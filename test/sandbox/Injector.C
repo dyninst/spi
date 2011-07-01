@@ -127,6 +127,7 @@ class Injector {
       // Setup code and inject code into mutatee's heap
       unsigned long* p = (unsigned long*)&code[OFF_DLOPEN];
       *p = (unsigned long)do_dlopen_addr - (unsigned long)(code_addr + OFF_DLRET);
+      fprintf(stderr, "*p: %x\n", *p);
       p = (unsigned long*)&code[OFF_ARGS];
       *p = (unsigned long)args_addr;
       proc_->writeMemory((Dyninst::Address)code_addr, code, size);

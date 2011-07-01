@@ -27,7 +27,7 @@ libagent.so: Agent.c
 	$(cc) -shared -o $@ $< -ldl -fPIC -O0 -g
 
 Mutatee: Mutatee.c
-	$(cc) -o $@ $< -g
+	$(cc) -o $@ $< -g 
 	execstack -s $@
 
 clean:

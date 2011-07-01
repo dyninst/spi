@@ -1,0 +1,46 @@
+include ../make.config
+
+all: Injector
+
+GXX        = g++
+RM         = rm -f
+
+COMMON_CFLAGS     =
+COMMON_CXXFLAGS   =
+COMMON_LDFLAGS    =
+
+#=================================================
+# For Injector
+#=================================================
+
+IJ_DIR      = ../src/Injector
+
+IJ_FLAGS   += $(COMMON_FLAGS)
+
+IJ_LDFLAGS += $(COMMON_LDFLAGS)
+IJ_LDFLAGS += -lpcontrol
+IJ_LDFLAGS += -L$(PCONTROL_DIR)/proccontrol/$(PLATFORM)
+
+IJ_IFLAGS  += -I../h
+IJ_IFLAGS  += -I$(PCONTROL_DIR)/proccontrol/h
+IJ_IFLAGS  += -I$(PCONTROL_DIR)/common/h
+IJ_IFLAGS  += -I$(PCONTROL_DIR)/dynutil/h
+
+IJ_SRCS    += $(IJ_DIR)/Injector.C \
+
+IJ_OBJS    += $(notdir $(IJ_SRCS:%.C=%.o))
+
+$(IJ_OBJS): %.o : $(IJ_SRCS)
+	@echo Compiling $(IJ_DIR)/$*.C
+	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
+
+Injector: $(IJ_OBJS)
+	@echo Linking $@
+	@$(GXX) -o $@  $(IJ_OBJS) $(IJ_LDFLAGS)
+
+#=================================================
+# For Agent
+#=================================================
+
+clean:
+	$(RM) Injector *.o

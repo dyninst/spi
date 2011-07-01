@@ -1,0 +1,87 @@
+#include "Injector.h"
+#include "dlfcn.h"
+
+using sp::Injector;
+using Dyninst::ProcControlAPI::Process;
+using Dyninst::ProcControlAPI::IRPC;
+
+/* Constructor */
+Injector::ptr Injector::create(Dyninst::PID pid) {
+  Injector::ptr ret = ptr(new Injector(pid));
+  return ret;
+}
+Injector::Injector(Dyninst::PID pid) : pid_(pid) {
+  proc_ = Process::attachProcess(pid);
+  if (!proc_) {
+    fprintf(stderr, "ERROR: failed to attach to process %d."
+                    "Injector exits!\n", pid);
+    exit(0);
+  }
+}
+
+/* The main inject procedure.
+   The fault handling is simple, simply report the error and exit! */
+void Injector::inject(const char* lib_name) {
+
+  printf("Step 1, Process %d is paused by injector.\n", pid_);
+  if (!proc_->stopProc()) {
+    fprintf(stderr, "ERROR: failed to stop process %d\n", pid_);
+    exit(0);
+  }
+
+  printf("Step 2, Save program counter to stack, for future ret.\n");
+  save_pc();
+
+  printf("Step 3, Find the address of do_dlopen function ");
+  Dyninst::Address do_dlopen_addr = find_do_dlopen();
+  printf("at %x\n", do_dlopen_addr);
+
+  printf("Step 4, Store library name \"%s\" in mutatee's heap ", lib_name);
+  size_t lib_name_len = strlen(lib_name) + 1;
+  Dyninst::Address lib_name_addr = proc_->mallocMemory(lib_name_len);
+  proc_->writeMemory(lib_name_addr, (void*)lib_name, lib_name_len);
+  printf("at %x\n", lib_name_addr);
+
+  printf("Step 5, Store do_dlopen's argument in mutatee's heap ");
+  dlopen_args_t args;
+  Dyninst::Address args_addr = proc_->mallocMemory(sizeof(args));
+  args.libname = (char*)lib_name_addr;
+  args.mode = RTLD_NOW | RTLD_GLOBAL;
+  args.link_map = 0;
+  proc_->writeMemory(args_addr, &args, sizeof(args));
+  printf("at %x\n", args_addr);
+
+  printf("Step 6, Setup load-library code and write code into mutatee's heap ");
+  size_t size = get_code_tmpl_size();
+  Dyninst::Address code_addr = proc_->mallocMemory(size+1);
+  char* code = get_code_tmpl(args_addr, do_dlopen_addr, code_addr);
+  proc_->writeMemory((Dyninst::Address)code_addr, code, size);
+  printf("at %x\n", code_addr);
+
+  printf("Step 7, Force the mutatee to execute load-library code at %x\n", code_addr);
+  IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr, false);
+  if (!proc_->postIRPC(irpc)) {
+    fprintf(stderr, "ERROR: failed to execute load-library code in mutatee's address space\n");
+    exit(0);
+  }
+  proc_->continueProc();
+  //Process::handleEvents(true);
+  proc_->detach();
+}
+
+/* Here we go! */
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    fprintf(stderr, "usage: %s PID LIB_NAME\n", argv[0]);
+    exit(0);
+  }
+
+  Dyninst::PID pid = atoi(argv[1]);
+  const char* lib_name = argv[2];
+
+  fprintf(stdout, "Injecting library %s to process %d ...\n", lib_name, pid);
+  Injector::ptr injector = Injector::create(pid);
+  injector->inject(lib_name);
+
+  return 0;
+}
