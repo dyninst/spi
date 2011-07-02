@@ -3,6 +3,7 @@
 #include "Symtab.h"
 #include "Function.h"
 #include "int_process.h"
+#include "Event.h"
 
 using sp::Injector;
 using Dyninst::ProcControlAPI::Process;
@@ -26,8 +27,8 @@ Injector::Injector(Dyninst::PID pid) : pid_(pid) {
   }
 }
 
-Library::ptr Injector::find_lib(char* libname) {
-  LibraryPool& libs = proc_->libraries();
+Library::ptr Injector::find_lib(Process::ptr proc, char* libname) {
+  LibraryPool& libs = proc->libraries();
   Library::ptr lib = Library::ptr();
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
     std::string name = (*li)->getName();
@@ -41,30 +42,30 @@ Library::ptr Injector::find_lib(char* libname) {
 
 /* Find do_dlopen */
 Dyninst::Address Injector::find_do_dlopen() {
-  // Find libc
-  Library::ptr libc = find_lib("libc");
-
-  // Find do_dlopen in libc, e.g., dynamically linked
-  std::string obj_name;
-  if (libc) {
-    obj_name = libc->getName();
+  LibraryPool& libs = proc_->libraries();
+  Library::ptr lib = Library::ptr();
+  for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
+    std::string name = (*li)->getName();
+    Symtab *obj = NULL;
+    bool err = Symtab::openFile(obj, name);
+    std::vector <Function *> funcs;
+    obj->findFunctionsByName(funcs, "do_dlopen");
+    if (funcs.size() > 0) return funcs[0]->getOffset();
   }
-  // Find do_dlopen in mutatee's executable, e.g., statically linked
-  else {
-    obj_name = (*proc_->libraries().begin())->getName();
-  }
-
-  // Find do_dlopen
-  Symtab *obj = NULL;
-  bool err = Symtab::openFile(obj, obj_name);
-  std::vector <Function *> funcs;
-  obj->findFunctionsByName(funcs, "do_dlopen");
-  if (funcs.size() > 0) return funcs[0]->getOffset();
   return 0;
 }
 
 Process::cb_ret_t on_event_rpc(Event::const_ptr ev) {
-  printf("The library is loaded!\n");
+  // printf("The library is loaded!\n");
+  // for debug
+  return Process::cbThreadContinue;
+}
+
+Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
+  EventLibrary::const_ptr libev = ev->getEventLibrary();
+  const std::set<Library::ptr> &libs = libev->libsAdded();
+  for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++)
+    printf("The library %s is loaded successfully!\n", (*i)->getName().c_str());
   return Process::cbThreadContinue;
 }
 
@@ -78,17 +79,21 @@ void Injector::inject(const char* lib_name) {
     exit(0);
   }
 
-  printf("Step 3, Find the address of do_dlopen function ");
+  printf("Step 2, Find the address of do_dlopen function ");
   Dyninst::Address do_dlopen_addr = find_do_dlopen();
-  printf("at %x\n", do_dlopen_addr);
+  if (do_dlopen_addr > 0) printf("at %x\n", do_dlopen_addr);
+  else {
+    fprintf(stderr, "ERROR: failed to find do_dlopen\n");
+    exit(0);
+  }
 
-  printf("Step 4, Store library name \"%s\" in mutatee's heap ", lib_name);
+  printf("Step 3, Store library name \"%s\" in mutatee's heap ", lib_name);
   size_t lib_name_len = strlen(lib_name) + 1;
   Dyninst::Address lib_name_addr = proc_->mallocMemory(lib_name_len);
   proc_->writeMemory(lib_name_addr, (void*)lib_name, lib_name_len);
   printf("at %x\n", lib_name_addr);
 
-  printf("Step 5, Store do_dlopen's argument in mutatee's heap ");
+  printf("Step 4, Store do_dlopen's argument in mutatee's heap ");
   dlopen_args_t args;
   Dyninst::Address args_addr = proc_->mallocMemory(sizeof(args));
   args.libname = (char*)lib_name_addr;
@@ -97,15 +102,16 @@ void Injector::inject(const char* lib_name) {
   proc_->writeMemory(args_addr, &args, sizeof(args));
   printf("at %x\n", args_addr);
 
-  printf("Step 6, Setup load-library code and write code into mutatee's heap ");
+  printf("Step 5, Setup load-library code and write code into mutatee's heap ");
   size_t size = get_code_tmpl_size();
   Dyninst::Address code_addr = proc_->mallocMemory(size+1);
   char* code = get_code_tmpl(args_addr, do_dlopen_addr, code_addr);
   proc_->writeMemory((Dyninst::Address)code_addr, code, size);
   printf("at %x\n", code_addr);
 
-  printf("Step 7, Force the mutatee to execute load-library code at %x\n", code_addr);
+  printf("Step 6, Force the mutatee to execute load-library code at %x\n", code_addr);
   Process::registerEventCallback(EventType::RPC, on_event_rpc);
+  Process::registerEventCallback(EventType::Library, on_event_lib);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   ThreadPool& thrs = proc_->threads();
   Thread::ptr t = thrs.getInitialThread();

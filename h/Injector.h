@@ -26,7 +26,8 @@ class Injector {
 
     Injector(Dyninst::PID pid);
     Dyninst::Address find_do_dlopen();
-    Dyninst::ProcControlAPI::Library::ptr find_lib(char* name);
+    static Dyninst::ProcControlAPI::Library::ptr
+    find_lib(Dyninst::ProcControlAPI::Process::ptr proc, char* name);
 
     /* Platform-dependent methods. See Injector-i386.C and Injector-x86_64 */
     size_t get_code_tmpl_size();
