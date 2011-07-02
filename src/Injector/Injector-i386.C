@@ -303,7 +303,7 @@ static symtab_t load_symtab(char *filename) {
 }
 
 static int
-lookup2(struct symlist *sl, unsigned char type,
+lookup2(symlist *sl, unsigned char type,
         char *name, unsigned long *val) {
   Elf32_Sym *p;
   int len;
@@ -321,10 +321,14 @@ lookup2(struct symlist *sl, unsigned char type,
 static int
 lookup_sym(symtab_t s, unsigned char type,
            char *name, unsigned long *val) {
-  if (s->dyn && !lookup2(s->dyn, type, name, val))
+  if (s->dyn && !lookup2(s->dyn, type, name, val)) {
+    fprintf(stdout, "dynamic case\n");
     return 0;
-  if (s->st && !lookup2(s->st, type, name, val))
+  }
+  if (s->st && !lookup2(s->st, type, name, val)) {
+    fprintf(stdout, "static case\n");
     return 0;
+  }
   return -1;
 }
 
@@ -365,10 +369,7 @@ Dyninst::Address Injector::find_do_dlopen() {
     fprintf(stderr, "ERROR: cannot find do_dlopen\n");
     exit(0);
   }
-  fprintf(stderr, "relative addr: %x, libc: %x, verify:%x\n", addr, ldaddr, addr + ldaddr);
-
-  addr += ldaddr;
-  fprintf(stderr, "absolute addr: %x\n", addr);
+  //addr += ldaddr;
   return addr;
 }
 
@@ -392,10 +393,10 @@ size_t Injector::get_code_tmpl_size() {
 
 char* Injector::get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dlopen,
                               Dyninst::Address code_addr) {
-  unsigned long* p = (unsigned long*)&dlopen_code[OFF_DLOPEN];
-  *p = (unsigned long)do_dlopen - (unsigned long)(code_addr + OFF_DLRET);
-  fprintf(stderr, "do_dlopen: %x, *p:%x\n", do_dlopen, *p);
-  p = (unsigned long*)&dlopen_code[OFF_ARGS];
-  *p = (unsigned long)args_addr;
+  long* p = (long*)&dlopen_code[OFF_DLOPEN];
+  Dyninst::Address abs_ret = code_addr + OFF_DLRET;
+  *p = (long)do_dlopen - (long)abs_ret;
+  p = (long*)&dlopen_code[OFF_ARGS];
+  *p = (long)args_addr;
   return dlopen_code;
 }

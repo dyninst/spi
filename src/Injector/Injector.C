@@ -65,8 +65,8 @@ void Injector::inject(const char* lib_name) {
     exit(0);
   }
   proc_->continueProc();
-  //Process::handleEvents(true);
-  proc_->detach();
+  //proc_->detach();
+  Process::handleEvents(true);
 }
 
 /* Here we go! */
