@@ -19,12 +19,17 @@ IJ_FLAGS   += $(COMMON_FLAGS)
 
 IJ_LDFLAGS += $(COMMON_LDFLAGS)
 IJ_LDFLAGS += -lpcontrol
-IJ_LDFLAGS += -L$(PCONTROL_DIR)/proccontrol/$(PLATFORM)
+IJ_LDFLAGS += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
+IJ_LDFLAGS += -lsymtabAPI
+IJ_LDFLAGS += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
 
 IJ_IFLAGS  += -I../h
-IJ_IFLAGS  += -I$(PCONTROL_DIR)/proccontrol/h
-IJ_IFLAGS  += -I$(PCONTROL_DIR)/common/h
-IJ_IFLAGS  += -I$(PCONTROL_DIR)/dynutil/h
+IJ_IFLAGS  += -I$(DYNINST_DIR)
+IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/h
+IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/src
+IJ_IFLAGS  += -I$(DYNINST_DIR)/symtabAPI/h
+IJ_IFLAGS  += -I$(DYNINST_DIR)/common/h
+IJ_IFLAGS  += -I$(DYNINST_DIR)/dynutil/h
 
 IJ_SRCS    += $(IJ_DIR)/Injector.C \
 

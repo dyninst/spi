@@ -1,9 +1,16 @@
 #include "Injector.h"
 #include "dlfcn.h"
+#include "Symtab.h"
+#include "Function.h"
+#include "int_process.h"
 
 using sp::Injector;
 using Dyninst::ProcControlAPI::Process;
 using Dyninst::ProcControlAPI::IRPC;
+using Dyninst::ProcControlAPI::LibraryPool;
+using Dyninst::ProcControlAPI::Library;
+using Dyninst::SymtabAPI::Symtab;
+using Dyninst::SymtabAPI::Function;
 
 /* Constructor */
 Injector::ptr Injector::create(Dyninst::PID pid) {
@@ -19,6 +26,48 @@ Injector::Injector(Dyninst::PID pid) : pid_(pid) {
   }
 }
 
+Library::ptr Injector::find_lib(char* libname) {
+  LibraryPool& libs = proc_->libraries();
+  Library::ptr lib = Library::ptr();
+  for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
+    std::string name = (*li)->getName();
+    if (name.find(libname) != std::string::npos) {
+      lib = *li;
+      break;
+    }
+  }
+  return lib;
+}
+
+/* Find do_dlopen */
+Dyninst::Address Injector::find_do_dlopen() {
+  // Find libc
+  Library::ptr libc = find_lib("libc");
+
+  // Find do_dlopen in libc, e.g., dynamically linked
+  std::string obj_name;
+  if (libc) {
+    obj_name = libc->getName();
+  }
+  // Find do_dlopen in mutatee's executable, e.g., statically linked
+  else {
+    obj_name = (*proc_->libraries().begin())->getName();
+  }
+
+  // Find do_dlopen
+  Symtab *obj = NULL;
+  bool err = Symtab::openFile(obj, obj_name);
+  std::vector <Function *> funcs;
+  obj->findFunctionsByName(funcs, "do_dlopen");
+  if (funcs.size() > 0) return funcs[0]->getOffset();
+  return 0;
+}
+
+Process::cb_ret_t on_event_rpc(Event::const_ptr ev) {
+  printf("The library is loaded!\n");
+  return Process::cbThreadContinue;
+}
+
 /* The main inject procedure.
    The fault handling is simple, simply report the error and exit! */
 void Injector::inject(const char* lib_name) {
@@ -28,9 +77,6 @@ void Injector::inject(const char* lib_name) {
     fprintf(stderr, "ERROR: failed to stop process %d\n", pid_);
     exit(0);
   }
-
-  printf("Step 2, Save program counter to stack, for future ret.\n");
-  save_pc();
 
   printf("Step 3, Find the address of do_dlopen function ");
   Dyninst::Address do_dlopen_addr = find_do_dlopen();
@@ -59,14 +105,20 @@ void Injector::inject(const char* lib_name) {
   printf("at %x\n", code_addr);
 
   printf("Step 7, Force the mutatee to execute load-library code at %x\n", code_addr);
-  IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr, false);
-  if (!proc_->postIRPC(irpc)) {
+  Process::registerEventCallback(EventType::RPC, on_event_rpc);
+  IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
+  ThreadPool& thrs = proc_->threads();
+  Thread::ptr t = thrs.getInitialThread();
+  if (!t->postIRPC(irpc)) {
     fprintf(stderr, "ERROR: failed to execute load-library code in mutatee's address space\n");
     exit(0);
   }
-  proc_->continueProc();
-  //proc_->detach();
-  Process::handleEvents(true);
+
+  while (t->isStopped()) {
+    t->continueThread();
+    Process::handleEvents(true);
+  }
+  proc_->detach();
 }
 
 /* Here we go! */

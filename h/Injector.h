@@ -25,10 +25,10 @@ class Injector {
     } dlopen_args_t;
 
     Injector(Dyninst::PID pid);
+    Dyninst::Address find_do_dlopen();
+    Dyninst::ProcControlAPI::Library::ptr find_lib(char* name);
 
     /* Platform-dependent methods. See Injector-i386.C and Injector-x86_64 */
-    void save_pc();
-    Dyninst::Address find_do_dlopen();
     size_t get_code_tmpl_size();
     char* get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dlopen,
                         Dyninst::Address code_addr);
