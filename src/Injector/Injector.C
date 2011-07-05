@@ -4,6 +4,7 @@
 #include "Function.h"
 #include "int_process.h"
 #include "Event.h"
+#include <signal.h>
 
 using sp::Injector;
 using Dyninst::ProcControlAPI::Process;
@@ -12,6 +13,22 @@ using Dyninst::ProcControlAPI::LibraryPool;
 using Dyninst::ProcControlAPI::Library;
 using Dyninst::SymtabAPI::Symtab;
 using Dyninst::SymtabAPI::Function;
+
+/* Debugging facility */
+#define print_reg(thr, reg) do { \
+  Dyninst::MachRegisterVal reg; \
+  thr->getRegister(x86::reg, reg); \
+  fprintf(stderr, "** %s = %x\n", #reg, reg); \
+} while (0)
+
+static void dump_registers(Thread::const_ptr thr) {
+  print_reg(thr, esp);
+  print_reg(thr, eip);
+  print_reg(thr, eax);
+  print_reg(thr, ebx);
+  print_reg(thr, ecx);
+  print_reg(thr, edx);
+}
 
 /* Constructor */
 Injector::ptr Injector::create(Dyninst::PID pid) {
@@ -42,10 +59,12 @@ Library::ptr Injector::find_lib(Process::ptr proc, char* libname) {
 
 /* Find do_dlopen */
 Dyninst::Address Injector::find_do_dlopen() {
+
   LibraryPool& libs = proc_->libraries();
   Library::ptr lib = Library::ptr();
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
     std::string name = (*li)->getName();
+    if (name.size() <= 0) continue;
     Symtab *obj = NULL;
     bool err = Symtab::openFile(obj, name);
     std::vector <Function *> funcs;
@@ -56,8 +75,7 @@ Dyninst::Address Injector::find_do_dlopen() {
 }
 
 Process::cb_ret_t on_event_rpc(Event::const_ptr ev) {
-  // printf("The library is loaded!\n");
-  // for debug
+  dump_registers(ev->getThread());
   return Process::cbThreadContinue;
 }
 
@@ -67,6 +85,15 @@ Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
   for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++)
     printf("The library %s is loaded successfully!\n", (*i)->getName().c_str());
   return Process::cbThreadContinue;
+}
+
+Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
+  EventSignal::const_ptr sigev = ev->getEventSignal();
+  if(sigev->getSignal() == SIGSEGV) {
+    fprintf(stderr, "ERROR: segment fault on mutatee side\n");
+    dump_registers(ev->getThread());
+  }
+  return Process::cbDefault;
 }
 
 /* The main inject procedure.
@@ -104,26 +131,32 @@ void Injector::inject(const char* lib_name) {
 
   printf("Step 5, Setup load-library code and write code into mutatee's heap ");
   size_t size = get_code_tmpl_size();
-  Dyninst::Address code_addr = proc_->mallocMemory(size+1);
+  Dyninst::Address code_addr = proc_->mallocMemory(size);
   char* code = get_code_tmpl(args_addr, do_dlopen_addr, code_addr);
-  proc_->writeMemory((Dyninst::Address)code_addr, code, size);
-  printf("at %x\n", code_addr);
+  printf("at %x of %d bytes\n", code_addr, size);
 
   printf("Step 6, Force the mutatee to execute load-library code at %x\n", code_addr);
   Process::registerEventCallback(EventType::RPC, on_event_rpc);
   Process::registerEventCallback(EventType::Library, on_event_lib);
+  Process::registerEventCallback(EventType::Signal, on_event_signal);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   ThreadPool& thrs = proc_->threads();
   Thread::ptr t = thrs.getInitialThread();
+  dump_registers(t);
   if (!t->postIRPC(irpc)) {
     fprintf(stderr, "ERROR: failed to execute load-library code in mutatee's address space\n");
     exit(0);
   }
 
+  // Wait for completion
   while (t->isStopped()) {
     t->continueThread();
     Process::handleEvents(true);
   }
+
+  proc_->freeMemory(lib_name_addr);
+  proc_->freeMemory(args_addr);
+  proc_->freeMemory(code_addr);
   proc_->detach();
 }
 

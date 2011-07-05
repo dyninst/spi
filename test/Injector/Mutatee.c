@@ -13,7 +13,8 @@ int main(int argc, char *argv[]) {
   if (setrlimit(RLIMIT_CORE, &core_limit) < 0) return -1;
   printf("%d\n", getpid());
   while(1) {
-    //       sleep(1);
+    //sleep(1);
+    //printf("going\n");
   }
   return 0;
 }
