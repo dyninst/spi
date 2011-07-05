@@ -143,6 +143,7 @@ void Injector::inject(const char* lib_name) {
   ThreadPool& thrs = proc_->threads();
   Thread::ptr t = thrs.getInitialThread();
   dump_registers(t);
+  irpc->setStartOffset(2);
   if (!t->postIRPC(irpc)) {
     fprintf(stderr, "ERROR: failed to execute load-library code in mutatee's address space\n");
     exit(0);
