@@ -109,7 +109,7 @@ void Injector::inject(const char* lib_name) {
 
   printf("Step 2, Find the address of do_dlopen function ");
   Dyninst::Address do_dlopen_addr = find_do_dlopen();
-  if (do_dlopen_addr > 0) printf("at %x\n", do_dlopen_addr);
+  if (do_dlopen_addr > 0) printf("at %lx\n", do_dlopen_addr);
   else {
     fprintf(stderr, "ERROR: failed to find do_dlopen\n");
     exit(0);
@@ -119,7 +119,7 @@ void Injector::inject(const char* lib_name) {
   size_t lib_name_len = strlen(lib_name) + 1;
   Dyninst::Address lib_name_addr = proc_->mallocMemory(lib_name_len);
   proc_->writeMemory(lib_name_addr, (void*)lib_name, lib_name_len);
-  printf("at %x\n", lib_name_addr);
+  printf("at %lx\n", lib_name_addr);
 
   printf("Step 4, Store do_dlopen's argument in mutatee's heap ");
   dlopen_args_t args;
@@ -128,15 +128,15 @@ void Injector::inject(const char* lib_name) {
   args.mode = RTLD_NOW | RTLD_GLOBAL;
   args.link_map = 0;
   proc_->writeMemory(args_addr, &args, sizeof(args));
-  printf("at %x\n", args_addr);
+  printf("at %lx\n", args_addr);
 
   printf("Step 5, Setup load-library code and write code into mutatee's heap ");
   size_t size = get_code_tmpl_size();
   Dyninst::Address code_addr = proc_->mallocMemory(size);
   char* code = get_code_tmpl(args_addr, do_dlopen_addr, code_addr);
-  printf("at %x of %d bytes\n", code_addr, size);
+  printf("at %lx of %d bytes\n", code_addr, size);
 
-  printf("Step 6, Force the mutatee to execute load-library code at %x\n", code_addr);
+  printf("Step 6, Force the mutatee to execute load-library code at %lx\n", code_addr);
   Process::registerEventCallback(EventType::RPC, on_event_rpc);
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
