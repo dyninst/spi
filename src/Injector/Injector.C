@@ -69,7 +69,9 @@ Dyninst::Address Injector::find_do_dlopen() {
     bool err = Symtab::openFile(obj, name);
     std::vector <Function *> funcs;
     obj->findFunctionsByName(funcs, "do_dlopen");
-    if (funcs.size() > 0) return funcs[0]->getOffset();
+    if (funcs.size() > 0) {
+      return funcs[0]->getOffset() + (*li)->getLoadAddress();
+    }
   }
   return 0;
 }
@@ -99,7 +101,6 @@ Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
 /* The main inject procedure.
    The fault handling is simple, simply report the error and exit! */
 void Injector::inject(const char* lib_name) {
-
   printf("Step 1, Process %d is paused by injector.\n", pid_);
   if (!proc_->stopProc()) {
     fprintf(stderr, "ERROR: failed to stop process %d\n", pid_);

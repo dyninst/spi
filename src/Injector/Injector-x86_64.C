@@ -3,16 +3,17 @@
 using sp::Injector;
 
 /* The code snippet to invoke do_dlopen */
-/*
 static char dlopen_code[] = {
   0x90, 0x90,
-  0x48, 0xc7, 0xc0, 0x0, 0x0, 0x0, 0x0, // movq args, %rax
-  0x50,                                 // pushl %rax
-  0xe8, 0x0, 0x0, 0x0, 0x0,             // call do_dlopen
-  0x58,
+  0x48, 0xb8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // movq args, %rax
+  0x50,                                               // pushq %rax
+  0x48, 0xb8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // movq do_dlopen, %rax
+  0xff, 0xd0,                                         // call %rax
+  0x58,                                               // pop eax
   0xCC
 };
-*/
+
+/*
 static char dlopen_code[] = {
   0x90, 0x90,                 // nop, nop
   0x68, 0x0, 0x0, 0x0, 0x0,   // pushl args
@@ -20,19 +21,20 @@ static char dlopen_code[] = {
   0x83, 0xc4, 0x04,           // addl $4, %esp
   0xcc
 };
-/*
-enum {
-  OFF_ARGS = 5,
-  OFF_DLOPEN = 11,
-  OFF_DLRET = 15
-};
 */
+enum {
+  OFF_ARGS = 4,
+  OFF_DLOPEN = 15,
+  OFF_DLRET = 23
+};
 
+/*
 enum {
   OFF_ARGS = 3,
   OFF_DLOPEN = 8,
   OFF_DLRET = 12
 };
+*/
 
 size_t Injector::get_code_tmpl_size() {
   return sizeof(dlopen_code);

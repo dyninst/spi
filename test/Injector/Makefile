@@ -9,4 +9,4 @@ $(AGENT): Agent.c
 	gcc -shared -o $@ $< -fPIC -O0
 clean:
 	cd $(PLATFORM)
-	rm -f $(MUTATEE) $(AGENT)
+	rm -f $(MUTATEE) $(AGENT) core.*
