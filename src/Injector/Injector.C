@@ -75,7 +75,7 @@ Dyninst::Address Injector::find_do_dlopen() {
 }
 
 Process::cb_ret_t on_event_rpc(Event::const_ptr ev) {
-  dump_registers(ev->getThread());
+  // dump_registers(ev->getThread());
   return Process::cbThreadContinue;
 }
 
@@ -142,7 +142,7 @@ void Injector::inject(const char* lib_name) {
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   ThreadPool& thrs = proc_->threads();
   Thread::ptr t = thrs.getInitialThread();
-  dump_registers(t);
+  //dump_registers(t);
   irpc->setStartOffset(2);
   if (!t->postIRPC(irpc)) {
     fprintf(stderr, "ERROR: failed to execute load-library code in mutatee's address space\n");

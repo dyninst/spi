@@ -1,8 +1,12 @@
-all: Mutatee libagent.so
+MUTATEE  = $(PLATFORM)/Mutatee
+AGENT    = $(PLATFORM)/libagent.so
 
-Mutatee: Mutatee.c
-	gcc -o Mutatee Mutatee.c 
-libagent.so: Agent.c
-	gcc -shared -o libagent.so Agent.c -fPIC -O0
+all: $(MUTATEE) $(AGENT)
+
+$(MUTATEE): Mutatee.c
+	gcc -o $@ $< 
+$(AGENT): Agent.c
+	gcc -shared -o $@ $< -fPIC -O0
 clean:
-	rm -f Mutatee core* libagent.so
+	cd $(PLATFORM)
+	rm -f $(MUTATEE) $(AGENT)

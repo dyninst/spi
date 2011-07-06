@@ -1,11 +1,10 @@
-./Mutatee & 
-PID=$!
+PID=$1
 echo "runing mutatee $PID"
 
 sleep 1
 echo "running injector on $PID"
-../../$PLATFORM/Injector $PID libagent.so
+../../$PLATFORM/Injector $PID `pwd`/$PLATFORM/libagent.so
 
 
 echo "mutatee $PID gets killed"
-kill $PID
+#kill $PID

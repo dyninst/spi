@@ -11,10 +11,9 @@ int main(int argc, char *argv[]) {
   core_limit.rlim_cur = RLIM_INFINITY;
   core_limit.rlim_max = RLIM_INFINITY;
   if (setrlimit(RLIMIT_CORE, &core_limit) < 0) return -1;
-  printf("%d\n", getpid());
   while(1) {
     sleep(1);
-    //printf("going\n");
+    printf("on going\n");
   }
   return 0;
 }
