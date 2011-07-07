@@ -1,6 +1,34 @@
 #ifndef SP_AGENT_H_
 #define SP_AGENT_H_
 
+#include "PatchMgr.h"
 
+namespace sp {
+
+/* AgentConf is to manage Agent's configuration parameters, including:
+   - The event that causes the activation of instrumentation.
+     - Default: the callees of current function
+   - The event that causes the deactivation of instrumentation.
+     - Default: the exit of this process
+   - The initial user-defined payload code to execute when activation.
+     - Default: print out the current function name
+   - The parser to parse CFG structures of current running process.
+     - Default: runtime parsing
+ */
+class AgentConf {
+  public:
+    typedef dyn_detail::boost::shared_ptr<AgentConf> ptr;
+    static ptr create();
+
+  protected:
+    // initEvent
+    // finiEvent
+    // initPayload
+    // parser
+
+    AgentConf();
+};
+
+}
 
 #endif /* SP_AGENT_H_ */

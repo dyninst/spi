@@ -1,4 +1,5 @@
 #include "Injector.h"
+#include "Common.h"
 
 using sp::Injector;
 
@@ -32,3 +33,4 @@ char* Injector::get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dl
 
   return dlopen_code;
 }
+
