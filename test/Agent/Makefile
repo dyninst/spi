@@ -21,4 +21,4 @@ $(MYAGENT): MyAgent.C
 	g++ -shared -o $@ $< $(MY_FLAG) $(MY_LFLAG) $(MY_IFLAG)
 
 clean:
-	rm -f $(MUTATEE) $(PLATFORM)/*.so core.*
+	rm -f $(MUTATEE) $(MYAGENT) $(PLATFORM)/*.so core.*
