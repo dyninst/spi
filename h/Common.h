@@ -19,7 +19,7 @@ extern bool sp_debug_flag;
 
 #define sp_debug(...) do { \
     if (sp_debug_flag) {\
-      fprintf(stderr, "%s [%d]: ", __FILE__, __LINE__); \
+      fprintf(stderr, "%30s [%5d]: ", __FILE__, __LINE__); \
       fprintf(stderr, __VA_ARGS__); \
       fprintf(stderr, "\n");  \
       fflush(stderr); \
