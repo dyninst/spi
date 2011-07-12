@@ -5,5 +5,5 @@ AG_SRCS       =
 PLATFORM      ?= x86_64-unknown-linux2.4
 
 include ../make.config
-include ../make.module.tmpl
+include ../make.flag.tmpl
 include ../make.module.tmpl

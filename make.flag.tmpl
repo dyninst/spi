@@ -10,6 +10,8 @@ COMMON_IFLAGS    += -I$(DYNINST_DIR)/common/h
 COMMON_IFLAGS    += -I$(DYNINST_DIR)/dynutil/h
 COMMON_IFLAGS    += -I$(DYNINST_DIR)/symtabAPI/h
 
+COMMON_LDFLAGS   += -lpthread
+
 #=================================================
 # For Injector
 #=================================================

@@ -32,13 +32,18 @@ class Injector {
     Dyninst::PID pid_;
     Dyninst::ProcControlAPI::Process::ptr proc_;
     Dyninst::ProcControlAPI::Thread::ptr thr_;
+    typedef std::vector<std::string> DepNames;
+    DepNames dep_names_;
 
     Injector(Dyninst::PID pid);
     Dyninst::Address find_do_dlopen();
     static Dyninst::ProcControlAPI::Library::ptr
     find_lib(Dyninst::ProcControlAPI::Process::ptr proc, char* name);
-
+    bool getResolvedLibraryPath(const std::string &filename, std::vector<std::string> &paths);
     void verify_lib_loaded();
+
+    void set_dep_names(const char* lib_name);
+    void inject_internal(const char* lib_name);
 
     /* Platform-dependent methods. See Injector-i386.C and Injector-x86_64 */
     size_t get_code_tmpl_size();

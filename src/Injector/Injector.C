@@ -6,6 +6,9 @@
 #include "Event.h"
 #include <signal.h>
 #include "Common.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using sp::Injector;
 using Dyninst::ProcControlAPI::Process;
@@ -13,6 +16,7 @@ using Dyninst::ProcControlAPI::IRPC;
 using Dyninst::ProcControlAPI::LibraryPool;
 using Dyninst::ProcControlAPI::Library;
 using Dyninst::SymtabAPI::Symtab;
+using Dyninst::SymtabAPI::Symbol;
 using Dyninst::SymtabAPI::Function;
 
 /* Constructor */
@@ -65,27 +69,33 @@ Injector::dlopen_args_t* Injector::args_ = NULL;
 char* Injector::libname_ = NULL;
 
 Process::cb_ret_t on_event_rpc(Event::const_ptr ev) {
+  /*
   sp_debug("Step 7, load-library code completed, validate the result ...");
   Process::ptr p = dyn_detail::boost::const_pointer_cast<Process>(ev->getProcess());
   Injector::verify_ret(p, (Dyninst::Address)Injector::args_);
   Injector::verify_lib_loaded(p, Injector::libname_);
   sp_print("%s is loaded", Injector::libname_);
+*/
   return Process::cbThreadContinue;
 }
 
 Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
+  /*
   EventLibrary::const_ptr libev = ev->getEventLibrary();
   const std::set<Library::ptr> &libs = libev->libsAdded();
   for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++)
     sp_debug("*** The library %s is loaded the first time", (*i)->getName().c_str());
+*/
   return Process::cbThreadContinue;
 }
 
 Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
+  /*
   EventSignal::const_ptr sigev = ev->getEventSignal();
   if(sigev->getSignal() == SIGSEGV) {
     sp_perror("segment fault on mutatee side");
   }
+*/
   return Process::cbThreadContinue;
 }
 
@@ -115,17 +125,29 @@ void Injector::verify_ret(Process::ptr proc, Dyninst::Address args_) {
   }
 }
 
-/* The main inject procedure. */
+/* Inject all libraries in dep_names_ */
 void Injector::inject(const char* lib_name) {
-  //char* l = "libagent.so";
-  // 0, Check the existence of lib_name
+  set_dep_names(lib_name);
+  // inject all dependent libraries
+  for (DepNames::iterator i = dep_names_.begin(); i != dep_names_.end(); i++) {
+    inject_internal((*i).c_str());
+  }
+  // inject the one user specified
+  inject_internal(lib_name);
+}
+
+/* Inject one library for each invokation. */
+void Injector::inject_internal(const char* lib_name) {
+  // 0, Sanity check of lib_name.
   libname_ = realpath(lib_name, NULL);
-  //libname_ = realpath(l, NULL);
 
   if (!libname_) {
     sp_perror("invalid path for library %s", lib_name);
   }
   sp_debug("Step 0, absolute path of this lib is: %s", libname_);
+  if (find_lib(proc_, libname_)) {
+    return;
+  }
 
   // 1. Stop process, register some event handlers
   sp_debug("Step 1, Process %d is paused by injector.", pid_);
@@ -191,6 +213,138 @@ void Injector::inject(const char* lib_name) {
   proc_->detach();
 }
 
+/*
+  Store all dependencies of lib_name to dep_names_, including indirect dependency.
+ */
+void Injector::set_dep_names(const char* lib_name) {
+  char* libname = realpath(lib_name, NULL);
+
+  if (!libname) {
+    sp_perror("invalid path for library %s", lib_name);
+  }
+
+  Symtab *obj = NULL;
+  Symtab::openFile(obj, libname);
+  DepNames& dep_names = obj->getDependencies();
+
+  typedef std::map<std::string, std::string> DepMap;
+  typedef std::deque<std::string> DepDeque;
+  DepDeque dep_deque;
+  DepMap dep_map;
+  std::copy(dep_names.begin(), dep_names.end(), back_inserter(dep_deque));
+
+  while (!dep_deque.empty()) {
+    std::string lib = dep_deque.front();
+    dep_deque.pop_front();
+
+    if (dep_map.find(lib) == dep_map.end()) {
+      DepNames abs_paths;
+      getResolvedLibraryPath(lib, abs_paths);
+      for (DepNames::iterator li = abs_paths.begin(); li != abs_paths.end(); li++) {
+        dep_map[lib] = *li;
+        Symtab *dep_obj = NULL;
+        Symtab::openFile(dep_obj, *li);
+        DepNames& dep_names = dep_obj->getDependencies();
+        for (DepNames::iterator di = dep_names.begin(); di != dep_names.end(); di++) {
+          if (dep_map.find(*di) == dep_map.end()) dep_deque.push_back(*di);
+        }
+        break;
+      }
+    }
+  }
+
+  // copy to dep_names_
+  for (DepMap::iterator mi = dep_map.begin(); mi != dep_map.end(); mi++) {
+    dep_names_.push_back(mi->second);
+    sp_print("%s", (mi->second).c_str());
+  }
+}
+
+bool Injector::getResolvedLibraryPath(const std::string &filename, std::vector<std::string> &paths) {
+  char *libPathStr, *libPath;
+  std::vector<std::string> libPaths;
+  struct stat dummy;
+  FILE *ldconfig;
+  char buffer[512];
+  char *pos, *key, *val;
+
+  // prefer qualified file paths
+  if (stat(filename.c_str(), &dummy) == 0) {
+    paths.push_back(filename);
+  }
+
+  // search paths from environment variables
+  libPathStr = strdup(getenv("LD_LIBRARY_PATH"));
+  libPath = strtok(libPathStr, ":");
+  while (libPath != NULL) {
+    libPaths.push_back(std::string(libPath));
+    libPath = strtok(NULL, ":");
+  }
+  free(libPathStr);
+
+  //libPaths.push_back(std::string(getenv("PWD")));
+  for (unsigned int i = 0; i < libPaths.size(); i++) {
+    std::string str = libPaths[i] + "/" + filename;
+    if (stat(str.c_str(), &dummy) == 0) {
+      paths.push_back(str);
+    }
+  }
+
+  // search ld.so.cache
+  ldconfig = popen("/sbin/ldconfig -p", "r");
+  if (ldconfig) {
+    fgets(buffer, 512, ldconfig);       // ignore first line
+    while (fgets(buffer, 512, ldconfig) != NULL) {
+      pos = buffer;
+      while (*pos == ' ' || *pos == '\t') pos++;
+      key = pos;
+      while (*pos != ' ') pos++;
+      *pos = '\0';
+      while (*pos != '=' && *(pos + 1) != '>') pos++;
+      pos += 2;
+      while (*pos == ' ' || *pos == '\t') pos++;
+      val = pos;
+      while (*pos != '\n' && *pos != '\0') pos++;
+      *pos = '\0';
+      if (strcmp(key, filename.c_str()) == 0) {
+        paths.push_back(val);
+      }
+    }
+    pclose(ldconfig);
+  }
+
+  // search hard-coded system paths
+  libPaths.clear();
+  libPaths.push_back("/usr/local/lib");
+  libPaths.push_back("/usr/share/lib");
+  libPaths.push_back("/usr/lib");
+  libPaths.push_back("/usr/lib64");
+  libPaths.push_back("/lib");
+  libPaths.push_back("/lib64");
+  for (unsigned int i = 0; i < libPaths.size(); i++) {
+    std::string str = libPaths[i] + "/" + filename;
+    if (stat(str.c_str(), &dummy) == 0) {
+      paths.push_back(str);
+    }
+  }
+
+  // Remove those libraries running on a different architecture from mutatee
+  for (std::vector<std::string>::iterator j = paths.begin(); j != paths.end();) {
+    Symtab* obj = NULL;
+    bool ret = Symtab::openFile(obj, *j);
+    if (ret) {
+      if (obj->getAddressWidth() == proc_->llproc()->getAddressWidth()) {
+        j++;
+      } else {
+        j = paths.erase(j);
+      }
+    } else {
+      j = paths.erase(j);
+    }
+  }
+  return ( 0 < paths.size() );
+}
+
 /* Here we go! */
 int main(int argc, char *argv[]) {
   if (argc != 3) {
@@ -204,6 +358,7 @@ int main(int argc, char *argv[]) {
   sp_print("Injecting library %s to process %d ...", lib_name, pid);
   Injector::ptr injector = Injector::create(pid);
   injector->inject(lib_name);
+  //injector->set_dep_names(lib_name);
 
   return 0;
 }
