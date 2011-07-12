@@ -5,6 +5,8 @@
 #include "Parser.h"
 #include "Event.h"
 
+#define AGENT_INIT __attribute__((constructor))
+
 namespace sp {
 
 /* Agent is to manage Agent's configuration parameters, including:

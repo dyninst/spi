@@ -8,7 +8,7 @@ using sp::Parser;
 using sp::Agent;
 //using namespace Dyninst::Stackwalker;
 
-__attribute__((constructor))
+AGENT_INIT
 void init_parser() {
   dprint("AGENT: init_parser @ process %d", getpid());
 

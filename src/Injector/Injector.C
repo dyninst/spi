@@ -65,7 +65,7 @@ Injector::dlopen_args_t* Injector::args_ = NULL;
 char* Injector::libname_ = NULL;
 
 Process::cb_ret_t on_event_rpc(Event::const_ptr ev) {
-  sp_debug("Step 7. load-library code completed, validate the result ...");
+  sp_debug("Step 7, load-library code completed, validate the result ...");
   Process::ptr p = dyn_detail::boost::const_pointer_cast<Process>(ev->getProcess());
   Injector::verify_ret(p, (Dyninst::Address)Injector::args_);
   Injector::verify_lib_loaded(p, Injector::libname_);
@@ -85,7 +85,6 @@ Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
   EventSignal::const_ptr sigev = ev->getEventSignal();
   if(sigev->getSignal() == SIGSEGV) {
     sp_perror("segment fault on mutatee side");
-    //TODO(wenbin): should resume mutatee's execution
   }
   return Process::cbThreadContinue;
 }
@@ -118,9 +117,11 @@ void Injector::verify_ret(Process::ptr proc, Dyninst::Address args_) {
 
 /* The main inject procedure. */
 void Injector::inject(const char* lib_name) {
-
+  //char* l = "libagent.so";
   // 0, Check the existence of lib_name
   libname_ = realpath(lib_name, NULL);
+  //libname_ = realpath(l, NULL);
+
   if (!libname_) {
     sp_perror("invalid path for library %s", lib_name);
   }

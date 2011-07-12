@@ -1,59 +1,15 @@
-include ../make.config
 
 INJECTOR   = Injector
 AGENT      = libagent.so
 
-all: $(INJECTOR) $(AGENT)
+all: $(INJECTOR) $(AGENT) clean_objs
 
 GXX        = g++
 RM         = rm -f
 
-#=================================================
-# For COMMON
-#=================================================
-
-COMMON_FLAGS     = -fPIC
-
-COMMON_IFLAGS     = -I../h
-COMMON_IFLAGS    += -I$(DYNINST_DIR)
-COMMON_IFLAGS    += -I$(DYNINST_DIR)/common/h
-COMMON_IFLAGS    += -I$(DYNINST_DIR)/dynutil/h
-COMMON_IFLAGS    += -I$(DYNINST_DIR)/symtabAPI/h
-
-COMMON_LDFLAGS    = -lpthread
-COMMON_DIR        = ../src
-COMMON_SRCS       = $(COMMON_DIR)/Common.C
-
-COMMON_DEP  = .COMMON_DEPENDS
-COMMON_DEPS:
-	$(GXX) -MM $(COMMON_IFLAGS) $(COMMON_FLAGS) $(COMMON_SRCS) > $(COMMON_DEP)
-include $(COMMON_DEP)
-
-COMMON_OBJS    += $(notdir $(COMMON_SRCS:%.C=%.o))
-
-$(COMMON_OBJS): %.o : $(COMMON_SRCS)
-	@echo Compiling $(COMMON_DIR)/$*.C
-	@$(GXX) -c -o $@ $(COMMON_IFLAGS) $(COMMON_FLAGS) $(COMMON_DIR)/$*.C
-
-
-#=================================================
-# For Injector
-#=================================================
-
-IJ_DIR      = ../src/Injector
-
-IJ_FLAGS   += $(COMMON_FLAGS)
-
-IJ_LDFLAGS += $(COMMON_LDFLAGS)
-IJ_LDFLAGS += -lpcontrol
-IJ_LDFLAGS += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
-IJ_LDFLAGS += -lsymtabAPI
-IJ_LDFLAGS += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
-
-IJ_IFLAGS  += $(COMMON_IFLAGS)
-IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/h
-IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/src
-
+#======================================
+# Injector
+#======================================
 IJ_SRCS    += $(IJ_DIR)/Injector.C \
 
 IJ_OBJS    += $(notdir $(IJ_SRCS:%.C=%.o))
@@ -71,26 +27,9 @@ $(INJECTOR): $(IJ_OBJS) $(COMMON_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJ_OBJS) $(COMMON_OBJS) $(IJ_LDFLAGS)
 
-#=================================================
-# For Agent
-#=================================================
-
-AG_DIR      = ../src/Agent
-VPATH      += $(AG_DIR)
-
-AG_FLAGS   += $(COMMON_FLAGS)
-AG_FLAGS   += -fPIC -Dos_linux
-
-AG_LDFLAGS += $(COMMON_LDFLAGS)
-AG_LDFLAGS += -lpatchAPI
-AG_LDFLAGS += -L$(DYNINST_DIR)/patchAPI/$(PLATFORM)
-AG_LDFLAGS +=  -shared
-
-AG_IFLAGS  += $(COMMON_IFLAGS)
-AG_IFLAGS  += -I$(DYNINST_DIR)/patchAPI/h
-AG_IFLAGS  += -I$(DYNINST_DIR)/parseAPI/h
-AG_IFLAGS  += -I$(DYNINST_DIR)/instructionAPI/h
-
+#======================================
+# Agent
+#======================================
 AG_SRCS    += $(AG_DIR)/Agent.C \
               $(AG_DIR)/Parser.C \
               $(AG_DIR)/Event.C \
@@ -112,10 +51,13 @@ $(AGENT): $(AG_OBJS) $(COMMON_OBJS)
 
 
 #=================================================
-# Misc 
+# clean
 #=================================================
+clean_objs:
+	$(RM) *.o
+
 clean:
 	$(RM) $(INJECTOR) $(AGENT) *.o
 	make IJ_DEPS
 	make AG_DEPS
-	make COMMON_DEPS
+

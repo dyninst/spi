@@ -1,9 +1,10 @@
 #ifndef SP_COMMON_H_
 #define SP_COMMON_H_
 
-#include "dyn_detail/boost/shared_ptr.hpp"
+#include <stdio.h>
+#include <stdlib.h>
 
-extern bool sp_debug_flag;
+#include "dyn_detail/boost/shared_ptr.hpp"
 
 /* Print facility */
 #define sp_perror(...) do {\
@@ -20,7 +21,7 @@ extern bool sp_debug_flag;
 } while(0)
 
 #define sp_debug(...) do { \
-    if (sp_debug_flag) {\
+  if (getenv("SP_DEBUG")) {   \
       fprintf(stderr, "%30s [%5d]: ", __FILE__, __LINE__); \
       fprintf(stderr, __VA_ARGS__); \
       fprintf(stderr, "\n");  \
@@ -28,11 +29,5 @@ extern bool sp_debug_flag;
     } \
     else ; \
 } while(0)
-
-/* Set the environment variable SP_DEBUG to enable debug output */
-struct DebugConfig{
-  DebugConfig();
-};
-extern DebugConfig debug_config;
 
 #endif /* SP_COMMON_H_ */
