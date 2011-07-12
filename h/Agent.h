@@ -3,6 +3,7 @@
 
 #include "PatchMgr.h"
 #include "Parser.h"
+#include "Event.h"
 
 namespace sp {
 
@@ -26,9 +27,9 @@ class Agent {
 
 
   protected:
-    // initEvent
-    // finiEvent
     // initPayload
+    Event::ptr initEvent_;
+    Event::ptr finiEvent_;
     Parser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
 

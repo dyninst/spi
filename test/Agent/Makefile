@@ -15,12 +15,14 @@ AGENT_LDFLAGS         = -shared -fPIC
 AGENT_LDFLAGS        += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM) \
                         -L$(DYNINST_DIR)/parseAPI/$(PLATFORM) \
                         -L$(DYNINST_DIR)/patchAPI/$(PLATFORM) \
+                        -L$(DYNINST_DIR)/stackwalk/$(PLATFORM) \
                         -L$(DYNINST_DIR)/instructionAPI/$(PLATFORM) \
                         -L../../$(PLATFORM) \
 
 AGENT_LDFLAGS        += -lsymtabAPI \
                         -lparseAPI  \
                         -lpatchAPI  \
+                        -lstackwalk \
                         -linstructionAPI  \
                         -lagent     \
 
@@ -30,6 +32,7 @@ AGENT_IFLAGS          = -I$(DYNINST_DIR)/symtabAPI/h \
                         -I$(DYNINST_DIR)/common/h \
                         -I$(DYNINST_DIR)/dynutil/h \
                         -I$(DYNINST_DIR)/patchAPI/h \
+                        -I$(DYNINST_DIR)/stackwalk/h \
                         -I$(DYNINST_DIR)/instructionAPI/h \
                         -I../../h
 

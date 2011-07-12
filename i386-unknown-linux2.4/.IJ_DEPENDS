@@ -224,5 +224,5 @@ Injector.o: ../src/Injector/Injector.C ../h/Injector.h \
   ../../dyninst/dyninst/proccontrol/src/response.h \
   ../../dyninst/dyninst/common/h/dthread.h \
   ../../dyninst/dyninst/dynutil/h/dyn_regs.h \
-  ../../dyninst/dyninst/dynutil/h/SymReader.h \
-  ../../dyninst/dyninst/proccontrol/h/Event.h ../h/Common.h
+  ../../dyninst/dyninst/dynutil/h/SymReader.h ../h/Event.h ../h/Common.h \
+  ../h/Common.h

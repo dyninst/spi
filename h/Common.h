@@ -1,6 +1,8 @@
 #ifndef SP_COMMON_H_
 #define SP_COMMON_H_
 
+#include "dyn_detail/boost/shared_ptr.hpp"
+
 extern bool sp_debug_flag;
 
 /* Print facility */

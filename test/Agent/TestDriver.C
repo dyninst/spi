@@ -21,6 +21,7 @@ TestDriver::TestDriver() {
 
   // Add test cases here:
   add_testcase("parser");
+  add_testcase("event");
 }
 
 void TestDriver::add_testcase(std::string name) {
@@ -29,7 +30,7 @@ void TestDriver::add_testcase(std::string name) {
 
 bool TestDriver::run_testcase(std::string name) {
   // 1. Check if this test case is in testcases_
-  name = name.substr(1);
+  // name = name.substr(1);
   if (testcases_.find(name) == testcases_.end()) {
     std::cerr << "ERROR: there's not a test case called " << name << "\n";
     exit(0);
@@ -77,8 +78,28 @@ int main(int argc, char *argv[]) {
     driver.help();
     return 1;
   }
-
-  driver.run_testcase(argv[1]);
-
+  char* test_name = &argv[1][1];
+  int pid = fork();
+  switch (pid) {
+    // Child
+    case 0: {
+      driver.run_testcase(test_name);
+      break;
+    }
+    case -1: {
+      std::cerr << "ERROR: failed to fork a process to execute test case.\n";
+      break;
+    }
+    default: {
+      int child_status;
+      pid_t wpid = wait(&child_status);
+      std::cout << test_name;
+      if (WIFEXITED(child_status))
+	std::cout << " PASSED\n";
+      else
+	std::cout << " FAILED\n";
+      break;
+    }
+  }
   return 0;
 }

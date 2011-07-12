@@ -1,8 +1,12 @@
 #include "test_case.h"
 #include "Agent.h"
-
+/*
+#include "frame.h"
+#include "walker.h"
+*/
 using sp::Parser;
 using sp::Agent;
+//using namespace Dyninst::Stackwalker;
 
 __attribute__((constructor))
 void init_parser() {
@@ -15,4 +19,14 @@ void init_parser() {
 
   Dyninst::ParseAPI::Function* mutatee_func = parser->findFunction("run_mutatee");
   assert(mutatee_func);
+  /*
+  std::vector<Frame> stackwalk; 
+  string s;
+  Walker *walker = Walker::newWalker();
+  walker->walkStack(stackwalk);
+  for (unsigned i=0; i<stackwalk.size(); i++) {
+    stackwalk[i].getName(s);
+    cout << "Found function " << s << endl;
+  }
+  */
 }
