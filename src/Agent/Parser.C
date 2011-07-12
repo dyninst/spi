@@ -10,8 +10,9 @@ using Dyninst::SymtabAPI::AddressLookup;
 using Dyninst::SymtabAPI::Symtab;
 using Dyninst::ParseAPI::CodeObject;
 using Dyninst::ParseAPI::SymtabCodeSource;
+using Dyninst::PatchAPI::PatchObject;
 
-Parser::Parser() : exe_co_(NULL) {
+Parser::Parser() : exe_obj_(NULL) {
 }
 
 Parser::~Parser() {
@@ -28,7 +29,7 @@ Parser::ptr Parser::create() {
 }
 
 /* Default implementation is runtime parsing. */
-Parser::CodeObjects& Parser::parse() {
+Parser::PatchObjects& Parser::parse() {
   AddressLookup* al = AddressLookup::createAddressLookup(getpid());
   al->refresh();
   std::vector<Symtab*> tabs;
@@ -38,24 +39,26 @@ Parser::CodeObjects& Parser::parse() {
     Symtab* sym = *i;
     Dyninst::Address load_addr;
     al->getLoadAddress(sym, load_addr);
-    sp_debug("%x: %s", load_addr, sym->file().c_str());
 
     SymtabCodeSource* scs = new SymtabCodeSource(sym);
     code_srcs_.push_back(scs);
     CodeObject* co = new CodeObject(scs);
     code_objs_.push_back(co);
     co->parse();
-    if (sym->isExec()) exe_co_ = co;
+
+    PatchObject* patch_obj = PatchObject::create(co, load_addr ? load_addr : sym->getLoadAddress());
+    patch_objs_.push_back(patch_obj);
+    if (sym->isExec()) exe_obj_ = patch_obj;
   }
-  return code_objs_;
+  return patch_objs_;
 }
 
-CodeObject* Parser::exe_co() {
-  if (!exe_co_) {
+PatchObject* Parser::exe_obj() {
+  if (!exe_obj_) {
     parse();
-    if (!exe_co_) sp_perror("failed to parse binary");
+    if (!exe_obj_) sp_perror("failed to parse binary");
   }
-  return exe_co_;
+  return exe_obj_;
 }
 
 Dyninst::ParseAPI::Function* Parser::findFunction(std::string name) {

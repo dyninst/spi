@@ -15,7 +15,4 @@ void init_parser() {
 
   Dyninst::ParseAPI::Function* mutatee_func = parser->findFunction("run_mutatee");
   assert(mutatee_func);
-  dprint("AGENT: mutatee_func %s() is found in object 0x%x",
-         mutatee_func->name().c_str(),
-         mutatee_func->obj()->cs()->loadAddress());
 }

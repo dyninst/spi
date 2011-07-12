@@ -16,8 +16,9 @@ class Parser : public Dyninst::PatchAPI::CFGMaker {
     static ptr create();
 
     typedef std::vector<Dyninst::ParseAPI::CodeObject*> CodeObjects;
-    virtual CodeObjects& parse();
-    Dyninst::ParseAPI::CodeObject* exe_co();
+    typedef std::vector<Dyninst::PatchAPI::PatchObject*> PatchObjects;
+    virtual PatchObjects& parse();
+    Dyninst::PatchAPI::PatchObject* exe_obj();
 
     // Mainly for debug
     Dyninst::ParseAPI::Function* findFunction(std::string name);
@@ -26,7 +27,8 @@ class Parser : public Dyninst::PatchAPI::CFGMaker {
     typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
     CodeSources code_srcs_;
     CodeObjects code_objs_;
-    Dyninst::ParseAPI::CodeObject* exe_co_;
+    PatchObjects patch_objs_;
+    Dyninst::PatchAPI::PatchObject* exe_obj_;
 
     Parser();
 };

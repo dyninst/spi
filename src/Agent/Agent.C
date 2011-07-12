@@ -29,23 +29,21 @@ void Agent::go() {
   sp_debug("%s", __FUNCTION__);
 
   // 1. Parsing and initialize PatchAPI stuffs
-  Parser::CodeObjects& cos = parser_->parse();
-  sp_debug("%d CodeObjects created", cos.size());
+  Parser::PatchObjects& cos = parser_->parse();
+  sp_debug("%d PatchObjects created", cos.size());
 
-  CodeObject* exe_co = parser_->exe_co();
-  assert(exe_co);
+  PatchObject* exe_obj = parser_->exe_obj();
+  assert(exe_obj);
 
-  sp_debug("create PatchObject for exe with load address 0x%x", exe_co->cs()->loadAddress());
-  PatchObject* exe_obj = PatchObject::create(exe_co, exe_co->cs()->loadAddress());
+  sp_debug("PatchObject for exe with load address 0x%lx", exe_obj->codeBase());
   AddrSpacePtr as = AddrSpace::create(exe_obj);
   mgr_ = PatchMgr::create(as);
 
-  for (Parser::CodeObjects::iterator i = cos.begin(); i != cos.end(); i++) {
-    CodeObject* co = *i;
-    assert(co);
-    sp_debug("create PatchObject for a shared library with load address 0x%x", co->cs()->loadAddress());
-    PatchObject* obj = PatchObject::create(co, co->cs()->loadAddress());
-    as->loadObject(obj);
+  for (Parser::PatchObjects::iterator i = cos.begin(); i != cos.end(); i++) {
+    if (*i != exe_obj) {
+      as->loadObject(*i);
+      sp_debug("PatchObject for .so with load address 0x%lx", (*i)->codeBase());
+    }
   }
 
   // 2. Register Events
