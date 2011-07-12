@@ -2,10 +2,11 @@
 #define SP_AGENT_H_
 
 #include "PatchMgr.h"
+#include "Parser.h"
 
 namespace sp {
 
-/* AgentConf is to manage Agent's configuration parameters, including:
+/* Agent is to manage Agent's configuration parameters, including:
    - The event that causes the activation of instrumentation.
      - Default: the callees of current function
    - The event that causes the deactivation of instrumentation.
@@ -15,18 +16,23 @@ namespace sp {
    - The parser to parse CFG structures of current running process.
      - Default: runtime parsing
  */
-class AgentConf {
+class Agent {
   public:
-    typedef dyn_detail::boost::shared_ptr<AgentConf> ptr;
+    typedef dyn_detail::boost::shared_ptr<Agent> ptr;
     static ptr create();
+
+    void setParser(Parser::ptr parser);
+    void go();
+
 
   protected:
     // initEvent
     // finiEvent
     // initPayload
-    // parser
+    Parser::ptr parser_;
+    Dyninst::PatchAPI::PatchMgrPtr mgr_;
 
-    AgentConf();
+    Agent();
 };
 
 }

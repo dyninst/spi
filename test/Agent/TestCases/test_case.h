@@ -3,10 +3,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define dprint(...) do { \
   if (getenv("SP_DEBUG")) { \
-    fprintf(stderr, "%30s [%d]: ", __FILE__, __LINE__); \
+    fprintf(stderr, "%30s [%5d]: ", __FILE__, __LINE__); \
     fprintf(stderr, __VA_ARGS__); \
     fprintf(stderr, "\n");  \
     fflush(stderr); \

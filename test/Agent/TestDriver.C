@@ -40,17 +40,18 @@ bool TestDriver::run_testcase(std::string name) {
   void* m_handle = dlopen(mutatee.c_str(), RTLD_NOW | RTLD_GLOBAL);
   if (!m_handle) {
     std::cerr << "ERROR: cannot load " << mutatee << "\n";
+    std::cerr << dlerror() << "\n";
     exit(0);
   }
   std::string agent = name + "_agent.so";
   void* a_handle = dlopen(agent.c_str(), RTLD_NOW | RTLD_GLOBAL);
   if (!a_handle) {
     std::cerr << "ERROR: cannot load " << agent << "\n";
+    std::cerr << dlerror() << "\n";
     exit(0);
   }
 
   // 3. Run mutatee()
-  //run_mutatee();
   typedef void (*run_mutatee_t)();
   run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
   run();

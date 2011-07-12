@@ -1,1 +1,3 @@
-$PLATFORM/test $1
+export LD_LIBRARY_PATH=../../../$PLATFORM:$LD_LIBRARY_PATH
+cd $PLATFORM
+./test $1

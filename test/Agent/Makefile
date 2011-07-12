@@ -1,4 +1,4 @@
-DYNINST_DIR  = ../../dyninst/dyninst
+DYNINST_DIR  = ../../../dyninst/dyninst
 GXX          = g++
 GCC          = gcc
 TESTCASE_DIR = TestCases
@@ -12,8 +12,28 @@ DRIVER_LDFLAGS        = -ldl
 AGENT_SRCS            = $(wildcard TestCases/*agent.C)
 AGENT_SO              = $(notdir $(AGENT_SRCS:%.C=%.so))
 AGENT_LDFLAGS         = -shared -fPIC
-AGENT_IFLAGS          =
-AGENT_FLAGS           =
+AGENT_LDFLAGS        += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM) \
+                        -L$(DYNINST_DIR)/parseAPI/$(PLATFORM) \
+                        -L$(DYNINST_DIR)/patchAPI/$(PLATFORM) \
+                        -L$(DYNINST_DIR)/instructionAPI/$(PLATFORM) \
+                        -L../../$(PLATFORM) \
+
+AGENT_LDFLAGS        += -lsymtabAPI \
+                        -lparseAPI  \
+                        -lpatchAPI  \
+                        -linstructionAPI  \
+                        -lagent     \
+
+AGENT_IFLAGS          = -I$(DYNINST_DIR)/symtabAPI/h \
+                        -I$(DYNINST_DIR)/parseAPI/h \
+                        -I$(DYNINST_DIR) \
+                        -I$(DYNINST_DIR)/common/h \
+                        -I$(DYNINST_DIR)/dynutil/h \
+                        -I$(DYNINST_DIR)/patchAPI/h \
+                        -I$(DYNINST_DIR)/instructionAPI/h \
+                        -I../../h
+
+AGENT_FLAGS           = -Dos_linux
 
 # Mutatee
 MUTATEE_SRCS          = $(wildcard TestCases/*mutatee.c)
