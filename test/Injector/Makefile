@@ -7,7 +7,7 @@ $(MUTATEE): Mutatee.c
 	mkdir -p $(PLATFORM)
 	gcc -o $@ $< 
 $(AGENT): Agent.c
-	gcc -shared -o $@ $< -fPIC -O0
+	gcc -shared -o $@ $< -fPIC -O0 -ldl
 clean:
 	cd $(PLATFORM) ; rm * 
 	rm -f $(MUTATEE) $(AGENT) core.*

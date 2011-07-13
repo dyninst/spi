@@ -9,6 +9,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 using sp::Injector;
 using Dyninst::ProcControlAPI::Process;
@@ -65,6 +68,7 @@ Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
   const std::set<Library::ptr> &libs = libev->libsAdded();
   for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++)
     sp_debug("LOADED - %s", (*i)->getName().c_str());
+
   return Process::cbThreadContinue;
 }
 
@@ -105,75 +109,48 @@ void Injector::verify_ret(Process::ptr proc, Dyninst::Address args_addr) {
   }
 }
 
-bool Injector::check_all_dependencies(const char* lib_name, DepNames& unresolved) {
-  char* libname = realpath(lib_name, NULL);
-  bool ret = true;
-  if (!libname) {
-    sp_perror("invalid path for library %s", lib_name);
-  }
-
-  // Get the names of lib_name's direct dependencies
-  Symtab *obj = NULL;
-  bool sret = Symtab::openFile(obj, libname);
-  if (!sret) sp_perror("failed to open %s in symtabAPI", libname);
-  std::vector<std::string>& dep_names = obj->getDependencies();
-
-  typedef std::deque<std::string> DepDeque;
-  DepDeque dep_deque;
-  std::copy(dep_names.begin(), dep_names.end(), back_inserter(dep_deque));
-
-  typedef std::set<std::string> DepSet;
-  DepSet dep_set;
-
-  while (!dep_deque.empty()) {
-    std::string lib = dep_deque.front();
-    dep_deque.pop_front();
-    if (std::find(dep_set.begin(), dep_set.end(), lib) == dep_set.end()) {
-      DepNames abs_paths;
-      if (!get_resolved_lib_path(lib, abs_paths)) {
-        ret = false;
-        unresolved.insert(lib);
-        continue;
-      }
-      for (DepNames::iterator li = abs_paths.begin(); li != abs_paths.end(); li++) {
-        Symtab *dep_obj = NULL;
-        sret = Symtab::openFile(dep_obj, *li);
-        if (!sret) sp_perror("failed to open %s in symtabAPI", (*li).c_str());
-        dep_set.insert(lib);
-
-        typedef std::vector<std::string> DepVector;
-        DepVector& dep_names = dep_obj->getDependencies();
-        for (DepVector::iterator di = dep_names.begin(); di != dep_names.end(); di++) {
-          if (std::find(dep_set.begin(), dep_set.end(), *di) == dep_set.end())
-            dep_deque.push_back(*di);
-        }
-        break;
-      }
-    }
-  }
-
-  free(libname);
-  return ret;
-}
+typedef struct {
+  char libname[512];
+  char err[512];
+} IjMsg;
 
 void Injector::inject(const char* lib_name) {
-  DepNames unresolved_libs;
-  if (check_all_dependencies(lib_name, unresolved_libs)) {
-    inject_internal(lib_name);
-    return;
+  // verify the path of lib_name
+  char* abs_lib_name = realpath(lib_name, NULL);
+  if (!abs_lib_name) sp_print("cannot locate %s", abs_lib_name);
+
+  // check the existence of libijagent.so
+  std::string ijagent("libijagent.so");
+  DepNames ijagent_paths;
+  if (!get_resolved_lib_path(ijagent, ijagent_paths))
+    sp_perror("cannot find libijagent.so");
+
+  // setup shared memory memory 1986
+  const int SHMSZ = sizeof(IjMsg);
+  key_t key = 1986;
+  int shmid;
+  if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0666)) < 0) {
+    sp_perror("failed to creat a shared memory w/ size %d bytes", SHMSZ);
   }
-  std::string err("unresolved files -- ( ");
-  for (DepNames::iterator i = unresolved_libs.begin(); i != unresolved_libs.end(); i++) {
-    std::string err_line = *i + " ";
-    err += err_line;
+  IjMsg *shm;
+  if ((long)(shm = (IjMsg*)shmat(shmid, NULL, 0)) == (long)-1) {
+    sp_perror("failed to get shared memory pointer");
   }
-  char pid[10];
-  sprintf(pid, "%d", pid_);
-  err += ").\n*** Please make sure these shared libraries can be found by ld.so.\n";
-  err += "*** Hint: check LD_LIBRARY_PATH by running the following command:\n    strings /proc/";
-  err += pid;
-  err += "/environ | grep LD_LIBRARY_PATH";
-  sp_perror(err.c_str());
+  strcpy(shm->libname, abs_lib_name);
+  shm->err[0] = '\0';
+
+  // inject libijagent.so
+  inject_internal((*ijagent_paths.begin()).c_str());
+
+  // invoke load_lib
+
+  // wait, should setup an alarm mechanism 
+  while (strlen(shm->err) <= 0)
+    sleep(1);
+  sp_print(shm->err);
+
+  // Verify
+  verify_lib_loaded(proc_, abs_lib_name);
 }
 
 /* Inject one library for each invokation. */
@@ -234,8 +211,6 @@ void Injector::inject_internal(const char* lib_name) {
     Process::handleEvents(true);
   }
 
-  // Verify
-  verify_lib_loaded(proc_, libname);
 
   // Clean up
   proc_->freeMemory(lib_name_addr);
@@ -254,36 +229,25 @@ bool Injector::get_resolved_lib_path(const std::string &filename, DepNames &path
   char *pos, *key, *val;
 
   // prefer qualified file paths
+  // TODO: what if filename is ./agent
   if (stat(filename.c_str(), &dummy) == 0) {
     paths.insert(filename);
   }
 
   // search paths from mutatee's environment variables
-  const int max_path = 4096;
-  char cmd[max_path];
-  char path[max_path];
-  sprintf(cmd, "strings /proc/%d/environ", pid_);
-  FILE* fp = popen(cmd, "r");
-  while (fgets(path, max_path, fp) != NULL) {
-    if (strstr(path, "LD_LIBRARY_PATH")) {
-      libPathStr = strchr(path, '/');
-      break;
-    }
-  }
-  pclose(fp);
-
+  libPathStr = strdup(getenv("LD_LIBRARY_PATH"));
   libPath = strtok(libPathStr, ":");
   while (libPath != NULL) {
     libPaths.push_back(std::string(libPath));
     libPath = strtok(NULL, ":");
   }
-
   for (unsigned int i = 0; i < libPaths.size(); i++) {
     std::string str = libPaths[i] + "/" + filename;
     if (stat(str.c_str(), &dummy) == 0) {
       paths.insert(str);
     }
   }
+  free(libPathStr);
 
   // search ld.so.cache
   ldconfig = popen("/sbin/ldconfig -p", "r");

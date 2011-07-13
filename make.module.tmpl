@@ -1,9 +1,11 @@
 
 INJECTOR   = Injector
+IJAGENT    = libijagent.so
 AGENT      = libagent.so
 
-all: $(INJECTOR) $(AGENT) clean_objs
+all: $(INJECTOR) $(IJAGENT) $(AGENT) clean_objs
 
+GCC        = gcc
 GXX        = g++
 RM         = rm -f
 
@@ -13,6 +15,10 @@ RM         = rm -f
 IJ_SRCS    += $(IJ_DIR)/Injector.C \
 
 IJ_OBJS    += $(notdir $(IJ_SRCS:%.C=%.o))
+
+IJA_SRCS   += $(IJ_DIR)/IjAgent.c \
+
+IJA_OBJS   += $(notdir $(IJA_SRCS:%.c=%.o))
 
 IJ_DEP  = .IJ_DEPENDS
 IJ_DEPS:
@@ -26,6 +32,14 @@ $(IJ_OBJS): %.o : $(IJ_SRCS)
 $(INJECTOR): $(IJ_OBJS) $(COMMON_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJ_OBJS) $(COMMON_OBJS) $(IJ_LDFLAGS)
+
+$(IJA_OBJS): %.o : $(IJA_SRCS)
+	@echo Compiling $*.o
+	@$(GCC) -c -o $@ $(IJA_IFLAGS) $(IJA_FLAGS) $(IJ_DIR)/$*.c
+
+$(IJAGENT): $(IJA_OBJS)
+	@echo Linking $@
+	@$(GCC) -o $@ $(IJA_OBJS) $(IJA_LDFLAGS)
 
 #======================================
 # Agent

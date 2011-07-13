@@ -30,6 +30,9 @@ IJ_IFLAGS  += $(COMMON_IFLAGS)
 IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/h
 IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/src
 
+IJA_FLAGS   += -fPIC
+IJA_LDFLAGS += -ldl -shared
+
 #=================================================
 # For Agent
 #=================================================

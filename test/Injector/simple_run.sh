@@ -1,5 +1,5 @@
 
-export LD_LIBRARY_PATH=/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/$PLATFORM:/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/test/Agent/$PLATFORM:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/$PLATFORM:/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/test/Agent/$PLATFORM:$LD_LIBRARY_PATH
 
 $PLATFORM/Mutatee & 
 PID=$!
