@@ -1,6 +1,9 @@
-DYNINST_DIR  = ../../../dyninst/dyninst
-GXX          = g++
-GCC          = gcc
+include ../../make.config
+include ../../make.flag.tmpl
+
+GCC        = gcc
+GXX        = g++
+RM         = rm -f
 TESTCASE_DIR = TestCases
 
 # Test driver
@@ -11,32 +14,9 @@ DRIVER_LDFLAGS        = -ldl
 # Agent
 AGENT_SRCS            = $(wildcard TestCases/*agent.C)
 AGENT_SO              = $(notdir $(AGENT_SRCS:%.C=%.so))
-AGENT_LDFLAGS         = -shared -fPIC
-AGENT_LDFLAGS        += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM) \
-                        -L$(DYNINST_DIR)/parseAPI/$(PLATFORM) \
-                        -L$(DYNINST_DIR)/patchAPI/$(PLATFORM) \
-                        -L$(DYNINST_DIR)/stackwalk/$(PLATFORM) \
-                        -L$(DYNINST_DIR)/instructionAPI/$(PLATFORM) \
-                        -L../../$(PLATFORM) \
 
-AGENT_LDFLAGS        += -lsymtabAPI \
-                        -lparseAPI  \
-                        -lpatchAPI  \
-                        -lstackwalk \
-                        -linstructionAPI  \
-                        -lagent     \
-
-AGENT_IFLAGS          = -I$(DYNINST_DIR)/symtabAPI/h \
-                        -I$(DYNINST_DIR)/parseAPI/h \
-                        -I$(DYNINST_DIR) \
-                        -I$(DYNINST_DIR)/common/h \
-                        -I$(DYNINST_DIR)/dynutil/h \
-                        -I$(DYNINST_DIR)/patchAPI/h \
-                        -I$(DYNINST_DIR)/stackwalk/h \
-                        -I$(DYNINST_DIR)/instructionAPI/h \
-                        -I../../h
-
-AGENT_FLAGS           = -Dos_linux
+AG_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
+AG_LDFLAGS           += -lagent
 
 # Mutatee
 MUTATEE_SRCS          = $(wildcard TestCases/*mutatee.c)
@@ -47,16 +27,28 @@ MUTATEE_FLAGS         =
 
 # Rules
 #.PHONY: all
-all: $(MUTATEE_SO) $(AGENT_SO) $(TEST_DRIVER)
-
+all: MUTATEE AGENT DRIVER
+	@echo ""
+	@echo "====================="
+	@echo " Usage: sh run.sh "
+	@echo "====================="
+AGENT: $(AGENT_SO)
+	@echo "* All agents are done"
 $(AGENT_SO): %.so : $(AGENT_SRCS)
-	$(GXX) -o $(PLATFORM)/$@ $(TESTCASE_DIR)/$*.C $(AGENT_LDFLAGS) $(AGENT_IFLAGS) $(AGENT_FLAGS)
+	@echo "Building $@"
+	@$(GXX) -o $(PLATFORM)/$@ $(TESTCASE_DIR)/$*.C $(AG_LDFLAGS) $(AG_IFLAGS) $(AG_FLAGS)
 
+MUTATEE: $(MUTATEE_SO)
+	@echo "* All mutatees are done"
 $(MUTATEE_SO): %.so : $(MUTATEE_SRCS)
-	$(GCC) -o $(PLATFORM)/$@ $(TESTCASE_DIR)/$*.c $(MUTATEE_LDFLAGS) $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS)
+	@echo "Building $@"
+	@$(GCC) -o $(PLATFORM)/$@ $(TESTCASE_DIR)/$*.c $(MUTATEE_LDFLAGS) $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS)
 
+DRIVER: $(TEST_DRIVER)
+	@echo "* Test driver is done"
 $(TEST_DRIVER): $(DRIVER_SRCS)
-	$(GXX) -o $(PLATFORM)/$@ $(DRIVER_SRCS) $(DRIVER_LDFLAGS) $(DRIVER_IFLAGS) $(DRIVER_FLAGS)
+	@echo "Building $@"
+	@$(GXX) -o $(PLATFORM)/$@ $(DRIVER_SRCS) $(DRIVER_LDFLAGS) $(DRIVER_IFLAGS) $(DRIVER_FLAGS)
 
 # Clean up
 clean:

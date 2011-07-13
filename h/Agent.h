@@ -30,8 +30,8 @@ class Agent {
 
   protected:
     // initPayload
-    Event::ptr initEvent_;
-    Event::ptr finiEvent_;
+    Event::ptr init_event_;
+    Event::ptr fini_event_;
     Parser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
 

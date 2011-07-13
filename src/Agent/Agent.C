@@ -16,6 +16,9 @@ Agent::ptr Agent::create() {
 
 Agent::Agent() {
   sp_debug("%s", __FUNCTION__);
+  init_event_ = Event::ptr();
+  fini_event_ = Event::ptr();
+  parser_ = Parser::ptr();
 }
 
 /* Configuration */
@@ -27,6 +30,11 @@ void Agent::setParser(Parser::ptr parser) {
 /* Go! */
 void Agent::go() {
   sp_debug("%s", __FUNCTION__);
+
+  // 0. Sanity check. If not user configuration, use default ones
+  if (!init_event_) init_event_ = NowEvent::create();
+  if (!fini_event_) fini_event_ = Event::create();
+  if (!parser_) parser_ = Parser::create();
 
   // 1. Parsing and initialize PatchAPI stuffs
   Parser::PatchObjects& cos = parser_->parse();
@@ -47,4 +55,6 @@ void Agent::go() {
   }
 
   // 2. Register Events
+  init_event_->register_event();
+  fini_event_->register_event();
 }

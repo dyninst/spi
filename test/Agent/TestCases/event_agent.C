@@ -1,6 +1,7 @@
 #include "test_case.h"
+#include "Agent.h"
 
-__attribute__((constructor))
+AGENT_INIT
 void init_event() {
   //print("AGENT: init_event");
 }
