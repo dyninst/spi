@@ -8,7 +8,8 @@
 
 /* Print facility */
 #define sp_perror(...) do {\
-  fprintf(stderr, "ERROR in %s [%d]: ", __FILE__, __LINE__); \
+  char* nodir = strrchr(__FILE__, '/') + 1; \
+  fprintf(stderr, "ERROR in %10s [%5d]: ", nodir, __LINE__); \
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n"); \
   exit(0);\
@@ -22,7 +23,8 @@
 
 #define sp_debug(...) do { \
   if (getenv("SP_DEBUG")) {   \
-      fprintf(stderr, "%30s [%5d]: ", __FILE__, __LINE__); \
+      char* nodir = strrchr(__FILE__, '/') + 1;   \
+      fprintf(stderr, "%10s [%5d]: ", nodir, __LINE__); \
       fprintf(stderr, __VA_ARGS__); \
       fprintf(stderr, "\n");  \
       fflush(stderr); \

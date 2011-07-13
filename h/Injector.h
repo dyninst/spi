@@ -2,6 +2,7 @@
 #define SP_INJECTOR_H_
 
 #include "Process.h"
+#include <list>
 
 namespace sp {
 
@@ -22,28 +23,25 @@ class Injector {
       int mode;
       void* link_map;
     } dlopen_args_t;
-    static dlopen_args_t* args_; // in mutatee's address space
-
+    static Dyninst::Address args_;
     static void verify_lib_loaded(const Dyninst::ProcControlAPI::Process::ptr proc,
                                   char* libname);
-    static char* libname_;       // in mutator's address space
 
   protected:
     Dyninst::PID pid_;
     Dyninst::ProcControlAPI::Process::ptr proc_;
     Dyninst::ProcControlAPI::Thread::ptr thr_;
-    typedef std::vector<std::string> DepNames;
+    typedef std::set<std::string> DepNames;
     DepNames dep_names_;
 
     Injector(Dyninst::PID pid);
     Dyninst::Address find_do_dlopen();
-    static Dyninst::ProcControlAPI::Library::ptr
-    find_lib(Dyninst::ProcControlAPI::Process::ptr proc, char* name);
-    bool getResolvedLibraryPath(const std::string &filename, std::vector<std::string> &paths);
+    bool get_resolved_lib_path(const std::string &filename, DepNames &paths);
+
     void verify_lib_loaded();
 
-    void set_dep_names(const char* lib_name);
-    void inject_internal(const char* lib_name);
+    void inject_internal(const char*);
+    bool check_all_dependencies(const char* lib_name, DepNames& unresolved_libs);
 
     /* Platform-dependent methods. See Injector-i386.C and Injector-x86_64 */
     size_t get_code_tmpl_size();

@@ -16,10 +16,10 @@ void init_parser() {
   Agent::ptr agent = Agent::create();
   agent->setParser(parser);
   agent->go();
-
+  /*
   Dyninst::ParseAPI::Function* mutatee_func = parser->findFunction("run_mutatee");
   assert(mutatee_func);
-  /*
+
   std::vector<Frame> stackwalk; 
   string s;
   Walker *walker = Walker::newWalker();
