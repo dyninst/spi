@@ -27,6 +27,7 @@ Injector::ptr Injector::create(Dyninst::PID pid) {
   Injector::ptr ret = ptr(new Injector(pid));
   return ret;
 }
+
 Injector::Injector(Dyninst::PID pid) : pid_(pid) {
   proc_ = Process::attachProcess(pid);
   if (!proc_) {
@@ -36,8 +37,12 @@ Injector::Injector(Dyninst::PID pid) : pid_(pid) {
   thr_ = thrs.getInitialThread();
 }
 
+Injector::~Injector() {
+  proc_->detach();
+}
+
 /* Find do_dlopen */
-Dyninst::Address Injector::find_do_dlopen() {
+Dyninst::Address Injector::find_func(char* func) {
   LibraryPool& libs = proc_->libraries();
   Library::ptr lib = Library::ptr();
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
@@ -46,7 +51,7 @@ Dyninst::Address Injector::find_do_dlopen() {
     Symtab *obj = NULL;
     bool err = Symtab::openFile(obj, name);
     std::vector <Function *> funcs;
-    obj->findFunctionsByName(funcs, "do_dlopen");
+    obj->findFunctionsByName(funcs, func);
     if (funcs.size() > 0) {
       return funcs[0]->getOffset() + (*li)->getLoadAddress();
     }
@@ -55,14 +60,6 @@ Dyninst::Address Injector::find_do_dlopen() {
 }
 
 /* Event handlers */
-Dyninst::Address Injector::args_ = 0;
-Process::cb_ret_t on_event_rpc(Event::const_ptr ev) {
-  Process::ptr p = dyn_detail::boost::const_pointer_cast<Process>(ev->getProcess());
-  IRPC::ptr r = dyn_detail::boost::const_pointer_cast<IRPC>(ev->getEventRPC()->getIRPC());
-  Injector::verify_ret(p, (Dyninst::Address)Injector::args_);
-  return Process::cbThreadContinue;
-}
-
 Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
   EventLibrary::const_ptr libev = ev->getEventLibrary();
   const std::set<Library::ptr> &libs = libev->libsAdded();
@@ -81,37 +78,42 @@ Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
 }
 
 /* check whether we load the library successfully */
-void Injector::verify_lib_loaded(Process::ptr proc, char* libname) {
-  LibraryPool& libs = proc->libraries();
+void Injector::verify_lib_loaded(const char* libname) {
   bool found = false;
-  LibraryPool::iterator li = libs.begin();
-  for (li = libs.begin(); li != libs.end(); li++) {
-    std::string name = (*li)->getName();
-    if (name.size() <= 0) continue;
-    if (name.compare(libname) == 0) {
-      found = true;
-      break;
-    }
-  }
-  if (!found) {
-    sp_perror("FATAL - %s not loaded", libname);
-  }
-  sp_print("INJECTED - %s", libname);
-}
+  int count = 0;
+  char* name_only = strrchr(libname, '/');
+  if (!name_only)  name_only = (char*)libname;
 
-void Injector::verify_ret(Process::ptr proc, Dyninst::Address args_addr) {
-  dlopen_args_t args;
-  proc->readMemory(&args, args_addr, sizeof(Injector::dlopen_args_t));
-  if (!args.link_map || (args.mode != (RTLD_NOW | RTLD_GLOBAL))) {
-    sp_perror("wrong ret value from do_dlopen (link_map:%lx, mode:%x)",args.link_map, args.mode);
-  } else {
-    sp_debug("PASSED - correct ret value (link_map: %lx, mode: %x)", args.link_map, args.mode);
-  }
+  do {
+    LibraryPool& libs = proc_->libraries();
+    LibraryPool::iterator li = libs.begin();
+    for (li = libs.begin(); li != libs.end(); li++) {
+      std::string name = (*li)->getName();
+      if (name.size() <= 0) continue;
+      sp_debug("CHECKING %s", name.c_str());
+      if (name.find(name_only) != std::string::npos) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      sp_print("Injector [pid = %5d]: not loaded, sleep 1 second, and check again",
+               getpid());
+      sleep(1);
+      ++count;
+    }
+  } while (!found && count < 10);
+
+  if (found)
+    sp_print("Injector [pid = %5d]: INJECTED, confirmed", getpid());
+  else
+    sp_print("Injector [pid = %5d]: still not loaded, abort", getpid());
 }
 
 typedef struct {
   char libname[512];
   char err[512];
+  char loaded;
 } IjMsg;
 
 void Injector::inject(const char* lib_name) {
@@ -138,19 +140,59 @@ void Injector::inject(const char* lib_name) {
   }
   strcpy(shm->libname, abs_lib_name);
   shm->err[0] = '\0';
+  shm->loaded = -1;
 
   // inject libijagent.so
   inject_internal((*ijagent_paths.begin()).c_str());
 
   // invoke load_lib
+  invoke_ijagent();
 
   // wait, should setup an alarm mechanism 
-  while (strlen(shm->err) <= 0)
+  int count = 0;
+  while (shm->loaded == -1) {
+    if (count > 5) {
+      sp_perror("INJECTOR [pid = %d]: injectee not response, abort", getpid());
+    }
     sleep(1);
-  sp_print(shm->err);
+    ++count;
+  }
+  if (!shm->loaded) sp_perror(shm->err);
 
   // Verify
-  verify_lib_loaded(proc_, abs_lib_name);
+  sp_print(shm->err);
+  verify_lib_loaded(lib_name);
+}
+
+void Injector::invoke_ijagent() {
+  Dyninst::Address ij_agent_addr = find_func("ij_agent");
+  if (ij_agent_addr > 0) {
+    sp_debug("find the address of ij_agent function at %lx", ij_agent_addr);
+  }
+  else {
+    sp_perror("failed to find ij_agent");
+  }
+
+  size_t size = get_ij_tmpl_size();
+  Dyninst::Address code_addr = proc_->mallocMemory(size);
+  char* code = get_ij_tmpl(ij_agent_addr, code_addr);
+  sp_debug("allocate a buffer for load-library code in mutatee's heap"
+           " at %lx of %d bytes", code_addr, size);
+  IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
+  irpc->setStartOffset(2);
+
+  // Post all irpcs
+  if (!thr_->postIRPC(irpc)) {
+    sp_perror("failed to execute load-library code in mutatee's address space");
+  }
+
+  // Wait for finish
+  while (thr_->isStopped()) {
+    thr_->continueThread();
+    Process::handleEvents(true);
+  }
+
+  proc_->freeMemory(code_addr);
 }
 
 /* Inject one library for each invokation. */
@@ -164,12 +206,11 @@ void Injector::inject_internal(const char* lib_name) {
   if (!proc_->stopProc()) {
     sp_perror("failed to stop process %d", pid_);
   }
-  Process::registerEventCallback(EventType::RPC, on_event_rpc);
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
 
   // Find do_dlopen function
-  Dyninst::Address do_dlopen_addr = find_do_dlopen();
+  Dyninst::Address do_dlopen_addr = find_func("do_dlopen");
   if (do_dlopen_addr > 0) {
     sp_debug("find the address of do_dlopen function at %lx", do_dlopen_addr);
   }
@@ -189,7 +230,6 @@ void Injector::inject_internal(const char* lib_name) {
   args.mode = RTLD_NOW | RTLD_GLOBAL;
   args.link_map = 0;
   proc_->writeMemory(args_addr, &args, sizeof(args));
-  args_ = args_addr;
   sp_debug("store do_dlopen's argument in mutatee's heap at %lx", args_addr);
 
   size_t size = get_code_tmpl_size();
@@ -211,13 +251,11 @@ void Injector::inject_internal(const char* lib_name) {
     Process::handleEvents(true);
   }
 
-
   // Clean up
   proc_->freeMemory(lib_name_addr);
   proc_->freeMemory(args_addr);
   proc_->freeMemory(code_addr);
   free(libname);
-  proc_->detach();
 }
 
 bool Injector::get_resolved_lib_path(const std::string &filename, DepNames &paths) {
@@ -319,7 +357,7 @@ int main(int argc, char *argv[]) {
   Dyninst::PID pid = atoi(argv[1]);
   const char* lib_name = argv[2];
 
-  sp_print("INJECTING - %s ...", lib_name);
+  sp_print("Injector [pid = %5d]: INJECTING - %s ...", getpid(), lib_name);
   Injector::ptr injector = Injector::create(pid);
   injector->inject(lib_name);
 

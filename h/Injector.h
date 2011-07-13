@@ -12,20 +12,15 @@ class Injector {
   public:
     typedef dyn_detail::boost::shared_ptr<Injector> ptr;
     static ptr create(Dyninst::PID pid);
+    ~Injector();
 
     void inject(const char* lib_name);
 
-    /* validate the result of library loading */
-    static void verify_ret(const Dyninst::ProcControlAPI::Process::ptr proc,
-                           Dyninst::Address args);
     typedef struct {
       const char *libname;
       int mode;
       void* link_map;
     } dlopen_args_t;
-    static Dyninst::Address args_;
-    static void verify_lib_loaded(const Dyninst::ProcControlAPI::Process::ptr proc,
-                                  char* libname);
 
   protected:
     Dyninst::PID pid_;
@@ -35,18 +30,20 @@ class Injector {
     DepNames dep_names_;
 
     Injector(Dyninst::PID pid);
-    Dyninst::Address find_do_dlopen();
+
+    Dyninst::Address find_func(char* name);
     bool get_resolved_lib_path(const std::string &filename, DepNames &paths);
-
-    void verify_lib_loaded();
-
+    void verify_lib_loaded(const char* libname);
     void inject_internal(const char*);
-    bool check_all_dependencies(const char* lib_name, DepNames& unresolved_libs);
+    void invoke_ijagent();
 
     /* Platform-dependent methods. See Injector-i386.C and Injector-x86_64 */
     size_t get_code_tmpl_size();
     char* get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dlopen,
                         Dyninst::Address code_addr);
+    size_t get_ij_tmpl_size();
+    char* get_ij_tmpl(Dyninst::Address ij_addr,
+                      Dyninst::Address /*code_addr*/);
 };
 
 }
