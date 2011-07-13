@@ -1,0 +1,2 @@
+event_mutatee.o: ../TestCases/event_mutatee.c ../TestCases/test_case.h
+parser_mutatee.o: ../TestCases/parser_mutatee.c ../TestCases/test_case.h
