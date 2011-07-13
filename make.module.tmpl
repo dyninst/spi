@@ -47,6 +47,8 @@ $(IJAGENT): $(IJA_OBJS)
 AG_SRCS    += $(AG_DIR)/Agent.C \
               $(AG_DIR)/Parser.C \
               $(AG_DIR)/Event.C \
+              $(AG_DIR)/Propeller.C \
+              $(AG_DIR)/Payload.C \
 
 AG_OBJS    += $(notdir $(AG_SRCS:%.C=%.o))
 
