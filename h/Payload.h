@@ -8,7 +8,15 @@ class Payload {
   public:
     typedef dyn_detail::boost::shared_ptr<Payload> ptr;
     static ptr create();
-    virtual bool operator()();
+
+    virtual bool operator()(ContextPtr);
+    void* binary();
+    void destroy();
+
+  protected:
+    Payload();
+
+    void* blob_;
 };
 }
 

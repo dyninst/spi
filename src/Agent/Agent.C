@@ -3,6 +3,8 @@
 
 using sp::Agent;
 using sp::Parser;
+using sp::Context;
+using sp::ContextPtr;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::ParseAPI::CodeObject;
 using Dyninst::PatchAPI::AddrSpacePtr;
@@ -27,6 +29,26 @@ void Agent::setParser(Parser::ptr parser) {
   parser_ = parser;
 }
 
+void Agent::setInitEvent(Event::ptr e) {
+  sp_debug("%s", __FUNCTION__);
+  init_event_ = e;
+}
+
+void Agent::setFiniEvent(Event::ptr e) {
+  sp_debug("%s", __FUNCTION__);
+  init_event_ = e;
+}
+
+void Agent::setPayload(Payload::ptr p) {
+  sp_debug("%s", __FUNCTION__);
+  init_payload_ = p;
+}
+
+void Agent::setPropeller(Propeller::ptr p) {
+  sp_debug("%s", __FUNCTION__);
+  propeller_ = p;
+}
+
 /* Go! */
 void Agent::go() {
   sp_debug("%s", __FUNCTION__);
@@ -35,6 +57,8 @@ void Agent::go() {
   if (!init_event_) init_event_ = NowEvent::create();
   if (!fini_event_) fini_event_ = Event::create();
   if (!parser_) parser_ = Parser::create();
+  if (!init_payload_) init_payload_ = Payload::create();
+  if (!propeller_) propeller_ = Propeller::create();
 
   // 1. Parsing and initialize PatchAPI stuffs
   Parser::PatchObjects& cos = parser_->parse();
@@ -54,7 +78,15 @@ void Agent::go() {
     }
   }
 
-  // 2. Register Events
-  init_event_->register_event();
-  fini_event_->register_event();
+  // 2. Prepare context
+  // TODO (wenbin): what's in the context?
+  // - init_payload
+  // - PatchMgr
+  ContextPtr context = Context::create(propeller_,
+                                       init_payload_,
+                                       mgr_);
+
+  // 3. Register Events
+  init_event_->register_event(context);
+  fini_event_->register_event(context);
 }

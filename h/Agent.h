@@ -4,6 +4,8 @@
 #include "PatchMgr.h"
 #include "Parser.h"
 #include "Event.h"
+#include "Payload.h"
+#include "Propeller.h"
 
 #define AGENT_INIT __attribute__((constructor))
 
@@ -24,15 +26,22 @@ class Agent {
     typedef dyn_detail::boost::shared_ptr<Agent> ptr;
     static ptr create();
 
-    void setParser(Parser::ptr parser);
+    void setParser(Parser::ptr);
+    void setInitEvent(Event::ptr);
+    void setFiniEvent(Event::ptr);
+    void setPayload(Payload::ptr);
+    void setPropeller(Propeller::ptr);
+
     void go();
 
 
   protected:
-    // initPayload
     Event::ptr init_event_;
     Event::ptr fini_event_;
     Parser::ptr parser_;
+    Payload::ptr init_payload_;
+    Propeller::ptr propeller_;
+
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
 
     Agent();

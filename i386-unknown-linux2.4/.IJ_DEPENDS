@@ -230,4 +230,5 @@ Injector.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/SymReader.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Event.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Common.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Common.h

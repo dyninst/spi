@@ -46,9 +46,12 @@ AG_FLAGS   += -fPIC -Dos_linux
 AG_LDFLAGS += $(COMMON_LDFLAGS)
 AG_LDFLAGS += -lpatchAPI
 AG_LDFLAGS += -L$(DYNINST_DIR)/patchAPI/$(PLATFORM)
+AG_LDFLAGS += -lstackwalk
+AG_LDFLAGS += -L$(DYNINST_DIR)/stackwalk/$(PLATFORM)
 AG_LDFLAGS +=  -shared
 
 AG_IFLAGS  += $(COMMON_IFLAGS)
 AG_IFLAGS  += -I$(DYNINST_DIR)/patchAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/parseAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/instructionAPI/h
+AG_IFLAGS  += -I$(DYNINST_DIR)/stackwalk/h

@@ -32,4 +32,9 @@
     else ; \
 } while(0)
 
+namespace sp {
+class Context;
+typedef dyn_detail::boost::shared_ptr<Context> ContextPtr;
+}
+
 #endif /* SP_COMMON_H_ */

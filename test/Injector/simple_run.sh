@@ -6,6 +6,7 @@ PID=$!
 
 sleep 1
 #cat /proc/$PID/maps
+#valgrind --tool=memcheck --leak-check=yes ../../$PLATFORM/Injector $PID `pwd`/$PLATFORM/libagent.so
 ../../$PLATFORM/Injector $PID `pwd`/$PLATFORM/libagent.so
 #../../$PLATFORM/Injector $PID `pwd`/../Agent/$PLATFORM/parser_agent.so
 #../../$PLATFORM/Injector $PID `pwd`/../Agent/$PLATFORM/event_agent.so
