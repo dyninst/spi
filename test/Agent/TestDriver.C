@@ -33,7 +33,6 @@ void TestDriver::add_testcase(std::string name) {
 
 bool TestDriver::run_testcase(std::string name) {
   // 1. Check if this test case is in testcases_
-  // name = name.substr(1);
   if (testcases_.find(name) == testcases_.end()) {
     std::cerr << "ERROR: there's not a test case called " << name << "\n";
     exit(0);
@@ -47,6 +46,7 @@ bool TestDriver::run_testcase(std::string name) {
     std::cerr << dlerror() << "\n";
     exit(0);
   }
+
   std::string agent = name + "_agent.so";
   void* a_handle = dlopen(agent.c_str(), RTLD_NOW | RTLD_GLOBAL);
   if (!a_handle) {
@@ -82,6 +82,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   char* test_name = &argv[1][1];
+      driver.run_testcase(test_name);
+      exit(0);
   int pid = fork();
   switch (pid) {
     // Child

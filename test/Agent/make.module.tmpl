@@ -11,12 +11,14 @@ TEST_DRIVER           = test
 DRIVER_SRCS          += $(wildcard ../*.C)
 DRIVER_OBJS           = $(notdir $(DRIVER_SRCS:%.C=%.o))
 DRIVER_LDFLAGS        = -ldl
+DRIVER_FLAGS          = -g
 
 # Agent
 AGENT_SRCS           += $(wildcard ../TestCases/*agent.C)
 AGENT_OBJS            = $(notdir $(AGENT_SRCS:%.C=%.o))
 AGENT_SO              = $(notdir $(AGENT_SRCS:%.C=%.so))
 
+AG_FLAGS             += -g
 AG_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
 AG_LDFLAGS           += -lagent
 
@@ -40,7 +42,7 @@ AG_DEP  = .AG_DEPENDS
 AG_DEPS:
 	@echo "Makeing dependency Agents"
 	@$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP)
-#include $(AG_DEP)
+include $(AG_DEP)
 
 AGENT: $(AGENT_SO)
 	@echo "* All agents are done"
@@ -55,7 +57,7 @@ MUTATEE_DEP  = .MUTATEE_DEPENDS
 MUTATEE_DEPS:
 	@echo "Makeing dependency for Mutatees"
 	@$(GXX) -MM $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) $(MUTATEE_SRCS) > $(MUTATEE_DEP)
-#include $(MUTATEE_DEP)
+include $(MUTATEE_DEP)
 
 MUTATEE: $(MUTATEE_SO)
 	@echo "* All mutatees are done"
@@ -70,7 +72,7 @@ DRIVER_DEP  = .DRIVER_DEPENDS
 DRIVER_DEPS:
 	@echo "Makeing dependency for Test driver"
 	@$(GXX) -MM $(DRIVER_IFLAGS) $(DRIVER_FLAGS) $(DRIVER_SRCS) > $(DRIVER_DEP)
-#include $(DRIVER_DEP)
+include $(DRIVER_DEP)
 
 DRIVER: $(TEST_DRIVER)
 	@echo "* Test driver is done"
@@ -79,11 +81,12 @@ $(DRIVER_OBJS): %.o : $(DRIVER_SRCS)
 	@$(GXX) -o $@ $(DRIVER_SRCS) $(DRIVER_IFLAGS) $(DRIVER_FLAGS) -c
 $(TEST_DRIVER): $(DRIVER_OBJS)
 	@echo "Linking $@"
-	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
+	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS) -L$(DYNINST_DIR)/stackwalk/$(PLATFORM) -lstackwalk
+#	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
 
 # Clean up
 clean:
-	@rm -f *.so *.o $(TEST_DRIVER)
+	@rm -f *.so *.o $(TEST_DRIVER) core*
 	@make AG_DEPS
 	@make MUTATEE_DEPS
 	@make DRIVER_DEPS

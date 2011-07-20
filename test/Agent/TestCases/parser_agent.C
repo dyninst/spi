@@ -1,6 +1,11 @@
 #include "test_case.h"
 #include "SpAgent.h"
 
+#include "frame.h"
+#include "walker.h"
+using Dyninst::Stackwalker::Walker;
+using Dyninst::Stackwalker::Frame;
+
 using sp::SpParser;
 using sp::SpAgent;
 
@@ -13,6 +18,6 @@ void init_parser() {
   agent->set_parser(parser);
   agent->go();
 
-  Dyninst::ParseAPI::Function* mutatee_func = parser->findFunction("run_mutatee");
-  assert(mutatee_func);
+  //  Dyninst::ParseAPI::Function* mutatee_func = parser->findFunction("run_mutatee");
+  //  assert(mutatee_func);
 }
