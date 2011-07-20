@@ -1,7 +1,7 @@
-#include "Agent.h"
+#include "SpAgent.h"
 
-using sp::Parser;
-using sp::Agent;
+using sp::SpParser;
+using sp::SpAgent;
 
 AGENT_INIT
 void MyAgent() {

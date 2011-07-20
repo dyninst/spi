@@ -1,5 +1,5 @@
 #include "test_case.h"
-#include "Agent.h"
+#include "SpAgent.h"
 
 AGENT_INIT
 void init_propel() {

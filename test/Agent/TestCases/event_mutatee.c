@@ -12,4 +12,11 @@ void run_mutatee() {
   dprint("MUTATEE: enter event mutatee");
   func1();
   func2();
+
+  int count = 0;
+  while(count < 10) {
+    dprint("MUTATEE: mutatee alive");
+    sleep(1);
+    count++;
+  }
 }

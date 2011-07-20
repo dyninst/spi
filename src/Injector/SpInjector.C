@@ -1,11 +1,11 @@
-#include "Injector.h"
+#include "SpInjector.h"
 #include "dlfcn.h"
 #include "Symtab.h"
 #include "Function.h"
 #include "int_process.h"
 #include "Event.h"
 #include <signal.h>
-#include "Common.h"
+#include "SpCommon.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -13,7 +13,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-using sp::Injector;
+using sp::SpInjector;
 using Dyninst::ProcControlAPI::Process;
 using Dyninst::ProcControlAPI::IRPC;
 using Dyninst::ProcControlAPI::LibraryPool;
@@ -23,12 +23,12 @@ using Dyninst::SymtabAPI::Symbol;
 using Dyninst::SymtabAPI::Function;
 
 /* Constructor */
-Injector::ptr Injector::create(Dyninst::PID pid) {
-  Injector::ptr ret = ptr(new Injector(pid));
+SpInjector::ptr SpInjector::create(Dyninst::PID pid) {
+  SpInjector::ptr ret = ptr(new SpInjector(pid));
   return ret;
 }
 
-Injector::Injector(Dyninst::PID pid) : pid_(pid) {
+SpInjector::SpInjector(Dyninst::PID pid) : pid_(pid) {
   proc_ = Process::attachProcess(pid);
   if (!proc_) {
     sp_perror("failed to attach to process %d.", pid);
@@ -37,12 +37,12 @@ Injector::Injector(Dyninst::PID pid) : pid_(pid) {
   thr_ = thrs.getInitialThread();
 }
 
-Injector::~Injector() {
+SpInjector::~SpInjector() {
   proc_->detach();
 }
 
 /* Find do_dlopen */
-Dyninst::Address Injector::find_func(char* func) {
+Dyninst::Address SpInjector::find_func(char* func) {
   LibraryPool& libs = proc_->libraries();
   Library::ptr lib = Library::ptr();
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
@@ -78,7 +78,7 @@ Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
 }
 
 /* check whether we load the library successfully */
-void Injector::verify_lib_loaded(const char* libname) {
+void SpInjector::verify_lib_loaded(const char* libname) {
   bool found = false;
   int count = 0;
   char* name_only = strrchr(libname, '/');
@@ -116,7 +116,7 @@ typedef struct {
   char loaded;
 } IjMsg;
 
-void Injector::inject(const char* lib_name) {
+void SpInjector::inject(const char* lib_name) {
   // verify the path of lib_name
   char* abs_lib_name = realpath(lib_name, NULL);
   if (!abs_lib_name) sp_print("cannot locate %s", abs_lib_name);
@@ -164,7 +164,7 @@ void Injector::inject(const char* lib_name) {
   verify_lib_loaded(lib_name);
 }
 
-void Injector::invoke_ijagent() {
+void SpInjector::invoke_ijagent() {
   Dyninst::Address ij_agent_addr = find_func("ij_agent");
   if (ij_agent_addr > 0) {
     sp_debug("find the address of ij_agent function at %lx", ij_agent_addr);
@@ -196,7 +196,7 @@ void Injector::invoke_ijagent() {
 }
 
 /* Inject one library for each invokation. */
-void Injector::inject_internal(const char* lib_name) {
+void SpInjector::inject_internal(const char* lib_name) {
   // Make absolute path for this shared library
   char* libname = realpath(lib_name, NULL);
   if (!libname) sp_perror("%s cannot be found", lib_name);
@@ -258,7 +258,7 @@ void Injector::inject_internal(const char* lib_name) {
   free(libname);
 }
 
-bool Injector::get_resolved_lib_path(const std::string &filename, DepNames &paths) {
+bool SpInjector::get_resolved_lib_path(const std::string &filename, DepNames &paths) {
   char *libPathStr, *libPath;
   std::vector<std::string> libPaths;
   struct stat dummy;
@@ -358,7 +358,7 @@ int main(int argc, char *argv[]) {
   const char* lib_name = argv[2];
 
   sp_print("Injector [pid = %5d]: INJECTING - %s ...", getpid(), lib_name);
-  Injector::ptr injector = Injector::create(pid);
+  SpInjector::ptr injector = SpInjector::create(pid);
   injector->inject(lib_name);
 
   return 0;

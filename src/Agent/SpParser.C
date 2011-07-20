@@ -1,21 +1,21 @@
-#include "Parser.h"
-#include "Common.h"
+#include "SpParser.h"
+#include "SpCommon.h"
 
 #include "Symtab.h"
 #include "AddrLookup.h"
 #include "CodeObject.h"
 
-using sp::Parser;
+using sp::SpParser;
 using Dyninst::SymtabAPI::AddressLookup;
 using Dyninst::SymtabAPI::Symtab;
 using Dyninst::ParseAPI::CodeObject;
 using Dyninst::ParseAPI::SymtabCodeSource;
 using Dyninst::PatchAPI::PatchObject;
 
-Parser::Parser() : exe_obj_(NULL) {
+SpParser::SpParser() : exe_obj_(NULL) {
 }
 
-Parser::~Parser() {
+SpParser::~SpParser() {
   for (CodeSources::iterator i = code_srcs_.begin(); i != code_srcs_.end(); i++) {
     SymtabCodeSource* scs = static_cast<SymtabCodeSource*>(*i);
     delete scs;
@@ -24,12 +24,12 @@ Parser::~Parser() {
     delete *i;
 }
 
-Parser::ptr Parser::create() {
-  return ptr(new Parser());
+SpParser::ptr SpParser::create() {
+  return ptr(new SpParser());
 }
 
 /* Default implementation is runtime parsing. */
-Parser::PatchObjects& Parser::parse() {
+SpParser::PatchObjects& SpParser::parse() {
   AddressLookup* al = AddressLookup::createAddressLookup(getpid());
   al->refresh();
   std::vector<Symtab*> tabs;
@@ -53,7 +53,7 @@ Parser::PatchObjects& Parser::parse() {
   return patch_objs_;
 }
 
-PatchObject* Parser::exe_obj() {
+PatchObject* SpParser::exe_obj() {
   if (!exe_obj_) {
     parse();
     if (!exe_obj_) sp_perror("failed to parse binary");
@@ -61,7 +61,7 @@ PatchObject* Parser::exe_obj() {
   return exe_obj_;
 }
 
-Dyninst::ParseAPI::Function* Parser::findFunction(std::string name) {
+Dyninst::ParseAPI::Function* SpParser::findFunction(std::string name) {
   for (CodeObjects::iterator ci = code_objs_.begin(); ci != code_objs_.end(); ci++) {
     CodeObject::funclist& all = (*ci)->funcs();
     for (CodeObject::funclist::iterator fi = all.begin(); fi != all.end(); fi++) {

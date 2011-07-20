@@ -10,6 +10,8 @@
 
 using sp::TestDriver;
 
+char can_exit = 0;
+
 TestDriver::TestDriver() {
   struct rlimit core_limit;
   core_limit.rlim_cur = RLIM_INFINITY;
@@ -59,8 +61,8 @@ bool TestDriver::run_testcase(std::string name) {
   run();
 
   // 4. Unload name_mutatee.so and name_agent.so
-  dlclose(m_handle);
   dlclose(a_handle);
+  dlclose(m_handle);
 
   return true;
 }
@@ -96,9 +98,9 @@ int main(int argc, char *argv[]) {
       pid_t wpid = wait(&child_status);
       std::cout << test_name;
       if (WIFEXITED(child_status))
-	std::cout << " PASSED\n";
+        std::cout << " PASSED\n";
       else
-	std::cout << " FAILED\n";
+        std::cout << " FAILED\n";
       break;
     }
   }

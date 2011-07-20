@@ -1,4 +1,4 @@
-IJ_SRCS       =  ../src/Injector/Injector-x86_64.C \
+IJ_SRCS       =  ../src/Injector/SpInjector-x86_64.C \
 
 AG_SRCS       =
 

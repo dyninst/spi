@@ -12,7 +12,7 @@ RM         = rm -f
 #======================================
 # Injector
 #======================================
-IJ_SRCS    += $(IJ_DIR)/Injector.C \
+IJ_SRCS    += $(IJ_DIR)/SpInjector.C \
 
 IJ_OBJS    += $(notdir $(IJ_SRCS:%.C=%.o))
 
@@ -44,12 +44,12 @@ $(IJAGENT): $(IJA_OBJS)
 #======================================
 # Agent
 #======================================
-AG_SRCS    += $(AG_DIR)/Agent.C \
-              $(AG_DIR)/Parser.C \
-              $(AG_DIR)/Event.C \
-              $(AG_DIR)/Propeller.C \
-              $(AG_DIR)/Payload.C \
-              $(AG_DIR)/Context.C \
+AG_SRCS    += $(AG_DIR)/SpAgent.C \
+              $(AG_DIR)/SpParser.C \
+              $(AG_DIR)/SpEvent.C \
+              $(AG_DIR)/SpPropeller.C \
+              $(AG_DIR)/SpPayload.C \
+              $(AG_DIR)/SpContext.C \
 
 AG_OBJS    += $(notdir $(AG_SRCS:%.C=%.o))
 

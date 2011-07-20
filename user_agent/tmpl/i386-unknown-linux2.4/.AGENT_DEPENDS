@@ -1,5 +1,5 @@
 MyAgent.o: ../MyAgent.C \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Agent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpAgent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/parseAPI/h/CFG.h \
@@ -214,7 +214,10 @@ MyAgent.o: ../MyAgent.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchObject.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/CFGMaker.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Parser.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpParser.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchObject.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Event.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/Common.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h

@@ -1,20 +1,20 @@
-#include "Propeller.h"
-#include "Context.h"
+#include "SpPropeller.h"
+#include "SpContext.h"
 
-using sp::Propeller;
-using sp::Payload;
-using sp::Context;
+using sp::SpPropeller;
+using sp::SpPayload;
+using sp::SpContext;
 
-Propeller::Propeller() {
+SpPropeller::SpPropeller() {
   sp_debug("%s", __FUNCTION__);
 }
 
-Propeller::ptr Propeller::create() {
-  return ptr(new Propeller);
+SpPropeller::ptr SpPropeller::create() {
+  return ptr(new SpPropeller);
 }
 
-bool Propeller::go(Propeller::PointType type,
-                   Payload::ptr payload) {
+bool SpPropeller::go(SpPropeller::PointType type,
+                     SpPayload::ptr payload) {
   sp_debug("%s", __FUNCTION__);
 
   // 0. Restore previous overwritten instruction
@@ -40,7 +40,7 @@ bool Propeller::go(Propeller::PointType type,
   return true;
 }
 
-void Propeller::set_context(ContextPtr c) {
+void SpPropeller::set_context(SpContextPtr c) {
   sp_debug("%s", __FUNCTION__);
   context_ = c;
 }

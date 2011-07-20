@@ -1,7 +1,7 @@
-#include "Injector.h"
+#include "SpInjector.h"
 #include <dlfcn.h>
 
-using sp::Injector;
+using sp::SpInjector;
 
 /* The code snippet to invoke do_dlopen */
 static char do_dlopen_code[] = {
@@ -40,11 +40,11 @@ enum {
   OFF_IJRET = 12
 };
 
-size_t Injector::get_code_tmpl_size() {
+size_t SpInjector::get_code_tmpl_size() {
   return sizeof(do_dlopen_code);
 }
 
-char* Injector::get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dlopen,
+char* SpInjector::get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dlopen,
                               Dyninst::Address /*code_addr*/) {
   long* p = (long*)&do_dlopen_code[OFF_DODLOPEN];
   *p = (long)do_dlopen;
@@ -53,11 +53,11 @@ char* Injector::get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dl
   return do_dlopen_code;
 }
 
-size_t Injector::get_ij_tmpl_size() {
+size_t SpInjector::get_ij_tmpl_size() {
   return sizeof(ijagent_code);
 }
 
-char* Injector::get_ij_tmpl(Dyninst::Address ij_addr,
+char* SpInjector::get_ij_tmpl(Dyninst::Address ij_addr,
                             Dyninst::Address /*code_addr*/) {
   long* p = (long*)&ijagent_code[OFF_IJ];
   *p = (long)ij_addr;
