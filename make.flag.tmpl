@@ -19,6 +19,7 @@ COMMON_LDFLAGS   += -lpthread
 IJ_DIR      = $(SP_DIR)/src/Injector
 
 IJ_FLAGS   += $(COMMON_FLAGS)
+IJ_FLAGS   += -D_GNU_SOURCE
 
 IJ_LDFLAGS += $(COMMON_LDFLAGS)
 IJ_LDFLAGS += -lpcontrol

@@ -2,6 +2,7 @@
 #include "SpCommon.h"
 
 #include "Symtab.h"
+#include "Function.h"
 #include "AddrLookup.h"
 #include "CodeObject.h"
 
@@ -9,6 +10,7 @@ using sp::SpParser;
 using Dyninst::SymtabAPI::AddressLookup;
 using Dyninst::SymtabAPI::Symtab;
 using Dyninst::ParseAPI::CodeObject;
+using Dyninst::ParseAPI::CodeRegion;
 using Dyninst::ParseAPI::SymtabCodeSource;
 using Dyninst::PatchAPI::PatchObject;
 
@@ -49,6 +51,7 @@ SpParser::PatchObjects& SpParser::parse() {
     PatchObject* patch_obj = PatchObject::create(co, load_addr ? load_addr : sym->getLoadAddress());
     patch_objs_.push_back(patch_obj);
     if (sym->isExec()) exe_obj_ = patch_obj;
+    sp_debug("%s @ %lx", sym->name().c_str(), load_addr ? load_addr : sym->imageOffset());
   }
   return patch_objs_;
 }
@@ -66,6 +69,38 @@ Dyninst::ParseAPI::Function* SpParser::findFunction(std::string name) {
     CodeObject::funclist& all = (*ci)->funcs();
     for (CodeObject::funclist::iterator fi = all.begin(); fi != all.end(); fi++) {
       if ((*fi)->name().compare(name) == 0) return *fi;
+    }
+  }
+  return NULL;
+}
+
+/* Find the function that contains addr */
+Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
+  for (PatchObjects::iterator ci = patch_objs_.begin(); ci != patch_objs_.end(); ci++) {
+    PatchObject* obj = *ci;
+    SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+    Symtab* sym = cs->getSymtabObject();
+    Dyninst::Address upper_bound = obj->codeBase() + cs->length();
+    Dyninst::Address lower_bound = obj->codeBase();
+    sp_debug("%s = [%lx, %lx]", sym->name().c_str(), lower_bound, upper_bound);
+    if (addr >= lower_bound && addr <= upper_bound) {
+      sp_debug("Find function in %s", sym->name().c_str());
+      Dyninst::Address address = addr;
+      Dyninst::SymtabAPI::Function* f;
+      if (!sym->getContainingFunction(address, f)) {
+        address -= lower_bound;
+      }
+
+      for (std::vector<CodeRegion*>::const_iterator ri = cs->regions().begin();
+           ri != cs->regions().end(); ri++) {
+        std::set<ParseAPI::Function*> funcs;
+        obj->co()->findFuncs(*ri, address, funcs);
+        if (funcs.size() > 0) {
+          sp_debug("got function %s", (*funcs.begin())->name().c_str());
+          break;
+        }
+      }
+      break;
     }
   }
   return NULL;

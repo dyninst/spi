@@ -24,7 +24,7 @@ bool SpPropeller::go(SpPropeller::PointType type,
   //    - mgr = get PatchMgr from context_
   //    - cur_func = get current function from context_
   //    - findPoints(cur_func, type, points)
-  context_->getCurrentFunc();
+  //context_->getCurrentFunc();
   switch (type) {
     case CALLEE: {
       break;

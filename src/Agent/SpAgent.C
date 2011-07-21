@@ -1,5 +1,6 @@
-#include "SpAgent.h"
 #include "SpCommon.h"
+#include "SpAgent.h"
+#include "SpContext.h"
 
 using sp::SpAgent;
 using sp::SpParser;
@@ -61,6 +62,7 @@ void SpAgent::go() {
   if (!propeller_) propeller_ = SpPropeller::create();
 
   // 1. Parsing and initialize PatchAPI stuffs
+  /*
   SpParser::PatchObjects& cos = parser_->parse();
   sp_debug("%d PatchObjects created", cos.size());
 
@@ -77,14 +79,11 @@ void SpAgent::go() {
       sp_debug("PatchObject for .so with load address 0x%lx", (*i)->codeBase());
     }
   }
-
+  */
   // 2. Prepare context
-  // TODO (wenbin): what's in the context?
-  // - init_payload
-  // - PatchMgr
   SpContextPtr context = SpContext::create(propeller_,
                                            init_payload_,
-                                           mgr_);
+                                           parser_);
 
   // 3. Register Events
   init_event_->register_event(context);

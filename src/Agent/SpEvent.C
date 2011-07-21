@@ -1,7 +1,11 @@
+#include <ucontext.h>
+
 #include "SpEvent.h"
-
+#include "SpContext.h"
 #include "signal.h"
+#include "SpParser.h"
 
+using sp::SpParser;
 using sp::SpEvent;
 using sp::NowEvent;
 using sp::TimerEvent;
@@ -9,6 +13,20 @@ using sp::TimerEvent;
 using sp::SpContext;
 using sp::SpContextPtr;
 using sp::SpPropeller;
+
+sp::SpContextPtr g_context = sp::SpContextPtr();
+extern Dyninst::Address get_cur_func_ip(void* context);
+
+void event_handler(int signum, siginfo_t* info, void* context) {
+  Dyninst::Address ip = get_cur_func_ip(context);
+
+  g_context->parse();
+
+  SpParser::ptr parser = g_context->parser();
+  parser->findFunction(ip);
+
+  g_context->propel(SpPropeller::CALLEE, g_context->init_payload());
+}
 
 /* Default Event -- dumb event, does nothing */
 SpEvent::SpEvent() {
@@ -24,17 +42,29 @@ NowEvent::NowEvent() {
   sp_debug("%s", __FUNCTION__);
 }
 
+
 void NowEvent::register_event(SpContextPtr c) {
   sp_debug("NowEvent::%s", __FUNCTION__);
-  c->propel(SpPropeller::CALLEE, c->init_payload());
+  g_context = c;
+
+  /*
+  struct sigaction act;
+  act.sa_sigaction = event_handler;
+  act.sa_flags = SA_SIGINFO;
+  sigaction(SIGUSR1, &act, NULL);
+  raise(SIGUSR1);
+  */
+  //sigaction(SIGALRM, &act, NULL);
+  //alarm(3);
+  ucontext_t cxt;
+  getcontext(&cxt);
+  Dyninst::Address ip = get_cur_func_ip((void*)cxt.uc_link);
+  g_context->parse();
+  g_context->parser()->findFunction(ip);
+  g_context->propel(SpPropeller::CALLEE, g_context->init_payload());
 }
 
 /* Timer Event */
-sp::SpContextPtr g_context = sp::SpContextPtr();
-void alarm_handler(int) {
-  assert(g_context);
-  g_context->propel(sp::SpPropeller::CALLEE, g_context->init_payload());
-}
 
 TimerEvent::TimerEvent(int sec) : after_secs_(sec){
   sp_debug("%s", __FUNCTION__);
@@ -43,6 +73,10 @@ TimerEvent::TimerEvent(int sec) : after_secs_(sec){
 void TimerEvent::register_event(SpContextPtr c) {
   sp_debug("TimerEvent::%s", __FUNCTION__);
   g_context = c;
-  signal(SIGALRM, alarm_handler);
+
+  struct sigaction act;
+  act.sa_sigaction = event_handler;
+  act.sa_flags = SA_SIGINFO;
+  sigaction(SIGALRM, &act, NULL);
   alarm(after_secs_);
 }

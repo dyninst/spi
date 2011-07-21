@@ -82,8 +82,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   char* test_name = &argv[1][1];
-      driver.run_testcase(test_name);
-      exit(0);
+
+  //  driver.run_testcase(test_name);
+  //  exit(0);
   int pid = fork();
   switch (pid) {
     // Child
