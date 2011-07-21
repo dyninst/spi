@@ -38,7 +38,8 @@ bool TestDriver::run_testcase(std::string name) {
     exit(0);
   }
 
-  // 2. Load name_mutatee.so and name_agent.so
+
+  // 2. Load name_mutatee.so
   std::string mutatee = name + "_mutatee.so";
   void* m_handle = dlopen(mutatee.c_str(), RTLD_NOW | RTLD_GLOBAL);
   if (!m_handle) {
@@ -46,22 +47,17 @@ bool TestDriver::run_testcase(std::string name) {
     std::cerr << dlerror() << "\n";
     exit(0);
   }
-
   std::string agent = name + "_agent.so";
-  void* a_handle = dlopen(agent.c_str(), RTLD_NOW | RTLD_GLOBAL);
-  if (!a_handle) {
-    std::cerr << "ERROR: cannot load " << agent << "\n";
-    std::cerr << dlerror() << "\n";
-    exit(0);
-  }
 
-  // 3. Run mutatee()
+  // 3. Inject name_agent.so
+  char cmd[2048];
+  sprintf(cmd, "./Injector %d %s", getpid(), agent.c_str());
+  system(cmd);
+
+  // 4. run mutatee
   typedef void (*run_mutatee_t)();
   run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
   run();
-
-  // 4. Unload name_mutatee.so and name_agent.so
-  dlclose(a_handle);
   dlclose(m_handle);
 
   return true;

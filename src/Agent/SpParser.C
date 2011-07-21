@@ -1,6 +1,7 @@
 #include "SpParser.h"
 #include "SpCommon.h"
 
+#include "Symbol.h"
 #include "Symtab.h"
 #include "Function.h"
 #include "AddrLookup.h"
@@ -9,6 +10,7 @@
 using sp::SpParser;
 using Dyninst::SymtabAPI::AddressLookup;
 using Dyninst::SymtabAPI::Symtab;
+using Dyninst::SymtabAPI::Symbol;
 using Dyninst::ParseAPI::CodeObject;
 using Dyninst::ParseAPI::CodeRegion;
 using Dyninst::ParseAPI::SymtabCodeSource;
@@ -104,4 +106,25 @@ Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
     }
   }
   return NULL;
+}
+
+Dyninst::Address SpParser::findGlobalVar(char* var) {
+  Dyninst::Address pc = 0;
+  for (PatchObjects::iterator pi = patch_objs_.begin(); pi != patch_objs_.end(); pi++) {
+    PatchObject* obj = *pi;
+    CodeObject* co = obj->co();
+    SymtabCodeSource* cs = (SymtabCodeSource*)co->cs();
+    Symtab* sym = cs->getSymtabObject();
+    std::vector<Symbol*> symbols;
+    std::string var_name(var);
+    sym->findSymbol(symbols, var_name);
+    if (symbols.size() > 0) {
+      Dyninst::Address offset = symbols[0]->getOffset();
+      Dyninst::Address pc_addr = offset + obj->codeBase();
+      pc = *((Dyninst::Address*)pc_addr);
+      sp_debug("%s's offset: %lx, abs addr: %lx", IJ_PC_VAR, offset, pc_addr);
+      break;
+    }
+  }
+  return pc;
 }

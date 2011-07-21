@@ -1,6 +1,7 @@
 #include "SpInjector.h"
 #include "dlfcn.h"
 #include "Symtab.h"
+#include "Type.h"
 #include "Function.h"
 #include "int_process.h"
 #include "Event.h"
@@ -58,6 +59,7 @@ Dyninst::Address SpInjector::find_func(char* func) {
   }
   return 0;
 }
+
 
 /* Event handlers */
 Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
@@ -129,7 +131,7 @@ void SpInjector::inject(const char* lib_name) {
 
   // setup shared memory memory 1986
   const int SHMSZ = sizeof(IjMsg);
-  key_t key = 1986;
+  key_t key = IJMSG_ID;
   int shmid;
   if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0666)) < 0) {
     sp_perror("failed to creat a shared memory w/ size %d bytes", SHMSZ);
@@ -164,7 +166,34 @@ void SpInjector::inject(const char* lib_name) {
   verify_lib_loaded(lib_name);
 }
 
+void SpInjector::save_pc() {
+  LibraryPool& libs = proc_->libraries();
+  for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
+    std::string name = (*li)->getName();
+    if (name.size() <= 0) continue;
+    Library::ptr lib = *li;
+
+    Symtab *obj = NULL;
+    bool err = Symtab::openFile(obj, name);
+    std::vector<Symbol*> symbols;
+    std::string var_name(IJ_PC_VAR);
+    obj->findSymbol(symbols, var_name);
+    if (symbols.size() > 0) {
+      Dyninst::Address var_addr = symbols[0]->getOffset() + lib->getLoadAddress();
+      sp_debug("got ij_cur_pc at %lx", var_addr);
+      Dyninst::Address pc = get_pc();
+      proc_->writeMemory(var_addr, &pc, sizeof(Dyninst::Address));
+      break;
+    }
+  }
+}
+
 void SpInjector::invoke_ijagent() {
+  sp_debug("process %d is paused by injector.", pid_);
+  if (!proc_->stopProc()) {
+    sp_perror("failed to stop process %d", pid_);
+  }
+
   Dyninst::Address ij_agent_addr = find_func("ij_agent");
   if (ij_agent_addr > 0) {
     sp_debug("find the address of ij_agent function at %lx", ij_agent_addr);
@@ -180,6 +209,8 @@ void SpInjector::invoke_ijagent() {
            " at %lx of %d bytes", code_addr, size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
+
+  save_pc();
 
   // Post all irpcs
   if (!thr_->postIRPC(irpc)) {

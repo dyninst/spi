@@ -9,7 +9,6 @@ using sp::SpParser;
 using sp::SpEvent;
 using sp::NowEvent;
 using sp::TimerEvent;
-
 using sp::SpContext;
 using sp::SpContextPtr;
 using sp::SpPropeller;
@@ -45,23 +44,10 @@ NowEvent::NowEvent() {
 
 void NowEvent::register_event(SpContextPtr c) {
   sp_debug("NowEvent::%s", __FUNCTION__);
-  g_context = c;
-
-  /*
-  struct sigaction act;
-  act.sa_sigaction = event_handler;
-  act.sa_flags = SA_SIGINFO;
-  sigaction(SIGUSR1, &act, NULL);
-  raise(SIGUSR1);
-  */
-  //sigaction(SIGALRM, &act, NULL);
-  //alarm(3);
-  ucontext_t cxt;
-  getcontext(&cxt);
-  Dyninst::Address ip = get_cur_func_ip((void*)cxt.uc_link);
-  g_context->parse();
-  g_context->parser()->findFunction(ip);
-  g_context->propel(SpPropeller::CALLEE, g_context->init_payload());
+  c->parse();
+  Dyninst::Address ip = c->parser()->findGlobalVar(IJ_PC_VAR);
+  c->parser()->findFunction(ip);
+  c->propel(SpPropeller::CALLEE, c->init_payload());
 }
 
 /* Timer Event */

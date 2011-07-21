@@ -13,6 +13,8 @@ typedef struct {
 } IjMsg;
 #define SHMSZ sizeof(IjMsg)
 
+unsigned long ij_cur_pc = 0;
+
 void ij_agent() {
   int shmid;
   key_t key = 1986;

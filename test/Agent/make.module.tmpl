@@ -32,7 +32,7 @@ MUTATEE_FLAGS         = -fPIC
 
 # Rules
 #.PHONY: all
-all: MUTATEE AGENT DRIVER
+all: MUTATEE AGENT DRIVER COPYIJ
 	@echo ""
 	@echo "====================="
 	@echo " Usage: sh run.sh "
@@ -84,9 +84,13 @@ $(TEST_DRIVER): $(DRIVER_OBJS)
 	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS) -L$(DYNINST_DIR)/stackwalk/$(PLATFORM) -lstackwalk
 #	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
 
+COPYIJ:
+	@echo "Copying Injector and libijagent.so..."
+	cp $(SP_DIR)/$(PLATFORM)/Injector $(SP_DIR)/$(PLATFORM)/libijagent.so ./
+
 # Clean up
 clean:
-	@rm -f *.so *.o $(TEST_DRIVER) core*
+	@rm -f *.so *.o $(TEST_DRIVER) core* Injector libijagent.so
 	@make AG_DEPS
 	@make MUTATEE_DEPS
 	@make DRIVER_DEPS

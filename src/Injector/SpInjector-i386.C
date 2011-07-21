@@ -54,3 +54,9 @@ char* SpInjector::get_ij_tmpl(Dyninst::Address ij_addr,
   *p = (long)ij_addr - (long)abs_ret;
   return ijagent_code;
 }
+
+Dyninst::Address SpInjector::get_pc() {
+  Dyninst::MachRegisterVal eip;
+  proc_->getRegister(Dyninst::x86::eip, eip);
+  return eip;
+}
