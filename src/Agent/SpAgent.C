@@ -54,32 +54,13 @@ void SpAgent::set_propeller(SpPropeller::ptr p) {
 void SpAgent::go() {
   sp_debug("%s", __FUNCTION__);
 
-  // 0. Sanity check. If not user configuration, use default ones
-  if (!init_event_) init_event_ = NowEvent::create();
+  // 1. Sanity check. If not user configuration, use default ones
+  if (!init_event_) init_event_ = SyncEvent::create();
   if (!fini_event_) fini_event_ = SpEvent::create();
   if (!parser_) parser_ = SpParser::create();
   if (!init_payload_) init_payload_ = SpPayload::create();
   if (!propeller_) propeller_ = SpPropeller::create();
 
-  // 1. Parsing and initialize PatchAPI stuffs
-  /*
-  SpParser::PatchObjects& cos = parser_->parse();
-  sp_debug("%d PatchObjects created", cos.size());
-
-  PatchObject* exe_obj = parser_->exe_obj();
-  assert(exe_obj);
-
-  sp_debug("PatchObject for exe with load address 0x%lx", exe_obj->codeBase());
-  AddrSpacePtr as = AddrSpace::create(exe_obj);
-  mgr_ = PatchMgr::create(as);
-
-  for (SpParser::PatchObjects::iterator i = cos.begin(); i != cos.end(); i++) {
-    if (*i != exe_obj) {
-      as->loadObject(*i);
-      sp_debug("PatchObject for .so with load address 0x%lx", (*i)->codeBase());
-    }
-  }
-  */
   // 2. Prepare context
   SpContextPtr context = SpContext::create(propeller_,
                                            init_payload_,

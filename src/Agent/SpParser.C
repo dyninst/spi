@@ -122,7 +122,7 @@ Dyninst::Address SpParser::findGlobalVar(char* var) {
       Dyninst::Address offset = symbols[0]->getOffset();
       Dyninst::Address pc_addr = offset + obj->codeBase();
       pc = *((Dyninst::Address*)pc_addr);
-      sp_debug("%s's offset: %lx, abs addr: %lx", IJ_PC_VAR, offset, pc_addr);
+      sp_debug("%s's offset: %lx, abs addr: %lx, pc: %lx", IJ_PC_VAR, offset, pc_addr, pc);
       break;
     }
   }

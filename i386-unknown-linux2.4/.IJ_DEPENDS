@@ -212,6 +212,7 @@ SpInjector.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Module.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Region.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/ProcReader.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Type.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Function.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Aggregate.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Variable.h \

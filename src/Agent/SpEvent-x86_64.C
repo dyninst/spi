@@ -18,13 +18,6 @@ Dyninst::Address get_cur_func_ip(void* context) {
   mcontext_t m = c->uc_mcontext;
   unsigned long rip = m.gregs[REG_RIP];
   sp_debug("rip: %lx", rip);
-
-  /*
-  ucontext_t* c = (ucontext_t*)context;
-  mcontext_t m = c->uc_link->uc_mcontext;
-  unsigned long rip = m.gregs[REG_RIP];
-  sp_debug("rip: %lx", rip);
-  */
   return rip;
 }
 

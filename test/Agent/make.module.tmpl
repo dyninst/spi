@@ -81,12 +81,12 @@ $(DRIVER_OBJS): %.o : $(DRIVER_SRCS)
 	@$(GXX) -o $@ $(DRIVER_SRCS) $(DRIVER_IFLAGS) $(DRIVER_FLAGS) -c
 $(TEST_DRIVER): $(DRIVER_OBJS)
 	@echo "Linking $@"
-	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS) -L$(DYNINST_DIR)/stackwalk/$(PLATFORM) -lstackwalk
+	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
 #	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
 
 COPYIJ:
 	@echo "Copying Injector and libijagent.so..."
-	cp $(SP_DIR)/$(PLATFORM)/Injector $(SP_DIR)/$(PLATFORM)/libijagent.so ./
+	@cp $(SP_DIR)/$(PLATFORM)/Injector $(SP_DIR)/$(PLATFORM)/libijagent.so ./
 
 # Clean up
 clean:

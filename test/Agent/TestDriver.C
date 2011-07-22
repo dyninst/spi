@@ -35,9 +35,8 @@ bool TestDriver::run_testcase(std::string name) {
   // 1. Check if this test case is in testcases_
   if (testcases_.find(name) == testcases_.end()) {
     std::cerr << "ERROR: there's not a test case called " << name << "\n";
-    exit(0);
+    exit(-1);
   }
-
 
   // 2. Load name_mutatee.so
   std::string mutatee = name + "_mutatee.so";
@@ -48,16 +47,30 @@ bool TestDriver::run_testcase(std::string name) {
     exit(0);
   }
   std::string agent = name + "_agent.so";
-
-  // 3. Inject name_agent.so
-  char cmd[2048];
-  sprintf(cmd, "./Injector %d %s", getpid(), agent.c_str());
-  system(cmd);
-
-  // 4. run mutatee
+  /*
+  void* a_handle = dlopen(agent.c_str(), RTLD_NOW | RTLD_GLOBAL);
   typedef void (*run_mutatee_t)();
   run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
   run();
+*/
+
+  int ppid = getpid();
+  int pid = fork();
+  switch(pid) {
+    case 0: {
+      char cmd[2048];
+      sprintf(cmd, "./Injector %d %s", ppid, agent.c_str());
+      system(cmd);
+      break;
+    }
+    default: {
+      typedef void (*run_mutatee_t)();
+      run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
+      run();
+      int status;
+      wait(&status);
+    }
+  }
   dlclose(m_handle);
 
   return true;
@@ -79,8 +92,6 @@ int main(int argc, char *argv[]) {
   }
   char* test_name = &argv[1][1];
 
-  //  driver.run_testcase(test_name);
-  //  exit(0);
   int pid = fork();
   switch (pid) {
     // Child
@@ -95,8 +106,8 @@ int main(int argc, char *argv[]) {
     default: {
       int child_status;
       pid_t wpid = wait(&child_status);
-      std::cout << test_name;
-      if (WIFEXITED(child_status))
+      std::cout << test_name << " returns " << child_status << " -- ";
+      if (child_status == 0 && WIFEXITED(child_status))
         std::cout << " PASSED\n";
       else
         std::cout << " FAILED\n";

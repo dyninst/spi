@@ -182,6 +182,7 @@ void SpInjector::save_pc() {
       Dyninst::Address var_addr = symbols[0]->getOffset() + lib->getLoadAddress();
       sp_debug("got ij_cur_pc at %lx", var_addr);
       Dyninst::Address pc = get_pc();
+      sp_debug("got pc %lx", pc);
       proc_->writeMemory(var_addr, &pc, sizeof(Dyninst::Address));
       break;
     }
