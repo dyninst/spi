@@ -13,6 +13,7 @@ using sp::TestDriver;
 char can_exit = 0;
 
 TestDriver::TestDriver() {
+  /*
   struct rlimit core_limit;
   core_limit.rlim_cur = RLIM_INFINITY;
   core_limit.rlim_max = RLIM_INFINITY;
@@ -20,7 +21,7 @@ TestDriver::TestDriver() {
     std::cerr << "ERROR: failed to setup core dump ability\n";
     exit(0);
   }
-
+*/
   // Add test cases here:
   add_testcase("parser");
   add_testcase("event");

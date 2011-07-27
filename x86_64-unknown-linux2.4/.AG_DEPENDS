@@ -668,6 +668,12 @@ SpParser.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Command.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Symbol.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Function.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Aggregate.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Variable.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Symtab.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_regs.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/AddrLookup.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/parseAPI/h/CodeObject.h
 SpEvent.o:  \

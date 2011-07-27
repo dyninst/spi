@@ -2,5 +2,5 @@
 
 void run_mutatee() {
   dprint("MUTATEE: enter parser mutatee");
-  //  while(1) {}
+  while(1) {}
 }

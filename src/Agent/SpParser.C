@@ -55,6 +55,19 @@ SpParser::PatchObjects& SpParser::parse() {
     if (sym->isExec()) exe_obj_ = patch_obj;
     sp_debug("%s @ %lx", sym->name().c_str(), load_addr ? load_addr : sym->imageOffset());
   }
+
+  // parse vdso
+  Dyninst::Address vdso_load_addr = 0;
+  Symtab* vdso_sym = parse_vdso(vdso_load_addr);
+  sp_debug("are we here?");
+  /*
+  SymtabCodeSource* vdso_scs = new SymtabCodeSource(vdso_sym);
+  CodeObject* vdso_co = new CodeObject(vdso_scs);
+  vdso_co->parse();
+  PatchObject* vdso_patch_obj = PatchObject::create(vdso_co, vdso_load_addr);
+  patch_objs_.push_back(vdso_patch_obj);
+  sp_debug("vdso @ %lx", vdso_load_addr);
+  */
   return patch_objs_;
 }
 
@@ -127,4 +140,52 @@ Dyninst::Address SpParser::findGlobalVar(char* var) {
     }
   }
   return pc;
+}
+
+Dyninst::SymtabAPI::Symtab* SpParser::parse_vdso(Dyninst::Address& load_addr) {
+  FILE* fp = fopen("/proc/self/maps", "r");
+  if (!fp) {
+    sp_perror("failed to open /proc/self/maps to parse vdso");
+  }
+
+  char line[4096];
+  while (fgets(line, 4096, fp) != NULL) {
+    char * pch;
+    pch = strtok(line," \t");
+    int id = 1;
+    char* range = NULL;
+    while (pch != NULL)  {
+      if (id == 1) {
+        range = pch;
+        --id;
+      }
+      if (strncmp(pch, "[vdso]", 6) == 0) {
+        sp_debug("find [vdso] @ range %s", range);
+        char* startaddr_str = range;
+        char* endaddr_str = strchr(range, '-');
+        *endaddr_str = '\0';
+        ++endaddr_str;
+        char* endptr1;
+        char* endptr2;
+        Dyninst::Address start_addr = strtol(startaddr_str, &endptr1, 16);
+        load_addr = start_addr;
+        Dyninst::Address end_addr = strtol(endaddr_str, &endptr2, 16);
+        sp_debug("[vdso] %lx ~ %lx", start_addr, end_addr);
+
+        Symtab* sym;
+        string n("");
+        if (Symtab::openFile(sym, (void*)start_addr, (size_t)(end_addr - start_addr), n)) {
+          sp_debug("get symtab object for vdso successfully");
+          return sym;
+        }
+        else {
+          sp_perror("cannot get symtab object for vdso");
+          return NULL;
+        }
+      }
+      pch = strtok (NULL, " \t");
+    }
+
+  }
+  fclose(fp);
 }
