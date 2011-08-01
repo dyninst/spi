@@ -1,4 +1,4 @@
-SpEvent-x86_64.o: ../src/Agent/SpEvent-x86_64.C \
+SpContext-x86_64.o: ../src/Agent/SpContext-x86_64.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \

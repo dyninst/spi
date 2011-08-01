@@ -53,10 +53,16 @@ bool SpContext::propel(SpPropeller::PointType type,
 }
 
 /* Get the first instrumentable function.
-   Here, the instrumentable function is the caller of the first encountered
-   system call wrapper. For example, we are currently in the function __A,
-   which is called by the system call sleep(), and sleep() is called by main(),
-   and main() is called by __start(). So, main() is the first instrumentable function.
+   Here, an instrumentable function should fulfill all of the following requirements:
+   1. it should be resovled by the parser.
+   2. it should not be a system call.
+   3. it should not be from some well known system libraries, including
+      3.1, libc
+      3.2, ld
+      3.3, libm
+      3.4, libpthread
+      3.5, libgcc
+      3.6, libstdc++
  */
 PatchFunction* SpContext::get_first_inst_func() {
   std::vector<Frame> stackwalk;

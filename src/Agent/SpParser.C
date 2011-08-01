@@ -90,6 +90,7 @@ SpParser::PatchObjects& SpParser::parse() {
     if (sym->isExec()) exe_obj_ = patch_obj;
     sp_debug("%s @ %lx", sym->name().c_str(), load_addr);
   }
+  shmctl(IJLIB_ID, IPC_RMID, NULL);
 
   return patch_objs_;
 }

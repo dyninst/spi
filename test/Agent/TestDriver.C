@@ -48,12 +48,6 @@ bool TestDriver::run_testcase(std::string name) {
     exit(0);
   }
   std::string agent = name + "_agent.so";
-  /*
-  void* a_handle = dlopen(agent.c_str(), RTLD_NOW | RTLD_GLOBAL);
-  typedef void (*run_mutatee_t)();
-  run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
-  run();
-*/
 
   int ppid = getpid();
   int pid = fork();
