@@ -40,7 +40,6 @@ SpParser::ptr SpParser::create() {
 /* Default implementation is runtime parsing. */
 typedef struct {
   Dyninst::Address offsets[100];
-  size_t sizes[100];
 } IjLib;
 
 SpParser::PatchObjects& SpParser::parse() {
@@ -61,8 +60,7 @@ SpParser::PatchObjects& SpParser::parse() {
   int cur = 0;
   typedef std::map<Dyninst::Address, bool> LibLookup;
   LibLookup lib_lookup;
-  while (shm->sizes[cur] != -1) {
-    sp_debug("offset: %lx, size: %d bytes", shm->offsets[cur], shm->sizes[cur]);
+  while (shm->offsets[cur] != -1) {
     lib_lookup[shm->offsets[cur]] = true;
     ++cur;
   }

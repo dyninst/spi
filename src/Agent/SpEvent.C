@@ -29,6 +29,7 @@ typedef void (*event_handler_t)(int, siginfo_t*, void*);
 
 sp::SpContextPtr g_context = sp::SpContextPtr();
 void async_event_handler(int signum, siginfo_t* info, void* context) {
+  g_context->get_first_inst_func();
   g_context->propel(SpPropeller::CALLEE, g_context->init_payload());
 }
 
@@ -53,6 +54,7 @@ void AsyncEvent::register_event(SpContextPtr c) {
 
 /* SyncEvent */
 void sync_event_handler(int signum, siginfo_t* info, void* context) {
+  g_context->get_first_inst_func();
   g_context->propel(SpPropeller::CALLEE, g_context->init_payload());
 }
 
