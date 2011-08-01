@@ -16,6 +16,7 @@ SpPropeller::ptr SpPropeller::create() {
 bool SpPropeller::go(SpPropeller::PointType type,
                      SpPayload::ptr payload) {
   sp_debug("%s", __FUNCTION__);
+  context_->get_first_inst_func();
 
   // 0. Restore previous overwritten instruction
   //    should build a map (orig addr -> orig inst)

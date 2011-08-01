@@ -1,3 +1,7 @@
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 #include "SpParser.h"
 #include "SpCommon.h"
 
@@ -29,20 +33,53 @@ SpParser::~SpParser() {
 }
 
 SpParser::ptr SpParser::create() {
+  sp_debug("SpParser::%s", __FUNCTION__);
   return ptr(new SpParser());
 }
 
 /* Default implementation is runtime parsing. */
+typedef struct {
+  Dyninst::Address offsets[100];
+  size_t sizes[100];
+} IjLib;
+
 SpParser::PatchObjects& SpParser::parse() {
+  sp_debug("SpParser::%s", __FUNCTION__);
+
+  int shmid;
+  key_t key = 1985;
+  IjLib* shm;
+  if ((shmid = shmget(key, sizeof(IjLib), 0666)) < 0) {
+    perror("shmget");
+    exit(1);
+  }
+  if ((char*)(shm = (IjLib*)shmat(shmid, NULL, 0)) == (char *) -1) {
+    perror("shmat");
+    exit(1);
+  }
+  // build lookup map
+  int cur = 0;
+  typedef std::map<Dyninst::Address, bool> LibLookup;
+  LibLookup lib_lookup;
+  while (shm->sizes[cur] != -1) {
+    sp_debug("offset: %lx, size: %d bytes", shm->offsets[cur], shm->sizes[cur]);
+    lib_lookup[shm->offsets[cur]] = true;
+    ++cur;
+  }
+
   AddressLookup* al = AddressLookup::createAddressLookup(getpid());
   al->refresh();
   std::vector<Symtab*> tabs;
   al->getAllSymtabs(tabs);
   sp_debug("%d symtabs found", tabs.size());
+
   for (std::vector<Symtab*>::iterator i = tabs.begin(); i != tabs.end(); i++) {
     Symtab* sym = *i;
-    Dyninst::Address load_addr;
+    Dyninst::Address load_addr = 0;
     al->getLoadAddress(sym, load_addr);
+    if (!load_addr) load_addr = sym->getLoadAddress();
+
+    if (lib_lookup.find(load_addr) == lib_lookup.end()) continue;
 
     SymtabCodeSource* scs = new SymtabCodeSource(sym);
     code_srcs_.push_back(scs);
@@ -50,29 +87,17 @@ SpParser::PatchObjects& SpParser::parse() {
     code_objs_.push_back(co);
     co->parse();
 
-    PatchObject* patch_obj = PatchObject::create(co, load_addr ? load_addr : sym->getLoadAddress());
+    PatchObject* patch_obj = PatchObject::create(co, load_addr);
     patch_objs_.push_back(patch_obj);
     if (sym->isExec()) exe_obj_ = patch_obj;
-    sp_debug("%s @ %lx", sym->name().c_str(), load_addr ? load_addr : sym->imageOffset());
+    sp_debug("%s @ %lx", sym->name().c_str(), load_addr);
   }
 
-  // parse vdso
-  /*
-  Dyninst::Address vdso_load_addr = 0;
-  Symtab* vdso_sym = parse_vdso(vdso_load_addr);
-  sp_debug("are we here?");
-
-  SymtabCodeSource* vdso_scs = new SymtabCodeSource(vdso_sym);
-  CodeObject* vdso_co = new CodeObject(vdso_scs);
-  vdso_co->parse();
-  PatchObject* vdso_patch_obj = PatchObject::create(vdso_co, vdso_load_addr);
-  patch_objs_.push_back(vdso_patch_obj);
-  sp_debug("vdso @ %lx", vdso_load_addr);
-  */
   return patch_objs_;
 }
 
 PatchObject* SpParser::exe_obj() {
+  sp_debug("SpParser::%s", __FUNCTION__);
   if (!exe_obj_) {
     parse();
     if (!exe_obj_) sp_perror("failed to parse binary");
@@ -80,7 +105,9 @@ PatchObject* SpParser::exe_obj() {
   return exe_obj_;
 }
 
+/* Find the function that has the name */
 Dyninst::ParseAPI::Function* SpParser::findFunction(std::string name) {
+  sp_debug("SpParser::%s", __FUNCTION__);
   for (CodeObjects::iterator ci = code_objs_.begin(); ci != code_objs_.end(); ci++) {
     CodeObject::funclist& all = (*ci)->funcs();
     for (CodeObject::funclist::iterator fi = all.begin(); fi != all.end(); fi++) {
@@ -120,73 +147,4 @@ Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
     }
   }
   return NULL;
-}
-
-Dyninst::Address SpParser::findGlobalVar(char* var) {
-  Dyninst::Address pc = 0;
-  for (PatchObjects::iterator pi = patch_objs_.begin(); pi != patch_objs_.end(); pi++) {
-    PatchObject* obj = *pi;
-    CodeObject* co = obj->co();
-    SymtabCodeSource* cs = (SymtabCodeSource*)co->cs();
-    Symtab* sym = cs->getSymtabObject();
-    std::vector<Symbol*> symbols;
-    std::string var_name(var);
-    sym->findSymbol(symbols, var_name);
-    if (symbols.size() > 0) {
-      Dyninst::Address offset = symbols[0]->getOffset();
-      Dyninst::Address pc_addr = offset + obj->codeBase();
-      pc = *((Dyninst::Address*)pc_addr);
-      sp_debug("%s's offset: %lx, abs addr: %lx, pc: %lx", IJ_PC_VAR, offset, pc_addr, pc);
-      break;
-    }
-  }
-  return pc;
-}
-
-Dyninst::SymtabAPI::Symtab* SpParser::parse_vdso(Dyninst::Address& load_addr) {
-  FILE* fp = fopen("/proc/self/maps", "r");
-  if (!fp) {
-    sp_perror("failed to open /proc/self/maps to parse vdso");
-  }
-
-  char line[4096];
-  while (fgets(line, 4096, fp) != NULL) {
-    char * pch;
-    pch = strtok(line," \t");
-    int id = 1;
-    char* range = NULL;
-    while (pch != NULL)  {
-      if (id == 1) {
-        range = pch;
-        --id;
-      }
-      if (strncmp(pch, "[vdso]", 6) == 0) {
-        sp_debug("find [vdso] @ range %s", range);
-        char* startaddr_str = range;
-        char* endaddr_str = strchr(range, '-');
-        *endaddr_str = '\0';
-        ++endaddr_str;
-        char* endptr1;
-        char* endptr2;
-        Dyninst::Address start_addr = strtol(startaddr_str, &endptr1, 16);
-        load_addr = start_addr;
-        Dyninst::Address end_addr = strtol(endaddr_str, &endptr2, 16);
-        sp_debug("[vdso] %lx ~ %lx", start_addr, end_addr);
-
-        Symtab* sym;
-        string n("");
-        if (Symtab::openFile(sym, (void*)start_addr, (size_t)(end_addr - start_addr), n)) {
-          sp_debug("get symtab object for vdso successfully");
-          return sym;
-        }
-        else {
-          sp_perror("cannot get symtab object for vdso");
-          return NULL;
-        }
-      }
-      pch = strtok (NULL, " \t");
-    }
-
-  }
-  fclose(fp);
 }

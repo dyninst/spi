@@ -25,7 +25,7 @@ using Dyninst::PatchAPI::AddrSpace;
 SpContext::SpContext(SpPropeller::ptr p,
                      SpPayload::ptr ip,
                      SpParser::ptr parser) {
-  sp_debug("%s", __FUNCTION__);
+  sp_debug("SpContext::%s", __FUNCTION__);
   assert(p);
   assert(ip);
 
@@ -48,12 +48,17 @@ SpContextPtr SpContext::create(SpPropeller::ptr propeller,
 
 bool SpContext::propel(SpPropeller::PointType type,
                        SpPayload::ptr payload) {
-  sp_debug("%s", __FUNCTION__);
+  sp_debug("SpContext::%s", __FUNCTION__);
   propeller_->go(type, payload);
 }
 
-
-void SpContext::getCurrentFunc() {
+/* Get the first instrumentable function.
+   Here, the instrumentable function is the caller of the first encountered
+   system call wrapper. For example, we are currently in the function __A,
+   which is called by the system call sleep(), and sleep() is called by main(),
+   and main() is called by __start(). So, main() is the first instrumentable function.
+ */
+PatchFunction* SpContext::get_first_inst_func() {
   std::vector<Frame> stackwalk;
   Walker *walker = Walker::newWalker();
   walker->walkStack(stackwalk);
@@ -64,11 +69,12 @@ void SpContext::getCurrentFunc() {
     Dyninst::Offset o;
     void* symobj;
     stackwalk[i].getLibOffset(l, o, symobj);
-    sp_debug("FuncCall: %s in %s @ %lx", s.c_str(), l.c_str(), o);
+    sp_debug("In Call Stack - %s in %s w/ offset %lx", s.c_str(), l.c_str(), o);
+    // find the first syscall wrapper
   }
 }
 
-
+/* Parse the binary and initialize PatchAPI structures. */
 void SpContext::parse() {
   SpParser::PatchObjects& cos = parser_->parse();
   sp_debug("%d PatchObjects created", cos.size());
@@ -83,8 +89,6 @@ void SpContext::parse() {
   for (SpParser::PatchObjects::iterator i = cos.begin(); i != cos.end(); i++) {
     if (*i != exe_obj) {
       as->loadObject(*i);
-      sp_debug("PatchObject for .so with load address 0x%lx", (*i)->codeBase());
     }
   }
-
 }

@@ -1,6 +1,7 @@
 #include "SpInjector.h"
 #include "dlfcn.h"
 #include "Symtab.h"
+#include "AddrLookup.h"
 #include "Type.h"
 #include "Function.h"
 #include "int_process.h"
@@ -22,6 +23,7 @@ using Dyninst::ProcControlAPI::Library;
 using Dyninst::SymtabAPI::Symtab;
 using Dyninst::SymtabAPI::Symbol;
 using Dyninst::SymtabAPI::Function;
+using Dyninst::SymtabAPI::AddressLookup;
 
 /* Constructor */
 SpInjector::ptr SpInjector::create(Dyninst::PID pid) {
@@ -50,9 +52,13 @@ Dyninst::Address SpInjector::find_func(char* func) {
     std::string name = (*li)->getName();
     if (name.size() <= 0) continue;
     Symtab *obj = NULL;
-    bool err = Symtab::openFile(obj, name);
+    bool ret = Symtab::openFile(obj, name);
     std::vector <Function *> funcs;
-    obj->findFunctionsByName(funcs, func);
+    if (!obj || !ret) {
+      sp_perror("failed to open %s", name.c_str());
+    } else {
+      obj->findFunctionsByName(funcs, func);
+    }
     if (funcs.size() > 0) {
       return funcs[0]->getOffset() + (*li)->getLoadAddress();
     }
@@ -62,11 +68,50 @@ Dyninst::Address SpInjector::find_func(char* func) {
 
 
 /* Event handlers */
+static Dyninst::Address ijagent_load_addr = 0;
+Process::cb_ret_t on_event_ijagent(Event::const_ptr ev) {
+  EventLibrary::const_ptr libev = ev->getEventLibrary();
+  const std::set<Library::ptr> &libs = libev->libsAdded();
+  Process::const_ptr proc = libev->getProcess();
+  for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++) {
+    sp_debug("LOADED - %s @ %lx", (*i)->getName().c_str(), (*i)->getLoadAddress());
+    ijagent_load_addr = (*i)->getLoadAddress();
+  }
+}
+
 Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
   EventLibrary::const_ptr libev = ev->getEventLibrary();
   const std::set<Library::ptr> &libs = libev->libsAdded();
-  for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++)
-    sp_debug("LOADED - %s", (*i)->getName().c_str());
+  Process::const_ptr proc = libev->getProcess();
+
+  static int lib_num = 0;
+  // the global variable ij_lib_load_addrs's address
+  Dyninst::Address ij_lib_addr;
+
+  Symtab *obj = NULL;
+  bool err = Symtab::openFile(obj, IJAGENT);
+  if (!err || !obj) {
+    sp_debug("WARNING: failed to open %s", IJAGENT);
+  } else {
+    std::vector<Symbol*> symbols;
+    obj->findSymbol(symbols, "ij_lib_load_addrs");
+    if (symbols.size() == 0) {
+      sp_debug("WARNING: failed to find symbol %s, %d symbols found", "ij_lib_load_addrs", symbols.size());
+    } else {
+      ij_lib_addr = symbols[0]->getOffset() + ijagent_load_addr;
+      sp_debug("get %s at %lx", symbols[0]->getPrettyName().c_str(), ij_lib_addr);
+    }
+  }
+  for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++) {
+    Dyninst::Address loaded_addr = (*i)->getLoadAddress();
+    sp_debug("LOADED - %s @ %lx", (*i)->getName().c_str(), loaded_addr);
+    proc->writeMemory(ij_lib_addr + sizeof(Dyninst::Address) * lib_num,
+                      &loaded_addr, sizeof(Dyninst::Address));
+    Dyninst::Address end = 0;
+    proc->writeMemory(ij_lib_addr + sizeof(Dyninst::Address) * (lib_num+1),
+                      &end, sizeof(Dyninst::Address));
+    ++lib_num;
+  }
 
   return Process::cbThreadContinue;
 }
@@ -118,18 +163,23 @@ typedef struct {
   char loaded;
 } IjMsg;
 
+typedef struct {
+  Dyninst::Address offsets[100];
+  size_t sizes[100];
+} IjLib;
+
 void SpInjector::inject(const char* lib_name) {
   // verify the path of lib_name
   char* abs_lib_name = realpath(lib_name, NULL);
   if (!abs_lib_name) sp_print("cannot locate %s", abs_lib_name);
 
   // check the existence of libijagent.so
-  std::string ijagent("libijagent.so");
+  std::string ijagent(IJAGENT);
   DepNames ijagent_paths;
   if (!get_resolved_lib_path(ijagent, ijagent_paths))
     sp_perror("cannot find libijagent.so");
 
-  // setup shared memory memory 1986
+  // setup shared memory 1986
   const int SHMSZ = sizeof(IjMsg);
   key_t key = IJMSG_ID;
   int shmid;
@@ -143,6 +193,31 @@ void SpInjector::inject(const char* lib_name) {
   strcpy(shm->libname, abs_lib_name);
   shm->err[0] = '\0';
   shm->loaded = -1;
+
+  // setup shared memory 1985
+  const int SHLIBZ = sizeof(IjLib);
+  key_t key_lib = IJLIB_ID;
+  int shmid_lib;
+  if ((shmid_lib = shmget(key_lib, SHLIBZ, IPC_CREAT | 0666)) < 0) {
+    sp_perror("failed to creat a shared memory w/ size %d bytes", SHLIBZ);
+  }
+  IjLib *shm_lib;
+  if ((long)(shm_lib = (IjLib*)shmat(shmid_lib, NULL, 0)) == (long)-1) {
+    sp_perror("failed to get shared memory pointer");
+  }
+  AddressLookup* al = AddressLookup::createAddressLookup(getpid());
+  al->refresh();
+  std::vector<Symtab*> tabs;
+  al->getAllSymtabs(tabs);
+  for (int i = 0; i < tabs.size(); i++) {
+    Symtab* sym = tabs[i];
+    Dyninst::Address load_addr;
+    al->getLoadAddress(sym, load_addr);
+    shm_lib->offsets[i] = (load_addr?load_addr:sym->getLoadAddress());
+    shm_lib->sizes[i] = sym->imageLength();
+  }
+  shm_lib->offsets[tabs.size()] = -1;
+  shm_lib->sizes[tabs.size()] = -1;
 
   // inject libijagent.so
   inject_internal((*ijagent_paths.begin()).c_str());
@@ -166,34 +241,12 @@ void SpInjector::inject(const char* lib_name) {
   verify_lib_loaded(lib_name);
 }
 
-void SpInjector::save_pc() {
-  LibraryPool& libs = proc_->libraries();
-  for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
-    std::string name = (*li)->getName();
-    if (name.size() <= 0) continue;
-    Library::ptr lib = *li;
-
-    Symtab *obj = NULL;
-    bool err = Symtab::openFile(obj, name);
-    std::vector<Symbol*> symbols;
-    std::string var_name(IJ_PC_VAR);
-    obj->findSymbol(symbols, var_name);
-    if (symbols.size() > 0) {
-      Dyninst::Address var_addr = symbols[0]->getOffset() + lib->getLoadAddress();
-      sp_debug("got ij_cur_pc at %lx", var_addr);
-      Dyninst::Address pc = get_pc();
-      sp_debug("got pc %lx", pc);
-      proc_->writeMemory(var_addr, &pc, sizeof(Dyninst::Address));
-      break;
-    }
-  }
-}
-
 void SpInjector::invoke_ijagent() {
   sp_debug("process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("failed to stop process %d", pid_);
   }
+  Process::registerEventCallback(EventType::Library, on_event_lib);
 
   Dyninst::Address ij_agent_addr = find_func("ij_agent");
   if (ij_agent_addr > 0) {
@@ -210,8 +263,6 @@ void SpInjector::invoke_ijagent() {
            " at %lx of %d bytes", code_addr, size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
-
-  save_pc();
 
   // Post all irpcs
   if (!thr_->postIRPC(irpc)) {
@@ -238,7 +289,7 @@ void SpInjector::inject_internal(const char* lib_name) {
   if (!proc_->stopProc()) {
     sp_perror("failed to stop process %d", pid_);
   }
-  Process::registerEventCallback(EventType::Library, on_event_lib);
+  Process::registerEventCallback(EventType::Library, on_event_ijagent);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
 
   // Find do_dlopen function
@@ -289,6 +340,7 @@ void SpInjector::inject_internal(const char* lib_name) {
   proc_->freeMemory(code_addr);
   free(libname);
 }
+
 
 bool SpInjector::get_resolved_lib_path(const std::string &filename, DepNames &paths) {
   char *libPathStr, *libPath;

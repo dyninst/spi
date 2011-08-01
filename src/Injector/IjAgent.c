@@ -13,7 +13,8 @@ typedef struct {
 } IjMsg;
 #define SHMSZ sizeof(IjMsg)
 
-unsigned long ij_cur_pc = 0;
+// this array ended with the address 0
+unsigned long ij_lib_load_addrs[100];
 
 void ij_agent() {
   int shmid;
