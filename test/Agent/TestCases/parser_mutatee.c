@@ -2,5 +2,6 @@
 
 void run_mutatee() {
   dprint("MUTATEE: enter parser mutatee");
-  while(1) {}
+  int count = 1;
+  while(count < 10) { sleep(1); count++; }
 }

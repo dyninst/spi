@@ -1,5 +1,6 @@
 #include "test_case.h"
 #include "SpAgent.h"
+#include "SpEvent.h"
 
 #include "frame.h"
 #include "walker.h"
@@ -8,14 +9,19 @@ using Dyninst::Stackwalker::Frame;
 
 using sp::SpParser;
 using sp::SpAgent;
+using sp::SyncEvent;
 
 AGENT_INIT
 void init_parser() {
   dprint("AGENT: init_parser @ process %d", getpid());
 
-  SpParser::ptr parser = SpParser::create();
   SpAgent::ptr agent = SpAgent::create();
+
+  SpParser::ptr parser = SpParser::create();
   agent->set_parser(parser);
+
+  SyncEvent::ptr event = SyncEvent::create();
+  agent->set_init_event(event);
   agent->go();
 
   //  Dyninst::ParseAPI::Function* mutatee_func = parser->findFunction("run_mutatee");

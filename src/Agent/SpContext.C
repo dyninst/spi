@@ -4,12 +4,11 @@
 #include "PatchMgr.h"
 #include "PatchCFG.h"
 
-/*
 #include "frame.h"
 #include "walker.h"
 using Dyninst::Stackwalker::Walker;
 using Dyninst::Stackwalker::Frame;
-*/
+
 
 using sp::SpContext;
 using sp::SpContextPtr;
@@ -53,10 +52,8 @@ bool SpContext::propel(SpPropeller::PointType type,
   propeller_->go(type, payload);
 }
 
-/*
-PatchFunction* SpContext::getCurrentFunc() {
-  PatchFunction* func = NULL;
 
+void SpContext::getCurrentFunc() {
   std::vector<Frame> stackwalk;
   Walker *walker = Walker::newWalker();
   walker->walkStack(stackwalk);
@@ -69,15 +66,8 @@ PatchFunction* SpContext::getCurrentFunc() {
     stackwalk[i].getLibOffset(l, o, symobj);
     sp_debug("FuncCall: %s in %s @ %lx", s.c_str(), l.c_str(), o);
   }
-
-  std::vector<Dyninst::THR_ID> thrs;
-  walker->getAvailableThreads(thrs);
-  for (unsigned i = 0; i < thrs.size(); i++) {
-    sp_debug("Thread id: %d", thrs[i]);
-  }
-  return func;
 }
-*/
+
 
 void SpContext::parse() {
   SpParser::PatchObjects& cos = parser_->parse();

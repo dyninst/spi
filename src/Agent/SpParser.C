@@ -57,10 +57,11 @@ SpParser::PatchObjects& SpParser::parse() {
   }
 
   // parse vdso
+  /*
   Dyninst::Address vdso_load_addr = 0;
   Symtab* vdso_sym = parse_vdso(vdso_load_addr);
   sp_debug("are we here?");
-  /*
+
   SymtabCodeSource* vdso_scs = new SymtabCodeSource(vdso_sym);
   CodeObject* vdso_co = new CodeObject(vdso_scs);
   vdso_co->parse();
