@@ -24,6 +24,9 @@ SpAgent::SpAgent() {
   parser_ = SpParser::ptr();
 }
 
+SpAgent::~SpAgent() {
+}
+
 /* Configuration */
 void SpAgent::set_parser(SpParser::ptr parser) {
   sp_debug("%s", __FUNCTION__);

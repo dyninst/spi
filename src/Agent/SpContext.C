@@ -42,11 +42,11 @@ SpContextPtr SpContext::create(SpPropeller::ptr propeller,
                                                 init_payload,
                                                 parser));
   assert(ret);
-  propeller->set_context(ret);
+
   return ret;
 }
 
-bool SpContext::propel(SpPropeller::PointType type,
+bool SpContext::propel(int type,
                        SpPayload::ptr payload) {
   sp_debug("SpContext::%s", __FUNCTION__);
   propeller_->go(type, payload);

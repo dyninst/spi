@@ -104,18 +104,6 @@ PatchObject* SpParser::exe_obj() {
   return exe_obj_;
 }
 
-/* Find the function that has the name */
-Dyninst::ParseAPI::Function* SpParser::findFunction(std::string name) {
-  sp_debug("SpParser::%s", __FUNCTION__);
-  for (CodeObjects::iterator ci = code_objs_.begin(); ci != code_objs_.end(); ci++) {
-    CodeObject::funclist& all = (*ci)->funcs();
-    for (CodeObject::funclist::iterator fi = all.begin(); fi != all.end(); fi++) {
-      if ((*fi)->name().compare(name) == 0) return *fi;
-    }
-  }
-  return NULL;
-}
-
 /* Find the function that contains addr */
 Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
   for (PatchObjects::iterator ci = patch_objs_.begin(); ci != patch_objs_.end(); ci++) {
