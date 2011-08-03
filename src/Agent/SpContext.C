@@ -25,7 +25,6 @@ using Dyninst::PatchAPI::AddrSpace;
 SpContext::SpContext(SpPropeller::ptr p,
                      SpPayload::ptr ip,
                      SpParser::ptr parser) {
-  sp_debug("SpContext::%s", __FUNCTION__);
   assert(p);
   assert(ip);
 
@@ -37,7 +36,6 @@ SpContext::SpContext(SpPropeller::ptr p,
 SpContextPtr SpContext::create(SpPropeller::ptr propeller,
                                SpPayload::ptr init_payload,
                                SpParser::ptr parser) {
-  sp_debug("SpContext::%s", __FUNCTION__);
   SpContextPtr ret = SpContextPtr(new SpContext(propeller,
                                                 init_payload,
                                                 parser));
@@ -48,7 +46,6 @@ SpContextPtr SpContext::create(SpPropeller::ptr propeller,
 
 bool SpContext::propel(int type,
                        SpPayload::ptr payload) {
-  sp_debug("SpContext::%s", __FUNCTION__);
   propeller_->go(type, payload);
 }
 
@@ -75,7 +72,8 @@ PatchFunction* SpContext::get_first_inst_func() {
     Dyninst::Offset o;
     void* symobj;
     stackwalk[i].getLibOffset(l, o, symobj);
-    sp_debug("In Call Stack - %s in %s w/ offset %lx", s.c_str(), l.c_str(), o);
+    sp_debug("STACKWALK - %s in library %s with offset %lx",
+             s.c_str(), sp_filename(l.c_str()), o);
     // find the first syscall wrapper
   }
 }
@@ -83,12 +81,10 @@ PatchFunction* SpContext::get_first_inst_func() {
 /* Parse the binary and initialize PatchAPI structures. */
 void SpContext::parse() {
   SpParser::PatchObjects& cos = parser_->parse();
-  sp_debug("%d PatchObjects created", cos.size());
 
   PatchObject* exe_obj = parser_->exe_obj();
   assert(exe_obj);
 
-  sp_debug("PatchObject for exe with load address 0x%lx", exe_obj->codeBase());
   AddrSpacePtr as = AddrSpace::create(exe_obj);
   mgr_ = PatchMgr::create(as);
 

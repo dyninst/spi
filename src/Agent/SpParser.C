@@ -33,7 +33,6 @@ SpParser::~SpParser() {
 }
 
 SpParser::ptr SpParser::create() {
-  sp_debug("SpParser::%s", __FUNCTION__);
   return ptr(new SpParser());
 }
 
@@ -43,8 +42,6 @@ typedef struct {
 } IjLib;
 
 SpParser::PatchObjects& SpParser::parse() {
-  sp_debug("SpParser::%s", __FUNCTION__);
-
   int shmid;
   key_t key = 1985;
   IjLib* shm;
@@ -69,7 +66,7 @@ SpParser::PatchObjects& SpParser::parse() {
   al->refresh();
   std::vector<Symtab*> tabs;
   al->getAllSymtabs(tabs);
-  sp_debug("%d symtabs found", tabs.size());
+  sp_debug("FOUND - %d symtabs", tabs.size());
 
   for (std::vector<Symtab*>::iterator i = tabs.begin(); i != tabs.end(); i++) {
     Symtab* sym = *i;
@@ -87,8 +84,12 @@ SpParser::PatchObjects& SpParser::parse() {
 
     PatchObject* patch_obj = PatchObject::create(co, load_addr);
     patch_objs_.push_back(patch_obj);
-    if (sym->isExec()) exe_obj_ = patch_obj;
-    sp_debug("%s @ %lx", sym->name().c_str(), load_addr);
+    if (sym->isExec()) {
+      sp_debug("FOUND - Executable %s at %lx", sp_filename(sym->name().c_str()), load_addr);
+      exe_obj_ = patch_obj;
+    } else {
+      sp_debug("FOUND - Library %s at %lx", sp_filename(sym->name().c_str()), load_addr);
+    }
   }
   shmctl(IJLIB_ID, IPC_RMID, NULL);
 
@@ -96,7 +97,6 @@ SpParser::PatchObjects& SpParser::parse() {
 }
 
 PatchObject* SpParser::exe_obj() {
-  sp_debug("SpParser::%s", __FUNCTION__);
   if (!exe_obj_) {
     parse();
     if (!exe_obj_) sp_perror("failed to parse binary");
@@ -112,9 +112,7 @@ Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
     Symtab* sym = cs->getSymtabObject();
     Dyninst::Address upper_bound = obj->codeBase() + cs->length();
     Dyninst::Address lower_bound = obj->codeBase();
-    sp_debug("%s = [%lx, %lx]", sym->name().c_str(), lower_bound, upper_bound);
     if (addr >= lower_bound && addr <= upper_bound) {
-      sp_debug("Find function in %s", sym->name().c_str());
       Dyninst::Address address = addr;
       Dyninst::SymtabAPI::Function* f;
       if (!sym->getContainingFunction(address, f)) {
@@ -126,7 +124,7 @@ Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
         std::set<ParseAPI::Function*> funcs;
         obj->co()->findFuncs(*ri, address, funcs);
         if (funcs.size() > 0) {
-          sp_debug("got function %s", (*funcs.begin())->name().c_str());
+          sp_debug("FOUND - Function %s", (*funcs.begin())->name().c_str());
           break;
         }
       }

@@ -18,7 +18,6 @@ SpAgent::ptr SpAgent::create() {
 }
 
 SpAgent::SpAgent() {
-  sp_debug("%s", __FUNCTION__);
   init_event_ = SpEvent::ptr();
   fini_event_ = SpEvent::ptr();
   parser_ = SpParser::ptr();
@@ -29,34 +28,27 @@ SpAgent::~SpAgent() {
 
 /* Configuration */
 void SpAgent::set_parser(SpParser::ptr parser) {
-  sp_debug("%s", __FUNCTION__);
   parser_ = parser;
 }
 
 void SpAgent::set_init_event(SpEvent::ptr e) {
-  sp_debug("%s", __FUNCTION__);
   init_event_ = e;
 }
 
 void SpAgent::set_fini_event(SpEvent::ptr e) {
-  sp_debug("%s", __FUNCTION__);
   init_event_ = e;
 }
 
 void SpAgent::set_payload(SpPayload::ptr p) {
-  sp_debug("%s", __FUNCTION__);
   init_payload_ = p;
 }
 
 void SpAgent::set_propeller(SpPropeller::ptr p) {
-  sp_debug("%s", __FUNCTION__);
   propeller_ = p;
 }
 
 /* Go! */
 void SpAgent::go() {
-  sp_debug("%s", __FUNCTION__);
-
   // 1. Sanity check. If not user configuration, use default ones
   if (!init_event_) init_event_ = SyncEvent::create();
   if (!fini_event_) fini_event_ = SpEvent::create();
@@ -68,7 +60,6 @@ void SpAgent::go() {
   SpContextPtr context = SpContext::create(propeller_,
                                            init_payload_,
                                            parser_);
-
   // 3. Register Events
   init_event_->register_event(context);
   fini_event_->register_event(context);

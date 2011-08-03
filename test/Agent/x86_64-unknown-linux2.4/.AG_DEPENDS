@@ -219,7 +219,8 @@ event_agent.o: ../TestCases/event_agent.C ../TestCases/test_case.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h
 parser_agent.o: ../TestCases/parser_agent.C ../TestCases/test_case.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpAgent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
@@ -442,6 +443,7 @@ parser_agent.o: ../TestCases/parser_agent.C ../TestCases/test_case.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/stackwalk/h/frame.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/stackwalk/h/basetypes.h \
@@ -670,4 +672,5 @@ propel_agent.o: ../TestCases/propel_agent.C ../TestCases/test_case.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h
