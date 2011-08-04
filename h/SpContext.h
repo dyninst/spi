@@ -28,7 +28,6 @@ class SpContext {
     SpParser::ptr parser() { return parser_; }
     Dyninst::PatchAPI::PatchFunction* get_first_inst_func();
     Dyninst::PatchAPI::PatchMgrPtr mgr() { return mgr_; }
-
   protected:
     SpPropeller::ptr init_propeller_;
     PayloadFunc init_payload_;

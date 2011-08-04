@@ -65,6 +65,7 @@ PatchMgrPtr SpParser::parse() {
     perror("shmat");
     exit(1);
   }
+
   // build lookup map
   int cur = 0;
   typedef std::map<Dyninst::Address, bool> LibLookup;
@@ -87,7 +88,11 @@ PatchMgrPtr SpParser::parse() {
     al->getLoadAddress(sym, load_addr);
     if (!load_addr) load_addr = sym->getLoadAddress();
 
-    if (lib_lookup.find(load_addr) == lib_lookup.end()) continue;
+    if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
+        (sym->name().find(get_agent_name()) == string::npos) &&
+        (sym->name().find("libagent.so") == string::npos)) {
+        continue;
+    }
 
     SymtabCodeSource* scs = new SymtabCodeSource(sym);
     code_srcs_.push_back(scs);
@@ -98,10 +103,10 @@ PatchMgrPtr SpParser::parse() {
     PatchObject* patch_obj = PatchObject::create(co, load_addr);
     patch_objs.push_back(patch_obj);
     if (sym->isExec()) {
-      sp_debug("FOUND - Executable %s at %lx", sp_filename(sym->name().c_str()), load_addr);
+      sp_debug("PARSED - Executable %s at %lx", sp_filename(sym->name().c_str()), load_addr);
       exe_obj_ = patch_obj;
     } else {
-      sp_debug("FOUND - Library %s at %lx", sp_filename(sym->name().c_str()), load_addr);
+      sp_debug("PARSED - Library %s at %lx", sp_filename(sym->name().c_str()), load_addr);
     }
   }
 
@@ -116,6 +121,7 @@ PatchMgrPtr SpParser::parse() {
     }
   }
 
+  // destroy shared memory
   shmctl(IJLIB_ID, IPC_RMID, NULL);
   shmctl(IJMSG_ID, IPC_RMID, NULL);
 
@@ -170,4 +176,23 @@ void* SpParser::get_payload(string payload_name) {
       sp_debug("PAYLOAD - get payload");
     }
   }
+}
+
+typedef struct {
+  char libname[512];
+  char err[512];
+  char loaded;
+} IjMsg;
+
+char* SpParser::get_agent_name() {
+  int shmid;
+  key_t key = 1986;
+  IjMsg* msg_shm;
+  if ((shmid = shmget(key, sizeof(IjMsg), 0666)) < 0) {
+    sp_perror("FATAL - Failed to get agent shared library name");
+  }
+  if ((char*)(msg_shm = (IjMsg*)shmat(shmid, NULL, 0)) == (char *) -1) {
+    sp_perror("FATAL - Failed to get agent library name");
+  }
+  return msg_shm->libname;
 }

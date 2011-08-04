@@ -47,6 +47,18 @@ SpContextPtr SpContext::create(SpPropeller::ptr propeller,
   return ret;
 }
 
+
+void SpContext::init_well_known_libs() {
+  well_known_libs_.push_back("libc-");
+  well_known_libs_.push_back("libm-");
+  well_known_libs_.push_back("ld-");
+  well_known_libs_.push_back("libdl-");
+  well_known_libs_.push_back("libstdc++");
+  well_known_libs_.push_back("libgcc");
+  well_known_libs_.push_back("libagent.so");
+  well_known_libs_.push_back(parser_->get_agent_name());
+}
+
 /* Get the first instrumentable function.
    Here, an instrumentable function should fulfill all of the following requirements:
    1. it should be resovled by the parser.
