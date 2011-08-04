@@ -30,6 +30,8 @@ SpContext::SpContext(SpPropeller::ptr p,
   init_propeller_ = p;
   init_payload_ = ip;
   parser_ = parser;
+
+  init_well_known_libs();
 }
 
 SpContextPtr SpContext::create(SpPropeller::ptr propeller,
@@ -61,11 +63,34 @@ PatchFunction* SpContext::get_first_inst_func() {
     stackwalk[i].getLibOffset(l, o, symobj);
     sp_debug("STACKWALK - %s in library %s with offset %lx",
              s.c_str(), sp_filename(l.c_str()), o);
-    // find the first syscall wrapper
+
+    // Step 1: if the function is in a well known library
+    if (is_well_known_lib(l)) {
+      sp_debug("SKIPPED - Function %s is in well known lib", s.c_str());
+      continue;
+    }
+
+    // Step 2: if the function can be resolved
+    PatchFunction* func = parser_->findFunction(stackwalk[i].getRA());
+    if (!func) {
+      sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());
+      continue;
+    }
+
+    // Step 3: return this function
+    sp_debug("FOUND - Function %s is the first instrumentable function", s.c_str());
+    return func;
   }
+  return NULL;
 }
 
-/* Parse the binary and initialize PatchAPI structures. */
 void SpContext::parse() {
   mgr_ = parser_->parse();
+}
+
+bool SpContext::is_well_known_lib(string lib) {
+  for (int i = 0; i < well_known_libs_.size(); i++) {
+    if (lib.find(well_known_libs_[i]) != string::npos) return true;
+  }
+  return false;
 }

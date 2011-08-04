@@ -24,6 +24,7 @@ using Dyninst::PatchAPI::PatchMgrPtr;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::AddrSpace;
+using Dyninst::PatchAPI::PatchFunction;
 
 SpParser::SpParser() : exe_obj_(NULL) {
 }
@@ -111,7 +112,7 @@ PatchMgrPtr SpParser::parse() {
 }
 
 /* Find the function that contains addr */
-Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
+PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
   AddrSpacePtr as = mgr_->as();
   for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
     PatchObject* obj = *ci;
@@ -120,6 +121,9 @@ Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
     Dyninst::Address upper_bound = obj->codeBase() + cs->length();
     Dyninst::Address lower_bound = obj->codeBase();
     if (addr >= lower_bound && addr <= upper_bound) {
+      sp_debug("FOUND - In range [%lx, %lx) in library %s",
+              lower_bound, upper_bound, sp_filename(sym->name().c_str()));
+
       Dyninst::Address address = addr;
       Dyninst::SymtabAPI::Function* f;
       if (!sym->getContainingFunction(address, f)) {
@@ -131,8 +135,9 @@ Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
         std::set<ParseAPI::Function*> funcs;
         obj->co()->findFuncs(*ri, address, funcs);
         if (funcs.size() > 0) {
-          sp_debug("FOUND - Function %s", (*funcs.begin())->name().c_str());
-          break;
+          PatchFunction* pfunc = obj->getFunc(*funcs.begin());
+          sp_debug("FOUND - Function %s", pfunc->name().c_str());
+          return pfunc;
         }
       }
       break;
