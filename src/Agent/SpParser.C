@@ -104,7 +104,6 @@ PatchMgrPtr SpParser::parse() {
       sp_debug("FOUND - Library %s at %lx", sp_filename(sym->name().c_str()), load_addr);
     }
   }
-  shmctl(IJLIB_ID, IPC_RMID, NULL);
 
   // initialize PatchAPI objects
   AddrSpacePtr as = AddrSpace::create(exe_obj_);
@@ -116,6 +115,10 @@ PatchMgrPtr SpParser::parse() {
       as->loadObject(*i);
     }
   }
+
+  shmctl(IJLIB_ID, IPC_RMID, NULL);
+  shmctl(IJMSG_ID, IPC_RMID, NULL);
+
   return mgr_;
 }
 
@@ -155,4 +158,16 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
 }
 
 void* SpParser::get_payload(string payload_name) {
+  sp_debug("PAYLOAD - looking for %s", payload_name.c_str());
+  AddrSpacePtr as = mgr_->as();
+  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
+    PatchObject* obj = *ci;
+    SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+    Symtab* sym = cs->getSymtabObject();
+
+    std::vector<Symbol*> symbols;
+    if (sym->findSymbol(symbols, payload_name)) {
+      sp_debug("PAYLOAD - get payload");
+    }
+  }
 }

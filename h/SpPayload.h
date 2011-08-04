@@ -9,8 +9,10 @@ namespace sp {
                                 SpContext* context);
   // typedef void* PayloadFunc;
 
-  bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
-                       SpContext* context);
 }
 
+extern "C" {
+bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
+                     sp::SpContext* context);
+}
 #endif /* SP_PAYLOAD_H_ */

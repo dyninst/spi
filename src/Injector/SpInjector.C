@@ -209,7 +209,6 @@ void SpInjector::inject(const char* lib_name) {
   // Verify
   sp_print(shm->err);
   verify_lib_loaded(lib_name);
-  shmctl(IJMSG_ID, IPC_RMID, NULL);
 }
 
 void SpInjector::invoke_ijagent() {

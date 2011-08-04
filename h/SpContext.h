@@ -25,7 +25,7 @@ class SpContext {
     bool propel(int, PayloadFunc);
 
     void parse();
-
+    SpParser::ptr parser() { return parser_; }
     Dyninst::PatchAPI::PatchFunction* get_first_inst_func();
     Dyninst::PatchAPI::PatchMgrPtr mgr() { return mgr_; }
 
