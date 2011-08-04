@@ -13,7 +13,6 @@ using Dyninst::Stackwalker::Frame;
 using sp::SpContext;
 using sp::SpContextPtr;
 using sp::SpPropeller;
-using sp::SpPayload;
 using sp::SpParser;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::PatchAPI::PatchMgrPtr;
@@ -23,7 +22,7 @@ using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::AddrSpace;
 
 SpContext::SpContext(SpPropeller::ptr p,
-                     SpPayload::ptr ip,
+                     PayloadFunc ip,
                      SpParser::ptr parser) {
   assert(p);
   assert(ip);
@@ -34,7 +33,7 @@ SpContext::SpContext(SpPropeller::ptr p,
 }
 
 SpContextPtr SpContext::create(SpPropeller::ptr propeller,
-                               SpPayload::ptr init_payload,
+                               PayloadFunc init_payload,
                                SpParser::ptr parser) {
   SpContextPtr ret = SpContextPtr(new SpContext(propeller,
                                                 init_payload,
@@ -45,8 +44,8 @@ SpContextPtr SpContext::create(SpPropeller::ptr propeller,
 }
 
 bool SpContext::propel(int type,
-                       SpPayload::ptr payload) {
-  propeller_->go(type, payload);
+                       PayloadFunc payload) {
+  propeller_->go(payload);
 }
 
 /* Get the first instrumentable function.

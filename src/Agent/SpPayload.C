@@ -1,13 +1,13 @@
 #include "SpPayload.h"
+#include "PatchCFG.h"
 
-using sp::SpPayload;
-using sp::SpContextPtr;
+using sp::SpContext;
+using Dyninst::PatchAPI::PatchFunction;
 
-SpPayload::SpPayload()  {
-  sp_debug("%s", __FUNCTION__);
+namespace sp {
+
+bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
+                     SpContext* context) {
 }
 
-SpPayload::ptr SpPayload::create() {
-  return ptr(new SpPayload);
 }
-

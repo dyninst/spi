@@ -12,7 +12,7 @@ class SpPropeller {
     static ptr create();
     SpPropeller();
 
-    virtual bool go(int, SpPayload::ptr);
+    virtual bool go(PayloadFunc);
 };
 }
 

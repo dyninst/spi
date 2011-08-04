@@ -10,13 +10,6 @@ namespace sp {
 
   bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
                        SpContext* context);
-
-class SpPayload {
-  public:
-    typedef dyn_detail::boost::shared_ptr<SpPayload> ptr;
-    SpPayload();
-    static ptr create();
-};
 }
 
 #endif /* SP_PAYLOAD_H_ */

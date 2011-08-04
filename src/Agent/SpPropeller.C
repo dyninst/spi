@@ -2,7 +2,6 @@
 #include "SpContext.h"
 
 using sp::SpPropeller;
-using sp::SpPayload;
 using sp::SpContext;
 
 SpPropeller::SpPropeller() {
@@ -12,8 +11,7 @@ SpPropeller::ptr SpPropeller::create() {
   return ptr(new SpPropeller);
 }
 
-bool SpPropeller::go(int i,
-                     SpPayload::ptr payload) {
+bool SpPropeller::go(PayloadFunc payload) {
   // 0. Restore previous overwritten instruction
   //    should build a map (orig addr -> orig inst)
 
