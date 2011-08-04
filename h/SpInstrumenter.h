@@ -14,6 +14,7 @@ class SpInstrumenter  : public Dyninst::PatchAPI::Instrumenter {
 
   protected:
     SpInstrumenter(Dyninst::PatchAPI::AddrSpacePtr);
+    bool install(Dyninst::PatchAPI::Point* point, char* blob);
 };
 
 }

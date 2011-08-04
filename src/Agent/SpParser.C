@@ -163,21 +163,6 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
   return NULL;
 }
 
-void* SpParser::get_payload(string payload_name) {
-  sp_debug("PAYLOAD - looking for %s", payload_name.c_str());
-  AddrSpacePtr as = mgr_->as();
-  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
-    PatchObject* obj = *ci;
-    SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
-    Symtab* sym = cs->getSymtabObject();
-
-    std::vector<Symbol*> symbols;
-    if (sym->findSymbol(symbols, payload_name)) {
-      sp_debug("PAYLOAD - get payload");
-    }
-  }
-}
-
 typedef struct {
   char libname[512];
   char err[512];
@@ -206,7 +191,7 @@ Dyninst::Address SpParser::get_func_addr(string name) {
     for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
       if ((*fit)->name().compare(name) == 0) {
         Dyninst::Address addr = (*fit)->addr() + obj->codeBase();
-        sp_debug("FOUND -Absolute address of function %s is %lx", name.c_str(), addr);
+        sp_debug("FOUND - Absolute address of function %s is %lx", name.c_str(), addr);
         return addr;
       }
     }

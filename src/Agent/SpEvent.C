@@ -52,7 +52,6 @@ void AsyncEvent::register_event(SpContextPtr c) {
 /* SyncEvent */
 void sync_event_handler(int signum, siginfo_t* info, void* context) {
   PatchFunction* f = g_context->get_first_inst_func();
-  g_context->parser()->get_payload("default_payload");
   g_context->init_propeller()->go(f, g_context, g_context->init_payload());
 }
 
