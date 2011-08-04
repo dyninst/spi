@@ -80,17 +80,5 @@ PatchFunction* SpContext::get_first_inst_func() {
 
 /* Parse the binary and initialize PatchAPI structures. */
 void SpContext::parse() {
-  SpParser::PatchObjects& cos = parser_->parse();
-
-  PatchObject* exe_obj = parser_->exe_obj();
-  assert(exe_obj);
-
-  AddrSpacePtr as = AddrSpace::create(exe_obj);
-  mgr_ = PatchMgr::create(as);
-
-  for (SpParser::PatchObjects::iterator i = cos.begin(); i != cos.end(); i++) {
-    if (*i != exe_obj) {
-      as->loadObject(*i);
-    }
-  }
+  mgr_ = parser_->parse();
 }

@@ -17,14 +17,13 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
 
     typedef std::vector<Dyninst::ParseAPI::CodeObject*> CodeObjects;
     typedef std::vector<Dyninst::PatchAPI::PatchObject*> PatchObjects;
-    virtual SpParser::PatchObjects& parse();
+    virtual Dyninst::PatchAPI::PatchMgrPtr parse();
     Dyninst::PatchAPI::PatchObject* exe_obj();
     Dyninst::ParseAPI::Function* findFunction(Dyninst::Address addr);
   protected:
     typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
     CodeSources code_srcs_;
     CodeObjects code_objs_;
-    PatchObjects patch_objs_;
     Dyninst::PatchAPI::PatchObject* exe_obj_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
 

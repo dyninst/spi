@@ -5,6 +5,7 @@
 #include "SpParser.h"
 #include "SpCommon.h"
 
+#include "PatchMgr.h"
 #include "Symbol.h"
 #include "Symtab.h"
 #include "Function.h"
@@ -19,6 +20,10 @@ using Dyninst::ParseAPI::CodeObject;
 using Dyninst::ParseAPI::CodeRegion;
 using Dyninst::ParseAPI::SymtabCodeSource;
 using Dyninst::PatchAPI::PatchObject;
+using Dyninst::PatchAPI::PatchMgrPtr;
+using Dyninst::PatchAPI::PatchMgr;
+using Dyninst::PatchAPI::AddrSpacePtr;
+using Dyninst::PatchAPI::AddrSpace;
 
 SpParser::SpParser() : exe_obj_(NULL) {
 }
@@ -41,7 +46,7 @@ typedef struct {
   Dyninst::Address offsets[100];
 } IjLib;
 
-SpParser::PatchObjects& SpParser::parse() {
+PatchMgrPtr SpParser::parse() {
   int shmid;
   key_t key = 1985;
   IjLib* shm;
@@ -68,6 +73,7 @@ SpParser::PatchObjects& SpParser::parse() {
   al->getAllSymtabs(tabs);
   sp_debug("FOUND - %d symtabs", tabs.size());
 
+  PatchObjects patch_objs;
   for (std::vector<Symtab*>::iterator i = tabs.begin(); i != tabs.end(); i++) {
     Symtab* sym = *i;
     Dyninst::Address load_addr = 0;
@@ -83,7 +89,7 @@ SpParser::PatchObjects& SpParser::parse() {
     co->parse();
 
     PatchObject* patch_obj = PatchObject::create(co, load_addr);
-    patch_objs_.push_back(patch_obj);
+    patch_objs.push_back(patch_obj);
     if (sym->isExec()) {
       sp_debug("FOUND - Executable %s at %lx", sp_filename(sym->name().c_str()), load_addr);
       exe_obj_ = patch_obj;
@@ -93,20 +99,21 @@ SpParser::PatchObjects& SpParser::parse() {
   }
   shmctl(IJLIB_ID, IPC_RMID, NULL);
 
-  return patch_objs_;
-}
-
-PatchObject* SpParser::exe_obj() {
-  if (!exe_obj_) {
-    parse();
-    if (!exe_obj_) sp_perror("failed to parse binary");
+  // initialize PatchAPI objects
+  AddrSpacePtr as = AddrSpace::create(exe_obj_);
+  mgr_ = PatchMgr::create(as);
+  for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
+    if (*i != exe_obj_) {
+      as->loadObject(*i);
+    }
   }
-  return exe_obj_;
+  return mgr_;
 }
 
 /* Find the function that contains addr */
 Dyninst::ParseAPI::Function* SpParser::findFunction(Dyninst::Address addr) {
-  for (PatchObjects::iterator ci = patch_objs_.begin(); ci != patch_objs_.end(); ci++) {
+  AddrSpacePtr as = mgr_->as();
+  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
     PatchObject* obj = *ci;
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
     Symtab* sym = cs->getSymtabObject();
