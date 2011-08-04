@@ -196,3 +196,20 @@ char* SpParser::get_agent_name() {
   }
   return msg_shm->libname;
 }
+
+Dyninst::Address SpParser::get_func_addr(string name) {
+  AddrSpacePtr as = mgr_->as();
+  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
+    PatchObject* obj = *ci;
+    CodeObject* co = obj->co();
+    CodeObject::funclist& all = co->funcs();
+    for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
+      if ((*fit)->name().compare(name) == 0) {
+        Dyninst::Address addr = (*fit)->addr() + obj->codeBase();
+        sp_debug("FOUND -Absolute address of function %s is %lx", name.c_str(), addr);
+        return addr;
+      }
+    }
+  }
+  return 0;
+}

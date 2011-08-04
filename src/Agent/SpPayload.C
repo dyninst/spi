@@ -8,3 +8,6 @@ bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
                      SpContext* context) {
 
 }
+
+void simple_payload() {
+}

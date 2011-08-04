@@ -63,6 +63,7 @@ void SpAgent::go() {
   SpContextPtr context = SpContext::create(init_propeller_,
                                            init_payload_,
                                            parser_);
+
   // 3. Register Events
   init_event_->register_event(context);
   fini_event_->register_event(context);

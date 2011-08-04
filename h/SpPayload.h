@@ -14,5 +14,6 @@ namespace sp {
 extern "C" {
 bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
                      sp::SpContext* context);
+void simple_payload();
 }
 #endif /* SP_PAYLOAD_H_ */

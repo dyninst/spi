@@ -40,7 +40,7 @@ AsyncEvent::AsyncEvent(int signum, int sec)
 void AsyncEvent::register_event(SpContextPtr c) {
   g_context = c;
 
-  g_context->parse();
+  // g_context->parse();
 
   struct sigaction act;
   act.sa_sigaction = (event_handler_t)handler_;

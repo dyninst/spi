@@ -34,6 +34,9 @@ SpContext::SpContext(SpPropeller::ptr p,
   parser_ = parser;
 
   init_well_known_libs();
+
+  parse();
+  parser_->get_func_addr("simple_payload");
 }
 
 SpContextPtr SpContext::create(SpPropeller::ptr propeller,
