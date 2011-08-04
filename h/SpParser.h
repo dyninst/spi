@@ -20,6 +20,8 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     virtual Dyninst::PatchAPI::PatchMgrPtr parse();
     Dyninst::PatchAPI::PatchObject* exe_obj();
     Dyninst::PatchAPI::PatchFunction* findFunction(Dyninst::Address addr);
+    void* get_payload(string payload_name);
+
   protected:
     typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
     CodeSources code_srcs_;

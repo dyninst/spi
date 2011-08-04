@@ -1,6 +1,6 @@
 IJ_SRCS       =  ../src/Injector/SpInjector-x86_64.C \
 
-AG_SRCS       =  ../src/Agent/SpContext-x86_64.C \
+AG_SRCS       =  ../src/Agent/SpArch-x86_64.C \
 
 
 PLATFORM      ?= x86_64-unknown-linux2.4

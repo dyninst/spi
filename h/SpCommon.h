@@ -39,6 +39,8 @@ class SpContext;
 typedef dyn_detail::boost::shared_ptr<SpContext> SpContextPtr;
 }
 
+#define DYN_CAST(type, obj) dyn_detail::boost::dynamic_pointer_cast<type>(obj)
+
 #define IJMSG_ID        1986
 #define IJLIB_ID        1985
 #define IJAGENT         "libijagent.so"

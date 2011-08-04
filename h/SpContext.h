@@ -38,6 +38,7 @@ class SpContext {
 
     void init_well_known_libs();
     bool is_well_known_lib(string);
+    //bool is_instrumentable_func(Dyninst::PatchAPI::PatchFunction* func);
 };
 
 

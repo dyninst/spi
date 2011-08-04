@@ -2,9 +2,11 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
+#include "SpInstrumenter.h"
 #include "SpParser.h"
 #include "SpCommon.h"
 
+#include "Point.h"
 #include "PatchMgr.h"
 #include "Symbol.h"
 #include "Symtab.h"
@@ -12,6 +14,7 @@
 #include "AddrLookup.h"
 #include "CodeObject.h"
 
+using sp::SpInstrumenter;
 using sp::SpParser;
 using Dyninst::SymtabAPI::AddressLookup;
 using Dyninst::SymtabAPI::Symtab;
@@ -25,6 +28,9 @@ using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::AddrSpace;
 using Dyninst::PatchAPI::PatchFunction;
+using Dyninst::PatchAPI::PointMaker;
+using Dyninst::PatchAPI::PointMakerPtr;
+
 
 SpParser::SpParser() : exe_obj_(NULL) {
 }
@@ -102,7 +108,9 @@ PatchMgrPtr SpParser::parse() {
 
   // initialize PatchAPI objects
   AddrSpacePtr as = AddrSpace::create(exe_obj_);
-  mgr_ = PatchMgr::create(as);
+  PointMakerPtr pf = PointMakerPtr(new PointMaker);
+  SpInstrumenter::ptr inst = SpInstrumenter::create(as);
+  mgr_ = PatchMgr::create(as, pf, inst);
   for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
       as->loadObject(*i);
@@ -144,4 +152,7 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
     }
   }
   return NULL;
+}
+
+void* SpParser::get_payload(string payload_name) {
 }

@@ -20,6 +20,8 @@ using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::PatchObject;
 using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::AddrSpace;
+using Dyninst::ParseAPI::SymtabCodeSource;
+using Dyninst::SymtabAPI::Symtab;
 
 SpContext::SpContext(SpPropeller::ptr p,
                      PayloadFunc ip,
@@ -94,3 +96,20 @@ bool SpContext::is_well_known_lib(string lib) {
   }
   return false;
 }
+
+/*
+bool SpContext::is_instrumentable_func(PatchFunction* func) {
+  // if the function is in a well known library
+  AddrSpacePtr as = mgr_->as();
+  PatchObject* obj = func->object();
+  SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+  Symtab* sym = cs->getSymtabObject();
+  if (is_well_known_lib(sym->name())) {
+    sp_debug("NO INST - Function %s in a well known lib %s",
+             func->name().c_str(), sp_filename(sym->name().c_str()));
+    return false;
+  }
+  sp_debug("INST - Function %s instrumentable", func->name().c_str());
+  return true;
+}
+*/
