@@ -18,6 +18,7 @@ SpAgent::ptr SpAgent::create() {
 }
 
 SpAgent::SpAgent() {
+  sp_debug("========== Agent ==========");
   init_event_ = SpEvent::ptr();
   fini_event_ = SpEvent::ptr();
   parser_ = SpParser::ptr();
@@ -44,7 +45,7 @@ void SpAgent::set_payload(PayloadFunc p) {
 }
 
 void SpAgent::set_propeller(SpPropeller::ptr p) {
-  propeller_ = p;
+  init_propeller_ = p;
 }
 
 /* Go! */
@@ -54,10 +55,10 @@ void SpAgent::go() {
   if (!fini_event_) fini_event_ = SpEvent::create();
   if (!parser_) parser_ = SpParser::create();
   if (!init_payload_) init_payload_ = default_payload;
-  if (!propeller_) propeller_ = SpPropeller::create();
+  if (!init_propeller_) init_propeller_ = SpPropeller::create();
 
   // 2. Prepare context
-  SpContextPtr context = SpContext::create(propeller_,
+  SpContextPtr context = SpContext::create(init_propeller_,
                                            init_payload_,
                                            parser_);
   // 3. Register Events

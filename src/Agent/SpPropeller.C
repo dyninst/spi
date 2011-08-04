@@ -11,7 +11,9 @@ SpPropeller::ptr SpPropeller::create() {
   return ptr(new SpPropeller);
 }
 
-bool SpPropeller::go(PayloadFunc payload) {
+bool SpPropeller::go(Dyninst::PatchAPI::PatchFunction*,
+                    SpContextPtr,
+                    PayloadFunc payload) {
   // 0. Restore previous overwritten instruction
   //    should build a map (orig addr -> orig inst)
 

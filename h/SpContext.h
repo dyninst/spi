@@ -21,7 +21,7 @@ class SpContext {
               SpParser::ptr);
 
     PayloadFunc init_payload() { return init_payload_; }
-    // SpPropeller::ptr init_propeller() { return init_propeller_; }
+    SpPropeller::ptr init_propeller() { return init_propeller_; }
     bool propel(int, PayloadFunc);
 
     void parse();
@@ -30,7 +30,7 @@ class SpContext {
     Dyninst::PatchAPI::PatchMgrPtr mgr() { return mgr_; }
 
   protected:
-    SpPropeller::ptr propeller_;
+    SpPropeller::ptr init_propeller_;
     PayloadFunc init_payload_;
     SpParser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;

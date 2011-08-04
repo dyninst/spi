@@ -27,7 +27,7 @@ SpContext::SpContext(SpPropeller::ptr p,
   assert(p);
   assert(ip);
 
-  propeller_ = p;
+  init_propeller_ = p;
   init_payload_ = ip;
   parser_ = parser;
 }
@@ -43,22 +43,10 @@ SpContextPtr SpContext::create(SpPropeller::ptr propeller,
   return ret;
 }
 
-bool SpContext::propel(int type,
-                       PayloadFunc payload) {
-  propeller_->go(payload);
-}
-
 /* Get the first instrumentable function.
    Here, an instrumentable function should fulfill all of the following requirements:
    1. it should be resovled by the parser.
-   2. it should not be a system call.
-   3. it should not be from some well known system libraries, including
-      3.1, libc
-      3.2, ld
-      3.3, libm
-      3.4, libpthread
-      3.5, libgcc
-      3.6, libstdc++
+   2. it should not be from some well known system libraries, including
  */
 PatchFunction* SpContext::get_first_inst_func() {
   std::vector<Frame> stackwalk;

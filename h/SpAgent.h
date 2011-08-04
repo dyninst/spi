@@ -39,7 +39,7 @@ class SpAgent {
     SpEvent::ptr init_event_;
     SpEvent::ptr fini_event_;
     SpParser::ptr parser_;
-    SpPropeller::ptr propeller_;
+    SpPropeller::ptr init_propeller_;
     PayloadFunc init_payload_;
     SpContextPtr context_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;

@@ -1,5 +1,6 @@
 #include <ucontext.h>
 
+#include "PatchCFG.h"
 #include "SpEvent.h"
 #include "SpContext.h"
 #include "signal.h"
@@ -12,7 +13,7 @@ using sp::AsyncEvent;
 using sp::SpContext;
 using sp::SpContextPtr;
 using sp::SpPropeller;
-
+using Dyninst::PatchAPI::PatchFunction;
 
 /* Default Event -- dumb event, does nothing */
 SpEvent::SpEvent() {
@@ -27,8 +28,8 @@ typedef void (*event_handler_t)(int, siginfo_t*, void*);
 
 sp::SpContextPtr g_context = sp::SpContextPtr();
 void async_event_handler(int signum, siginfo_t* info, void* context) {
-  g_context->get_first_inst_func();
-  g_context->propel(0, g_context->init_payload());
+  PatchFunction* f = g_context->get_first_inst_func();
+  g_context->init_propeller()->go(f, g_context, g_context->init_payload());
 }
 
 AsyncEvent::AsyncEvent(int signum, int sec)
@@ -50,8 +51,8 @@ void AsyncEvent::register_event(SpContextPtr c) {
 
 /* SyncEvent */
 void sync_event_handler(int signum, siginfo_t* info, void* context) {
-  g_context->get_first_inst_func();
-  g_context->propel(0, g_context->init_payload());
+  PatchFunction* f = g_context->get_first_inst_func();
+  g_context->init_propeller()->go(f, g_context, g_context->init_payload());
 }
 
 SyncEvent::SyncEvent(std::string func_name, int sec)

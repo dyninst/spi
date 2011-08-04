@@ -12,7 +12,9 @@ class SpPropeller {
     static ptr create();
     SpPropeller();
 
-    virtual bool go(PayloadFunc);
+    virtual bool go(Dyninst::PatchAPI::PatchFunction*,
+                    SpContextPtr,
+                    PayloadFunc);
 };
 }
 
