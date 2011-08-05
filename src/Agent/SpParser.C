@@ -196,6 +196,7 @@ Dyninst::Address SpParser::get_func_addr(string name) {
       }
     }
   }
+  sp_debug("NO FOUND - Absolute address of function %s cannot be found", name.c_str());
   return 0;
 }
 

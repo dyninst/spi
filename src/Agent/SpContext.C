@@ -24,29 +24,20 @@ using Dyninst::ParseAPI::SymtabCodeSource;
 using Dyninst::SymtabAPI::Symtab;
 
 SpContext::SpContext(SpPropeller::ptr p,
-                     PayloadFunc ip,
                      SpParser::ptr parser) {
-  assert(p);
-  assert(ip);
-
   init_propeller_ = p;
-  init_payload_ = ip;
   parser_ = parser;
-
   init_well_known_libs();
-
   parse();
-  parser_->get_func_addr("simple_payload");
 }
 
 SpContextPtr SpContext::create(SpPropeller::ptr propeller,
-                               PayloadFunc init_payload,
+                               string init_payload,
                                SpParser::ptr parser) {
   SpContextPtr ret = SpContextPtr(new SpContext(propeller,
-                                                init_payload,
                                                 parser));
   assert(ret);
-
+  ret->init_payload_ = (void*)ret->parser()->get_func_addr(init_payload);
   return ret;
 }
 

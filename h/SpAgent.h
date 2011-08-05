@@ -30,7 +30,7 @@ class SpAgent {
     void set_parser(SpParser::ptr);
     void set_init_event(SpEvent::ptr);
     void set_fini_event(SpEvent::ptr);
-    void set_payload(PayloadFunc);
+    void set_init_payload(string);
     void set_propeller(SpPropeller::ptr);
 
     void go();
@@ -40,7 +40,7 @@ class SpAgent {
     SpEvent::ptr fini_event_;
     SpParser::ptr parser_;
     SpPropeller::ptr init_propeller_;
-    PayloadFunc init_payload_;
+    string init_payload_;
     SpContextPtr context_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
 

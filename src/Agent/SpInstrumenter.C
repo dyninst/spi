@@ -58,11 +58,12 @@ bool SpInstrumenter::install(Point* point, char* blob, SpContextPtr context) {
   size_t rel_dist = (long)blob > (long)addr ?
     ((long)blob - (long)addr) :
     ((long)addr - (long)blob);
+  // mprotect requires the address be aligned by page size
   while ((size_t)obj_base % page_size != 0) obj_base++;
-  sp_debug("DUMP INSN - BEGIN");
-  sp_debug("\n%s", context->parser()->dump_insn((void*)point->getBlock()->start(),
+
+  sp_debug("BEGIN DUMP INSN {\n\n%s", context->parser()->dump_insn((void*)point->getBlock()->start(),
                                               point->getBlock()->size()).c_str());
-  sp_debug("DUMP INSN - END");
+  sp_debug("} END DUMP INSN");
   if (mprotect(obj_base, obj->co()->cs()->length(), PROT_READ | PROT_WRITE | PROT_EXEC) < 0) {
     sp_debug("MPROTECT - Failed to change memory access permission");
   } else {

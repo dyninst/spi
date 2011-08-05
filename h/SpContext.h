@@ -13,12 +13,9 @@ namespace sp {
 class SpContext {
   public:
   static SpContextPtr create(SpPropeller::ptr,
-                             PayloadFunc,
+                             string,
                              SpParser::ptr);
 
-    SpContext(SpPropeller::ptr,
-              PayloadFunc,
-              SpParser::ptr);
 
     PayloadFunc init_payload() { return init_payload_; }
     SpPropeller::ptr init_propeller() { return init_propeller_; }
@@ -35,6 +32,8 @@ class SpContext {
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     std::vector<string> well_known_libs_;
 
+    SpContext(SpPropeller::ptr,
+              SpParser::ptr);
     void init_well_known_libs();
     bool is_well_known_lib(string);
     //bool is_instrumentable_func(Dyninst::PatchAPI::PatchFunction* func);
