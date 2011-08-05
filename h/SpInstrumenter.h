@@ -2,6 +2,7 @@
 #define _SPINSTRUMENTER_H_
 
 #include "Instrumenter.h"
+#include "SpCommon.h"
 
 namespace sp {
 
@@ -14,7 +15,7 @@ class SpInstrumenter  : public Dyninst::PatchAPI::Instrumenter {
 
   protected:
     SpInstrumenter(Dyninst::PatchAPI::AddrSpacePtr);
-    bool install(Dyninst::PatchAPI::Point* point, char* blob);
+    bool install(Dyninst::PatchAPI::Point* point, char* blob, SpContextPtr context);
 };
 
 }

@@ -5,6 +5,7 @@
 #include "SpInstrumenter.h"
 #include "SpCommon.h"
 #include "SpSnippet.h"
+#include "SpContext.h"
 
 using sp::SpInstrumenter;
 using Dyninst::PatchAPI::CommandList;
@@ -37,7 +38,7 @@ bool SpInstrumenter::run() {
       char* blob = sp_snip->blob();
 
       // 2. Link snippet to original code
-      if (install(pt, blob)) {
+      if (install(pt, blob, sp_snip->context())) {
         sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
                  pt->getBlock()->last(), pt->getCallee()->name().c_str());
       } else {
@@ -48,7 +49,7 @@ bool SpInstrumenter::run() {
   }
 }
 
-bool SpInstrumenter::install(Point* point, char* blob) {
+bool SpInstrumenter::install(Point* point, char* blob, SpContextPtr context) {
   char int3[] = { 0xcc, 0x90, 0x90, 0x90, 0x90 };
   Dyninst::PatchAPI::PatchObject* obj = point->getBlock()->function()->object();
   char* addr = (char*)point->getBlock()->last();
@@ -58,8 +59,10 @@ bool SpInstrumenter::install(Point* point, char* blob) {
     ((long)blob - (long)addr) :
     ((long)addr - (long)blob);
   while ((size_t)obj_base % page_size != 0) obj_base++;
-  sp_debug("SIZE - Call instruction is of size %d bytes", (long)point->getBlock()->end() - (long)addr);
-  sp_debug("JUMP - From %lx to %lx, relatively %lx", (long)addr, blob, rel_dist);
+  sp_debug("DUMP INSN - BEGIN");
+  sp_debug("\n%s", context->parser()->dump_insn((void*)point->getBlock()->start(),
+                                              point->getBlock()->size()).c_str());
+  sp_debug("DUMP INSN - END");
   if (mprotect(obj_base, obj->co()->cs()->length(), PROT_READ | PROT_WRITE | PROT_EXEC) < 0) {
     sp_debug("MPROTECT - Failed to change memory access permission");
   } else {

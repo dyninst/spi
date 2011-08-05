@@ -1,17 +1,10 @@
+source ../../make.config
+export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$SP_DIR/test/Agent/$PLATFORM:$LD_LIBRARY_PATH
 
-export LD_LIBRARY_PATH=/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/$PLATFORM:/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/test/Agent/$PLATFORM:$LD_LIBRARY_PATH
-
-$PLATFORM/Mutatee & 
+$SP_DIR/test/Injector/$PLATFORM/Mutatee & 
 PID=$!
 
 sleep 1
-#cat /proc/$PID/maps
-#valgrind --tool=memcheck --leak-check=yes ../../$PLATFORM/Injector $PID `pwd`/$PLATFORM/libagent.so
-../../$PLATFORM/Injector $PID `pwd`/$PLATFORM/libagent.so
-#../../$PLATFORM/Injector $PID `pwd`/../Agent/$PLATFORM/parser_agent.so
-#../../$PLATFORM/Injector $PID `pwd`/../Agent/$PLATFORM/event_agent.so
-#../../$PLATFORM/Injector $PID `pwd`/../../$PLATFORM/libagent.so
-#../../$PLATFORM/Injector $PID /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/user_agent/tmpl/i386-unknown-linux2.4/libagent_tmpl.so
-#cat /proc/$PID/maps
+$SP_DIR/$PLATFORM/Injector $PID $SP_DIR/test/Injector/$PLATFORM/libagent.so
 
 kill $PID

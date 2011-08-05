@@ -21,6 +21,7 @@ class SpSnippet {
     }
 
     char* blob();
+    SpContextPtr context() { return context_; }
   protected:
     Dyninst::PatchAPI::PatchFunction* func_;
     SpContextPtr context_;

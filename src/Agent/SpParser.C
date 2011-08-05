@@ -198,3 +198,22 @@ Dyninst::Address SpParser::get_func_addr(string name) {
   }
   return 0;
 }
+
+string SpParser::dump_insn(void* addr, size_t size) {
+  using namespace InstructionAPI;
+  Dyninst::Address base = (Dyninst::Address)addr;
+  SymtabCodeSource* cs = (SymtabCodeSource*)mgr_->as()->getFirstObject()->co()->cs();
+  string s;
+  char buf[256];
+  InstructionDecoder deco(addr,
+                          size,
+                          cs->getArch());
+  Instruction::Ptr insn = deco.decode();
+  while(insn) {
+    sprintf(buf, "%30lx: %s\n", base, insn->format(base).c_str());
+    s += buf;
+    base += insn->size();
+    insn = deco.decode();
+  }
+  return s;
+}
