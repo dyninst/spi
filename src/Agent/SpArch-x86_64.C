@@ -21,4 +21,9 @@ Dyninst::Address get_pre_signal_pc(void* context) {
   return ctx->uc_mcontext.gregs[REG_RIP];
 }
 
+Dyninst::Address set_pc(Dyninst::Address pc, void* context) {
+  ucontext_t* ctx = (ucontext_t*)context;
+  ctx->uc_mcontext.gregs[REG_RIP] = pc;
+}
+
 }

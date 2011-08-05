@@ -21,7 +21,8 @@ namespace sp {
    - The parser to parse CFG structures of current running process.
      - Default: runtime parsing
  */
-class SpAgent {
+class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
+  friend class SpContext;
   public:
     typedef dyn_detail::boost::shared_ptr<SpAgent> ptr;
     static ptr create();

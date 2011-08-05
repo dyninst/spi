@@ -1,7 +1,17 @@
 #include "test_case.h"
 
+void callee1() {
+  dprint("MUTATEE: callee1");
+}
+
+void callee2() {
+  dprint("MUTATEE: callee2");
+}
+
 void func() {
   dprint("MUTATEE: in func");
+  callee1();
+  callee2();
 }
 
 void run_mutatee() {

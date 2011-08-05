@@ -18,7 +18,7 @@ void init_parser() {
   SpAgent::ptr agent = SpAgent::create();
 
   SpParser::ptr parser = SpParser::create();
-  agent->set_init_payload("simple_payload");
+  //agent->set_init_payload("simple_payload");
   agent->set_parser(parser);
 
   SyncEvent::ptr event = SyncEvent::create();

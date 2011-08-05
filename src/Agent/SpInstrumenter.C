@@ -29,8 +29,9 @@ SpInstrumenter::SpInstrumenter(Dyninst::PatchAPI::AddrSpacePtr as)
 extern sp::SpContextPtr g_context;
 namespace sp {
 extern Dyninst::Address get_pre_signal_pc(void* context);
+extern Dyninst::Address set_pc(Dyninst::Address pc, void* context);
 }
-typedef void (*FUNC)();
+
 void trap_handler(int sig, siginfo_t* info, void* c) {
   // Get eip
   Dyninst::Address pc = sp::get_pre_signal_pc(c) - 1;
@@ -39,12 +40,11 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   if (inst_map.find(pc) == inst_map.end()) return;
   SpSnippet::ptr sp_snip = inst_map[pc];
   sp_debug("PAYLOAD - At address %lx", sp_snip->payload());
-  FUNC f = (FUNC)sp_snip->payload();
-  f();
+  sp::PayloadFunc_t payload_func = (sp::PayloadFunc_t)sp_snip->payload();
+  payload_func(sp_snip->func(), g_context);
   string& orig_insn = sp_snip->orig_insn();
   memcpy((void*)pc, orig_insn.c_str(), orig_insn.size());
-  ucontext* uc = (ucontext*)c;
-  uc->uc_mcontext.gregs[REG_RIP] = pc;
+  sp::set_pc(pc, c);
 }
 
 bool SpInstrumenter::run() {

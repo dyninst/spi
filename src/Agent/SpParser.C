@@ -32,7 +32,8 @@ using Dyninst::PatchAPI::PointMaker;
 using Dyninst::PatchAPI::PointMakerPtr;
 
 
-SpParser::SpParser() : exe_obj_(NULL) {
+SpParser::SpParser()
+  : exe_obj_(NULL) {
 }
 
 SpParser::~SpParser() {
@@ -45,7 +46,7 @@ SpParser::~SpParser() {
 }
 
 SpParser::ptr SpParser::create() {
-  return ptr(new SpParser());
+  return ptr(new SpParser);
 }
 
 /* Default implementation is runtime parsing. */
@@ -89,7 +90,7 @@ PatchMgrPtr SpParser::parse() {
     if (!load_addr) load_addr = sym->getLoadAddress();
 
     if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
-        (sym->name().find(get_agent_name()) == string::npos) &&
+        (sym->name().find(sp_filename(sp_filename(get_agent_name()))) == string::npos) &&
         (sym->name().find("libagent.so") == string::npos)) {
         continue;
     }
@@ -153,7 +154,7 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
         obj->co()->findFuncs(*ri, address, funcs);
         if (funcs.size() > 0) {
           PatchFunction* pfunc = obj->getFunc(*funcs.begin());
-          sp_debug("FOUND - Function %s", pfunc->name().c_str());
+          sp_debug("FOUND - Function %s with %d callees", pfunc->name().c_str(), pfunc->calls().size());
           return pfunc;
         }
       }
@@ -170,6 +171,7 @@ typedef struct {
 } IjMsg;
 
 char* SpParser::get_agent_name() {
+
   int shmid;
   key_t key = 1986;
   IjMsg* msg_shm;

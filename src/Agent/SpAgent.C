@@ -53,8 +53,8 @@ void SpAgent::go() {
   // 1. Sanity check. If not user configuration, use default ones
   if (!init_event_) init_event_ = SyncEvent::create();
   if (!fini_event_) fini_event_ = SpEvent::create();
-  if (!parser_) parser_ = SpParser::create();
   if (init_payload_.size() == 0) init_payload_ = "default_payload";
+  if (!parser_) parser_ = SpParser::create();
   if (!init_propeller_) init_propeller_ = SpPropeller::create();
 
   // 2. Prepare context

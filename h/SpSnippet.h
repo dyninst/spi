@@ -24,7 +24,7 @@ class SpSnippet {
     SpContextPtr context() { return context_; }
     PayloadFunc payload() { return payload_; }
     string& orig_insn() { return orig_insn_; }
-
+    Dyninst::PatchAPI::PatchFunction* func() { return func_; }
   protected:
     Dyninst::PatchAPI::PatchFunction* func_;
     SpContextPtr context_;
