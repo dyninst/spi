@@ -211,7 +211,11 @@ string SpParser::dump_insn(void* addr, size_t size) {
                           cs->getArch());
   Instruction::Ptr insn = deco.decode();
   while(insn) {
-    sprintf(buf, "%30lx: %s\n", base, insn->format(base).c_str());
+    sprintf(buf, "    %lx(%2d bytes): %-25s | ", base, insn->size(), insn->format(base).c_str());
+    char* raw = (char*)insn->ptr();
+    for (int i = 0; i < insn->size(); i++)
+      sprintf(buf, "%s%0.2x ", buf, 0xff&raw[i]);
+    sprintf(buf, "%s\n", buf);
     s += buf;
     base += insn->size();
     insn = deco.decode();
