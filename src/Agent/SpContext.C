@@ -119,3 +119,8 @@ bool SpContext::is_instrumentable_func(PatchFunction* func) {
   return true;
 }
 */
+
+void SpContext::restore() {
+  // Restore trap handler
+  sigaction(SIGTRAP, &old_act_, NULL);
+}

@@ -22,10 +22,14 @@ class SpSnippet {
 
     char* blob();
     SpContextPtr context() { return context_; }
+    PayloadFunc payload() { return payload_; }
+    string& orig_insn() { return orig_insn_; }
+
   protected:
     Dyninst::PatchAPI::PatchFunction* func_;
     SpContextPtr context_;
     PayloadFunc payload_;
+    string orig_insn_;
 };
 
 }

@@ -16,4 +16,9 @@ char* SpSnippet::blob() {
   return NULL;
 }
 
+Dyninst::Address get_pre_signal_pc(void* context) {
+  ucontext_t* ctx = (ucontext_t*)context;
+  return ctx->uc_mcontext.gregs[REG_RIP];
+}
+
 }

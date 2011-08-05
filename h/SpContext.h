@@ -7,6 +7,7 @@
 #include "SpParser.h"
 #include "PatchMgr.h"
 #include "SpEvent.h"
+#include "SpSnippet.h"
 
 namespace sp {
 
@@ -22,15 +23,27 @@ class SpContext {
     bool propel(int, PayloadFunc);
 
     void parse();
+    void restore();
+
     SpParser::ptr parser() { return parser_; }
     Dyninst::PatchAPI::PatchFunction* get_first_inst_func();
     Dyninst::PatchAPI::PatchMgrPtr mgr() { return mgr_; }
+    void set_old_act(struct sigaction old_act) { old_act_ = old_act; }
+
+    // EIP -> snippet
+    typedef std::map<Dyninst::Address, SpSnippet::ptr> InstMap;
+    InstMap& inst_map() { return inst_map_; }
+
   protected:
     SpPropeller::ptr init_propeller_;
     PayloadFunc init_payload_;
     SpParser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     std::vector<string> well_known_libs_;
+
+    // Things to be restored
+    struct sigaction old_act_;
+    InstMap inst_map_;
 
     SpContext(SpPropeller::ptr,
               SpParser::ptr);

@@ -10,4 +10,5 @@ bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
 }
 
 void simple_payload() {
+  sp_debug("SIMPLE PAYLOAD - I'm in!");
 }
