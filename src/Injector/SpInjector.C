@@ -87,36 +87,25 @@ Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
   return Process::cbThreadContinue;
 }
 
-/* check whether we load the library successfully */
-void SpInjector::verify_lib_loaded(const char* libname) {
+/* check whether a library is loaded */
+bool SpInjector::is_lib_loaded(const char* libname) {
   bool found = false;
   int count = 0;
-  char* name_only = strrchr(libname, '/');
-  if (!name_only)  name_only = (char*)libname;
-
-  do {
-    LibraryPool& libs = proc_->libraries();
-    LibraryPool::iterator li = libs.begin();
-    for (li = libs.begin(); li != libs.end(); li++) {
-      std::string name = (*li)->getName();
-      if (name.size() <= 0) continue;
-      if (name.find(name_only) != std::string::npos) {
-        found = true;
-        break;
-      }
+  char* name_only = sp_filename(libname);
+  sp_debug("CHECKING - checking whether %s is loaded ...",
+           name_only);
+  LibraryPool& libs = proc_->libraries();
+  LibraryPool::iterator li = libs.begin();
+  for (li = libs.begin(); li != libs.end(); li++) {
+    std::string name = (*li)->getName();
+    if (name.size() <= 0) continue;
+    if (name.find(name_only) != std::string::npos) {
+      sp_debug("LOADED - %s is already loaded", name_only);
+      return true;
     }
-    if (!found) {
-      sp_print("Injector [pid = %5d]: not loaded, sleep 1 second, and check again",
-               getpid());
-      sleep(1);
-      ++count;
-    }
-  } while (!found && count < 10);
-
-  if (found)
-    sp_print("Injector [pid = %5d]: INJECTED, confirmed", getpid());
-  else
-    sp_print("Injector [pid = %5d]: still not loaded, abort", getpid());
+  }
+  sp_debug("NO LOADED - %s is not yet loaded", name_only);
+  return false;
 }
 
 typedef struct {
@@ -129,94 +118,94 @@ typedef struct {
   Dyninst::Address offsets[100];
 } IjLib;
 
+/* The main injection procedure, which has two main steps:
+   Step 1: Force injectee to execute do_dlopen to load shared library libijagent.so.
+   Step 2: Force injectee to execute ij_agent in libijagent.so to load the
+           user-specified shared library. In this step, we have to pass parameters
+           by IPC mechanism, where we use shared memory in current implementation.
+
+   Q & A:
+   1. Why don't we directly use do_dlopen to load user-specified shared library?
+   Answer: Because do_dlopen is not a public function, which is unsafe to use.
+           Often times, do_dlopen causes injectee to crash, e.g., the library is
+           not found. On the other hand, dlopen is safe to use, which would not
+           causes the injectee process to crash.
+   2. To follow up question 1, why don't we directly call dlopen in step 1?
+   Answer: We are not allowed to do so. libc.so has sanity check on calling dlopen.
+           If we call dlopen using IRPC, dlopen would fail, although it won't crash
+           injectee process.
+   3. Why we use IPC mechanism to pass parameters to ij_agent in libijagent.so?
+   Answer: ij_agent is a function that calls dlopen. After dlopen is invoked, we
+           want to check whether the loading is successful. Even when dlopen fails,
+           we also want to know the error message. Therefore, we need to do IPC for
+           error report or checking return value. In this case, why don't we have
+           an easy and uniformed way to pass argument and check return value?
+ */
 void SpInjector::inject(const char* lib_name) {
-  // verify the path of lib_name
+
+  // Verify the existence of lib_name
   char* abs_lib_name = realpath(lib_name, NULL);
-  if (!abs_lib_name) sp_print("cannot locate %s", abs_lib_name);
+  if (!abs_lib_name)
+    sp_perror("Injector [pid = %5d] - cannot locate library %s.", getpid(), lib_name);
 
-  // check the existence of libijagent.so
-  std::string ijagent(IJAGENT);
-  DepNames ijagent_paths;
-  if (!get_resolved_lib_path(ijagent, ijagent_paths))
-    sp_perror("Injector [pid = %5d] - cannot find IJAGENT", getpid(), IJAGENT);
+  /* Step 1. Load libijagent.so */ 
+  if (!is_lib_loaded(IJAGENT)) {
+    // Verify the existence of libijagent.so
+    std::string ijagent(IJAGENT);
+    DepNames ijagent_paths;
+    if (!get_resolved_lib_path(ijagent, ijagent_paths))
+      sp_perror("Injector [pid = %5d] - cannot find IJAGENT", getpid(), IJAGENT);
 
-  // setup shared memory 1986
-  const int SHMSZ = sizeof(IjMsg);
-  key_t key = IJMSG_ID;
-  int shmid;
-  if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0666)) < 0) {
-    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes",
-             getpid(), SHMSZ);
-  }
-  IjMsg *shm;
-  if ((long)(shm = (IjMsg*)shmat(shmid, NULL, 0)) == (long)-1) {
-    sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
-  }
-  strcpy(shm->libname, abs_lib_name);
-  shm->err[0] = '\0';
-  shm->loaded = -1;
+    // This is to optimize self-propelled instrumentation
+    // if injector is going to be general purpose, please comment out this call.
+    identify_original_libs();
 
-  // setup shared memory 1985
-  const int SHLIBZ = sizeof(IjLib);
-  key_t key_lib = IJLIB_ID;
-  int shmid_lib;
-  if ((shmid_lib = shmget(key_lib, SHLIBZ, IPC_CREAT | 0666)) < 0) {
-    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes",
-             getpid(), SHLIBZ);
-  }
-  IjLib *shm_lib;
-  if ((long)(shm_lib = (IjLib*)shmat(shmid_lib, NULL, 0)) == (long)-1) {
-    sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
+    // Inject libijagent.so
+    inject_internal((*ijagent_paths.begin()).c_str());
   }
 
-  LibraryPool& libs = proc_->libraries();
+  /* Step 2. Load user-specified library */
+  if (!is_lib_loaded(sp_filename(abs_lib_name))) {
+    // setup shared memory, this is to pass arguments to call dlopen in libijagent.so
+    int shmid;
+    IjMsg *shm;
+    if ((shmid = shmget(IJMSG_ID, sizeof(IjMsg), IPC_CREAT | 0666)) < 0) {
+      sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes",
+                getpid(), sizeof(IjMsg));
+    }
+    if ((long)(shm = (IjMsg*)shmat(shmid, NULL, 0)) == (long)-1) {
+      sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
+    }
+    strcpy(shm->libname, abs_lib_name);
+    shm->err[0] = '\0';
+    shm->loaded = -1;
 
-  int lib_count = 0;
-  for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
+    // invoke dlopen in libijagent.so
+    invoke_ijagent();
 
-    std::string lib_name = (*li)->getName();
-    if (lib_name.size() <= 0) continue;
-    Symtab *obj = NULL;
-    bool ret = Symtab::openFile(obj, lib_name);
-    if (!obj || !ret) {
-      sp_perror("Injector [pid = %5d] - Failed to open %s", getpid(), lib_name.c_str());
+    // Wait for dlopen to return
+    int count = 0;
+    while (shm->loaded == -1) {
+      if (count > 5) {
+        sp_perror("INJECTOR [pid = %d]: injectee not response, abort", getpid());
+      }
+      sleep(1);
+      ++count;
     }
 
-    Dyninst::Address load_addr = (*li)->getLoadAddress();
-    if (!load_addr) load_addr = obj->getLoadAddress();
-    shm_lib->offsets[lib_count] = load_addr;
-    ++lib_count;
+    if (!shm->loaded) sp_perror(shm->err);
+    else sp_print(shm->err);
+  } else {
+    sp_print("Injector [pid = %5d]: Library %s is already loaded...", getpid(), sp_filename(lib_name));
   }
-  shm_lib->offsets[libs.size()] = -1;
-
-  // inject libijagent.so
-  inject_internal((*ijagent_paths.begin()).c_str());
-
-  // invoke load_lib
-  invoke_ijagent();
-
-  // wait, should setup an alarm mechanism 
-  int count = 0;
-  while (shm->loaded == -1) {
-    if (count > 5) {
-      sp_perror("INJECTOR [pid = %d]: injectee not response, abort", getpid());
-    }
-    sleep(1);
-    ++count;
-  }
-  if (!shm->loaded) sp_perror(shm->err);
-
-  // Verify
-  sp_print(shm->err);
-  verify_lib_loaded(lib_name);
 }
 
+/* Invoke ijagent function in libijagent.so, which in turn invokes dlopen */
 void SpInjector::invoke_ijagent() {
   sp_debug("PAUSED - Process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(), pid_);
   }
-
   Dyninst::Address ij_agent_addr = find_func("ij_agent");
   if (ij_agent_addr > 0) {
     sp_debug("FOUND - Address of ij_agent function at %lx", ij_agent_addr);
@@ -224,7 +213,6 @@ void SpInjector::invoke_ijagent() {
   else {
     sp_perror("Injector [pid = %5d] - Failed to find ij_agent", getpid());
   }
-
   size_t size = get_ij_tmpl_size();
   Dyninst::Address code_addr = proc_->mallocMemory(size);
   char* code = get_ij_tmpl(ij_agent_addr, code_addr);
@@ -232,35 +220,26 @@ void SpInjector::invoke_ijagent() {
            " at %lx of %d bytes", code_addr, size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
-
-  // Post all irpcs
-  if (!thr_->postIRPC(irpc)) {
+  sp_debug("POSTING - IRPC is on the way ...");
+  if (!proc_->postIRPC(irpc)) {
     sp_perror("Injector [pid = %5d] - Failed to execute load-library code in mutatee's address space", getpid());
   }
-
-  // Wait for finish
-  while (thr_->isStopped()) {
-    thr_->continueThread();
-    Process::handleEvents(true);
-  }
-
+  proc_->continueProc();
+  Process::handleEvents(true);
   proc_->freeMemory(code_addr);
 }
 
-/* Inject one library for each invokation. */
+/* Load a library by using do_dlopen */
 void SpInjector::inject_internal(const char* lib_name) {
   // Make absolute path for this shared library
   char* libname = realpath(lib_name, NULL);
   if (!libname) sp_perror("Injector [pid = %5d] - %s cannot be found", getpid(), sp_filename(lib_name));
-
-  // Stop mutatee and register events
   sp_debug("PAUSED - Process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(), pid_);
   }
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
-
   // Find do_dlopen function
   Dyninst::Address do_dlopen_addr = find_func("do_dlopen");
   if (do_dlopen_addr > 0) {
@@ -269,7 +248,6 @@ void SpInjector::inject_internal(const char* lib_name) {
   else {
     sp_perror("Injector [pid = %5d] - Failed to find do_dlopen", getpid());
   }
-
   // Prepare irpc
   size_t lib_name_len = strlen(libname) + 1;
   Dyninst::Address lib_name_addr = proc_->mallocMemory(lib_name_len);
@@ -293,17 +271,11 @@ void SpInjector::inject_internal(const char* lib_name) {
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
 
-  // Post all irpcs
-  if (!thr_->postIRPC(irpc)) {
+  if (!proc_->postIRPC(irpc)) {
     sp_perror("Injector [pid = %5d] - Failed to execute load-library code in mutatee's address space");
   }
-
-  // Wait for finish
-  while (thr_->isStopped()) {
-    thr_->continueThread();
-    Process::handleEvents(true);
-  }
-
+  proc_->continueProc();
+  Process::handleEvents(true);
   // Clean up
   proc_->freeMemory(lib_name_addr);
   proc_->freeMemory(args_addr);
@@ -401,20 +373,53 @@ bool SpInjector::get_resolved_lib_path(const std::string &filename, DepNames &pa
   return ( 0 < paths.size() );
 }
 
+/* This is to assist self-propelled instruemntation.
+   We store the originally loaded libraries' loaded addresses in shared memory,
+   so that in self-propelled instrumentation, we only parse those libraries.
+   Thus, we avoid time consuming parsing for dyninst libraries of huge size.
+*/
+void SpInjector::identify_original_libs() {
+    const int SHLIBZ = sizeof(IjLib);
+    key_t key_lib = IJLIB_ID;
+    int shmid_lib;
+    if ((shmid_lib = shmget(key_lib, SHLIBZ, IPC_CREAT | 0666)) < 0) {
+      sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes",
+                getpid(), SHLIBZ);
+    }
+    IjLib *shm_lib;
+    if ((long)(shm_lib = (IjLib*)shmat(shmid_lib, NULL, 0)) == (long)-1) {
+      sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
+    }
+    LibraryPool& libs = proc_->libraries();
+    int lib_count = 0;
+    for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
+      std::string lib_name = (*li)->getName();
+      if (lib_name.size() <= 0) continue;
+      Symtab *obj = NULL;
+      bool ret = Symtab::openFile(obj, lib_name);
+      if (!obj || !ret) {
+        sp_perror("Injector [pid = %5d] - Failed to open %s", getpid(), lib_name.c_str());
+      }
+
+      Dyninst::Address load_addr = (*li)->getLoadAddress();
+      if (!load_addr) load_addr = obj->getLoadAddress();
+      shm_lib->offsets[lib_count] = load_addr;
+      ++lib_count;
+    }
+    shm_lib->offsets[libs.size()] = -1;
+}
+
 /* Here we go! */
 int main(int argc, char *argv[]) {
   if (argc != 3) {
     sp_print("usage: %s PID LIB_NAME", argv[0]);
     exit(0);
   }
-
   Dyninst::PID pid = atoi(argv[1]);
   const char* lib_name = argv[2];
-
   sp_print("Injector [pid = %5d]: INJECTING - %s ...", getpid(), lib_name);
   sp_debug("========== Injector ==========");
   SpInjector::ptr injector = SpInjector::create(pid);
   injector->inject(lib_name);
-
   return 0;
 }

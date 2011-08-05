@@ -44,6 +44,10 @@ class SpInjector {
     size_t get_ij_tmpl_size();
     char* get_ij_tmpl(Dyninst::Address ij_addr,
                       Dyninst::Address /*code_addr*/);
+    bool is_lib_loaded(const char* libname);
+
+    // Procedures to assist self-propelled instrumentation
+    void identify_original_libs();
 };
 
 }
