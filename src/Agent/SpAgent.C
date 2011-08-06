@@ -1,3 +1,5 @@
+#include <unistd.h>
+#include <sys/resource.h>
 #include "SpCommon.h"
 #include "SpAgent.h"
 #include "SpContext.h"
@@ -14,6 +16,14 @@ using Dyninst::PatchAPI::PatchObject;
 
 /* Constructor for SpAgent */
 SpAgent::ptr SpAgent::create() {
+  if (getenv("SP_COREDUMP")) {
+    struct rlimit core_limit;
+    core_limit.rlim_cur = RLIM_INFINITY;
+    core_limit.rlim_max = RLIM_INFINITY;
+    if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
+      sp_perror("ERROR: failed to setup core dump ability\n");
+    }
+  }
   return ptr(new SpAgent());
 }
 

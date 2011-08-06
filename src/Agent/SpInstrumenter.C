@@ -65,16 +65,17 @@ bool SpInstrumenter::run() {
       SpSnippet::ptr sp_snip = snip->rep();
 
       // 1. Logically link snippet to the point (build map)
+      // TODO(wenbin): should check the protection of this memory area
       char* blob = sp_snip->blob();
       Dyninst::Address eip = pt->getBlock()->last();
-      sp_debug("END OF BLOCK - %lx", eip);
       SpContext::InstMap& inst_map = g_context->inst_map();
       inst_map[eip] = sp_snip;
       string& orig_insn = sp_snip->orig_insn();
       Dyninst::Address insn_size = pt->getBlock()->end() - eip;
       char* insn = (char*)eip;
-      for (int i = 0; i < insn_size; i++)
+      for (int i = 0; i < insn_size; i++) {
         orig_insn += insn[i];
+      }
 
       // 2. Physically link snippet to the point (generate code)
       if (install(pt, blob)) {
@@ -94,7 +95,9 @@ bool SpInstrumenter::run() {
 
 bool SpInstrumenter::install(Point* point, char* blob) {
 
-  char int3[] = { 0xcc, 0x90, 0x90, 0x90, 0x90 };
+  string int3;
+  int3 += (char)0xcc;
+  // char int3[] = { 0xcc, 0x90, 0x90, 0x90, 0x90 };
   Dyninst::PatchAPI::PatchObject* obj = point->getBlock()->function()->object();
   char* addr = (char*)point->getBlock()->last();
   char* obj_base = (char*)obj->codeBase();
@@ -111,7 +114,7 @@ bool SpInstrumenter::install(Point* point, char* blob) {
   if (mprotect(obj_base, obj->co()->cs()->length(), PROT_READ | PROT_WRITE | PROT_EXEC) < 0) {
     sp_debug("MPROTECT - Failed to change memory access permission");
   } else {
-    memcpy(addr, int3, sizeof(int3));
+    memcpy(addr, int3.c_str(), int3.size());
     sp_debug("WRITE - jmp %lx", rel_dist);
   }
   // if (mprotect(obj_base, obj->co()->cs()->length(), PROT_EXEC) < 0) {
