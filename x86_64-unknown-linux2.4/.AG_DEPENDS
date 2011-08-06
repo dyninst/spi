@@ -224,6 +224,7 @@ SpArch-x86_64.o: ../src/Agent/SpArch-x86_64.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpParser.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
 SpAgent.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpAgent.C \
@@ -451,7 +452,8 @@ SpAgent.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
 SpParser.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpParser.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpInstrumenter.h \
@@ -674,6 +676,13 @@ SpParser.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Instrumenter.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpParser.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Point.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Symbol.h \
@@ -910,6 +919,7 @@ SpEvent.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Command.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpParser.h
 SpPropeller.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpPropeller.C \
@@ -1137,6 +1147,7 @@ SpPropeller.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Command.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
 SpPayload.o:  \
@@ -1355,7 +1366,18 @@ SpPayload.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Point.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Snippet.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchCFG.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpParser.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchObject.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Instrumenter.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Command.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
 SpContext.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpContext.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h \
@@ -1581,6 +1603,7 @@ SpContext.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Command.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPropeller.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpParser.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
@@ -1820,4 +1843,5 @@ SpInstrumenter.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchObject.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Instrumenter.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
