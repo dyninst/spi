@@ -5,6 +5,7 @@
 #include "SpInstrumenter.h"
 #include "SpParser.h"
 #include "SpCommon.h"
+#include "SpContext.h"
 
 #include "Point.h"
 #include "PatchMgr.h"
@@ -200,6 +201,36 @@ Dyninst::Address SpParser::get_func_addr(string name) {
   }
   sp_debug("NO FOUND - Absolute address of function %s cannot be found", name.c_str());
   return 0;
+}
+
+extern sp::SpContextPtr g_context;
+PatchFunction* SpParser::findFunction(string name) {
+  AddrSpacePtr as = mgr_->as();
+  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
+
+    PatchObject* obj = *ci;
+    CodeObject* co = obj->co();
+    CodeObject::funclist& all = co->funcs();
+    SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+    Symtab* sym = cs->getSymtabObject();
+    if (g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
+      sp_debug("WELL KNOWN - %s is in well known lib %s", name.c_str(), sp_filename(sym->name().c_str()));
+      continue;
+    }
+
+    for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
+      if ((*fit)->name().compare(name) == 0) {
+        Dyninst::SymtabAPI::Region* region = sym->findEnclosingRegion((*fit)->addr());
+        if (region && region->getRegionName().compare(".plt") == 0) {
+          sp_debug("PLT - %s is in plt", name.c_str());
+          continue;
+        }
+        sp_debug("FOUND - %s", name.c_str());
+        return obj->getFunc(*fit);
+      }
+    }
+  }
+  return NULL;
 }
 
 string SpParser::dump_insn(void* addr, size_t size) {

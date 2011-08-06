@@ -86,7 +86,7 @@ bool SpInstrumenter::run() {
       }
     }
   }
-
+  user_commands_.clear();
   // Things to be restored
   g_context->set_old_act(old_act);
 }

@@ -33,6 +33,7 @@ class SpContext {
     // EIP -> snippet
     typedef std::map<Dyninst::Address, SpSnippet::ptr> InstMap;
     InstMap& inst_map() { return inst_map_; }
+    bool is_well_known_lib(string);
 
   protected:
     SpPropeller::ptr init_propeller_;
@@ -48,7 +49,6 @@ class SpContext {
     SpContext(SpPropeller::ptr,
               SpParser::ptr);
     void init_well_known_libs();
-    bool is_well_known_lib(string);
     //bool is_instrumentable_func(Dyninst::PatchAPI::PatchFunction* func);
 };
 
