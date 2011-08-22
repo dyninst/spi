@@ -1,6 +1,7 @@
 #include "SpPayload.h"
 #include "PatchCFG.h"
 #include "SpContext.h"
+#include "SpNextPoints.h"
 
 using sp::SpContextPtr;
 using Dyninst::PatchAPI::PatchFunction;
@@ -9,21 +10,21 @@ using Dyninst::PatchAPI::PatchMgrPtr;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::PatchAPI::Scope;
 
-bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func_plt,
-                     SpContextPtr context) {
-  sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", cur_func_plt->name().c_str());
-  printf("%s\n", cur_func_plt->name().c_str());
-  PatchFunction* cur_func = context->parser()->findFunction(cur_func_plt->name());
-  if (!cur_func) {
-    sp_debug("DEFAULT PAYLOAD - Leaf function");
-    return false;
-  }
-  context->init_propeller()->go(cur_func, context, context->init_payload());
+bool default_payload(Point* pt, SpContextPtr context) {
+  sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", pt->getCallee()->name().c_str());
+  sp_print("%s", pt->getCallee()->name().c_str());
+  sp::Points pts;
+
+  sp::CalleePoints(pt->getCallee(), context, pts);
+  sp_debug("FIND POINTS - %d points found in function %s", pts.size(), pt->getCallee()->name().c_str());
+
+  sp::SpPropeller::ptr p = sp::SpPropeller::create();
+  p->go(pts, context, context->init_payload());
+
   return true;
 }
 
-bool simple_payload(Dyninst::PatchAPI::PatchFunction* cur_func_plt,
-                    SpContextPtr context) {
-  sp_debug("SIMPLE PAYLOAD - I'm in!");
+bool simple_payload(Point* pt, SpContextPtr context) {
+  sp_debug("SIMPLE PAYLOAD - I'm in %s", pt->getCallee()->name().c_str());
   return true;
 }

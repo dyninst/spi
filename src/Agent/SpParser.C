@@ -218,7 +218,7 @@ PatchFunction* SpParser::findFunction(string name) {
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
     Symtab* sym = cs->getSymtabObject();
     if (g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
-      sp_debug("WELL KNOWN - %s is in well known lib %s", name.c_str(), sp_filename(sym->name().c_str()));
+      sp_debug("WELL KNOWN - Bypassing well known lib %s", sp_filename(sym->name().c_str()));
       continue;
     }
 

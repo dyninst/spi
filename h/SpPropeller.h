@@ -15,6 +15,9 @@ class SpPropeller {
     virtual bool go(Dyninst::PatchAPI::PatchFunction*,
                     SpContextPtr,
                     PayloadFunc);
+    virtual bool go(Points&  pts,
+                    SpContextPtr context,
+                    PayloadFunc payload);
 };
 
 }

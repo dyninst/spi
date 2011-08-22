@@ -5,6 +5,7 @@
 #include "SpContext.h"
 #include "signal.h"
 #include "SpParser.h"
+#include "SpNextPoints.h"
 
 using sp::SpParser;
 using sp::SpEvent;
@@ -30,7 +31,10 @@ sp::SpContextPtr g_context = sp::SpContextPtr();
 void async_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
-  g_context->init_propeller()->go(f, g_context, g_context->init_payload());
+  sp::Points pts;
+  sp::CalleePoints(f, g_context, pts);
+  // g_context->init_propeller()->go(f, g_context, g_context->init_payload());
+  g_context->init_propeller()->go(pts, g_context, g_context->init_payload());
 }
 
 AsyncEvent::AsyncEvent(int signum, int sec)
@@ -54,7 +58,11 @@ void AsyncEvent::register_event(SpContextPtr c) {
 void sync_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
-  g_context->init_propeller()->go(f, g_context, g_context->init_payload());
+
+  sp::Points pts;
+  sp::CalleePoints(f, g_context, pts);
+  // g_context->init_propeller()->go(f, g_context, g_context->init_payload());
+  g_context->init_propeller()->go(pts, g_context, g_context->init_payload());
 }
 
 SyncEvent::SyncEvent(std::string func_name, int sec)

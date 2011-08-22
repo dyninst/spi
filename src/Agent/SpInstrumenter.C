@@ -38,10 +38,15 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   sp_debug("TRAP - Executing payload code for address %lx", pc);
   SpContext::InstMap inst_map = g_context->inst_map();
   if (inst_map.find(pc) == inst_map.end()) return;
-  SpSnippet::ptr sp_snip = inst_map[pc];
+  InstancePtr instance = inst_map[pc];
+  Point* pt = instance->point();
+  Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
+  SpSnippet::ptr sp_snip = snip->rep();
+
   sp_debug("PAYLOAD - At address %lx", sp_snip->payload());
   sp::PayloadFunc_t payload_func = (sp::PayloadFunc_t)sp_snip->payload();
-  payload_func(sp_snip->func(), g_context);
+  payload_func(pt, g_context);
+
   string& orig_insn = sp_snip->orig_insn();
   memcpy((void*)pc, orig_insn.c_str(), orig_insn.size());
   sp::set_pc(pc, c);
@@ -69,7 +74,8 @@ bool SpInstrumenter::run() {
       char* blob = sp_snip->blob();
       Dyninst::Address eip = pt->getBlock()->last();
       SpContext::InstMap& inst_map = g_context->inst_map();
-      inst_map[eip] = sp_snip;
+
+      inst_map[eip] = instance;
       string& orig_insn = sp_snip->orig_insn();
       Dyninst::Address insn_size = pt->getBlock()->end() - eip;
       char* insn = (char*)eip;

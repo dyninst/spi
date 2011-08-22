@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
+
 
 #include "dyn_detail/boost/shared_ptr.hpp"
 
@@ -34,9 +36,15 @@
 
 #define sp_filename(path) basename(path)
 
+namespace Dyninst {
+  namespace PatchAPI {
+    class Point;
+  }
+}
 namespace sp {
 class SpContext;
 typedef dyn_detail::boost::shared_ptr<SpContext> SpContextPtr;
+typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 }
 
 #define DYN_CAST(type, obj) dyn_detail::boost::dynamic_pointer_cast<type>(obj)

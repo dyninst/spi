@@ -31,7 +31,7 @@ class SpContext {
     void set_old_act(struct sigaction old_act) { old_act_ = old_act; }
 
     // EIP -> snippet
-    typedef std::map<Dyninst::Address, SpSnippet::ptr> InstMap;
+    typedef std::map<Dyninst::Address, Dyninst::PatchAPI::InstancePtr> InstMap;
     InstMap& inst_map() { return inst_map_; }
     bool is_well_known_lib(string);
 

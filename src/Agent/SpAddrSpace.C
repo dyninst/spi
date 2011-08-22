@@ -2,6 +2,7 @@
 
 #include "SpAddrSpace.h"
 #include "SpCommon.h"
+#include "PatchObject.h"
 
 using sp::SpAddrSpace;
 using Dyninst::PatchAPI::PatchObject;
@@ -23,7 +24,25 @@ SpAddrSpace::ptr SpAddrSpace::create(PatchObject* obj) {
 
 
 Dyninst::Address SpAddrSpace::malloc(PatchObject* obj,
-                                     size_t size, Dyninst::Address near) {
+                                     size_t size,
+                                     Dyninst::Address /*near*/) {
+  Dyninst::Address addr = obj->codeBase();
+  void* m = NULL;
+
+  size_t ps = getpagesize();
+  size_t adjust_size = ((size + ps) & (~ps));
+  assert(adjust_size % ps == 0);
+  while (!m && addr > 0) {
+    addr -= adjust_size;
+    m = mmap((void*)addr,
+             adjust_size,
+             PROT_WRITE | PROT_READ | PROT_EXEC,
+             MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS,
+             -1,
+             0);
+  }
+  if (addr) return (Dyninst::Address)m;
+
   return 0;
 }
 
@@ -37,10 +56,14 @@ bool SpAddrSpace::free(PatchObject* obj, Dyninst::Address orig) {
 }
 
 bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
+  // Find [a, length] in range
+  // Set perm
   return false;
 }
 
 bool SpAddrSpace::restore_range_perm(Dyninst::Address a, size_t length) {
+  // Find [a, length] in range
+  // Restore perm
   return false;
 }
 
