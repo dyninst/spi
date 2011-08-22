@@ -11,7 +11,6 @@ using sp::SpParser;
 using sp::SpAgent;
 using sp::SyncEvent;
 
-
 AGENT_INIT
 void init_parser() {
   dprint("AGENT: init_parser @ process %d", getpid());
@@ -19,13 +18,15 @@ void init_parser() {
   SpAgent::ptr agent = SpAgent::create();
 
   SpParser::ptr parser = SpParser::create();
-  //agent->set_init_payload("simple_payload");
   agent->set_parser(parser);
 
   SyncEvent::ptr event = SyncEvent::create();
   agent->set_init_event(event);
+
+  agent->set_init_payload("simple_payload");
+
   agent->go();
 
-  //  Dyninst::ParseAPI::Function* mutatee_func = parser->findFunction("run_mutatee");
-  //  assert(mutatee_func);
+  Dyninst::PatchAPI::PatchFunction* mutatee_func = parser->findFunction("run_mutatee");
+  assert(mutatee_func);
 }

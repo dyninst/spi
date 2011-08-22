@@ -22,6 +22,8 @@ bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func_plt,
   return true;
 }
 
-void simple_payload() {
+bool simple_payload(Dyninst::PatchAPI::PatchFunction* cur_func_plt,
+                    SpContextPtr context) {
   sp_debug("SIMPLE PAYLOAD - I'm in!");
+  return true;
 }

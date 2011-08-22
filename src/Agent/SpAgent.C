@@ -54,7 +54,7 @@ void SpAgent::set_init_payload(string p) {
   init_payload_ = p;
 }
 
-void SpAgent::set_propeller(SpPropeller::ptr p) {
+void SpAgent::set_init_propeller(SpPropeller::ptr p) {
   init_propeller_ = p;
 }
 

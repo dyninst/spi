@@ -16,6 +16,7 @@ class SpPropeller {
                     SpContextPtr,
                     PayloadFunc);
 };
+
 }
 
 #endif /* SP_PROPEL_H_ */

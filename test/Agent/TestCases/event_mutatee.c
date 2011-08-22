@@ -15,9 +15,8 @@ void run_mutatee() {
 
   int count = 0;
     while(count < 10) {
-      //      while(1) {
-          dprint("MUTATEE: mutatee alive");
-       sleep(1);
-        count++;
+      dprint("MUTATEE: mutatee alive");
+      sleep(1);
+      count++;
   }
 }

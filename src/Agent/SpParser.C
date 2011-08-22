@@ -6,6 +6,7 @@
 #include "SpParser.h"
 #include "SpCommon.h"
 #include "SpContext.h"
+#include "SpAddrSpace.h"
 
 #include "Point.h"
 #include "PatchMgr.h"
@@ -17,6 +18,7 @@
 
 using sp::SpInstrumenter;
 using sp::SpParser;
+using sp::SpAddrSpace;
 using Dyninst::SymtabAPI::AddressLookup;
 using Dyninst::SymtabAPI::Symtab;
 using Dyninst::SymtabAPI::Symbol;
@@ -56,6 +58,8 @@ typedef struct {
 } IjLib;
 
 PatchMgrPtr SpParser::parse() {
+  if (mgr_) return mgr_;
+
   int shmid;
   key_t key = 1985;
   IjLib* shm;
@@ -113,7 +117,7 @@ PatchMgrPtr SpParser::parse() {
   }
 
   // initialize PatchAPI objects
-  AddrSpacePtr as = AddrSpace::create(exe_obj_);
+  AddrSpacePtr as = SpAddrSpace::create(exe_obj_);
   PointMakerPtr pf = PointMakerPtr(new PointMaker);
   SpInstrumenter::ptr inst = SpInstrumenter::create(as);
   mgr_ = PatchMgr::create(as, pf, inst);
@@ -151,7 +155,7 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
 
       for (std::vector<CodeRegion*>::const_iterator ri = cs->regions().begin();
            ri != cs->regions().end(); ri++) {
-        std::set<ParseAPI::Function*> funcs;
+        std::set<Dyninst::ParseAPI::Function*> funcs;
         obj->co()->findFuncs(*ri, address, funcs);
         if (funcs.size() > 0) {
           PatchFunction* pfunc = obj->getFunc(*funcs.begin());
@@ -234,7 +238,7 @@ PatchFunction* SpParser::findFunction(string name) {
 }
 
 string SpParser::dump_insn(void* addr, size_t size) {
-  using namespace InstructionAPI;
+  using namespace Dyninst::InstructionAPI;
   Dyninst::Address base = (Dyninst::Address)addr;
   SymtabCodeSource* cs = (SymtabCodeSource*)mgr_->as()->getFirstObject()->co()->cs();
   string s;

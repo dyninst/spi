@@ -32,7 +32,7 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
     void set_init_event(SpEvent::ptr);
     void set_fini_event(SpEvent::ptr);
     void set_init_payload(string);
-    void set_propeller(SpPropeller::ptr);
+    void set_init_propeller(SpPropeller::ptr);
 
     void go();
 
