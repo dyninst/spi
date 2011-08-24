@@ -13,6 +13,7 @@ using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Patcher;
 using Dyninst::PatchAPI::PushBackCommand;
 using Dyninst::PatchAPI::Snippet;
+using Dyninst::PatchAPI::PatchBlock;
 
 SpPropeller::SpPropeller() {
 }

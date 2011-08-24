@@ -137,8 +137,8 @@ PatchMgrPtr SpParser::parse() {
 /* Find the function that contains addr */
 PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
   AddrSpacePtr as = mgr_->as();
-  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
-    PatchObject* obj = *ci;
+  for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
+    PatchObject* obj = ci->second;
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
     Symtab* sym = cs->getSymtabObject();
     Dyninst::Address upper_bound = obj->codeBase() + cs->length();
@@ -191,8 +191,8 @@ char* SpParser::get_agent_name() {
 
 Dyninst::Address SpParser::get_func_addr(string name) {
   AddrSpacePtr as = mgr_->as();
-  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
-    PatchObject* obj = *ci;
+  for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
+    PatchObject* obj = ci->second;
     CodeObject* co = obj->co();
     CodeObject::funclist& all = co->funcs();
     for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
@@ -210,9 +210,9 @@ Dyninst::Address SpParser::get_func_addr(string name) {
 extern sp::SpContextPtr g_context;
 PatchFunction* SpParser::findFunction(string name) {
   AddrSpacePtr as = mgr_->as();
-  for (AddrSpace::ObjSet::iterator ci = as->objSet().begin(); ci != as->objSet().end(); ci++) {
+  for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
 
-    PatchObject* obj = *ci;
+    PatchObject* obj = ci->second;
     CodeObject* co = obj->co();
     CodeObject::funclist& all = co->funcs();
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();

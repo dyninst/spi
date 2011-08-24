@@ -72,12 +72,12 @@ bool SpInstrumenter::run() {
       // 1. Logically link snippet to the point (build map)
       // TODO(wenbin): should check the protection of this memory area
       char* blob = sp_snip->blob();
-      Dyninst::Address eip = pt->getBlock()->last();
+      Dyninst::Address eip = pt->block()->last();
       SpContext::InstMap& inst_map = g_context->inst_map();
 
       inst_map[eip] = instance;
       string& orig_insn = sp_snip->orig_insn();
-      Dyninst::Address insn_size = pt->getBlock()->end() - eip;
+      Dyninst::Address insn_size = pt->block()->end() - eip;
       char* insn = (char*)eip;
       for (int i = 0; i < insn_size; i++) {
         orig_insn += insn[i];
@@ -86,10 +86,10 @@ bool SpInstrumenter::run() {
       // 2. Physically link snippet to the point (generate code)
       if (install(pt, blob)) {
         sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
-                 pt->getBlock()->last(), pt->getCallee()->name().c_str());
+                 pt->block()->last(), pt->getCallee()->name().c_str());
       } else {
         sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
-                 pt->getBlock()->last(), pt->getCallee()->name().c_str());
+                 pt->block()->last(), pt->getCallee()->name().c_str());
       }
     }
   }
@@ -103,32 +103,29 @@ bool SpInstrumenter::install(Point* point, char* blob) {
 
   string int3;
   int3 += (char)0xcc;
-  // char int3[] = { 0xcc, 0x90, 0x90, 0x90, 0x90 };
-  Dyninst::PatchAPI::PatchObject* obj = point->getBlock()->function()->object();
-  char* addr = (char*)point->getBlock()->last();
+
+  Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
+  char* addr = (char*)point->block()->last();
   char* obj_base = (char*)obj->codeBase();
   size_t page_size = getpagesize();
-  size_t rel_dist = (long)blob > (long)addr ?
-    ((long)blob - (long)addr) :
-    ((long)addr - (long)blob);
+
   // mprotect requires the address be aligned by page size
   while ((size_t)obj_base % page_size != 0) obj_base++;
   sp_debug("BEFORE INSTALL");
-  sp_debug("BEGIN DUMP INSN {\n\n%s", g_context->parser()->dump_insn((void*)point->getBlock()->start(),
-                                              point->getBlock()->size()).c_str());
+  sp_debug("BEGIN DUMP INSN {\n\n%s", g_context->parser()->dump_insn((void*)point->block()->start(),
+                                              point->block()->size()).c_str());
   sp_debug("} END DUMP INSN");
   if (mprotect(obj_base, obj->co()->cs()->length(), PROT_READ | PROT_WRITE | PROT_EXEC) < 0) {
     sp_debug("MPROTECT - Failed to change memory access permission");
   } else {
     memcpy(addr, int3.c_str(), int3.size());
-    sp_debug("WRITE - jmp %lx", rel_dist);
   }
   // if (mprotect(obj_base, obj->co()->cs()->length(), PROT_EXEC) < 0) {
   //  sp_debug("MPROTECT - Failed to change memory access permission");
   //}
   sp_debug("AFTER INSTALL");
-  sp_debug("BEGIN DUMP INSN {\n\n%s", g_context->parser()->dump_insn((void*)point->getBlock()->start(),
-                                              point->getBlock()->size()).c_str());
+  sp_debug("BEGIN DUMP INSN {\n\n%s", g_context->parser()->dump_insn((void*)point->block()->start(),
+                                              point->block()->size()).c_str());
   sp_debug("} END DUMP INSN");
 
   return true;
