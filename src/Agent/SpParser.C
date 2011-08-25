@@ -136,6 +136,7 @@ PatchMgrPtr SpParser::parse() {
 
 /* Find the function that contains addr */
 PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
+  assert(0);
   AddrSpacePtr as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
     PatchObject* obj = ci->second;
@@ -152,7 +153,6 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
       if (!sym->getContainingFunction(address, f)) {
         address -= lower_bound;
       }
-
       for (std::vector<CodeRegion*>::const_iterator ri = cs->regions().begin();
            ri != cs->regions().end(); ri++) {
         std::set<Dyninst::ParseAPI::Function*> funcs;

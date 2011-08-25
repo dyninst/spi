@@ -58,10 +58,8 @@ void AsyncEvent::register_event(SpContextPtr c) {
 void sync_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
-
   sp::Points pts;
   sp::CalleePoints(f, g_context, pts);
-  // g_context->init_propeller()->go(f, g_context, g_context->init_payload());
   g_context->init_propeller()->go(pts, g_context, g_context->init_payload());
 }
 

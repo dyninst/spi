@@ -6,6 +6,7 @@
 #include "SpCommon.h"
 #include "SpSnippet.h"
 #include "SpContext.h"
+#include "SpAddrSpace.h"
 
 using sp::SpContext;
 using sp::SpSnippet;
@@ -16,6 +17,10 @@ using Dyninst::PatchAPI::InstancePtr;
 using Dyninst::PatchAPI::Point;
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Snippet;
+using Dyninst::PatchAPI::AddrSpace;
+using Dyninst::PatchAPI::AddrSpacePtr;
+using Dyninst::PatchAPI::PatchMgrPtr;
+
 
 SpInstrumenter::ptr SpInstrumenter::create(Dyninst::PatchAPI::AddrSpacePtr as) {
   return ptr(new SpInstrumenter(as));
@@ -33,7 +38,7 @@ extern Dyninst::Address set_pc(Dyninst::Address pc, void* context);
 }
 
 void trap_handler(int sig, siginfo_t* info, void* c) {
-  // Get eip
+  // Get pc
   Dyninst::Address pc = sp::get_pre_signal_pc(c) - 1;
   sp_debug("TRAP - Executing payload code for address %lx", pc);
   SpContext::InstMap inst_map = g_context->inst_map();
@@ -43,12 +48,24 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
   SpSnippet::ptr sp_snip = snip->rep();
 
+  // Execute payload function
   sp_debug("PAYLOAD - At address %lx", sp_snip->payload());
   sp::PayloadFunc_t payload_func = (sp::PayloadFunc_t)sp_snip->payload();
   payload_func(pt, g_context);
 
+  // Restore the original instruction
   string& orig_insn = sp_snip->orig_insn();
-  memcpy((void*)pc, orig_insn.c_str(), orig_insn.size());
+  PatchMgrPtr mgr = g_context->mgr();
+  sp::SpAddrSpace::ptr as = DYN_CAST(sp::SpAddrSpace, mgr->as());
+  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  if (!as->set_range_perm((Dyninst::Address)pc, orig_insn.size(), perm)) {
+    sp_debug("MPROTECT - Failed to change memory access permission");
+  } else {
+    memcpy((void*)pc, orig_insn.c_str(), orig_insn.size());
+  }
+  if (!as->restore_range_perm((Dyninst::Address)pc, orig_insn.size())) {
+    sp_debug("MPROTECT - Failed to restore memory access permission");
+  }
   sp::set_pc(pc, c);
 }
 
@@ -70,19 +87,30 @@ bool SpInstrumenter::run() {
       SpSnippet::ptr sp_snip = snip->rep();
 
       // 1. Logically link snippet to the point (build map)
-      // TODO(wenbin): should check the protection of this memory area
       char* blob = sp_snip->blob();
       Dyninst::Address eip = pt->block()->last();
       SpContext::InstMap& inst_map = g_context->inst_map();
+      sp_debug("after inst_map");
 
       inst_map[eip] = instance;
       string& orig_insn = sp_snip->orig_insn();
       Dyninst::Address insn_size = pt->block()->end() - eip;
+      sp_debug("after insn_size, end: %lx, last: %lx", pt->block()->end(), eip);
+
+      PatchMgrPtr mgr = g_context->mgr();
+      sp::SpAddrSpace::ptr as = DYN_CAST(sp::SpAddrSpace, mgr->as());
+      int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+      if (!as->set_range_perm((Dyninst::Address)eip, insn_size, perm)) {
+        sp_perror("MPROTECT - Failed to change memory access permission");
+      };
+
       char* insn = (char*)eip;
+      sp_debug("insn: %lx, size: %d", insn, insn_size);
+      char buf[255];
       for (int i = 0; i < insn_size; i++) {
         orig_insn += insn[i];
       }
-
+      sp_debug("after orig_insn");
       // 2. Physically link snippet to the point (generate code)
       if (install(pt, blob)) {
         sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
@@ -106,23 +134,27 @@ bool SpInstrumenter::install(Point* point, char* blob) {
 
   Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
-  char* obj_base = (char*)obj->codeBase();
-  size_t page_size = getpagesize();
+  size_t insn_length = point->block()->end() - point->block()->last();
 
-  // mprotect requires the address be aligned by page size
-  while ((size_t)obj_base % page_size != 0) obj_base++;
   sp_debug("BEFORE INSTALL");
   sp_debug("BEGIN DUMP INSN {\n\n%s", g_context->parser()->dump_insn((void*)point->block()->start(),
                                               point->block()->size()).c_str());
   sp_debug("} END DUMP INSN");
-  if (mprotect(obj_base, obj->co()->cs()->length(), PROT_READ | PROT_WRITE | PROT_EXEC) < 0) {
+
+  // Write int3 to the call site
+  SpAddrSpace::ptr as = DYN_CAST(SpAddrSpace, as_);
+  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  if (!as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
     sp_debug("MPROTECT - Failed to change memory access permission");
   } else {
     memcpy(addr, int3.c_str(), int3.size());
   }
-  // if (mprotect(obj_base, obj->co()->cs()->length(), PROT_EXEC) < 0) {
-  //  sp_debug("MPROTECT - Failed to change memory access permission");
-  //}
+
+  // Restore the permission of memory mapping
+  if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
+    sp_debug("MPROTECT - Failed to restore memory access permission");
+  }
+
   sp_debug("AFTER INSTALL");
   sp_debug("BEGIN DUMP INSN {\n\n%s", g_context->parser()->dump_insn((void*)point->block()->start(),
                                               point->block()->size()).c_str());

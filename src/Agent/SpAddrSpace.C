@@ -56,15 +56,52 @@ bool SpAddrSpace::free(PatchObject* obj, Dyninst::Address orig) {
 }
 
 bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
-  // Find [a, length] in range
-  // Set perm
-  return false;
+  bool ret = false;
+  for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
+    Dyninst::Address start = mi->first;
+    MemMapping& mm = mi->second;
+    Dyninst::Address end = mm.end;
+    Dyninst::Address code_end = a + length;
+    if ((a >= start && code_end < end) ||
+        (a <= start && code_end >= start && code_end <= end) ||
+        (a >= start && a < end && code_end >= end)) {
+      sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
+      if (mprotect((void*)start, end - start, perm) < 0) {
+        sp_print("MPROTECT - Failed to change memory access permission");
+        return false;
+      } else {
+        sp_debug("PERM - successfully change the access permission to %lx",
+                 PROT_READ | PROT_WRITE | PROT_EXEC);
+        ret = true;
+      }
+    } else {
+      sp_debug("PERM - [%lx, %lx) NOT overlap (%lx, %lx) at %s", start, end, a, code_end, mm.path.c_str());
+    }
+  }
+  return ret;
 }
 
 bool SpAddrSpace::restore_range_perm(Dyninst::Address a, size_t length) {
-  // Find [a, length] in range
-  // Restore perm
-  return false;
+  bool ret = false;
+  for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
+    Dyninst::Address start = mi->first;
+    MemMapping& mm = mi->second;
+    Dyninst::Address end = mm.end;
+    Dyninst::Address code_end = a + length;
+    if ((a >= start && code_end < end) ||
+        (a <= start && code_end >= start && code_end <= end) ||
+        (a >= start && a < end && code_end >= end)) {
+      sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
+      if (mprotect((void*)start, end - start, mem_maps_[start].perms) < 0) {
+        sp_print("MPROTECT - Failed to change memory access permission");
+        return false;
+      } else {
+        sp_debug("PERM - successfully change the access permission to %lx", mem_maps_[start].perms);
+        ret = true;
+      }
+    }
+  }
+  return ret;
 }
 
 // Parse /proc/pid/maps file to build memory mappings

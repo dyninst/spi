@@ -79,7 +79,7 @@ PatchFunction* SpContext::get_first_inst_func() {
     }
 
     // Step 2: if the function can be resolved
-    PatchFunction* func = parser_->findFunction(stackwalk[i].getRA());
+    PatchFunction* func = parser_->findFunction(s);//parser_->findFunction(stackwalk[i].getRA());
     if (!func) {
       sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());
       continue;
