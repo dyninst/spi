@@ -76,6 +76,7 @@ PatchMgrPtr SpParser::parse() {
   int cur = 0;
   typedef std::map<Dyninst::Address, bool> LibLookup;
   LibLookup lib_lookup;
+  lib_lookup[0] = true;
   while (shm->offsets[cur] != -1) {
     lib_lookup[shm->offsets[cur]] = true;
     ++cur;
@@ -92,11 +93,15 @@ PatchMgrPtr SpParser::parse() {
     Symtab* sym = *i;
     Dyninst::Address load_addr = 0;
     al->getLoadAddress(sym, load_addr);
-    if (!load_addr) load_addr = sym->getLoadAddress();
-
+    sp_debug("load_addr: %lx, name: %s", load_addr, sym->name().c_str());
+    // if (!load_addr) load_addr = sym->getLoadAddress();
+    //Symtab::getLoadAddress
+    //AddressLookup::getLoadAddress
+    //PatchObject::codeBase
     if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
         (sym->name().find(sp_filename(sp_filename(get_agent_name()))) == string::npos) &&
         (sym->name().find("libagent.so") == string::npos)) {
+      sp_debug("SKIP - parsing %s", sp_filename(sym->name().c_str()));
         continue;
     }
 
@@ -116,6 +121,7 @@ PatchMgrPtr SpParser::parse() {
     }
   }
 
+  assert(exe_obj_);
   // initialize PatchAPI objects
   AddrSpacePtr as = SpAddrSpace::create(exe_obj_);
   PointMakerPtr pf = PointMakerPtr(new PointMaker);

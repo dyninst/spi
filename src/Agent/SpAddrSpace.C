@@ -12,10 +12,11 @@ SpAddrSpace::SpAddrSpace()
 
   update_mem_maps();
   dump_mem_maps();
-
 }
 
+
 SpAddrSpace::ptr SpAddrSpace::create(PatchObject* obj) {
+  assert(obj);
   ptr ret = ptr(new SpAddrSpace);
   if (!ret) return ret;
   ret->init(obj);

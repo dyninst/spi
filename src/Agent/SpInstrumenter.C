@@ -100,6 +100,18 @@ bool SpInstrumenter::run() {
       PatchMgrPtr mgr = g_context->mgr();
       sp::SpAddrSpace::ptr as = DYN_CAST(sp::SpAddrSpace, mgr->as());
       int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+      // tmp start
+      /*
+      Dyninst::ParseAPI::SymtabCodeSource* symcs = (Dyninst::ParseAPI::SymtabCodeSource*)pt->block()->obj()->co()->cs();
+      Dyninst::SymtabAPI::Symtab* sym = symcs->getSymtabObject();
+      Dyninst::Address codebase = pt->block()->obj()->codeBase();
+      sp_debug("code base: %lx, end: %lx", codebase, codebase + sym->imageLength());
+      sp_debug("image offset: %lx, end: %lx", sym->imageOffset(), sym->imageOffset() + sym->imageLength());
+      if (mprotect((void*)pt->block()->obj()->codeBase(), sym->imageLength(), perm) < 0) {
+      }
+      */
+      // tmp end
+      //      exit(0);
       if (!as->set_range_perm((Dyninst::Address)eip, insn_size, perm)) {
         sp_perror("MPROTECT - Failed to change memory access permission");
       };

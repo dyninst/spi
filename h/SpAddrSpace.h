@@ -22,6 +22,7 @@ class SpAddrSpace : public Dyninst::PatchAPI::AddrSpace {
     bool set_range_perm(Dyninst::Address a, size_t length, int perm);
     bool restore_range_perm(Dyninst::Address a, size_t length);
 
+    void sp_init(Dyninst::PatchAPI::PatchObject*);
   protected:
 
     typedef struct {
