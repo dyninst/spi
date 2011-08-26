@@ -47,8 +47,20 @@ bool TestDriver::run_testcase(std::string name) {
     std::cerr << dlerror() << "\n";
     exit(0);
   }
-  std::string agent = name + "_agent.so";
 
+  run_testcase_inject(name, m_handle);
+  // run_testcase_preload(name);
+
+  dlclose(m_handle);
+
+  return true;
+}
+
+bool TestDriver::run_testcase_preload(std::string name, void* m_handle) {
+}
+
+bool TestDriver::run_testcase_inject(std::string name, void* m_handle) {
+  std::string agent = name + "_agent.so";
   int ppid = getpid();
   int pid = fork();
   switch(pid) {
@@ -66,25 +78,26 @@ bool TestDriver::run_testcase(std::string name) {
       wait(&status);
     }
   }
-  dlclose(m_handle);
-
-  return true;
 }
 
 void TestDriver::help() {
-  std::cout << "usage: test TEST_CASES\n";
+  std::cout << "usage: test TEST_CASES LOAD_METHOD\n";
   std::cout << "\tTEST_CASES should be one of the following items:\n";
   for (TestCases::iterator i = testcases_.begin(); i != testcases_.end(); i++) {
     std::cout << "\t-" << *i << "\n";
   }
+  std::cout << "\tLOAD_METHOD should be one of the following items:\n";
+  std::cout << "\t-" << "inject" << "\n";
+  std::cout << "\t-" << "preload" << "\n";
 }
 
 int main(int argc, char *argv[]) {
   TestDriver driver;
-  if (argc != 2) {
+  if (argc < 2) {
     driver.help();
     return 1;
   }
+
   char* test_name = &argv[1][1];
 
   int pid = fork();
