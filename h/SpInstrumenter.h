@@ -13,7 +13,7 @@ class SpInstrumenter  : public Dyninst::PatchAPI::Instrumenter {
 
   protected:
     SpInstrumenter(Dyninst::PatchAPI::AddrSpace*);
-    bool install(Dyninst::PatchAPI::Point* point, char* blob);
+    bool install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size);
 };
 
 class TrapInstrumenter : public Dyninst::PatchAPI::Instrumenter {
@@ -23,7 +23,7 @@ class TrapInstrumenter : public Dyninst::PatchAPI::Instrumenter {
 
   protected:
     TrapInstrumenter(Dyninst::PatchAPI::AddrSpace*);
-    bool install(Dyninst::PatchAPI::Point* point, char* blob);
+    bool install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size);
 };
 
 }

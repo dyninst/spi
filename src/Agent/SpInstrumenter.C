@@ -113,7 +113,7 @@ bool SpInstrumenter::run() {
       }
       sp_debug("after orig_insn");
       // 2. Physically link snippet to the point (generate code)
-      if (install(pt, blob)) {
+      if (install(pt, blob, sp_snip->size())) {
         sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
                  pt->block()->last(), pt->getCallee()->name().c_str());
       } else {
@@ -128,7 +128,7 @@ bool SpInstrumenter::run() {
 }
 
 
-bool SpInstrumenter::install(Point* point, char* blob) {
+bool SpInstrumenter::install(Point* point, char* blob, size_t /*blob_size*/) {
 
   string int3;
   int3 += (char)0xcc;
@@ -218,7 +218,7 @@ bool TrapInstrumenter::run() {
         sp_debug("ORIG INSN - %s", g_context->parser()->dump_insn((void*)insn, insn_size).c_str());
 
         // Install the blob to pt
-        if (install(pt, blob)) {
+        if (install(pt, blob, sp_snip->size())) {
           sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
                    pt->block()->last(), pt->getCallee()->name().c_str());
         } else {
@@ -234,7 +234,31 @@ bool TrapInstrumenter::run() {
 
 }
 
-bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob) {
-  sp_debug("INSTALLING - blob");
+bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
+  sp_debug("INSTALLING - blob %d bytes {", blob_size);
+  sp_debug("%s", g_context->parser()->dump_insn((void*)blob, blob_size).c_str());
+  sp_debug("}");
+
+  string int3;
+  int3 += (char)0xcc;
+
+  Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
+  char* addr = (char*)point->block()->last();
+  size_t insn_length = point->block()->end() - point->block()->last();
+
+  // Write int3 to the call site
+  SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(as_);
+  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  if (!as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
+    sp_debug("MPROTECT - Failed to change memory access permission");
+  } else {
+    memcpy(addr, int3.c_str(), int3.size());
+  }
+
+  // Restore the permission of memory mapping
+  if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
+    sp_debug("MPROTECT - Failed to restore memory access permission");
+  }
+
   return true;
 }

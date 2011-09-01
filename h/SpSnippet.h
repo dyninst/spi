@@ -21,12 +21,12 @@ class SpSnippet {
     SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
               Dyninst::PatchAPI::Point* pt,
               SpContextPtr c,
-              PayloadFunc p)
-              : func_(f), point_(pt), context_(c), payload_(p), old_context_(NULL) {
-    }
+              PayloadFunc p);
     ~SpSnippet();
 
     char* blob();
+    size_t size() { return blob_size_; }
+
     SpContextPtr context() { return context_; }
     PayloadFunc payload() { return payload_; }
     string& orig_insn() { return orig_insn_; }
@@ -38,7 +38,8 @@ class SpSnippet {
     PayloadFunc payload_;
     string orig_insn_;
 
-    string blob_;
+    char* blob_;
+    size_t blob_size_;
     ucontext_t* old_context_;
 };
 
