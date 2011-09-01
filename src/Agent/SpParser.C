@@ -28,11 +28,9 @@ using Dyninst::ParseAPI::SymtabCodeSource;
 using Dyninst::PatchAPI::PatchObject;
 using Dyninst::PatchAPI::PatchMgrPtr;
 using Dyninst::PatchAPI::PatchMgr;
-using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::AddrSpace;
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::PointMaker;
-using Dyninst::PatchAPI::PointMakerPtr;
 
 
 SpParser::SpParser()
@@ -123,10 +121,9 @@ PatchMgrPtr SpParser::parse() {
 
   assert(exe_obj_);
   // initialize PatchAPI objects
-  AddrSpacePtr as = SpAddrSpace::create(exe_obj_);
-  PointMakerPtr pf = PointMakerPtr(new PointMaker);
-  SpInstrumenter::ptr inst = SpInstrumenter::create(as);
-  mgr_ = PatchMgr::create(as, pf, inst);
+  AddrSpace* as = SpAddrSpace::create(exe_obj_);
+  SpInstrumenter* inst = SpInstrumenter::create(as);
+  mgr_ = PatchMgr::create(as, inst);
   for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
       as->loadObject(*i);
@@ -143,7 +140,7 @@ PatchMgrPtr SpParser::parse() {
 /* Find the function that contains addr */
 PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
   assert(0);
-  AddrSpacePtr as = mgr_->as();
+  AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
     PatchObject* obj = ci->second;
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
@@ -196,7 +193,7 @@ char* SpParser::get_agent_name() {
 }
 
 Dyninst::Address SpParser::get_func_addr(string name) {
-  AddrSpacePtr as = mgr_->as();
+  AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
     PatchObject* obj = ci->second;
     CodeObject* co = obj->co();
@@ -215,7 +212,7 @@ Dyninst::Address SpParser::get_func_addr(string name) {
 
 extern sp::SpContextPtr g_context;
 PatchFunction* SpParser::findFunction(string name) {
-  AddrSpacePtr as = mgr_->as();
+  AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
 
     PatchObject* obj = ci->second;
@@ -246,7 +243,7 @@ PatchFunction* SpParser::findFunction(string name) {
 string SpParser::dump_insn(void* addr, size_t size) {
   using namespace Dyninst::InstructionAPI;
   Dyninst::Address base = (Dyninst::Address)addr;
-  SymtabCodeSource* cs = (SymtabCodeSource*)mgr_->as()->getFirstObject()->co()->cs();
+  SymtabCodeSource* cs = (SymtabCodeSource*)mgr_->as()->executable()->co()->cs();
   string s;
   char buf[256];
   InstructionDecoder deco(addr,

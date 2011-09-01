@@ -44,6 +44,7 @@ class SyncEvent : public AsyncEvent {
     typedef dyn_detail::boost::shared_ptr<SyncEvent> ptr;
     static ptr create(std::string func_name="", int sec=2) {
       return ptr(new SyncEvent(func_name, sec)); }
+    void register_event(SpContextPtr c);
   protected:
     SyncEvent(std::string func_name, int sec);
 

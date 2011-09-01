@@ -18,7 +18,6 @@ using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::PatchAPI::PatchMgrPtr;
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::PatchObject;
-using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::AddrSpace;
 using Dyninst::ParseAPI::SymtabCodeSource;
 using Dyninst::SymtabAPI::Symtab;

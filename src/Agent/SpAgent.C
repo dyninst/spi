@@ -10,7 +10,6 @@ using sp::SpContext;
 using sp::SpContextPtr;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::ParseAPI::CodeObject;
-using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::AddrSpace;
 using Dyninst::PatchAPI::PatchObject;
 

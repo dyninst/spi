@@ -11,23 +11,21 @@
 using sp::SpContext;
 using sp::SpSnippet;
 using sp::SpInstrumenter;
-using Dyninst::PatchAPI::CommandList;
 using Dyninst::PatchAPI::PushBackCommand;
 using Dyninst::PatchAPI::InstancePtr;
 using Dyninst::PatchAPI::Point;
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Snippet;
 using Dyninst::PatchAPI::AddrSpace;
-using Dyninst::PatchAPI::AddrSpacePtr;
 using Dyninst::PatchAPI::PatchMgrPtr;
 
 
-SpInstrumenter::ptr SpInstrumenter::create(Dyninst::PatchAPI::AddrSpacePtr as) {
-  return ptr(new SpInstrumenter(as));
+SpInstrumenter* SpInstrumenter::create(Dyninst::PatchAPI::AddrSpace* as) {
+  return new SpInstrumenter(as);
 }
 
 
-SpInstrumenter::SpInstrumenter(Dyninst::PatchAPI::AddrSpacePtr as)
+SpInstrumenter::SpInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
   : Dyninst::PatchAPI::Instrumenter(as) {
 }
 
@@ -56,7 +54,7 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   // Restore the original instruction
   string& orig_insn = sp_snip->orig_insn();
   PatchMgrPtr mgr = g_context->mgr();
-  sp::SpAddrSpace::ptr as = DYN_CAST(sp::SpAddrSpace, mgr->as());
+  sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Dyninst::Address)pc, orig_insn.size(), perm)) {
     sp_debug("MPROTECT - Failed to change memory access permission");
@@ -79,7 +77,7 @@ bool SpInstrumenter::run() {
   sigaction(SIGTRAP, &act, &old_act);
 
   for (CommandList::iterator c = user_commands_.begin(); c != user_commands_.end(); c++) {
-    PushBackCommand::Ptr command = DYN_CAST(PushBackCommand, *c);
+    PushBackCommand* command = dynamic_cast<PushBackCommand*>(*c);
     if (command) {
       InstancePtr instance = command->instance();
       Point* pt = instance->point();
@@ -98,7 +96,7 @@ bool SpInstrumenter::run() {
       sp_debug("after insn_size, end: %lx, last: %lx", pt->block()->end(), eip);
 
       PatchMgrPtr mgr = g_context->mgr();
-      sp::SpAddrSpace::ptr as = DYN_CAST(sp::SpAddrSpace, mgr->as());
+      sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
       int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
       // tmp start
       /*
@@ -154,7 +152,7 @@ bool SpInstrumenter::install(Point* point, char* blob) {
   sp_debug("} END DUMP INSN");
 
   // Write int3 to the call site
-  SpAddrSpace::ptr as = DYN_CAST(SpAddrSpace, as_);
+  SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
     sp_debug("MPROTECT - Failed to change memory access permission");

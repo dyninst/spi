@@ -15,9 +15,9 @@ SpAddrSpace::SpAddrSpace()
 }
 
 
-SpAddrSpace::ptr SpAddrSpace::create(PatchObject* obj) {
+SpAddrSpace* SpAddrSpace::create(PatchObject* obj) {
   assert(obj);
-  ptr ret = ptr(new SpAddrSpace);
+  SpAddrSpace* ret = new SpAddrSpace;
   if (!ret) return ret;
   ret->init(obj);
   return ret;
@@ -76,7 +76,7 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
         ret = true;
       }
     } else {
-      sp_debug("PERM - [%lx, %lx) NOT overlap (%lx, %lx) at %s", start, end, a, code_end, mm.path.c_str());
+      // sp_debug("PERM - [%lx, %lx) NOT overlap (%lx, %lx) at %s", start, end, a, code_end, mm.path.c_str());
     }
   }
   return ret;

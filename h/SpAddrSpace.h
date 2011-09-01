@@ -7,9 +7,7 @@ namespace sp {
 
 class SpAddrSpace : public Dyninst::PatchAPI::AddrSpace {
   public:
-    typedef dyn_detail::boost::shared_ptr<SpAddrSpace> ptr;
-    static ptr create(Dyninst::PatchAPI::PatchObject*);
-
+    static SpAddrSpace* create(Dyninst::PatchAPI::PatchObject*);
     virtual Dyninst::Address malloc(Dyninst::PatchAPI::PatchObject* obj,
                                     size_t size,
                                     Dyninst::Address near);

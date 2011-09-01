@@ -33,7 +33,6 @@ void async_event_handler(int signum, siginfo_t* info, void* context) {
   PatchFunction* f = g_context->get_first_inst_func();
   sp::Points pts;
   sp::CalleePoints(f, g_context, pts);
-  // g_context->init_propeller()->go(f, g_context, g_context->init_payload());
   g_context->init_propeller()->go(pts, g_context, g_context->init_payload());
 }
 
@@ -44,9 +43,6 @@ AsyncEvent::AsyncEvent(int signum, int sec)
 
 void AsyncEvent::register_event(SpContextPtr c) {
   g_context = c;
-
-  // g_context->parse();
-
   struct sigaction act;
   act.sa_sigaction = (event_handler_t)handler_;
   act.sa_flags = SA_SIGINFO;
@@ -68,3 +64,11 @@ SyncEvent::SyncEvent(std::string func_name, int sec)
   handler_ = (void*)sync_event_handler;
 }
 
+void SyncEvent::register_event(SpContextPtr c) {
+  g_context = c;
+  c->parse();
+  PatchFunction* f = c->parser()->findFunction("main");
+  sp::Points pts;
+  sp::CalleePoints(f, c, pts);
+  c->init_propeller()->go(pts, c, c->init_payload());
+}

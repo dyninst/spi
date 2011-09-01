@@ -48,8 +48,8 @@ bool TestDriver::run_testcase(std::string name) {
     exit(0);
   }
 
-  run_testcase_inject(name, m_handle);
-  // run_testcase_preload(name);
+  // run_testcase_inject(name, m_handle);
+  run_testcase_preload(name, m_handle);
 
   dlclose(m_handle);
 
@@ -57,6 +57,20 @@ bool TestDriver::run_testcase(std::string name) {
 }
 
 bool TestDriver::run_testcase_preload(std::string name, void* m_handle) {
+  /*
+  char buf[255];
+  sprintf(buf, "%s test", name.c_str());
+  setenv("LD_PRELOAD", buf, 1);
+  int pid = fork();
+  switch(pid) {
+    case 0: {
+      system("./test ");
+    }
+  }
+  */
+  typedef void (*run_mutatee_t)();
+  run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
+  run();
 }
 
 bool TestDriver::run_testcase_inject(std::string name, void* m_handle) {
