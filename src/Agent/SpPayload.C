@@ -13,6 +13,9 @@ using Dyninst::PatchAPI::Scope;
 bool default_payload(Point* pt, SpContextPtr context) {
   sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", pt->getCallee()->name().c_str());
   sp_print("%s", pt->getCallee()->name().c_str());
+  FILE* fp=fopen("/tmp/vlog", "a");
+  fprintf(fp, "%s\n", pt->getCallee()->name().c_str());
+  fclose(fp);
   sp::Points pts;
 
   sp::CalleePoints(pt->getCallee(), context, pts);
