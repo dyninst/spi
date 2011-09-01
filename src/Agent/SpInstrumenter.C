@@ -11,6 +11,8 @@
 using sp::SpContext;
 using sp::SpSnippet;
 using sp::SpInstrumenter;
+using sp::TrapInstrumenter;
+
 using Dyninst::PatchAPI::PushBackCommand;
 using Dyninst::PatchAPI::InstancePtr;
 using Dyninst::PatchAPI::Point;
@@ -35,7 +37,7 @@ extern Dyninst::Address get_pre_signal_pc(void* context);
 extern Dyninst::Address set_pc(Dyninst::Address pc, void* context);
 }
 
-void trap_handler(int sig, siginfo_t* info, void* c) {
+void default_trap_handler(int sig, siginfo_t* info, void* c) {
   // Get pc
   Dyninst::Address pc = sp::get_pre_signal_pc(c) - 1;
   sp_debug("TRAP - Executing payload code for address %lx", pc);
@@ -71,7 +73,7 @@ bool SpInstrumenter::run() {
   sp_debug("CODE GEN - Start instrumentation and generate binary, %d commands to go", user_commands_.size());
   // Use trap to do instrumentation
   struct sigaction act;
-  act.sa_sigaction = trap_handler;
+  act.sa_sigaction = default_trap_handler;
   act.sa_flags = SA_SIGINFO;
   struct sigaction old_act;
   sigaction(SIGTRAP, &act, &old_act);
@@ -98,18 +100,7 @@ bool SpInstrumenter::run() {
       PatchMgrPtr mgr = g_context->mgr();
       sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
       int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-      // tmp start
-      /*
-      Dyninst::ParseAPI::SymtabCodeSource* symcs = (Dyninst::ParseAPI::SymtabCodeSource*)pt->block()->obj()->co()->cs();
-      Dyninst::SymtabAPI::Symtab* sym = symcs->getSymtabObject();
-      Dyninst::Address codebase = pt->block()->obj()->codeBase();
-      sp_debug("code base: %lx, end: %lx", codebase, codebase + sym->imageLength());
-      sp_debug("image offset: %lx, end: %lx", sym->imageOffset(), sym->imageOffset() + sym->imageLength());
-      if (mprotect((void*)pt->block()->obj()->codeBase(), sym->imageLength(), perm) < 0) {
-      }
-      */
-      // tmp end
-      //      exit(0);
+
       if (!as->set_range_perm((Dyninst::Address)eip, insn_size, perm)) {
         sp_perror("MPROTECT - Failed to change memory access permission");
       };
@@ -170,5 +161,80 @@ bool SpInstrumenter::install(Point* point, char* blob) {
                                               point->block()->size()).c_str());
   sp_debug("} END DUMP INSN");
 
+  return true;
+}
+
+TrapInstrumenter* TrapInstrumenter::create(Dyninst::PatchAPI::AddrSpace* as) {
+  return new TrapInstrumenter(as);
+}
+
+
+TrapInstrumenter::TrapInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
+  : Dyninst::PatchAPI::Instrumenter(as) {
+}
+
+bool TrapInstrumenter::run() {
+  sp_debug("CODE GEN - Start trap_instrumentation and generate binary, %d commands to go", user_commands_.size());
+
+  // Use trap to do instrumentation
+  struct sigaction act;
+  act.sa_sigaction = default_trap_handler;
+  act.sa_flags = SA_SIGINFO;
+  struct sigaction old_act;
+  sigaction(SIGTRAP, &act, &old_act);
+
+  for (CommandList::iterator c = user_commands_.begin(); c != user_commands_.end(); c++) {
+    PushBackCommand* command = dynamic_cast<PushBackCommand*>(*c);
+    if (command) {
+      InstancePtr instance = command->instance();
+      Point* pt = instance->point();
+      Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
+      SpSnippet::ptr sp_snip = snip->rep();
+      // 1. Logically link snippet to the point (build map)
+      char* blob = sp_snip->blob();
+      Dyninst::Address eip = pt->block()->last();
+      SpContext::InstMap& inst_map = g_context->inst_map();
+      sp_debug("after inst_map");
+
+      // 2. If this point is already instrumented, skip it
+      if (inst_map.find(eip) == inst_map.end()) {
+        inst_map[eip] = instance;
+        string& orig_insn = sp_snip->orig_insn();
+        Dyninst::Address insn_size = pt->block()->end() - eip;
+
+        // Change permission of the original call instructin, so that we can
+        // write an int3 to it
+        PatchMgrPtr mgr = g_context->mgr();
+        sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
+        int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+        if (!as->set_range_perm((Dyninst::Address)eip, insn_size, perm)) {
+          sp_perror("MPROTECT - Failed to change memory access permission");
+        };
+        char* insn = (char*)eip;
+        char buf[255];
+        for (int i = 0; i < insn_size; i++) {
+          orig_insn += insn[i];
+        }
+        sp_debug("ORIG INSN - %s", g_context->parser()->dump_insn((void*)insn, insn_size).c_str());
+
+        // Install the blob to pt
+        if (install(pt, blob)) {
+          sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
+                   pt->block()->last(), pt->getCallee()->name().c_str());
+        } else {
+          sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
+                   pt->block()->last(), pt->getCallee()->name().c_str());
+        }
+      }
+    }
+  }
+  user_commands_.clear();
+  // Things to be restored
+  g_context->set_old_act(old_act);
+
+}
+
+bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob) {
+  sp_debug("INSTALLING - blob");
   return true;
 }

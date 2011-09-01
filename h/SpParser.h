@@ -20,7 +20,7 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     virtual Dyninst::PatchAPI::PatchMgrPtr parse();
     Dyninst::PatchAPI::PatchObject* exe_obj();
     Dyninst::PatchAPI::PatchFunction* findFunction(Dyninst::Address addr);
-    Dyninst::PatchAPI::PatchFunction* findFunction(string name);
+    Dyninst::PatchAPI::PatchFunction* findFunction(string name, bool skip = true);
     char* get_agent_name();
     Dyninst::Address get_func_addr(string name);
     string dump_insn(void* addr, size_t size);

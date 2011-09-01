@@ -11,7 +11,7 @@ SpAddrSpace::SpAddrSpace()
  : Dyninst::PatchAPI::AddrSpace() {
 
   update_mem_maps();
-  dump_mem_maps();
+  //dump_mem_maps();
 }
 
 

@@ -122,7 +122,7 @@ PatchMgrPtr SpParser::parse() {
   assert(exe_obj_);
   // initialize PatchAPI objects
   AddrSpace* as = SpAddrSpace::create(exe_obj_);
-  SpInstrumenter* inst = SpInstrumenter::create(as);
+  Dyninst::PatchAPI::Instrumenter* inst = sp::TrapInstrumenter::create(as);
   mgr_ = PatchMgr::create(as, inst);
   for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
@@ -211,7 +211,8 @@ Dyninst::Address SpParser::get_func_addr(string name) {
 }
 
 extern sp::SpContextPtr g_context;
-PatchFunction* SpParser::findFunction(string name) {
+PatchFunction* SpParser::findFunction(string name, bool skip) {
+  sp_debug("FIND FUNC - %s", name.c_str());
   AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
 
@@ -220,10 +221,11 @@ PatchFunction* SpParser::findFunction(string name) {
     CodeObject::funclist& all = co->funcs();
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
     Symtab* sym = cs->getSymtabObject();
-    if (g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
+    if (skip && g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
       sp_debug("WELL KNOWN - Bypassing well known lib %s", sp_filename(sym->name().c_str()));
       continue;
     }
+    sp_debug("IN LIB -  %s", sp_filename(sym->name().c_str()));
 
     for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
       if ((*fit)->name().compare(name) == 0) {
@@ -237,6 +239,7 @@ PatchFunction* SpParser::findFunction(string name) {
       }
     }
   }
+  sp_debug("NOT FOUND - %s", name.c_str());
   return NULL;
 }
 

@@ -8,6 +8,10 @@ void func2() {
   dprint("MUTATEE: func2");
 }
 
+void func() {
+  func2();
+  func1();
+}
 void run_mutatee() {
   dprint("MUTATEE: enter event mutatee");
   func1();
@@ -19,4 +23,5 @@ void run_mutatee() {
       sleep(1);
       count++;
   }
+  func();
 }
