@@ -11,10 +11,10 @@ class SpPropeller {
     typedef dyn_detail::boost::shared_ptr<SpPropeller> ptr;
     static ptr create();
     SpPropeller();
-
+    /*
     virtual bool go(Dyninst::PatchAPI::PatchFunction*,
                     SpContextPtr,
-                    PayloadFunc);
+                    PayloadFunc);*/
     virtual bool go(Points&  pts,
                     SpContextPtr context,
                     PayloadFunc payload);

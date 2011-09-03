@@ -83,6 +83,9 @@ SpSnippet::~SpSnippet() {
     callq ORIG_FUNCTION
  */
 char* SpSnippet::blob() {
+  assert(payload_);
+  assert(context_);
+  assert(func_);
   sp_debug("BLOB - Invoke payload %lx with parameters 1) context %lx and 2) func %s",
            payload_, context_.get(), func_->name().c_str());
 

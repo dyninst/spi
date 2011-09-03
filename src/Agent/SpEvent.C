@@ -64,7 +64,7 @@ SyncEvent::SyncEvent(std::string func_name, int sec)
   handler_ = (void*)sync_event_handler;
 }
 
-/*
+
 void SyncEvent::register_event(SpContextPtr c) {
   g_context = c;
   c->parse();
@@ -73,4 +73,4 @@ void SyncEvent::register_event(SpContextPtr c) {
   sp::CalleePoints(f, c, pts);
   c->init_propeller()->go(pts, c, c->init_payload());
 }
-*/
+
