@@ -20,7 +20,7 @@ using Dyninst::PatchAPI::Snippet;
 using Dyninst::PatchAPI::AddrSpace;
 using Dyninst::PatchAPI::PatchMgrPtr;
 
-extern sp::SpContextPtr g_context;
+extern sp::SpContext* g_context;
 namespace sp {
 extern Dyninst::Address get_pre_signal_pc(void* context);
 extern Dyninst::Address set_pc(Dyninst::Address pc, void* context);
@@ -87,7 +87,15 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   Point* pt = instance->point();
   Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
   SpSnippet::ptr sp_snip = snip->rep();
-  char* blob = sp_snip->blob(pc + 2 /*after int3*/);
+  sp_snip->set_old_context((ucontext_t*)c);
+
+  char* blob = sp_snip->blob(pc+1 /*+1 is for after int3*/);
+  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  PatchMgrPtr mgr = g_context->mgr();
+  sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
+  if (!as->set_range_perm((Dyninst::Address)blob, sp_snip->size(), perm)) {
+    sp_debug("MPROTECT - Failed to change memory access permission for blob");
+  }
 
   // set pc to patch area
   sp::set_pc((Dyninst::Address)blob, c);
@@ -119,13 +127,13 @@ bool TrapInstrumenter::run() {
       // 2. If this point is already instrumented, skip it
       if (inst_map.find(eip) == inst_map.end()) {
         inst_map[eip] = instance;
-        char* blob = sp_snip->blob(eip+1 /*+1 is for int3*/);
+        // char* blob = sp_snip->blob(eip+1 /*+1 is for int3*/);
         int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
         PatchMgrPtr mgr = g_context->mgr();
         sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
-        if (!as->set_range_perm((Dyninst::Address)blob, sp_snip->size(), perm)) {
-          sp_debug("MPROTECT - Failed to change memory access permission for blob");
-        }
+        //if (!as->set_range_perm((Dyninst::Address)blob, sp_snip->size(), perm)) {
+        //  sp_debug("MPROTECT - Failed to change memory access permission for blob");
+        //}
 
         string& orig_insn = sp_snip->orig_insn();
         Dyninst::Address insn_size = pt->block()->end() - eip;
@@ -143,7 +151,7 @@ bool TrapInstrumenter::run() {
         sp_debug("ORIG INSN - %s", g_context->parser()->dump_insn((void*)insn, insn_size).c_str());
 
         // Install the blob to pt
-        if (install(pt, blob, sp_snip->size())) {
+        if (install(pt, NULL, sp_snip->size())) {
           sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
                    pt->block()->last(), pt->getCallee()->name().c_str());
         } else {

@@ -13,28 +13,29 @@ class SpSnippet {
     typedef dyn_detail::boost::shared_ptr<SpSnippet> ptr;
     static ptr create(Dyninst::PatchAPI::PatchFunction* f,
                       Dyninst::PatchAPI::Point* pt,
-                      SpContextPtr c,
+                      SpContext* c,
                       PayloadFunc p) {
       return ptr(new SpSnippet(f, pt, c, p));
     }
 
     SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
               Dyninst::PatchAPI::Point* pt,
-              SpContextPtr c,
+              SpContext* c,
               PayloadFunc p);
     ~SpSnippet();
 
     char* blob(Dyninst::Address ret_addr);
     size_t size() { return blob_size_; }
 
-    SpContextPtr context() { return context_; }
+    SpContext* context() { return context_; }
     PayloadFunc payload() { return payload_; }
+    void set_old_context(ucontext_t* old_context) { old_context_ = old_context; }
     string& orig_insn() { return orig_insn_; }
     Dyninst::PatchAPI::PatchFunction* func() { return func_; }
   protected:
     Dyninst::PatchAPI::PatchFunction* func_;
     Dyninst::PatchAPI::Point* point_;
-    SpContextPtr context_;
+    SpContext* context_;
     PayloadFunc payload_;
     string orig_insn_;
     Dyninst::Address setcontext_func_;

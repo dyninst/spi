@@ -23,7 +23,7 @@ SpPropeller::ptr SpPropeller::create() {
 }
 
 bool SpPropeller::go(Points&  pts,
-                     SpContextPtr context,
+                     SpContext* context,
                      PayloadFunc payload) {
   if (pts.size() == 0) return false;
 

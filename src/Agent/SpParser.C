@@ -210,7 +210,7 @@ Dyninst::Address SpParser::get_func_addr(string name) {
   return 0;
 }
 
-extern sp::SpContextPtr g_context;
+extern sp::SpContext* g_context;
 PatchFunction* SpParser::findFunction(string name, bool skip) {
   sp_debug("FIND FUNC - %s", name.c_str());
   AddrSpace* as = mgr_->as();

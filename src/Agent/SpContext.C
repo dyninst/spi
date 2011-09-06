@@ -11,7 +11,6 @@ using Dyninst::Stackwalker::Frame;
 
 
 using sp::SpContext;
-using sp::SpContextPtr;
 using sp::SpPropeller;
 using sp::SpParser;
 using Dyninst::PatchAPI::PatchMgr;
@@ -30,11 +29,11 @@ SpContext::SpContext(SpPropeller::ptr p,
   parse();
 }
 
-SpContextPtr SpContext::create(SpPropeller::ptr propeller,
+SpContext* SpContext::create(SpPropeller::ptr propeller,
                                string init_payload,
                                SpParser::ptr parser) {
-  SpContextPtr ret = SpContextPtr(new SpContext(propeller,
-                                                parser));
+  SpContext* ret = new SpContext(propeller,
+                                 parser);
   assert(ret);
   ret->init_payload_ = (void*)ret->parser()->get_func_addr(init_payload);
   return ret;

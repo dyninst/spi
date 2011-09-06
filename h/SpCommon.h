@@ -42,8 +42,6 @@ namespace Dyninst {
   }
 }
 namespace sp {
-class SpContext;
-typedef dyn_detail::boost::shared_ptr<SpContext> SpContextPtr;
 typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 }
 

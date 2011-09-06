@@ -74,7 +74,7 @@ static size_t emit_jump_abs(long trg, char* buf, size_t offset) {
 
 SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
                      Dyninst::PatchAPI::Point* pt,
-                     SpContextPtr c,
+                     SpContext* c,
                      PayloadFunc p)
   : func_(f), point_(pt), context_(c), payload_(p), blob_size_(0), old_context_(NULL) {
   // FIXME: use AddrSpace::malloc later
@@ -125,26 +125,30 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   old_context_ = (ucontext_t*)malloc(sizeof(ucontext_t));
 
   sp_debug("VARIABLES IN BLOB - old_context: %lx; point: %lx; sp_context: %lx",
-           old_context_, point_, context_.get());
+           old_context_, point_, context_);
   sp_debug("FUNCTIONS IN BLOB - setcontext: %lx; getcontext: %lx; payload: %lx; orig_func: %lx",
            setcontext_func_, getcontext_func_, payload_, func_->addr());
   sp_debug("RETURN TO - %lx", ret_addr);
+
   // Build blob
+
   // movq %rdi, old_context_
   size_t offset = 0;
-  size_t insnsize = emit_mov_imm64_rdi((long)old_context_, blob_, offset);
+  size_t insnsize = 0;
+  /*
+  insnsize = emit_mov_imm64_rdi((long)old_context_, blob_, offset);
   offset += insnsize;
 
   // callq getcontext
   insnsize = emit_call_abs((long)getcontext_func_, blob_, offset);
   offset += insnsize;
-
+  */
   // movq POINT, %rdi
   insnsize = emit_mov_imm64_rdi((long)point_, blob_, offset);
   offset += insnsize;
 
   // movq SP_CONTEXT, %rsi
-  insnsize = emit_mov_imm64_rsi((long)context_.get(), blob_, offset);
+  insnsize = emit_mov_imm64_rsi((long)context_, blob_, offset);
   offset += insnsize;
 
   // callq payload
@@ -159,7 +163,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // callq setcontext
   insnsize = emit_call_abs((long)setcontext_func_, blob_, offset);
   offset += insnsize;
-
   // movq ORIG_FUNCTION
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
   offset += insnsize;

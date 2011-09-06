@@ -3,14 +3,13 @@
 #include "SpContext.h"
 #include "SpNextPoints.h"
 
-using sp::SpContextPtr;
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Point;
 using Dyninst::PatchAPI::PatchMgrPtr;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::PatchAPI::Scope;
 
-bool default_payload(Point* pt, SpContextPtr context) {
+bool default_payload(Point* pt, sp::SpContext* context) {
   sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", pt->getCallee()->name().c_str());
   sp_print("%s", pt->getCallee()->name().c_str());
 
@@ -28,7 +27,7 @@ bool default_payload(Point* pt, SpContextPtr context) {
   return true;
 }
 
-bool simple_payload(Point* pt, SpContextPtr context) {
+bool simple_payload(Point* pt, sp::SpContext* context) {
   sp_debug("SIMPLE PAYLOAD - I'm in %s", pt->getCallee()->name().c_str());
   return true;
 }

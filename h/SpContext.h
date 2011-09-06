@@ -13,9 +13,9 @@ namespace sp {
 
 class SpContext {
   public:
-  static SpContextPtr create(SpPropeller::ptr,
-                             string,
-                             SpParser::ptr);
+  static SpContext* create(SpPropeller::ptr,
+                           string,
+                           SpParser::ptr);
 
 
     PayloadFunc init_payload() { return init_payload_; }

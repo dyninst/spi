@@ -5,8 +5,9 @@
 #include "PatchCFG.h"
 
 namespace sp {
+  class SpContext;
   typedef bool (*PayloadFunc_t)(Dyninst::PatchAPI::Point*,
-                              SpContextPtr context);
+                              SpContext* context);
   typedef void* PayloadFunc;
 
 }

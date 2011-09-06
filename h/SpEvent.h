@@ -8,11 +8,12 @@
 #include "SpPropeller.h"
 
 namespace sp {
+class SpContext;
 class SpEvent {
   public:
     typedef dyn_detail::boost::shared_ptr<SpEvent> ptr;
     static ptr create() { return ptr(new SpEvent); }
-    virtual void register_event(SpContextPtr);
+    virtual void register_event(SpContext*);
   protected:
     SpEvent();
 };
@@ -26,7 +27,7 @@ class AsyncEvent : public SpEvent {
        parameter is ignored*/
     static ptr create(int signum = SIGALRM, int sec = 5) {
       return ptr(new AsyncEvent(signum, sec)); }
-    virtual void register_event(SpContextPtr);
+    virtual void register_event(SpContext*);
   protected:
     AsyncEvent(int signum, int sec);
     void* handler_;
@@ -44,7 +45,7 @@ class SyncEvent : public AsyncEvent {
     typedef dyn_detail::boost::shared_ptr<SyncEvent> ptr;
     static ptr create(std::string func_name="", int sec=2) {
       return ptr(new SyncEvent(func_name, sec)); }
-    void register_event(SpContextPtr c);
+    void register_event(SpContext* c);
   protected:
     SyncEvent(std::string func_name, int sec);
 

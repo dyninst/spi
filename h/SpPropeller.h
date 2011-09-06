@@ -6,6 +6,7 @@
 #include "PatchCFG.h"
 
 namespace sp {
+class SpContext;
 class SpPropeller {
   public:
     typedef dyn_detail::boost::shared_ptr<SpPropeller> ptr;
@@ -16,7 +17,7 @@ class SpPropeller {
                     SpContextPtr,
                     PayloadFunc);*/
     virtual bool go(Points&  pts,
-                    SpContextPtr context,
+                    SpContext* context,
                     PayloadFunc payload);
 };
 

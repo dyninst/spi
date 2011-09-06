@@ -7,7 +7,6 @@
 using sp::SpAgent;
 using sp::SpParser;
 using sp::SpContext;
-using sp::SpContextPtr;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::ParseAPI::CodeObject;
 using Dyninst::PatchAPI::AddrSpace;
@@ -34,6 +33,7 @@ SpAgent::SpAgent() {
 }
 
 SpAgent::~SpAgent() {
+  //  delete context_;
 }
 
 /* Configuration */
@@ -67,11 +67,11 @@ void SpAgent::go() {
   if (!init_propeller_) init_propeller_ = SpPropeller::create();
 
   // 2. Prepare context
-  SpContextPtr context = SpContext::create(init_propeller_,
-                                           init_payload_,
-                                           parser_);
+  context_ = SpContext::create(init_propeller_,
+                               init_payload_,
+                               parser_);
 
   // 3. Register Events
-  init_event_->register_event(context);
-  fini_event_->register_event(context);
+  init_event_->register_event(context_);
+  fini_event_->register_event(context_);
 }

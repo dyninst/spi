@@ -1808,7 +1808,9 @@ SpInstrumenter.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Instrumenter.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpAddrSpace.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h
 SpAddrSpace.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpAddrSpace.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpAddrSpace.h \

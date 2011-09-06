@@ -42,8 +42,8 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
     SpParser::ptr parser_;
     SpPropeller::ptr init_propeller_;
     string init_payload_;
-    SpContextPtr context_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
+    SpContext* context_;
 
     SpAgent();
 };

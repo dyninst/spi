@@ -12,7 +12,6 @@ using sp::SpEvent;
 using sp::SyncEvent;
 using sp::AsyncEvent;
 using sp::SpContext;
-using sp::SpContextPtr;
 using sp::SpPropeller;
 using Dyninst::PatchAPI::PatchFunction;
 
@@ -20,14 +19,14 @@ using Dyninst::PatchAPI::PatchFunction;
 SpEvent::SpEvent() {
 }
 
-void SpEvent::register_event(SpContextPtr c) {
+void SpEvent::register_event(SpContext* c) {
 }
 
 
 /* AsyncEvent */
 typedef void (*event_handler_t)(int, siginfo_t*, void*);
 
-sp::SpContextPtr g_context = sp::SpContextPtr();
+sp::SpContext* g_context = NULL;
 void async_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
@@ -41,7 +40,7 @@ AsyncEvent::AsyncEvent(int signum, int sec)
   handler_ = (void*)async_event_handler;
 }
 
-void AsyncEvent::register_event(SpContextPtr c) {
+void AsyncEvent::register_event(SpContext* c) {
   g_context = c;
   struct sigaction act;
   act.sa_sigaction = (event_handler_t)handler_;
@@ -65,7 +64,7 @@ SyncEvent::SyncEvent(std::string func_name, int sec)
 }
 
 
-void SyncEvent::register_event(SpContextPtr c) {
+void SyncEvent::register_event(SpContext* c) {
   g_context = c;
   c->parse();
   PatchFunction* f = c->parser()->findFunction("main");
