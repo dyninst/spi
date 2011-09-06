@@ -77,12 +77,20 @@ void simple_trap_handler(int sig, siginfo_t* info, void* c) {
 
 void trap_handler(int sig, siginfo_t* info, void* c) {
   // get pc
-  // Dyninst::Address pc = sp::get_pre_signal_pc(c) - 1 + orig_insn_size;
+  Dyninst::Address pc = sp::get_pre_signal_pc(c) - 1;
+  sp_debug("TRAP - Executing payload code for address %lx", pc);
+  SpContext::InstMap inst_map = g_context->inst_map();
+  if (inst_map.find(pc) == inst_map.end()) return;
 
-  // setup jump back value for patch area
+  // get patch area's address
+  InstancePtr instance = inst_map[pc];
+  Point* pt = instance->point();
+  Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
+  SpSnippet::ptr sp_snip = snip->rep();
+  char* blob = sp_snip->blob(pc + 2 /*after int3*/);
 
-  // restore
-  // sp::set_pc(pc, c);
+  // set pc to patch area
+  // sp::set_pc((Dyninst::Address)blob, c);
 }
 
 bool TrapInstrumenter::run() {

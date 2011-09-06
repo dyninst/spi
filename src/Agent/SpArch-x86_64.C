@@ -112,8 +112,11 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   assert(payload_);
   assert(context_);
   assert(func_);
-  sp_debug("BLOB - Invoke payload %lx with parameters 1) context %lx and 2) func %s",
-           payload_, context_.get(), func_->name().c_str());
+  if (blob_size_ > 0) {
+    sp_debug("BLOB - Blob is constructed for calling %s(), just grab it!",
+            func_->name().c_str());
+    return blob_;
+  }
 
   sp_debug("BLOB - Constructing a blob");
 
