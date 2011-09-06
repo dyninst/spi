@@ -25,8 +25,8 @@ AG_LDFLAGS           += -lagent
 # Mutatee
 MUTATEE_SRCS         += $(wildcard ../TestCases/*mutatee.c)
 MUTATEE_OBJS          = $(notdir $(MUTATEE_SRCS:%.c=%.o))
-MUTATEE_SO            = $(notdir $(MUTATEE_SRCS:%.c=%.so))
-MUTATEE_LDFLAGS       = -shared
+MUTATEE_EXE           = $(notdir $(MUTATEE_SRCS:%.c=%))
+MUTATEE_LDFLAGS       =
 MUTATEE_IFLAGS        =
 MUTATEE_FLAGS         = -fPIC
 
@@ -59,14 +59,14 @@ MUTATEE_DEPS:
 	@$(GXX) -MM $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) $(MUTATEE_SRCS) > $(MUTATEE_DEP)
 include $(MUTATEE_DEP)
 
-MUTATEE: $(MUTATEE_SO)
+MUTATEE: $(MUTATEE_EXE)
 	@echo "* All mutatees are done"
 $(MUTATEE_OBJS): %.o : $(MUTATEE_SRCS)
 	@echo "Compiling $@"
-	@$(GCC) -o $@ $(TESTCASE_DIR)/$*.c $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) -c
-$(MUTATEE_SO): %.so : $(MUTATEE_OBJS)
+	$(GCC) -o $@ $(TESTCASE_DIR)/$*.c $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) -c
+$(MUTATEE_EXE): % : $(MUTATEE_OBJS)
 	@echo "Linking $@"
-	@$(GCC) -o $@ $*.o $(MUTATEE_LDFLAGS)
+	$(GCC) -o $@ $*.o $(MUTATEE_LDFLAGS)
 
 DRIVER_DEP  = .DRIVER_DEPENDS
 DRIVER_DEPS:
@@ -90,7 +90,7 @@ COPYIJ:
 
 # Clean up
 clean:
-	@rm -f *.so *.o $(TEST_DRIVER) core* Injector libijagent.so
+	@rm -f *.so *.o $(TEST_DRIVER) core* Injector libijagent.so $(MUTATEE_EXE)
 	@make AG_DEPS
 	@make MUTATEE_DEPS
 	@make DRIVER_DEPS

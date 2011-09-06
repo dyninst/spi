@@ -90,7 +90,7 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   char* blob = sp_snip->blob(pc + 2 /*after int3*/);
 
   // set pc to patch area
-  // sp::set_pc((Dyninst::Address)blob, c);
+  sp::set_pc((Dyninst::Address)blob, c);
 }
 
 bool TrapInstrumenter::run() {
@@ -120,14 +120,18 @@ bool TrapInstrumenter::run() {
       if (inst_map.find(eip) == inst_map.end()) {
         inst_map[eip] = instance;
         char* blob = sp_snip->blob(eip+1 /*+1 is for int3*/);
+        int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+        PatchMgrPtr mgr = g_context->mgr();
+        sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
+        if (!as->set_range_perm((Dyninst::Address)blob, sp_snip->size(), perm)) {
+          sp_debug("MPROTECT - Failed to change memory access permission for blob");
+        }
+
         string& orig_insn = sp_snip->orig_insn();
         Dyninst::Address insn_size = pt->block()->end() - eip;
 
         // Change permission of the original call instructin, so that we can
         // write an int3 to it
-        PatchMgrPtr mgr = g_context->mgr();
-        sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
-        int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
         if (!as->set_range_perm((Dyninst::Address)eip, insn_size, perm)) {
           sp_perror("MPROTECT - Failed to change memory access permission");
         };
@@ -177,6 +181,7 @@ bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   } else {
     memcpy(addr, int3.c_str(), int3.size());
   }
+
 
   // Restore the permission of memory mapping
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {

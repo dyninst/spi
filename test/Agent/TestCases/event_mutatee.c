@@ -12,7 +12,7 @@ void func() {
   func2();
   func1();
 }
-void run_mutatee() {
+void main() {
   dprint("MUTATEE: enter event mutatee");
   func1();
   func2();

@@ -14,9 +14,10 @@ void func() {
   callee2();
 }
 
-void run_mutatee() {
+int main(int argc, char** argv) {
   dprint("MUTATEE: enter parser mutatee");
   int count = 1;
   while(count < 10) { sleep(1); count++; }
   func();
+  return 0;
 }

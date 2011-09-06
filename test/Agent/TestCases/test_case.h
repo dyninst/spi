@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
+#include <setjmp.h>
+#include <unistd.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <dlfcn.h>
 
 #define dprint(...) do { \
   if (getenv("SP_DEBUG")) { \

@@ -23,7 +23,7 @@ void init_parser() {
   SyncEvent::ptr event = SyncEvent::create();
   agent->set_init_event(event);
 
-  //agent->set_init_payload("simple_payload");
+  agent->set_init_payload("simple_payload");
 
   agent->go();
 

@@ -112,6 +112,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   assert(payload_);
   assert(context_);
   assert(func_);
+  sp_debug("BLOB - patch area at %lx", blob_);
   if (blob_size_ > 0) {
     sp_debug("BLOB - Blob is constructed for calling %s(), just grab it!",
             func_->name().c_str());
@@ -122,9 +123,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
 
   // Allocate buffer for old_context
   old_context_ = (ucontext_t*)malloc(sizeof(ucontext_t));
-
-  // PatchFunction* setcontext_func = context_->parser()->findFunction("setcontext", false);
-  // PatchFunction* getcontext_func = context_->parser()->findFunction("getcontext", false);
 
   sp_debug("VARIABLES IN BLOB - old_context: %lx; point: %lx; sp_context: %lx",
            old_context_, point_, context_.get());
@@ -153,7 +151,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   insnsize = emit_call_abs((long)payload_, blob_, offset);
   offset += insnsize;
 
-
+  /*
   // movq old_context, %rdi
   insnsize = emit_mov_imm64_rdi((long)old_context_, blob_, offset);
   offset += insnsize;
@@ -165,7 +163,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // movq ORIG_FUNCTION
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
   offset += insnsize;
-
+  */
   // jmp ORIG_INSN_ADDR
   insnsize = emit_jump_abs(ret_addr, blob_, offset);
   offset += insnsize;
