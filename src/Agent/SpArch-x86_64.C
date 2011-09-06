@@ -58,6 +58,25 @@ static size_t emit_call_abs(long callee, char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
+static size_t emit_orig_call_abs(long callee, char* buf, size_t offset, long orig_rsp) {
+  char* p = buf + offset;
+  size_t insnsize = 0;
+  long retaddr = (long)p + 16 + 16 + 1;
+  // push return address
+  insnsize = emit_push_imm64(retaddr, p, 0);
+  p += insnsize;
+
+  // push callee address
+  insnsize = emit_push_imm64(callee, p, 0);
+  p += insnsize;
+  // ret
+  *p = 0xc3;
+  p ++;
+  assert(retaddr == (long)p);
+
+  return (p - (buf + offset));
+}
+
 static size_t emit_jump_abs(long trg, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
@@ -69,6 +88,134 @@ static size_t emit_jump_abs(long trg, char* buf, size_t offset) {
   *p = 0xc3;
   p ++;
 
+  return (p - (buf + offset));
+}
+
+
+static size_t emit_restore_regs(ucontext_t* c, char* buf, size_t offset) {
+  char* p = buf + offset;
+  size_t insnsize = 0;
+
+  sp_debug("IN BLOB - old_context: %lx", c);
+
+  // REG_RDI
+  *p = (char)0x48; p++;
+  *p = (char)0xbf; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RDI];
+  p += sizeof(long);
+
+  // REG_RSI
+  *p = (char)0x48; p++;
+  *p = (char)0xbe; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RSI];
+  p += sizeof(long);
+
+
+  // REG_RBP
+  *p = (char)0x48; p++;
+  *p = (char)0xbd; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RBP];
+  p += sizeof(long);
+
+  // REG_RBX
+  *p = (char)0x48; p++;
+  *p = (char)0xbb; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RBX];
+  p += sizeof(long);
+
+  // REG_RDX
+  *p = (char)0x48; p++;
+  *p = (char)0xba; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RDX];
+  p += sizeof(long);
+
+  // REG_RAX
+  *p = (char)0x48; p++;
+  *p = (char)0xb8; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RAX];
+  p += sizeof(long);
+
+  // REG_RCX
+  *p = (char)0x48; p++;
+  *p = (char)0xb9; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RCX];
+  p += sizeof(long);
+
+  // FIXME!!!!
+  // REG_RSP
+  *p = (char)0x48; p++;
+  *p = (char)0xbc; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_RSP];
+  p += sizeof(long);
+
+  // REG_R8
+  *p = (char)0x49; p++;
+  *p = (char)0xb8; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R8];
+  p += sizeof(long);
+
+  // REG_R9
+  *p = (char)0x49; p++;
+  *p = (char)0xb9; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R9];
+  p += sizeof(long);
+
+  // REG_R10
+  *p = (char)0x49; p++;
+  *p = (char)0xba; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R10];
+  p += sizeof(long);
+
+  // REG_R11
+  *p = (char)0x49; p++;
+  *p = (char)0xbb; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R11];
+  p += sizeof(long);
+
+
+  // REG_R12
+  *p = (char)0x49; p++;
+  *p = (char)0xbc; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R12];
+  p += sizeof(long);
+
+  // REG_R13
+  *p = (char)0x49; p++;
+  *p = (char)0xbd; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R13];
+  p += sizeof(long);
+
+  // REG_R14
+  *p = (char)0x49; p++;
+  *p = (char)0xbe; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R14];
+  p += sizeof(long);
+
+  // REG_R15
+  *p = (char)0x49; p++;
+  *p = (char)0xbf; p++;
+  *((long*)p) = (long)c->uc_mcontext.gregs[REG_R15];
+  p += sizeof(long);
+
+  // EFLAGS
+  p += emit_push_imm64((long)c->uc_mcontext.gregs[REG_EFL], p, 0);
+  *p = (char)0x9d; // popfq
+  p++;
+
+  /*
+  REG_RIP,
+# define REG_RIP	REG_RIP
+  REG_CSGSFS,		
+# define REG_CSGSFS	REG_CSGSFS
+  REG_ERR,
+# define REG_ERR	REG_ERR
+  REG_TRAPNO,
+# define REG_TRAPNO	REG_TRAPNO
+  REG_OLDMASK,
+# define REG_OLDMASK	REG_OLDMASK
+  REG_CR2
+# define REG_CR2	REG_CR2
+*/
   return (p - (buf + offset));
 }
 
@@ -121,9 +268,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
 
   sp_debug("BLOB - Constructing a blob");
 
-  // Allocate buffer for old_context
-  old_context_ = (ucontext_t*)malloc(sizeof(ucontext_t));
-
   sp_debug("VARIABLES IN BLOB - old_context: %lx; point: %lx; sp_context: %lx",
            old_context_, point_, context_);
   sp_debug("FUNCTIONS IN BLOB - setcontext: %lx; getcontext: %lx; payload: %lx; orig_func: %lx",
@@ -135,14 +279,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // movq %rdi, old_context_
   size_t offset = 0;
   size_t insnsize = 0;
-  /*
-  insnsize = emit_mov_imm64_rdi((long)old_context_, blob_, offset);
-  offset += insnsize;
 
-  // callq getcontext
-  insnsize = emit_call_abs((long)getcontext_func_, blob_, offset);
-  offset += insnsize;
-  */
   // movq POINT, %rdi
   insnsize = emit_mov_imm64_rdi((long)point_, blob_, offset);
   offset += insnsize;
@@ -155,7 +292,8 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   insnsize = emit_call_abs((long)payload_, blob_, offset);
   offset += insnsize;
 
-  /*
+/*
+  old_context_->uc_mcontext.gregs[REG_RIP] = (Dyninst::Address)(blob_ + offset + 10+4*4+4*4+1);
   // movq old_context, %rdi
   insnsize = emit_mov_imm64_rdi((long)old_context_, blob_, offset);
   offset += insnsize;
@@ -163,10 +301,16 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // callq setcontext
   insnsize = emit_call_abs((long)setcontext_func_, blob_, offset);
   offset += insnsize;
+*/
+
+  // restore registers
+  insnsize = emit_restore_regs(old_context_, blob_, offset);
+  offset += insnsize;
+
   // movq ORIG_FUNCTION
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
   offset += insnsize;
-  */
+
   // jmp ORIG_INSN_ADDR
   insnsize = emit_jump_abs(ret_addr, blob_, offset);
   offset += insnsize;

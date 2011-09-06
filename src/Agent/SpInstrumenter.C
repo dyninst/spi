@@ -87,6 +87,7 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   Point* pt = instance->point();
   Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
   SpSnippet::ptr sp_snip = snip->rep();
+  sp_debug("IN TRAP - old_context: %lx", c);
   sp_snip->set_old_context((ucontext_t*)c);
 
   char* blob = sp_snip->blob(pc+1 /*+1 is for after int3*/);
