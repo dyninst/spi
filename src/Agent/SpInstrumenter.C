@@ -90,8 +90,8 @@ bool TrapInstrumenter::run() {
 
   // Use trap to do instrumentation
   struct sigaction act;
-  //act.sa_sigaction = trap_handler;
-  act.sa_sigaction = simple_trap_handler;
+  act.sa_sigaction = trap_handler;
+  //act.sa_sigaction = simple_trap_handler;
   act.sa_flags = SA_SIGINFO;
   struct sigaction old_act;
   sigaction(SIGTRAP, &act, &old_act);
@@ -105,13 +105,13 @@ bool TrapInstrumenter::run() {
       Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
       SpSnippet::ptr sp_snip = snip->rep();
       // 1. Logically link snippet to the point (build map)
-      char* blob = sp_snip->blob();
       Dyninst::Address eip = pt->block()->last();
       SpContext::InstMap& inst_map = g_context->inst_map();
 
       // 2. If this point is already instrumented, skip it
       if (inst_map.find(eip) == inst_map.end()) {
         inst_map[eip] = instance;
+        char* blob = sp_snip->blob(eip+1 /*+1 is for int3*/);
         string& orig_insn = sp_snip->orig_insn();
         Dyninst::Address insn_size = pt->block()->end() - eip;
 
@@ -148,9 +148,9 @@ bool TrapInstrumenter::run() {
 }
 
 bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
-  sp_debug("INSTALLING - blob %d bytes {", blob_size);
+  // sp_debug("INSTALLING - blob %d bytes {", blob_size);
   // sp_debug("%s", g_context->parser()->dump_insn((void*)blob, blob_size).c_str());
-  sp_debug("}");
+  // sp_debug("}");
 
   string int3;
   int3 += (char)0xcc;
@@ -158,7 +158,9 @@ bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
   size_t insn_length = point->block()->end() - point->block()->last();
-
+  for (int i = 0; i < (insn_length-1); i++) {
+    int3 += (char)0x90;
+  }
   // Write int3 to the call site
   SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;

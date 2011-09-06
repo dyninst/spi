@@ -58,31 +58,57 @@ static size_t emit_call_abs(long callee, char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
+static size_t emit_jump_abs(long trg, char* buf, size_t offset) {
+  char* p = buf + offset;
+  size_t insnsize = 0;
+
+  // push jump target
+  insnsize = emit_push_imm64(trg, p, 0);
+  p += insnsize;
+  // ret
+  *p = 0xc3;
+  p ++;
+
+  return (p - (buf + offset));
+}
+
 SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
                      Dyninst::PatchAPI::Point* pt,
                      SpContextPtr c,
                      PayloadFunc p)
   : func_(f), point_(pt), context_(c), payload_(p), blob_size_(0), old_context_(NULL) {
   // FIXME: use AddrSpace::malloc later
+  assert(context_ && "SpContext is NULL");
   blob_ = (char*)malloc(1024);
+  setcontext_func_ = context_->setcontext_func();
+  getcontext_func_ = context_->getcontext_func();
 }
 
 SpSnippet::~SpSnippet() {
   free(blob_);
   free(old_context_);
 }
-/* Assembly for Blob:
+/* Psuedo Assembly for Blob:
 
-    movq OLD_CONTEXT, %rdi
-    callq getcontext
-    movq POINT, %rdi
-    movq SP_CONTEXT, %rsi
-    callq payload
-    movq OLD_CONTEXT, %rdi
-    callq setcontext
-    callq ORIG_FUNCTION
+    movq OLD_CONTEXT, %rdi                    movq OLD_CONTEXT, %rdi
+    callq getcontext                          push x 4 ret value
+                                              push x 4 getcontext addr
+                                              ret
+    movq POINT, %rdi                          movq POINT, %rdi
+    movq SP_CONTEXT, %rsi                     movq SP_CONTEXT, %rsi
+    callq payload                             push x 4 ret value
+                                              push x 4 payload addr
+                                              ret
+    movq OLD_CONTEXT, %rdi                    movq OLD_CONTEXT, %rdi
+    callq setcontext                          push x 4 ret value
+                                              push x 4 setcontext value
+                                              ret
+    callq ORIG_FUNCTION                       push x 4 ret value
+                                              push x 4 ORIG_FUNCTION
+    jmp ORIG_INSN_ADDR                        push x 4 ORIG_INSN_ADDR
+                                              ret
  */
-char* SpSnippet::blob() {
+char* SpSnippet::blob(Dyninst::Address ret_addr) {
   assert(payload_);
   assert(context_);
   assert(func_);
@@ -94,15 +120,14 @@ char* SpSnippet::blob() {
   // Allocate buffer for old_context
   old_context_ = (ucontext_t*)malloc(sizeof(ucontext_t));
 
-  // Get setcontext and getcontext
-  PatchFunction* setcontext_func = context_->parser()->findFunction("setcontext", false);
-  PatchFunction* getcontext_func = context_->parser()->findFunction("getcontext", false);
+  // PatchFunction* setcontext_func = context_->parser()->findFunction("setcontext", false);
+  // PatchFunction* getcontext_func = context_->parser()->findFunction("getcontext", false);
 
   sp_debug("VARIABLES IN BLOB - old_context: %lx; point: %lx; sp_context: %lx",
            old_context_, point_, context_.get());
   sp_debug("FUNCTIONS IN BLOB - setcontext: %lx; getcontext: %lx; payload: %lx; orig_func: %lx",
-           setcontext_func->addr(), getcontext_func->addr(), payload_, func_->addr());
-
+           setcontext_func_, getcontext_func_, payload_, func_->addr());
+  sp_debug("RETURN TO - %lx", ret_addr);
   // Build blob
   // movq %rdi, old_context_
   size_t offset = 0;
@@ -110,7 +135,7 @@ char* SpSnippet::blob() {
   offset += insnsize;
 
   // callq getcontext
-  insnsize = emit_call_abs((long)getcontext_func->addr(), blob_, offset);
+  insnsize = emit_call_abs((long)getcontext_func_, blob_, offset);
   offset += insnsize;
 
   // movq POINT, %rdi
@@ -131,17 +156,22 @@ char* SpSnippet::blob() {
   offset += insnsize;
 
   // callq setcontext
-  insnsize = emit_call_abs((long)setcontext_func->addr(), blob_, offset);
+  insnsize = emit_call_abs((long)setcontext_func_, blob_, offset);
   offset += insnsize;
 
   // movq ORIG_FUNCTION
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
   offset += insnsize;
 
+  // jmp ORIG_INSN_ADDR
+  insnsize = emit_jump_abs(ret_addr, blob_, offset);
+  offset += insnsize;
+
   blob_size_ = offset;
-  //sp_debug("DUMP INSN (%d bytes)- {", offset);
-  //sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
-  //sp_debug("DUMP INSN - }");
+
+  sp_debug("DUMP INSN (%d bytes)- {", offset);
+  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
+  sp_debug("DUMP INSN - }");
 
   return blob_;
 }

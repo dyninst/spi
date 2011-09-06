@@ -48,8 +48,8 @@ bool TestDriver::run_testcase(std::string name) {
     exit(0);
   }
 
-  run_testcase_inject(name, m_handle);
-  //run_testcase_preload(name, m_handle);
+  //run_testcase_inject(name, m_handle);
+  run_testcase_preload(name, m_handle);
 
   dlclose(m_handle);
 

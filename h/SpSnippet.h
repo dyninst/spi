@@ -24,7 +24,7 @@ class SpSnippet {
               PayloadFunc p);
     ~SpSnippet();
 
-    char* blob();
+    char* blob(Dyninst::Address ret_addr);
     size_t size() { return blob_size_; }
 
     SpContextPtr context() { return context_; }
@@ -37,6 +37,8 @@ class SpSnippet {
     SpContextPtr context_;
     PayloadFunc payload_;
     string orig_insn_;
+    Dyninst::Address setcontext_func_;
+    Dyninst::Address getcontext_func_;
 
     char* blob_;
     size_t blob_size_;

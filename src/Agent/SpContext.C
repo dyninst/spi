@@ -93,6 +93,15 @@ PatchFunction* SpContext::get_first_inst_func() {
 
 void SpContext::parse() {
   mgr_ = parser_->parse();
+
+  PatchFunction* setcontext_f = parser()->findFunction("setcontext", false);
+  if (!setcontext_f) sp_perror("FATAL - Cannot find setcontext()");
+  setcontext_func_ = setcontext_f->addr();
+  if (!setcontext_func_) sp_perror("FATAL - Cannot find setcontext()'s address");
+  PatchFunction* getcontext_f = parser()->findFunction("getcontext", false);
+  if (!getcontext_f) sp_perror("FATAL - Cannot find getcontext()");
+  getcontext_func_ = getcontext_f->addr();
+  if (!getcontext_func_) sp_perror("FATAL - Cannot find getcontext()'s address");
 }
 
 bool SpContext::is_well_known_lib(string lib) {
