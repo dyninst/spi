@@ -36,13 +36,6 @@ TrapInstrumenter::TrapInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
 }
 
 void simple_trap_handler(int sig, siginfo_t* info, void* c) {
-  // get pc
-  // Dyninst::Address pc = sp::get_pre_signal_pc(c) - 1 + orig_insn_size;
-
-  // setup jump back value for patch area
-
-  // restore
-  // sp::set_pc(pc, c);
 
   // Get pc
   Dyninst::Address pc = sp::get_pre_signal_pc(c) - 1;
@@ -95,7 +88,9 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   PatchMgrPtr mgr = g_context->mgr();
   sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
   if (!as->set_range_perm((Dyninst::Address)blob, sp_snip->size(), perm)) {
-    sp_debug("MPROTECT - Failed to change memory access permission for blob");
+    sp_debug("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
+    as->dump_mem_maps();
+    exit(0);
   }
 
   // set pc to patch area

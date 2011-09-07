@@ -79,6 +79,22 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
       // sp_debug("PERM - [%lx, %lx) NOT overlap (%lx, %lx) at %s", start, end, a, code_end, mm.path.c_str());
     }
   }
+
+  // last try
+  if (!ret) {
+    Dyninst::Address aligned = a;
+    size_t pz = getpagesize();
+    while (aligned % pz != 0) a--;
+    if (mprotect((void*)a, length, perm) < 0) {
+      sp_print("MPROTECT - Failed to change memory access permission");
+      return false;
+    } else {
+      sp_debug("PERM - successfully change the access permission to %lx",
+               PROT_READ | PROT_WRITE | PROT_EXEC);
+      ret = true;
+    }
+  }
+
   return ret;
 }
 

@@ -241,10 +241,6 @@ SpSnippet::~SpSnippet() {
 }
 /* Psuedo Assembly for Blob:
 
-    movq OLD_CONTEXT, %rdi                    movq OLD_CONTEXT, %rdi
-    callq getcontext                          push x 4 ret value
-                                              push x 4 getcontext addr
-                                              ret
     movq POINT, %rdi                          movq POINT, %rdi
     movq SP_CONTEXT, %rsi                     movq SP_CONTEXT, %rsi
     callq payload                             push x 4 ret value

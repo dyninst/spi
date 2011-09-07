@@ -36,7 +36,7 @@ class SpAddrSpace : public Dyninst::PatchAPI::AddrSpace {
     MemMappings mem_maps_;
 
     void update_mem_maps();
-    void dump_mem_maps();
+    public: void dump_mem_maps();
 
     SpAddrSpace();
 };

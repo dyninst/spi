@@ -15,7 +15,7 @@ using Dyninst::PatchAPI::PatchObject;
 bool default_payload(Point* pt, sp::SpContext* context) {
   sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", pt->getCallee()->name().c_str());
   sp_print("%s", pt->getCallee()->name().c_str());
-
+  /*
   sp_debug("CALL BLOCK per iter {");
   sp_debug("%s", context->parser()->dump_insn((void*)pt->block()->start(), pt->block()->size()).c_str());
   sp_debug("}");
@@ -31,6 +31,7 @@ bool default_payload(Point* pt, sp::SpContext* context) {
       sp_debug("}");
     }
   }
+*/
   /*
   vector<PatchBlock*> blks;
   obj->blocks(back_inserter(blks));
