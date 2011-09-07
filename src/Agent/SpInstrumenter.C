@@ -176,6 +176,10 @@ bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   string int3;
   int3 += (char)0xcc;
 
+  sp_debug("CALL BLOCK - blob %d bytes {", blob_size);
+  sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end() - point->block()->start()).c_str());
+  sp_debug("}");
+
   Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
   size_t insn_length = point->block()->end() - point->block()->last();
@@ -191,6 +195,9 @@ bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
     memcpy(addr, int3.c_str(), int3.size());
   }
 
+  sp_debug("CALL BLOCK after - blob %d bytes {", blob_size);
+  sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end() - point->block()->start()).c_str());
+  sp_debug("}");
 
   // Restore the permission of memory mapping
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {

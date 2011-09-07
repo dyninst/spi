@@ -51,6 +51,7 @@ static size_t emit_call_abs(long callee, char* buf, size_t offset) {
   insnsize = emit_push_imm64(callee, p, 0);
   p += insnsize;
   // ret
+  //*p = 0xcb;
   *p = 0xc3;
   p ++;
   assert(retaddr == (long)p);
@@ -86,6 +87,8 @@ static size_t emit_jump_abs(long trg, char* buf, size_t offset) {
   p += insnsize;
   // ret
   *p = 0xc3;
+  //*p = 0xcb;
+
   p ++;
 
   return (p - (buf + offset));
@@ -142,6 +145,7 @@ static size_t emit_restore_regs(ucontext_t* c, char* buf, size_t offset) {
   p += sizeof(long);
 
   // FIXME!!!!
+
   // REG_RSP
   *p = (char)0x48; p++;
   *p = (char)0xbc; p++;
@@ -201,7 +205,7 @@ static size_t emit_restore_regs(ucontext_t* c, char* buf, size_t offset) {
   p += emit_push_imm64((long)c->uc_mcontext.gregs[REG_EFL], p, 0);
   *p = (char)0x9d; // popfq
   p++;
-
+  //printf("flags: %x\n", c->uc_mcontext.gregs[REG_EFL]);
   /*
   REG_RIP,
 # define REG_RIP	REG_RIP
@@ -291,17 +295,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // callq payload
   insnsize = emit_call_abs((long)payload_, blob_, offset);
   offset += insnsize;
-
-/*
-  old_context_->uc_mcontext.gregs[REG_RIP] = (Dyninst::Address)(blob_ + offset + 10+4*4+4*4+1);
-  // movq old_context, %rdi
-  insnsize = emit_mov_imm64_rdi((long)old_context_, blob_, offset);
-  offset += insnsize;
-
-  // callq setcontext
-  insnsize = emit_call_abs((long)setcontext_func_, blob_, offset);
-  offset += insnsize;
-*/
 
   // restore registers
   insnsize = emit_restore_regs(old_context_, blob_, offset);
