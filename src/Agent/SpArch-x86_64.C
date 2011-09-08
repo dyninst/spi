@@ -357,7 +357,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // movq %rdi, old_context_
   size_t offset = 0;
   size_t insnsize = 0;
-  /*
+
   // save context
   insnsize = emit_save(blob_, offset);
   offset += insnsize;
@@ -377,7 +377,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // restore context
   insnsize = emit_restore(blob_, offset);
   offset += insnsize;
-*/
+
   // restore registers
   //insnsize = emit_restore_regs(old_context_, blob_, offset);
   //offset += insnsize;
