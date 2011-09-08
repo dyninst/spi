@@ -10,7 +10,65 @@ using Dyninst::PatchAPI::PatchFunction;
 
 namespace sp {
 
+// dump context
+void dump_context(ucontext_t* context) {
+  mcontext_t* c = &context->uc_mcontext;
+  sp_debug("DUMP CONTEXT - {");
+
+  sp_debug("rax: %lx", c->gregs[REG_RAX]);
+  sp_debug("rbx: %lx", c->gregs[REG_RBX]);
+  sp_debug("rcx: %lx", c->gregs[REG_RCX]);
+  sp_debug("rdx: %lx", c->gregs[REG_RDX]);
+  sp_debug("rsi: %lx", c->gregs[REG_RSI]);
+  sp_debug("rdi: %lx", c->gregs[REG_RDI]);
+  sp_debug("rbp: %lx", c->gregs[REG_RBP]);
+  sp_debug("rsp: %lx", c->gregs[REG_RSP]);
+  sp_debug("r8: %lx", c->gregs[REG_R8]);
+  sp_debug("r9: %lx", c->gregs[REG_R9]);
+  sp_debug("r10: %lx", c->gregs[REG_R10]);
+  sp_debug("r11: %lx", c->gregs[REG_R11]);
+  sp_debug("r12: %lx", c->gregs[REG_R12]);
+  sp_debug("r13: %lx", c->gregs[REG_R13]);
+  sp_debug("r14: %lx", c->gregs[REG_R14]);
+  sp_debug("r15: %lx", c->gregs[REG_R15]);
+  sp_debug("flags: %lx", c->gregs[REG_EFL]);
+
+  sp_debug("DUMP CONTEXT - }");
+}
+
 // a bunch of code generation functions
+static size_t emit_save( char* buf, size_t offset) {
+  char* p = buf + offset;
+  *p++ = 0x57; // push rdi
+  *p++ = 0x56; // push rsi
+  *p++ = 0x52; // push rdx
+  *p++ = 0x51; // push rcx
+
+  *p++ = 0x41; // r8
+  *p++ = 0x50;
+
+  *p++ = 0x41; // r9
+  *p++ = 0x51;
+
+  return (p - (buf + offset));
+}
+
+static size_t emit_restore( char* buf, size_t offset) {
+  char* p = buf + offset;
+  *p++ = 0x41; // pop r8
+  *p++ = 0x59;
+
+  *p++ = 0x41; // pop r8
+  *p++ = 0x58;
+
+  *p++ = 0x59; // pop rcx
+  *p++ = 0x5a; // pop rdx
+  *p++ = 0x5e; // pop rsi
+  *p++ = 0x5f; // pop rdi
+
+  return (p - (buf + offset));
+}
+
 static size_t emit_mov_imm64_rdi(long imm, char* buf, size_t offset) {
   char* p = buf + offset;
   *p = (char)0x48; p++;
@@ -59,6 +117,25 @@ static size_t emit_call_abs(long callee, char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
+static size_t emit_illegal(char* buf, size_t offset) {
+  char* p = buf + offset;
+  *p++ = 0xc7;
+  *p++ = 0x04;
+  *p++ = 0x25;
+
+  *p++ = 0x00;
+  *p++ = 0x00;
+  *p++ = 0x00;
+  *p++ = 0x00;
+
+  *p++ = 0x00;
+  *p++ = 0x00;
+  *p++ = 0x00;
+  *p++ = 0x00;
+
+  return (p - (buf + offset));
+}
+  /*
 static size_t emit_orig_call_abs(long callee, char* buf, size_t offset, long orig_rsp) {
   char* p = buf + offset;
   size_t insnsize = 0;
@@ -77,6 +154,7 @@ static size_t emit_orig_call_abs(long callee, char* buf, size_t offset, long ori
 
   return (p - (buf + offset));
 }
+  */
 
 static size_t emit_jump_abs(long trg, char* buf, size_t offset) {
   char* p = buf + offset;
@@ -279,6 +357,10 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // movq %rdi, old_context_
   size_t offset = 0;
   size_t insnsize = 0;
+  /*
+  // save context
+  insnsize = emit_save(blob_, offset);
+  offset += insnsize;
 
   // movq POINT, %rdi
   insnsize = emit_mov_imm64_rdi((long)point_, blob_, offset);
@@ -288,15 +370,23 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   insnsize = emit_mov_imm64_rsi((long)context_, blob_, offset);
   offset += insnsize;
 
-  // callq payload
+  // call payload
   insnsize = emit_call_abs((long)payload_, blob_, offset);
   offset += insnsize;
 
-  // restore registers
-  insnsize = emit_restore_regs(old_context_, blob_, offset);
+  // restore context
+  insnsize = emit_restore(blob_, offset);
   offset += insnsize;
+*/
+  // restore registers
+  //insnsize = emit_restore_regs(old_context_, blob_, offset);
+  //offset += insnsize;
 
-  // movq ORIG_FUNCTION
+  // for debug, cause core dump
+  //  insnsize = emit_illegal(blob_, offset);
+  //  offset += insnsize;
+
+  // call ORIG_FUNCTION
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
   offset += insnsize;
 

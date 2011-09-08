@@ -24,6 +24,7 @@ extern sp::SpContext* g_context;
 namespace sp {
 extern Dyninst::Address get_pre_signal_pc(void* context);
 extern Dyninst::Address set_pc(Dyninst::Address pc, void* context);
+extern void dump_context(ucontext_t* context);
 }
 
 TrapInstrumenter* TrapInstrumenter::create(Dyninst::PatchAPI::AddrSpace* as) {
@@ -93,6 +94,7 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
     exit(0);
   }
 
+  sp::dump_context((ucontext_t*)c);
   // set pc to patch area
   sp::set_pc((Dyninst::Address)blob, c);
 }

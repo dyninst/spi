@@ -6,26 +6,40 @@ void callee1() {
 void callee2() {
 }
 
-void func() {
+void func(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8,
+          int a9, int a10, int a11, int a12, int a13, int a14, int a15, int i,
+          char* a) {
   callee1();
   callee2();
+  printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d, %d, %d, %d, %d, %d, i=%d, %s\n", a1, a2, a3, a4, a5, a6, a7, a8,
+         a9, a10, a11, a12, a13, a14, a15, i, a);
 }
 
 int main(int argc, char** argv) {
-
-  int i = 0;
-  //int a = 0;
-  int j = 0;
-  for (; j < 5; j++) {
-  printf("outer %d\n", j);
-  while (i < 4) {
+  int i = 10;
+  char* a = "hello";
+  while (i < 19) {
     i++;
-    printf("  inner %d\n", i);
-    func();
-    callee1();
+    func(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, i, a);
   }
-  func();
-  i = 0;
-  }
-  //printf("a: %d\n", a);
+
+  /*
+  int count = 0;
+  printf("count: %d\n", count);
+  count++;
+  printf("count: %d\n", count);
+  count++;
+  printf("count: %d\n", count);
+  count++;
+  printf("count: %d\n", count);
+  count++;
+  printf("count: %d\n", count);
+  count++;
+  printf("count: %d\n", count);
+  count++;
+  printf("count: %d\n", count);
+  count++;
+  printf("count: %d\n", count);
+  count++;
+*/
 }
