@@ -26,7 +26,6 @@ class TrapInstrumenter : public Dyninst::PatchAPI::Instrumenter {
     bool install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size);
 };
 
-  /*
 class JumpInstrumenter : public Dyninst::PatchAPI::Instrumenter {
   public:
     static JumpInstrumenter* create(Dyninst::PatchAPI::AddrSpace* as);
@@ -36,7 +35,7 @@ class JumpInstrumenter : public Dyninst::PatchAPI::Instrumenter {
     JumpInstrumenter(Dyninst::PatchAPI::AddrSpace*);
     bool install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size);
 };
-  */
+
 }
 
 #endif /* _SPINSTRUMENTER_H_ */
