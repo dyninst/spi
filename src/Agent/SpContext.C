@@ -48,6 +48,8 @@ void SpContext::init_well_known_libs() {
   well_known_libs_.push_back("libstdc++");
   well_known_libs_.push_back("libgcc");
   well_known_libs_.push_back("libagent.so");
+  well_known_libs_.push_back("libpthread-");
+
   well_known_libs_.push_back(parser_->get_agent_name());
 }
 

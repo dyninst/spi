@@ -15,11 +15,11 @@ using Dyninst::PatchAPI::PatchObject;
 bool default_payload(Point* pt, sp::SpContext* context) {
   sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", pt->getCallee()->name().c_str());
   sp_print("%s", pt->getCallee()->name().c_str());
-  /*
+
   sp_debug("CALL BLOCK per iter {");
   sp_debug("%s", context->parser()->dump_insn((void*)pt->block()->start(), pt->block()->size()).c_str());
   sp_debug("}");
-
+/*
   PatchObject* obj = pt->block()->obj();
   vector<PatchFunction*> funcs;
   obj->funcs(back_inserter(funcs));
@@ -31,8 +31,7 @@ bool default_payload(Point* pt, sp::SpContext* context) {
       sp_debug("}");
     }
   }
-*/
-  /*
+
   vector<PatchBlock*> blks;
   obj->blocks(back_inserter(blks));
   sp_debug("%d blocks", blks.size());
@@ -41,8 +40,7 @@ bool default_payload(Point* pt, sp::SpContext* context) {
   sp_debug("%s", context->parser()->dump_insn((void*)blks[i]->start(), blks[i]->size()).c_str());
   sp_debug("}");
   }
-  */
-  /*
+
   PatchBlock* blk = pt->block();
   const PatchBlock::edgelist& edges = blk->getTargets();
 
@@ -53,24 +51,25 @@ bool default_payload(Point* pt, sp::SpContext* context) {
     sp_debug("%s", context->parser()->dump_insn((void*)b->start(), b->size()).c_str());
     sp_debug("}");
   }
-  */
-  /*
+
   FILE* fp=fopen("/tmp/vlog", "a");
   fprintf(fp, "%s\n", pt->getCallee()->name().c_str());
   fclose(fp);
   */
   sp::Points pts;
-
   sp::CalleePoints(pt->getCallee(), context, pts);
   sp_debug("FIND POINTS - %d points found in function %s", pts.size(), pt->getCallee()->name().c_str());
-
-  sp::SpPropeller::ptr p = sp::SpPropeller::create();
-  p->go(pts, context, context->init_payload());
-
+  if (pts.size() > 0) {
+    sp::SpPropeller::ptr p = sp::SpPropeller::create();
+    p->go(pts, context, context->init_payload());
+  } else {
+    sp_debug("NO POINTS - to propell");
+  }
   return true;
 }
 
 bool simple_payload(Point* pt, sp::SpContext* context) {
   sp_debug("SIMPLE PAYLOAD - I'm in %s", pt->getCallee()->name().c_str());
+  sp_print("%s", pt->getCallee()->name().c_str());
   return true;
 }
