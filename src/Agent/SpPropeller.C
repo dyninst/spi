@@ -2,6 +2,7 @@
 #include "SpContext.h"
 #include "PatchMgr.h"
 #include "SpSnippet.h"
+#include "Instruction.h"
 
 using sp::SpPropeller;
 using sp::SpContext;
@@ -36,6 +37,8 @@ bool SpPropeller::go(Points&  pts,
   for (int i = 0; i < pts.size(); i++) {
     Point* pt = pts[i];
     PatchFunction* callee = pt->getCallee();
+
+
     SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, payload);
     Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);
     patcher.add(PushBackCommand::create(pt, snip));

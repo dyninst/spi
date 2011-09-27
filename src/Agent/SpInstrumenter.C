@@ -142,7 +142,6 @@ bool TrapInstrumenter::run() {
           sp_perror("MPROTECT - Failed to change memory access permission");
         };
         char* insn = (char*)eip;
-        char buf[255];
         for (int i = 0; i < insn_size; i++) {
           orig_insn += insn[i];
         }
@@ -237,6 +236,15 @@ bool JumpInstrumenter::run() {
         string& orig_insn = sp_snip->orig_insn();
         Dyninst::Address insn_size = pt->block()->end() - eip;
         Dyninst::Address ret_addr = pt->block()->end();//eip + 5;
+
+        Dyninst::PatchAPI::PatchBlock* blk = pt->block();
+        Dyninst::Address last = blk->last();
+        Dyninst::InstructionAPI::Instruction::Ptr callinsn = blk->getInsn(last);
+        if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
+          sp_debug("CLAL BY JUMP - jump to function %s", pt->getCallee()->name().c_str());
+          ret_addr = 0;
+        }
+
         char* blob = sp_snip->blob(ret_addr);
         long abs_rel_addr = ((long)blob > (long)eip) ? ((long)blob - (long)eip) : ((long)eip - (long)blob);
 
@@ -254,7 +262,6 @@ bool JumpInstrumenter::run() {
         inst_map[eip] = instance;
 
         char* insn = (char*)eip;
-        char buf[255];
         for (int i = 0; i < insn_size; i++) {
           orig_insn += insn[i];
         }

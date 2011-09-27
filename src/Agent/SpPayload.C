@@ -12,13 +12,15 @@ using Dyninst::PatchAPI::PatchBlock;
 using Dyninst::PatchAPI::PatchEdge;
 using Dyninst::PatchAPI::PatchObject;
 
-bool default_payload(Point* pt, sp::SpContext* context) {
+void default_payload(Point* pt, sp::SpContext* context) {
+
   sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", pt->getCallee()->name().c_str());
   sp_print("%s", pt->getCallee()->name().c_str());
 
   sp_debug("CALL BLOCK per iter {");
   sp_debug("%s", context->parser()->dump_insn((void*)pt->block()->start(), pt->block()->size()).c_str());
   sp_debug("}");
+
 /*
   PatchObject* obj = pt->block()->obj();
   vector<PatchFunction*> funcs;
@@ -56,6 +58,7 @@ bool default_payload(Point* pt, sp::SpContext* context) {
   fprintf(fp, "%s\n", pt->getCallee()->name().c_str());
   fclose(fp);
   */
+
   sp::Points pts;
   sp::CalleePoints(pt->getCallee(), context, pts);
   sp_debug("FIND POINTS - %d points found in function %s", pts.size(), pt->getCallee()->name().c_str());
@@ -65,7 +68,6 @@ bool default_payload(Point* pt, sp::SpContext* context) {
   } else {
     sp_debug("NO POINTS - to propell");
   }
-  return true;
 }
 
 bool simple_payload(Point* pt, sp::SpContext* context) {

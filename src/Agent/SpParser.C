@@ -189,6 +189,7 @@ char* SpParser::get_agent_name() {
   if ((char*)(msg_shm = (IjMsg*)shmat(shmid, NULL, 0)) == (char *) -1) {
     sp_perror("FATAL - Failed to get agent library name");
   }
+  sp_debug("GET AGENT NAME - %s", msg_shm->libname);
   return msg_shm->libname;
 }
 

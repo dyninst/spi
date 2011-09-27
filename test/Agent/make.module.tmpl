@@ -26,9 +26,9 @@ AG_LDFLAGS           += -lagent
 MUTATEE_SRCS         += $(wildcard ../TestCases/*mutatee.c)
 MUTATEE_OBJS          = $(notdir $(MUTATEE_SRCS:%.c=%.o))
 MUTATEE_EXE           = $(notdir $(MUTATEE_SRCS:%.c=%))
-MUTATEE_LDFLAGS       =
+MUTATEE_LDFLAGS       = -ldl
 MUTATEE_IFLAGS        =
-MUTATEE_FLAGS         = -fPIC
+MUTATEE_FLAGS         = -fPIC -O4
 
 # Rules
 #.PHONY: all

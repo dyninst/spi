@@ -1,45 +1,52 @@
+#include "config.h"
+
+
 #include "test_case.h"
+#include <dlfcn.h>
+#include <locale.h>
+#include <stdlib.h>
+#include <errno.h>
 
-void callee1() {
+static volatile locale_t c_locale_cache;
+
+static inline locale_t
+c_locale (void)
+{
+  if (!c_locale_cache)
+    c_locale_cache = newlocale (LC_ALL_MASK, "C", (locale_t) 0);
+  return c_locale_cache;
 }
 
-void callee2() {
+double
+C_STRTOD (char const *nptr, char **endptr)
+{
+  double r;
+
+  locale_t locale = c_locale ();
+  if (!locale)
+    {
+      if (endptr)
+        *endptr = (char *) nptr;
+      return 0; /* errno is set here */
+    }
+
+  r = strtod_l(nptr, endptr, locale);
+  return r;
 }
 
-void func(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8,
-          int a9, int a10, int a11, int a12, int a13, int a14, int a15, int i,
-          char* a) {
-  callee1();
-  callee2();
-  printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d, %d, %d, %d, %d, %d, i=%d, %s\n", a1, a2, a3, a4, a5, a6, a7, a8,
-         a9, a10, a11, a12, a13, a14, a15, i, a);
+double recursion() {
+  char* end;
+  char* str = "899999999.99";
+  return C_STRTOD(str, &end);
 }
 
+void foo() {
+  printf("hello");
+}
 int main(int argc, char** argv) {
-  int i = 10;
-  char* a = "hello";
-  while (i < 19) {
-    i++;
-    func(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, i, a);
+  void* h = dlopen("/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/test/Agent/x86_64-unknown-linux2.4/parser_agent.so", RTLD_NOW);
+  if (!h) {
+    fprintf(stderr, "%s", dlerror());
   }
-
-  /*
-  int count = 0;
-  printf("count: %d\n", count);
-  count++;
-  printf("count: %d\n", count);
-  count++;
-  printf("count: %d\n", count);
-  count++;
-  printf("count: %d\n", count);
-  count++;
-  printf("count: %d\n", count);
-  count++;
-  printf("count: %d\n", count);
-  count++;
-  printf("count: %d\n", count);
-  count++;
-  printf("count: %d\n", count);
-  count++;
-*/
+  recursion();
 }
