@@ -101,17 +101,17 @@ void TestDriver::help() {
     std::cout << "\t-" << *i << "\n";
   }
   std::cout << "\tLOAD_METHOD should be one of the following items:\n";
-  std::cout << "\t-" << "inject" << "\n";
-  std::cout << "\t-" << "preload" << "\n";
+  std::cout << "\t-" << "i  (Inject)" << "\n";
+  std::cout << "\t-" << "l  (Preload)" << "\n";
 }
 
 int main(int argc, char *argv[]) {
   TestDriver driver;
-  if (argc < 2) {
+  if (argc < 3) {
     driver.help();
     return 1;
   }
-
+  /*
   char* test_name = &argv[1][1];
 
   int pid = fork();
@@ -136,5 +136,6 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+  */
   return 0;
 }
