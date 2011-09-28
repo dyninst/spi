@@ -33,7 +33,7 @@ using Dyninst::PatchAPI::PointMaker;
 
 
 SpParser::SpParser()
-  : exe_obj_(NULL) {
+  : exe_obj_(NULL), injected_(false) {
 }
 
 SpParser::~SpParser() {
@@ -57,57 +57,80 @@ typedef struct {
 PatchMgrPtr SpParser::parse() {
   if (mgr_) return mgr_;
 
-  int shmid;
-  key_t key = 1985;
-  IjLib* shm;
-  if ((shmid = shmget(key, sizeof(IjLib), 0666)) < 0) {
-    perror("shmget");
-    exit(1);
-  }
-  if ((char*)(shm = (IjLib*)shmat(shmid, NULL, 0)) == (char *) -1) {
-    perror("shmat");
-    exit(1);
-  }
-
-  // build lookup map
-  int cur = 0;
-  typedef std::map<Dyninst::Address, bool> LibLookup;
-  LibLookup lib_lookup;
-  lib_lookup[0] = true;
-  while (shm->offsets[cur] != -1) {
-    lib_lookup[shm->offsets[cur]] = true;
-    ++cur;
-  }
-
+  // Get all symtabs in this process
   AddressLookup* al = AddressLookup::createAddressLookup(getpid());
   al->refresh();
   std::vector<Symtab*> tabs;
   al->getAllSymtabs(tabs);
   sp_debug("FOUND - %d symtabs", tabs.size());
 
+  // Determine whether the agent is injected or preloaded.
+  // - true: injected by other process
+  // - false: preloaded
+  for (std::vector<Symtab*>::iterator i = tabs.begin(); i != tabs.end(); i++) {
+    Symtab* sym = *i;
+    if (sym->name().find("libijagent.so") != string::npos) {
+      sp_debug("INJECTED - this agent is injected by Injector process");
+      injected_ = true;
+      break;
+    }
+  }
+
+  int shmid;
+  key_t key = 1985;
+  IjLib* shm;
+  if (injected_) {
+    if ((shmid = shmget(key, sizeof(IjLib), 0666)) < 0) {
+      perror("shmget");
+      exit(1);
+    }
+    if ((char*)(shm = (IjLib*)shmat(shmid, NULL, 0)) == (char *) -1) {
+      perror("shmat");
+      exit(1);
+    }
+  } else {
+    sp_debug("PRELOADED - this agent is preloaded");
+  }
+
+  // Build lookup map, to parse those libraries that are loaded before
+  // injecting this agent.
+  // This happens only when the agent is injected_, rather than preloaded.
+  int cur = 0;
+  typedef std::map<Dyninst::Address, bool> LibLookup;
+  LibLookup lib_lookup;
+  lib_lookup[0] = true;
+  if (injected_) {
+    while (shm->offsets[cur] != -1) {
+      lib_lookup[shm->offsets[cur]] = true;
+      ++cur;
+    }
+  }
+
   PatchObjects patch_objs;
   for (std::vector<Symtab*>::iterator i = tabs.begin(); i != tabs.end(); i++) {
     Symtab* sym = *i;
     Dyninst::Address load_addr = 0;
     al->getLoadAddress(sym, load_addr);
-    sp_debug("load_addr: %lx, name: %s", load_addr, sym->name().c_str());
-    // if (!load_addr) load_addr = sym->getLoadAddress();
-    //Symtab::getLoadAddress
-    //AddressLookup::getLoadAddress
-    //PatchObject::codeBase
-    if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
-        (sym->name().find(sp_filename(sp_filename(get_agent_name()))) == string::npos) &&
-        (sym->name().find("libagent.so") == string::npos)) {
-      sp_debug("SKIP - parsing %s", sp_filename(sym->name().c_str()));
+
+    // Parsing binary objects is very time consuming
+    // We avoid parsing the libraries that are not loaded before injecting agent.
+    if (injected_) {
+      if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
+          (sym->name().find(sp_filename(sp_filename(get_agent_name()))) == string::npos) &&
+          (sym->name().find("libagent.so") == string::npos)) {
+        sp_debug("SKIP - parsing %s", sp_filename(sym->name().c_str()));
         continue;
+      }
     }
 
+    // Parse binary objects using ParseAPI::CodeObject::parse()
     SymtabCodeSource* scs = new SymtabCodeSource(sym);
     code_srcs_.push_back(scs);
     CodeObject* co = new CodeObject(scs);
     code_objs_.push_back(co);
     co->parse();
 
+    // Create PatchObjects
     PatchObject* patch_obj = PatchObject::create(co, load_addr);
     patch_objs.push_back(patch_obj);
     if (sym->isExec()) {
@@ -116,10 +139,10 @@ PatchMgrPtr SpParser::parse() {
     } else {
       sp_debug("PARSED - Library %s at %lx", sp_filename(sym->name().c_str()), load_addr);
     }
-  }
-
+  } // End of symtab iteration
   assert(exe_obj_);
-  // initialize PatchAPI objects
+
+  // Initialize PatchAPI stuffs
   AddrSpace* as = SpAddrSpace::create(exe_obj_);
   //Dyninst::PatchAPI::Instrumenter* inst = sp::TrapInstrumenter::create(as);
   Dyninst::PatchAPI::Instrumenter* inst = sp::JumpInstrumenter::create(as);
@@ -131,9 +154,10 @@ PatchMgrPtr SpParser::parse() {
   }
 
   // destroy shared memory
-  shmctl(IJLIB_ID, IPC_RMID, NULL);
-  shmctl(IJMSG_ID, IPC_RMID, NULL);
-
+  if (injected_) {
+    shmctl(IJLIB_ID, IPC_RMID, NULL);
+    shmctl(IJMSG_ID, IPC_RMID, NULL);
+  }
   return mgr_;
 }
 
@@ -179,7 +203,6 @@ typedef struct {
 } IjMsg;
 
 char* SpParser::get_agent_name() {
-
   int shmid;
   key_t key = 1986;
   IjMsg* msg_shm;

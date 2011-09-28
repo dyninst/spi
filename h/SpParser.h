@@ -24,6 +24,7 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     char* get_agent_name();
     Dyninst::Address get_func_addr(string name);
     string dump_insn(void* addr, size_t size);
+    bool injected() const { return injected_; }
 
   protected:
     typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
@@ -31,6 +32,7 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     CodeObjects code_objs_;
     Dyninst::PatchAPI::PatchObject* exe_obj_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
+    bool injected_;
 
     SpParser();
 };

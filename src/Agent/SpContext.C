@@ -25,8 +25,8 @@ SpContext::SpContext(SpPropeller::ptr p,
                      SpParser::ptr parser) {
   init_propeller_ = p;
   parser_ = parser;
-  init_well_known_libs();
   parse();
+  init_well_known_libs();
 }
 
 SpContext* SpContext::create(SpPropeller::ptr propeller,
@@ -50,7 +50,8 @@ void SpContext::init_well_known_libs() {
   well_known_libs_.push_back("libagent.so");
   well_known_libs_.push_back("libpthread-");
 
-  well_known_libs_.push_back(parser_->get_agent_name());
+  if (parser_->injected())
+    well_known_libs_.push_back(parser_->get_agent_name());
 }
 
 /* Get the first instrumentable function.
