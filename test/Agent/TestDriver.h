@@ -21,6 +21,9 @@ class TestDriver {
     void add_testcase(std::string name);
     bool run_testcase(std::string name);
 
+    bool run_preloaded_testcase(std::string name);
+    bool run_injected_testcase(std::string name);
+
     void help();
   private:
     typedef std::set<std::string> TestCases;

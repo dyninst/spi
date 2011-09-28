@@ -66,10 +66,19 @@ SyncEvent::SyncEvent(std::string func_name, int sec)
 
 void SyncEvent::register_event(SpContext* c) {
   g_context = c;
-  c->parse();
-  PatchFunction* f = c->parser()->findFunction("main");
-  sp::Points pts;
-  sp::CalleePoints(f, c, pts);
-  c->init_propeller()->go(pts, c, c->init_payload());
+
+  if (!g_context->parser()->injected()) {
+    c->parse();
+    PatchFunction* f = c->parser()->findFunction("main");
+    sp::Points pts;
+    sp::CalleePoints(f, c, pts);
+    c->init_propeller()->go(pts, c, c->init_payload());
+  } else {
+    struct sigaction act;
+    act.sa_sigaction = (event_handler_t)handler_;
+    act.sa_flags = SA_SIGINFO;
+    sigaction(signum_, &act, NULL);
+    if (signum_ == SIGALRM) alarm(after_secs_);
+  }
 }
 

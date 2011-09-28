@@ -80,7 +80,7 @@ PatchFunction* SpContext::get_first_inst_func() {
     }
 
     // Step 2: if the function can be resolved
-    PatchFunction* func = parser_->findFunction(s);//parser_->findFunction(stackwalk[i].getRA());
+    PatchFunction* func = parser_->findFunction(s);
     if (!func) {
       sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());
       continue;
@@ -95,15 +95,6 @@ PatchFunction* SpContext::get_first_inst_func() {
 
 void SpContext::parse() {
   mgr_ = parser_->parse();
-
-  PatchFunction* setcontext_f = parser()->findFunction("setcontext", false);
-  if (!setcontext_f) sp_perror("FATAL - Cannot find setcontext()");
-  setcontext_func_ = setcontext_f->addr();
-  if (!setcontext_func_) sp_perror("FATAL - Cannot find setcontext()'s address");
-  PatchFunction* getcontext_f = parser()->findFunction("getcontext", false);
-  if (!getcontext_f) sp_perror("FATAL - Cannot find getcontext()");
-  getcontext_func_ = getcontext_f->addr();
-  if (!getcontext_func_) sp_perror("FATAL - Cannot find getcontext()'s address");
 }
 
 bool SpContext::is_well_known_lib(string lib) {
@@ -112,23 +103,6 @@ bool SpContext::is_well_known_lib(string lib) {
   }
   return false;
 }
-
-/*
-bool SpContext::is_instrumentable_func(PatchFunction* func) {
-  // if the function is in a well known library
-  AddrSpacePtr as = mgr_->as();
-  PatchObject* obj = func->object();
-  SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
-  Symtab* sym = cs->getSymtabObject();
-  if (is_well_known_lib(sym->name())) {
-    sp_debug("NO INST - Function %s in a well known lib %s",
-             func->name().c_str(), sp_filename(sym->name().c_str()));
-    return false;
-  }
-  sp_debug("INST - Function %s instrumentable", func->name().c_str());
-  return true;
-}
-*/
 
 void SpContext::restore() {
   // Restore trap handler

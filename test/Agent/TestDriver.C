@@ -13,15 +13,6 @@ using sp::TestDriver;
 char can_exit = 0;
 
 TestDriver::TestDriver() {
-  /*
-  struct rlimit core_limit;
-  core_limit.rlim_cur = RLIM_INFINITY;
-  core_limit.rlim_max = RLIM_INFINITY;
-  if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
-    std::cerr << "ERROR: failed to setup core dump ability\n";
-    exit(0);
-  }
-*/
   // Add test cases here:
   add_testcase("parser");
   add_testcase("event");
@@ -32,66 +23,40 @@ void TestDriver::add_testcase(std::string name) {
   testcases_.insert(name);
 }
 
-bool TestDriver::run_testcase(std::string name) {
+bool TestDriver::run_preloaded_testcase(std::string name) {
   // 1. Check if this test case is in testcases_
   if (testcases_.find(name) == testcases_.end()) {
     std::cerr << "ERROR: there's not a test case called " << name << "\n";
     exit(-1);
   }
 
-  // 2. Load name_mutatee.so
-  std::string mutatee = name + "_mutatee.so";
-  void* m_handle = dlopen(mutatee.c_str(), RTLD_NOW | RTLD_GLOBAL);
-  if (!m_handle) {
-    std::cerr << "ERROR: cannot load " << mutatee << "\n";
-    std::cerr << dlerror() << "\n";
-    exit(0);
-  }
+  // 2. Make name_mutatee and name_agent.so
+  std::string mutatee = name + "_mutatee";
+  std::string agent = name + "_agent.so";
 
-  run_testcase_inject(name, m_handle);
-  //run_testcase_preload(name, m_handle);
-
-  dlclose(m_handle);
+  // 3. Exec
+  char cmd[1024];
+  sprintf(cmd, "LD_PRELOAD=./%s %s", agent.c_str(), mutatee.c_str());
+  system(cmd);
 
   return true;
 }
 
-bool TestDriver::run_testcase_preload(std::string name, void* m_handle) {
-  /*
-  char buf[255];
-  sprintf(buf, "%s test", name.c_str());
-  setenv("LD_PRELOAD", buf, 1);
-  int pid = fork();
-  switch(pid) {
-    case 0: {
-      system("./test ");
-    }
+bool TestDriver::run_injected_testcase(std::string name) {
+  // 1. Check if this test case is in testcases_
+  if (testcases_.find(name) == testcases_.end()) {
+    std::cerr << "ERROR: there's not a test case called " << name << "\n";
+    exit(-1);
   }
-  */
-  typedef void (*run_mutatee_t)();
-  run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
-  run();
-}
 
-bool TestDriver::run_testcase_inject(std::string name, void* m_handle) {
+  // 2. Make name_mutatee and name_agent.so
+  std::string mutatee = name + "_mutatee";
   std::string agent = name + "_agent.so";
-  int ppid = getpid();
-  int pid = fork();
-  switch(pid) {
-    case 0: {
-      char cmd[2048];
-      sprintf(cmd, "./Injector %d %s", ppid, agent.c_str());
-      system(cmd);
-      break;
-    }
-    default: {
-      typedef void (*run_mutatee_t)();
-      run_mutatee_t run = (run_mutatee_t)dlsym(m_handle, "run_mutatee");
-      run();
-      int status;
-      wait(&status);
-    }
-  }
+
+  // 3. Exec
+  char cmd[1024];
+  sprintf(cmd, "sh run.sh %s %s", agent.c_str(), mutatee.c_str());
+  return (system(cmd) != -1);
 }
 
 void TestDriver::help() {
@@ -111,14 +76,23 @@ int main(int argc, char *argv[]) {
     driver.help();
     return 1;
   }
-  /*
+
   char* test_name = &argv[1][1];
+  bool injected = false;
+  if (strncmp(&argv[2][1], "i", 1) == 0) {
+    injected = true;
+  }
 
   int pid = fork();
   switch (pid) {
     // Child
     case 0: {
-      driver.run_testcase(test_name);
+      // driver.run_testcase(test_name);
+      if (injected) {
+        driver.run_injected_testcase(test_name);
+      } else {
+        driver.run_preloaded_testcase(test_name);
+      }
       break;
     }
     case -1: {
@@ -136,6 +110,5 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-  */
   return 0;
 }

@@ -38,8 +38,8 @@ class SpSnippet {
     SpContext* context_;
     PayloadFunc payload_;
     string orig_insn_;
-    Dyninst::Address setcontext_func_;
-    Dyninst::Address getcontext_func_;
+    //Dyninst::Address setcontext_func_;
+    //Dyninst::Address getcontext_func_;
 
     char* blob_;
     size_t blob_size_;

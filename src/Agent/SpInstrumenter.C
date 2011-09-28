@@ -85,7 +85,16 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   sp_debug("IN TRAP - old_context: %lx", c);
   sp_snip->set_old_context((ucontext_t*)c);
 
-  char* blob = sp_snip->blob(pc+1 /*+1 is for after int3*/);
+  Dyninst::Address ret_addr = pc+1;
+  Dyninst::PatchAPI::PatchBlock* blk = pt->block();
+  Dyninst::Address last = blk->last();
+  Dyninst::InstructionAPI::Instruction::Ptr callinsn = blk->getInsn(last);
+  if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
+    sp_debug("CLAL BY JUMP - jump to function %s", pt->getCallee()->name().c_str());
+    ret_addr = 0;
+  }
+
+  char* blob = sp_snip->blob(ret_addr);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   PatchMgrPtr mgr = g_context->mgr();
   sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());

@@ -264,8 +264,6 @@ SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
   // FIXME: use AddrSpace::malloc later
   assert(context_ && "SpContext is NULL");
   blob_ = (char*)malloc(1024);
-  setcontext_func_ = context_->setcontext_func();
-  getcontext_func_ = context_->getcontext_func();
 }
 
 SpSnippet::~SpSnippet() {
@@ -289,18 +287,13 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
             func_->name().c_str());
     return blob_;
   }
-  /*
-  long* stack = (long*)old_context_->uc_mcontext.gregs[REG_RSP];
-  for (int i = 0; i < 10; i++) {
-    sp_debug("STACK @ %lx: %lx", &stack[i], stack[i]);
-  }
-*/
+
   // Build blob
 
   // movq %rdi, old_context_
   size_t offset = 0;
   size_t insnsize = 0;
-  //#if 0
+
   // save context
   insnsize = emit_save(blob_, offset);
   offset += insnsize;
@@ -320,19 +313,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // restore context
   insnsize = emit_restore(blob_, offset);
   offset += insnsize;
-  /*
-  if (func_->name().compare("strtod_l") == 0) {
-    sp_debug("STRTOD_L - will crash");
-    // setenv SP_COREDUMP first, then cause segfault, then check memory image
-    insnsize = emit_fault(blob_, offset);
-    offset += insnsize;
-  }
-*/
-  //#endif
-
-  // stack alignment
-  //  insnsize = emit_align_stack(0, blob_, offset);
-  //  offset += insnsize;
 
   // call ORIG_FUNCTION and jmp back to original return address
   if (ret_addr == 0) {
@@ -346,9 +326,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
     offset += insnsize;
   }
 
-  // stack unalignment
-  //  insnsize = emit_unalign_stack(blob_, offset);
-  //  offset += insnsize;
 
   blob_size_ = offset;
 
