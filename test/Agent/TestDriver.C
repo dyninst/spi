@@ -17,6 +17,7 @@ TestDriver::TestDriver() {
   add_testcase("parser");
   add_testcase("event");
   add_testcase("propel");
+  add_testcase("indcall");
 }
 
 void TestDriver::add_testcase(std::string name) {
