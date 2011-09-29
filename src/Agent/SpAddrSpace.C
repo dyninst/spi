@@ -69,6 +69,7 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
       sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
       if (mprotect((void*)start, end - start, perm) < 0) {
         sp_print("MPROTECT - Failed to change memory access permission");
+	perror("mprotect");
         return false;
       } else {
         sp_debug("PERM - successfully change the access permission to %lx",
@@ -84,9 +85,11 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
   if (!ret) {
     Dyninst::Address aligned = a;
     size_t pz = getpagesize();
-    while (aligned % pz != 0) a--;
-    if (mprotect((void*)a, length, perm) < 0) {
+    //while (aligned % pz != 0) aligned--;
+    aligned = (Dyninst::Address)(((Dyninst::Address) aligned + pz-1) & ~(pz-1));
+    if (mprotect((void*)aligned, length, perm) < 0) {
       sp_print("MPROTECT - Failed to change memory access permission");
+      perror("mprotect");
       return false;
     } else {
       sp_debug("PERM - successfully change the access permission to %lx",

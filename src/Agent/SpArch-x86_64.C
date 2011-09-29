@@ -263,7 +263,9 @@ SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
   : func_(f), point_(pt), context_(c), payload_(p), blob_size_(0), old_context_(NULL) {
   // FIXME: use AddrSpace::malloc later
   assert(context_ && "SpContext is NULL");
-  blob_ = (char*)malloc(1024);
+
+  blob_ = (char*)malloc(1024+ getpagesize() -1);
+  blob_ = (char*)(((Dyninst::Address)blob_ + getpagesize()-1) & ~(getpagesize()-1));
 }
 
 SpSnippet::~SpSnippet() {
