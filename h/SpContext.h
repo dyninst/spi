@@ -35,9 +35,6 @@ class SpContext {
     InstMap& inst_map() { return inst_map_; }
     bool is_well_known_lib(string);
 
-    //Dyninst::Address setcontext_func() const { return setcontext_func_; }
-    //Dyninst::Address getcontext_func() const { return getcontext_func_; }
-
   protected:
     SpPropeller::ptr init_propeller_;
     PayloadFunc init_payload_;
@@ -49,13 +46,9 @@ class SpContext {
     struct sigaction old_act_;
     InstMap inst_map_;
 
-    //Dyninst::Address setcontext_func_;
-    //Dyninst::Address getcontext_func_;
-
     SpContext(SpPropeller::ptr,
               SpParser::ptr);
     void init_well_known_libs();
-    //bool is_instrumentable_func(Dyninst::PatchAPI::PatchFunction* func);
 };
 
 
