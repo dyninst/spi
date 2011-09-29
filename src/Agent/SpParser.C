@@ -144,8 +144,8 @@ PatchMgrPtr SpParser::parse() {
 
   // Initialize PatchAPI stuffs
   AddrSpace* as = SpAddrSpace::create(exe_obj_);
-  // Dyninst::PatchAPI::Instrumenter* inst = sp::TrapInstrumenter::create(as);
-  Dyninst::PatchAPI::Instrumenter* inst = sp::JumpInstrumenter::create(as);
+  Dyninst::PatchAPI::Instrumenter* inst = sp::TrapInstrumenter::create(as);
+  //Dyninst::PatchAPI::Instrumenter* inst = sp::JumpInstrumenter::create(as);
   mgr_ = PatchMgr::create(as, inst);
   for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
