@@ -52,7 +52,7 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   Dyninst::Address last = blk->last();
   Dyninst::InstructionAPI::Instruction::Ptr callinsn = blk->getInsn(last);
   if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
-    sp_debug("CLAL BY JUMP - jump to function %s", pt->getCallee()->name().c_str());
+    sp_debug("CLAL BY JUMP - jump to function %s", g_context->parser()->callee(pt)->name().c_str());
     ret_addr = 0;
   }
 
@@ -117,10 +117,10 @@ bool TrapInstrumenter::run() {
         // Install the blob to pt
         if (install(pt, NULL, sp_snip->size())) {
           sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
-                   pt->block()->last(), pt->getCallee()->name().c_str());
+                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         } else {
           sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
-                   pt->block()->last(), pt->getCallee()->name().c_str());
+                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         }
       }
     }
@@ -204,7 +204,7 @@ bool JumpInstrumenter::run() {
         Dyninst::Address last = blk->last();
         Dyninst::InstructionAPI::Instruction::Ptr callinsn = blk->getInsn(last);
         if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
-          sp_debug("CLAL BY JUMP - jump to function %s", pt->getCallee()->name().c_str());
+          sp_debug("CLAL BY JUMP - jump to function %s", g_context->parser()->callee(pt)->name().c_str());
           ret_addr = 0;
         }
 
@@ -233,10 +233,10 @@ bool JumpInstrumenter::run() {
         // Install the blob to pt
         if (install(pt, blob, sp_snip->size())) {
           sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
-                   pt->block()->last(), pt->getCallee()->name().c_str());
+                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         } else {
           sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
-                   pt->block()->last(), pt->getCallee()->name().c_str());
+                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         }
       }
     }

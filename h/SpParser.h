@@ -21,6 +21,8 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     Dyninst::PatchAPI::PatchObject* exe_obj();
     Dyninst::PatchAPI::PatchFunction* findFunction(Dyninst::Address addr);
     Dyninst::PatchAPI::PatchFunction* findFunction(string name, bool skip = true);
+    Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt);
+
     char* get_agent_name();
     Dyninst::Address get_func_addr(string name);
     string dump_insn(void* addr, size_t size);

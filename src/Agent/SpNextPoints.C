@@ -20,11 +20,11 @@ void sp::CalleePoints(PatchFunction* func, SpContext* context, Points& pts) {
   }
   sp_debug("POINTS - %d in total", tmp_pts.size());
   for (Points::iterator pi = tmp_pts.begin(); pi != tmp_pts.end(); pi++) {
-    if (!(*pi)->getCallee()) continue;
+    if (!context->parser()->callee(*pi)) continue;
     pts.push_back(*pi);
     sp_debug("%s at %lx (%d pts) - Call %s at Block %lx ~ %lx",
              cur_func->name().c_str(), cur_func->addr(), pts.size(),
-             (*pi)->getCallee()->name().c_str(),
+             context->parser()->callee(*pi)->name().c_str(),
              (*pi)->block()->start(), (*pi)->block()->end());
   }
 }

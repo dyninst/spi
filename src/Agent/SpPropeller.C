@@ -36,8 +36,7 @@ bool SpPropeller::go(Points&  pts,
   Dyninst::PatchAPI::Patcher patcher(mgr);
   for (int i = 0; i < pts.size(); i++) {
     Point* pt = pts[i];
-    PatchFunction* callee = pt->getCallee();
-
+    PatchFunction* callee = context->parser()->callee(pt);
 
     SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, payload);
     Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);

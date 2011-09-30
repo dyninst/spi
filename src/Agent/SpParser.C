@@ -29,8 +29,9 @@ using Dyninst::PatchAPI::PatchMgrPtr;
 using Dyninst::PatchAPI::PatchMgr;
 using Dyninst::PatchAPI::AddrSpace;
 using Dyninst::PatchAPI::PatchFunction;
+using Dyninst::PatchAPI::PatchBlock;
 using Dyninst::PatchAPI::PointMaker;
-
+using Dyninst::PatchAPI::Point;
 
 SpParser::SpParser()
   : exe_obj_(NULL), injected_(false) {
@@ -288,4 +289,33 @@ string SpParser::dump_insn(void* addr, size_t size) {
     insn = deco.decode();
   }
   return s;
+}
+
+PatchFunction* SpParser::callee(Point* pt) {
+  PatchFunction* f = pt->getCallee();
+  // Found direct call
+  if (f) {
+    sp_debug("DIRECT CALL - call relative_addr");
+    return f;
+  }
+
+  // Try indirect call: call reg
+  sp_debug("INDIRECT CALL -");
+  using namespace Dyninst::InstructionAPI;
+
+  PatchBlock* blk = pt->block();
+  Instruction::Ptr insn = blk->getInsn(blk->last());
+
+  if (f) {
+    sp_debug("INDIRECT CALL - call register");
+    return f;
+  }
+
+  // Try indirect call: call [addr]
+  if (f) {
+    sp_debug("INDIRECT CALL - call [addr]");
+    return f;
+  }
+
+  return NULL;
 }

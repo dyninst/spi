@@ -14,8 +14,9 @@ using Dyninst::PatchAPI::PatchObject;
 
 void default_payload(Point* pt, sp::SpContext* context) {
 
-  sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", pt->getCallee()->name().c_str());
-  sp_print("%s", pt->getCallee()->name().c_str());
+  string callee_name = context->parser()->callee(pt)->name();
+  sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", callee_name.c_str());
+  sp_print("%s", callee_name.c_str());
 
   sp_debug("CALL BLOCK per iter {");
   sp_debug("%s", context->parser()->dump_insn((void*)pt->block()->start(), pt->block()->size()).c_str());
@@ -60,8 +61,8 @@ void default_payload(Point* pt, sp::SpContext* context) {
   */
 
   sp::Points pts;
-  sp::CalleePoints(pt->getCallee(), context, pts);
-  sp_debug("FIND POINTS - %d points found in function %s", pts.size(), pt->getCallee()->name().c_str());
+  sp::CalleePoints(context->parser()->callee(pt), context, pts);
+  sp_debug("FIND POINTS - %d points found in function %s", pts.size(), callee_name.c_str());
   if (pts.size() > 0) {
     sp::SpPropeller::ptr p = sp::SpPropeller::create();
     p->go(pts, context, context->init_payload());
@@ -71,7 +72,7 @@ void default_payload(Point* pt, sp::SpContext* context) {
 }
 
 bool simple_payload(Point* pt, sp::SpContext* context) {
-  sp_debug("SIMPLE PAYLOAD - I'm in %s", pt->getCallee()->name().c_str());
-  sp_print("%s", pt->getCallee()->name().c_str());
+  sp_debug("SIMPLE PAYLOAD - I'm in %s", context->parser()->callee(pt)->name().c_str());
+  sp_print("%s", context->parser()->callee(pt)->name().c_str());
   return true;
 }

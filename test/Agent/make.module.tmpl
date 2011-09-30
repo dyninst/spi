@@ -86,7 +86,7 @@ $(TEST_DRIVER): $(DRIVER_OBJS)
 
 COPYIJ:
 	@echo "Copying Injector and libijagent.so..."
-	@cp $(SP_DIR)/$(PLATFORM)/Injector $(SP_DIR)/$(PLATFORM)/libijagent.so ./
+	@cp $(SP_DIR)/$(PLATFORM)/Injector $(SP_DIR)/$(PLATFORM)/libijagent.so $(SP_DIR)/$(PLATFORM)/libagent.so ./
 
 # Clean up
 clean:
