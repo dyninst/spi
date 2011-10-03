@@ -3,6 +3,7 @@
 
 #include "PatchObject.h"
 #include "PatchMgr.h"
+#include <ucontext.h>
 
 namespace sp {
 
@@ -21,13 +22,16 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     Dyninst::PatchAPI::PatchObject* exe_obj();
     Dyninst::PatchAPI::PatchFunction* findFunction(Dyninst::Address addr);
     Dyninst::PatchAPI::PatchFunction* findFunction(string name, bool skip = true);
-    Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt);
+    Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt,
+                                             bool parse_indirect = false);
 
     char* get_agent_name();
     Dyninst::Address get_func_addr(string name);
     string dump_insn(void* addr, size_t size);
     bool injected() const { return injected_; }
 
+    // only works for trap-based instrumentation
+    void set_old_context(ucontext_t* c) { old_context_ = *c; }
   protected:
     typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
     CodeSources code_srcs_;
@@ -35,8 +39,10 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     Dyninst::PatchAPI::PatchObject* exe_obj_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     bool injected_;
+    ucontext_t old_context_;
 
     SpParser();
+    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg);
 };
 
 }

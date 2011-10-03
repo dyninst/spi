@@ -12,6 +12,9 @@ namespace sp {
 
 // dump context
 void SpSnippet::dump_context(ucontext_t* context) {
+  if (!context) {
+    return;
+  }
   mcontext_t* c = &context->uc_mcontext;
   sp_debug("DUMP CONTEXT - {");
 
@@ -227,6 +230,38 @@ Dyninst::Address SpSnippet::get_pre_signal_pc(void* context) {
 Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
   ucontext_t* ctx = (ucontext_t*)context;
   ctx->uc_mcontext.gregs[REG_RIP] = pc;
+}
+
+Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg) {
+  sp_debug("INDIRECT - get saved function address");
+  sp_print("call_addr in %s", reg.name().c_str());
+  //SpSnippet::dump_context(&old_context_);
+  using namespace Dyninst::x86_64;
+  mcontext_t* c = &old_context_.uc_mcontext;
+
+  if (reg == eax) {
+    return c->gregs[REG_RAX];
+  } else if (reg == ebx) {
+    return c->gregs[REG_RBX];
+  } else if (reg == ecx) {
+    return c->gregs[REG_RCX];
+  } else if (reg == edx) {
+    return c->gregs[REG_RDX];
+  } else if (reg == esp) {
+    return c->gregs[REG_RSP];
+  } else if (reg == rax) {
+    return c->gregs[REG_RAX];
+  } else if (reg == rbx) {
+    return c->gregs[REG_RBX];
+  } else if (reg == rcx) {
+    return c->gregs[REG_RCX];
+  } else if (reg == rdx) {
+    return c->gregs[REG_RDX];
+  } else if (reg == rsp) {
+    return c->gregs[REG_RSP];
+  } else {
+    assert(0);
+  }
 }
 
 }

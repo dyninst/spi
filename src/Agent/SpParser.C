@@ -15,6 +15,7 @@
 #include "Function.h"
 #include "AddrLookup.h"
 #include "CodeObject.h"
+#include "Visitor.h"
 
 using sp::SpParser;
 using sp::SpAddrSpace;
@@ -164,14 +165,16 @@ PatchMgrPtr SpParser::parse() {
 
 /* Find the function that contains addr */
 PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
-  assert(0);
+  //  assert(0);
   AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
     PatchObject* obj = ci->second;
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
     Symtab* sym = cs->getSymtabObject();
-    Dyninst::Address upper_bound = obj->codeBase() + cs->length();
     Dyninst::Address lower_bound = obj->codeBase();
+    if (!lower_bound) lower_bound = sym->getLoadOffset();
+    Dyninst::Address upper_bound = lower_bound + cs->length();
+    sp_debug("LOOK FOR - %lx in [%lx, %lx)?", addr, lower_bound, upper_bound);
     if (addr >= lower_bound && addr <= upper_bound) {
       sp_debug("FOUND - In range [%lx, %lx) in library %s",
               lower_bound, upper_bound, sp_filename(sym->name().c_str()));
@@ -291,31 +294,68 @@ string SpParser::dump_insn(void* addr, size_t size) {
   return s;
 }
 
-PatchFunction* SpParser::callee(Point* pt) {
+
+PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   PatchFunction* f = pt->getCallee();
-  // Found direct call
+
+  //-------------------------------------
+  // 1. Looking for direct call
+  //-------------------------------------
   if (f) {
     sp_debug("DIRECT CALL - call relative_addr");
     return f;
   }
 
-  // Try indirect call: call reg
-  sp_debug("INDIRECT CALL -");
-  using namespace Dyninst::InstructionAPI;
+  //-------------------------------------
+  // 2. Looking for indirect call
+  //-------------------------------------
+  if (parse_indirect) {
+    sp_print("INDIRECT CALL");
+    using namespace Dyninst::InstructionAPI;
+    PatchBlock* blk = pt->block();
+    Instruction::Ptr insn = blk->getInsn(blk->last());
+    Expression::Ptr trg = insn->getControlFlowTarget();
+    class SpVisitor : public Visitor {
+      public:
+        SpVisitor() : Visitor() { }
+        virtual void visit(RegisterAST* r) { reg_ = r; }
+        virtual void visit(BinaryFunction* b) {}
+        virtual void visit(Immediate* i) {}
+        virtual void visit(Dereference* d) {}
 
-  PatchBlock* blk = pt->block();
-  Instruction::Ptr insn = blk->getInsn(blk->last());
+        RegisterAST* reg() { return reg_; }
+      private:
+        RegisterAST* reg_;
+    };
+    SpVisitor visitor;
+    trg->apply(&visitor);
 
-  if (f) {
-    sp_debug("INDIRECT CALL - call register");
-    return f;
+    //-------------------------------------
+    // 2.1 Try indirect call: call reg
+    //-------------------------------------
+    sp_debug("INDIRECT CALL - looking for call reg");
+    Dyninst::MachRegister reg = visitor.reg()->getID();
+    Dyninst::Address call_addr = get_saved_reg(reg);
+    f = findFunction(call_addr);
+    if (f) {
+      sp_debug("INDIRECT CALL - call %s @ %lx", f->name().c_str(), call_addr);
+      return f;
+    }
+
+    //-------------------------------------
+    // 2.2 Try indirect call: call [addr]
+    // TODO:
+    //  case 1: [imm]
+    //  case 2: [reg]
+    //  case 3: [reg + imm]
+    //-------------------------------------
+    sp_debug("INDIRECT CALL - looking for call [addr]");
+    if (f) {
+      sp_debug("INDIRECT CALL - call [addr]");
+      return f;
+    }
   }
 
-  // Try indirect call: call [addr]
-  if (f) {
-    sp_debug("INDIRECT CALL - call [addr]");
-    return f;
-  }
-
+  sp_print("CANNOT RESOLVE, SKIP");
   return NULL;
 }

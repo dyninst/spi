@@ -53,6 +53,7 @@ class SpSnippet {
     static size_t emit_call_abs(long callee, char* buf, size_t offset);
     static size_t emit_call_jump(long callee, char* buf, size_t offset);
     static size_t emit_jump_abs(long trg, char* buf, size_t offset);
+    static size_t emit_call_orig(long src, size_t size, char* buf, size_t offset);
 };
 
 }

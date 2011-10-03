@@ -39,7 +39,10 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   Dyninst::Address pc = sp::SpSnippet::get_pre_signal_pc(c) - 1;
   sp_debug("TRAP - Executing payload code for address %lx", pc);
   SpContext::InstMap inst_map = g_context->inst_map();
-  if (inst_map.find(pc) == inst_map.end()) return;
+  if (inst_map.find(pc) == inst_map.end()) {
+    sp_debug("NO PC - cannot find pc %lx?!", pc);
+    return;
+  }
 
   // get patch area's address
   InstancePtr instance = inst_map[pc];
@@ -52,7 +55,7 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   Dyninst::Address last = blk->last();
   Dyninst::InstructionAPI::Instruction::Ptr callinsn = blk->getInsn(last);
   if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
-    sp_debug("CLAL BY JUMP - jump to function %s", g_context->parser()->callee(pt)->name().c_str());
+    // sp_debug("CLAL BY JUMP - jump to function %s", g_context->parser()->callee(pt)->name().c_str());
     ret_addr = 0;
   }
 
@@ -67,7 +70,9 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   }
 
   sp_snip->dump_context((ucontext_t*)c);
+  g_context->parser()->set_old_context((ucontext_t*)c);
   // set pc to patch area
+  sp_debug("GOTO BLOB - go go go");
   sp::SpSnippet::set_pc((Dyninst::Address)blob, c);
 }
 
@@ -116,11 +121,11 @@ bool TrapInstrumenter::run() {
 
         // Install the blob to pt
         if (install(pt, NULL, sp_snip->size())) {
-          sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
-                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
+          // sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
+          //         pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         } else {
-          sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
-                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
+          //sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
+          //         pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         }
       }
     }
@@ -204,7 +209,7 @@ bool JumpInstrumenter::run() {
         Dyninst::Address last = blk->last();
         Dyninst::InstructionAPI::Instruction::Ptr callinsn = blk->getInsn(last);
         if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
-          sp_debug("CLAL BY JUMP - jump to function %s", g_context->parser()->callee(pt)->name().c_str());
+          // sp_debug("CLAL BY JUMP - jump to function %s", g_context->parser()->callee(pt)->name().c_str());
           ret_addr = 0;
         }
 
@@ -232,11 +237,11 @@ bool JumpInstrumenter::run() {
 
         // Install the blob to pt
         if (install(pt, blob, sp_snip->size())) {
-          sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
-                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
+          // sp_debug("INSTALLED - Instrumentation at %lx for calling %s",
+          //         pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         } else {
-          sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
-                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
+          // sp_debug("FAILED - Failed to install instrumentation at %lx for calling %s",
+          //         pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
         }
       }
     }

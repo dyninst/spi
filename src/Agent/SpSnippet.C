@@ -19,7 +19,7 @@ SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
   assert(context_ && "SpContext is NULL");
   Dyninst::PatchAPI::PatchMgrPtr mgr = c->mgr();
   Dyninst::PatchAPI::AddrSpace* as = mgr->as();
-  blob_ = (char*)as->malloc(f->obj(), 1024, f->obj()->codeBase());
+  blob_ = (char*)as->malloc(pt->obj(), 1024, pt->obj()->codeBase());
   /*
   blob_ = (char*)malloc(1024+ getpagesize() -1);
   blob_ = (char*)(((Dyninst::Address)blob_ + getpagesize()-1) & ~(getpagesize()-1));
@@ -29,6 +29,18 @@ SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
 SpSnippet::~SpSnippet() {
   free(blob_);
 }
+
+size_t SpSnippet::emit_call_orig(long src, size_t size,
+                                 char* buf, size_t offset) {
+  char* p = buf + offset;
+  char* psrc = (char*)src;
+
+  for (size_t i = 0; i < size; i++)
+    *p++ = psrc[i];
+
+  return (p - (buf + offset));
+}
+
 
 /* For function call that is made by call insn, the blob contains:
    1. Save context
@@ -46,12 +58,14 @@ SpSnippet::~SpSnippet() {
 char* SpSnippet::blob(Dyninst::Address ret_addr) {
   assert(payload_);
   assert(context_);
-  assert(func_);
-  sp_debug("BLOB - patch area at %lx for calling %s, will return to %lx",
-          blob_, func_->name().c_str(), ret_addr);
+  // assert(func_);
+  if (func_)
+    sp_debug("BLOB - patch area at %lx for calling %s, will return to %lx",
+             blob_, func_->name().c_str(), ret_addr);
+
   if (blob_size_ > 0) {
-    sp_debug("BLOB - Blob is constructed for calling %s(), just grab it!",
-            func_->name().c_str());
+    if (func_) sp_debug("BLOB - Blob is constructed for calling %s(), just grab it!",
+                        func_->name().c_str());
     return blob_;
   }
 
@@ -76,10 +90,28 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
 
   // 4. call ORIG_FUNCTION
   if (ret_addr == 0) {
-    insnsize = emit_call_jump((long)func_->addr(), blob_, offset);
+
+    // Direct call
+    if (func_) {
+      insnsize = emit_call_jump((long)func_->addr(), blob_, offset);
+    }
+    // Indirect call
+    else {
+      insnsize = emit_call_orig((long)orig_insn_.c_str(),
+                                orig_insn_.size(), blob_, offset);
+    }
     offset += insnsize;
   } else {
-    insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
+
+    // Direct call
+    if (func_) {
+      insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
+    }
+    // Indirect call
+    else {
+      insnsize = emit_call_orig((long)orig_insn_.c_str(),
+                                orig_insn_.size(), blob_, offset);
+    }
     offset += insnsize;
     // 5. jmp ORIG_INSN_ADDR
     insnsize = emit_jump_abs(ret_addr, blob_, offset);

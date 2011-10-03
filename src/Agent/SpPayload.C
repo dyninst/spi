@@ -14,7 +14,13 @@ using Dyninst::PatchAPI::PatchObject;
 
 void default_payload(Point* pt, sp::SpContext* context) {
 
-  string callee_name = context->parser()->callee(pt)->name();
+  PatchFunction* f = context->parser()->callee(pt, true);
+  if (!f) {
+    sp_print("Indirect call");
+    return;
+  }
+
+  string callee_name = f->name();
   sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", callee_name.c_str());
   sp_print("%s", callee_name.c_str());
 
@@ -61,7 +67,7 @@ void default_payload(Point* pt, sp::SpContext* context) {
   */
 
   sp::Points pts;
-  sp::CalleePoints(context->parser()->callee(pt), context, pts);
+  sp::CalleePoints(f, context, pts);
   sp_debug("FIND POINTS - %d points found in function %s", pts.size(), callee_name.c_str());
   if (pts.size() > 0) {
     sp::SpPropeller::ptr p = sp::SpPropeller::create();
@@ -72,7 +78,7 @@ void default_payload(Point* pt, sp::SpContext* context) {
 }
 
 bool simple_payload(Point* pt, sp::SpContext* context) {
-  sp_debug("SIMPLE PAYLOAD - I'm in %s", context->parser()->callee(pt)->name().c_str());
-  sp_print("%s", context->parser()->callee(pt)->name().c_str());
+  //sp_debug("SIMPLE PAYLOAD - I'm in %s", context->parser()->callee(pt)->name().c_str());
+  //sp_print("%s", context->parser()->callee(pt)->name().c_str());
   return true;
 }
