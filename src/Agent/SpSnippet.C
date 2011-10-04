@@ -44,10 +44,13 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 
 /* For function call that is made by call insn, the blob contains:
    1. Save context
-   2. Call payload function
+   2. Call head payload function
    3. Restore context
    4. Call original function
-   5. Jump back original address
+   5. Save context
+   6. Call tail payload function
+   7. Restore context
+   8. Jump back original address
 
    For function call that is made by jump insn, the blob contains:
    1. Save context
@@ -96,6 +99,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
       insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
     } else {
       // Case 2: using jump instruction, for tail code optimization
+      sp_print("TAIL CALL");
       insnsize = emit_call_jump((long)func_->addr(), blob_, offset);
     }
   } else {

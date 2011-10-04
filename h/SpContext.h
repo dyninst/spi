@@ -47,6 +47,7 @@ class SpContext {
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     std::vector<string> well_known_libs_;
 
+
     // Things to be restored
     struct sigaction old_act_;
     InstMap inst_map_;

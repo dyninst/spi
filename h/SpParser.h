@@ -41,6 +41,10 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     bool injected_;
     ucontext_t old_context_;
 
+    typedef std::map<Dyninst::PatchAPI::Point*,
+                     Dyninst::PatchAPI::PatchFunction*> PtToCallee;
+    PtToCallee pt_to_callee_;
+
     SpParser();
     Dyninst::Address get_saved_reg(Dyninst::MachRegister reg);
 };

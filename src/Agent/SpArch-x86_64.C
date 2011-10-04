@@ -42,10 +42,9 @@ void SpSnippet::dump_context(ucontext_t* context) {
 // a bunch of code generation functions
 size_t SpSnippet::emit_save(char* buf, size_t offset) {
   char* p = buf + offset;
-  /*
+
   *p++ = 0x54; // push rsp
   *p++ = 0x9c; // pushfq
-  */
 
   *p++ = 0x57; // push rdi
   *p++ = 0x56; // push rsi
@@ -104,10 +103,10 @@ size_t SpSnippet::emit_restore( char* buf, size_t offset) {
   *p++ = 0x5a; // pop rdx
   *p++ = 0x5e; // pop rsi
   *p++ = 0x5f; // pop rdi
-  /*
+
   *p++ = 0x9d; // popfq
   *p++ = 0x5c; // pop rsp
-  */
+
   return (p - (buf + offset));
 }
 

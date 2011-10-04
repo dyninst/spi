@@ -300,13 +300,21 @@ string SpParser::dump_insn(void* addr, size_t size) {
 
 
 PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
-  PatchFunction* f = pt->getCallee();
+
+  //-------------------------------------
+  // 0. Check the cache
+  //-------------------------------------
+  if (pt_to_callee_.find(pt) != pt_to_callee_.end()) {
+    return pt_to_callee_[pt];
+  }
 
   //-------------------------------------
   // 1. Looking for direct call
   //-------------------------------------
+  PatchFunction* f = pt->getCallee();
   if (f) {
     sp_debug("DIRECT CALL - %s", f->name().c_str());
+    pt_to_callee_[pt] = f;
     return f;
   }
 
@@ -394,6 +402,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     f = findFunction(call_addr);
     if (f) {
       sp_debug("INDIRECT CALL - call %s @ %lx", f->name().c_str(), call_addr);
+      pt_to_callee_[pt] = f;
       return f;
     }
 
