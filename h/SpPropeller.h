@@ -18,7 +18,8 @@ class SpPropeller {
                     PayloadFunc);*/
     virtual bool go(Points&  pts,
                     SpContext* context,
-                    PayloadFunc payload);
+                    PayloadFunc head,
+                    PayloadFunc tail);
 };
 
 }

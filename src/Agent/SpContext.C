@@ -30,12 +30,14 @@ SpContext::SpContext(SpPropeller::ptr p,
 }
 
 SpContext* SpContext::create(SpPropeller::ptr propeller,
-                               string init_payload,
+                               string init_head,
+                               string init_tail,
                                SpParser::ptr parser) {
   SpContext* ret = new SpContext(propeller,
                                  parser);
   assert(ret);
-  ret->init_payload_ = (void*)ret->parser()->get_func_addr(init_payload);
+  ret->init_head_ = (void*)ret->parser()->get_func_addr(init_head);
+  ret->init_tail_ = (void*)ret->parser()->get_func_addr(init_tail);
   return ret;
 }
 

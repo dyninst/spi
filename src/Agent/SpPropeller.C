@@ -25,7 +25,8 @@ SpPropeller::ptr SpPropeller::create() {
 
 bool SpPropeller::go(Points&  pts,
                      SpContext* context,
-                     PayloadFunc payload) {
+                     PayloadFunc head,
+                     PayloadFunc tail) {
   if (pts.size() == 0) return false;
 
   // 1. Find points according to type
@@ -40,7 +41,7 @@ bool SpPropeller::go(Points&  pts,
     PatchFunction* callee = context->parser()->callee(pt);
     if (!callee) sp_debug("INDIRECT CALL - instrumenting indirect call");
 
-    SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, payload);
+    SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, head, tail);
     sp_debug("CREATED - snip insert command");
 
     Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);

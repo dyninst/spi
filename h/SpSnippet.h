@@ -14,21 +14,22 @@ class SpSnippet {
     static ptr create(Dyninst::PatchAPI::PatchFunction* f,
                       Dyninst::PatchAPI::Point* pt,
                       SpContext* c,
-                      PayloadFunc p) {
-      return ptr(new SpSnippet(f, pt, c, p));
+                      PayloadFunc head, PayloadFunc tail) {
+      return ptr(new SpSnippet(f, pt, c, head, tail));
     }
 
     SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
               Dyninst::PatchAPI::Point* pt,
               SpContext* c,
-              PayloadFunc p);
+              PayloadFunc head, PayloadFunc tail);
     ~SpSnippet();
 
     char* blob(Dyninst::Address ret_addr);
     size_t size() { return blob_size_; }
 
     SpContext* context() { return context_; }
-    PayloadFunc payload() { return payload_; }
+    PayloadFunc head() { return head_; }
+    PayloadFunc tail() { return tail_; }
     string& orig_insn() { return orig_insn_; }
     Dyninst::PatchAPI::PatchFunction* func() { return func_; }
 
@@ -39,7 +40,8 @@ class SpSnippet {
     Dyninst::PatchAPI::PatchFunction* func_;
     Dyninst::PatchAPI::Point* point_;
     SpContext* context_;
-    PayloadFunc payload_;
+    PayloadFunc head_;
+    PayloadFunc tail_;
     string orig_insn_;
     char* blob_;
     size_t blob_size_;

@@ -12,22 +12,24 @@ using Dyninst::PatchAPI::PatchBlock;
 using Dyninst::PatchAPI::PatchEdge;
 using Dyninst::PatchAPI::PatchObject;
 
-void default_payload(Point* pt, sp::SpContext* context) {
+void default_head(Point* pt, sp::SpContext* context) {
 
   PatchFunction* f = context->callee(pt);
   if (!f) return;
 
   string callee_name = f->name();
-  sp_debug("DEFAULT PAYLOAD - Instrumenting function %s", callee_name.c_str());
-  sp_print("%s", callee_name.c_str());
+  sp_print("Enter %s", callee_name.c_str());
 
   sp::Points pts;
   sp::CalleePoints(f, context, pts);
   sp_debug("FIND POINTS - %d points found in function %s", pts.size(), callee_name.c_str());
   sp::SpPropeller::ptr p = sp::SpPropeller::create();
-  p->go(pts, context, context->init_payload());
+  p->go(pts, context, context->init_head(), context->init_tail());
 }
 
-bool simple_payload(Point* pt, sp::SpContext* context) {
-  return true;
+void default_tail(Point* pt, sp::SpContext* context) {
+  PatchFunction* f = context->callee(pt);
+  if (!f) return;
+  string callee_name = f->name();
+  sp_print("Leave %s", callee_name.c_str());
 }

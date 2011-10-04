@@ -15,10 +15,13 @@ class SpContext {
   public:
   static SpContext* create(SpPropeller::ptr,
                            string,
+                           string,
                            SpParser::ptr);
 
 
-    PayloadFunc init_payload() { return init_payload_; }
+    PayloadFunc init_head() { return init_head_; }
+    PayloadFunc init_tail() { return init_tail_; }
+
     SpPropeller::ptr init_propeller() { return init_propeller_; }
     bool propel(int, PayloadFunc);
 
@@ -38,7 +41,8 @@ class SpContext {
 
   protected:
     SpPropeller::ptr init_propeller_;
-    PayloadFunc init_payload_;
+    PayloadFunc init_head_;
+    PayloadFunc init_tail_;
     SpParser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     std::vector<string> well_known_libs_;

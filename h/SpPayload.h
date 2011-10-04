@@ -6,15 +6,10 @@
 
 namespace sp {
   class SpContext;
-  typedef bool (*PayloadFunc_t)(Dyninst::PatchAPI::Point*,
+  typedef void (*PayloadFunc_t)(Dyninst::PatchAPI::Point*,
                               SpContext* context);
   typedef void* PayloadFunc;
 
 }
 
-extern "C" {
-bool default_payload(Dyninst::PatchAPI::PatchFunction* cur_func,
-                     sp::SpContext* context);
-void simple_payload();
-}
 #endif /* SP_PAYLOAD_H_ */

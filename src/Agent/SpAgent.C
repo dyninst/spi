@@ -49,8 +49,12 @@ void SpAgent::set_fini_event(SpEvent::ptr e) {
   init_event_ = e;
 }
 
-void SpAgent::set_init_payload(string p) {
-  init_payload_ = p;
+void SpAgent::set_init_head(string p) {
+  init_head_ = p;
+}
+
+void SpAgent::set_init_tail(string p) {
+  init_tail_ = p;
 }
 
 void SpAgent::set_init_propeller(SpPropeller::ptr p) {
@@ -62,13 +66,15 @@ void SpAgent::go() {
   // 1. Sanity check. If not user configuration, use default ones
   if (!init_event_) init_event_ = SyncEvent::create();
   if (!fini_event_) fini_event_ = SpEvent::create();
-  if (init_payload_.size() == 0) init_payload_ = "default_payload";
+  if (init_head_.size() == 0) init_head_ = "default_head";
+  if (init_tail_.size() == 0) init_tail_ = "default_tail";
   if (!parser_) parser_ = SpParser::create();
   if (!init_propeller_) init_propeller_ = SpPropeller::create();
 
   // 2. Prepare context
   context_ = SpContext::create(init_propeller_,
-                               init_payload_,
+                               init_head_,
+                               init_tail_,
                                parser_);
 
   // 3. Register Events
