@@ -108,3 +108,8 @@ void SpContext::restore() {
   // Restore trap handler
   sigaction(SIGTRAP, &old_act_, NULL);
 }
+
+
+Dyninst::PatchAPI::PatchFunction* SpContext::callee(Dyninst::PatchAPI::Point* pt) {
+  return parser()->callee(pt, true);
+}

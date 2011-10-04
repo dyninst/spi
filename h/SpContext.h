@@ -25,6 +25,7 @@ class SpContext {
     void parse();
     void restore();
 
+    Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt);
     SpParser::ptr parser() { return parser_; }
     Dyninst::PatchAPI::PatchFunction* get_first_inst_func();
     Dyninst::PatchAPI::PatchMgrPtr mgr() { return mgr_; }

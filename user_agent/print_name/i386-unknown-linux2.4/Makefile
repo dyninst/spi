@@ -1,4 +1,4 @@
-AGENT_SRCS    +=
+AGENT_SRCS     =
 
 include ../../../make.config
 include ../make.config
