@@ -233,9 +233,9 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 }
 
 Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg) {
-  sp_debug("INDIRECT - get saved function address");
-  sp_print("call_addr in %s", reg.name().c_str());
-  //SpSnippet::dump_context(&old_context_);
+  sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
+  // sp_print("call_addr in %s", reg.name().c_str());
+
   using namespace Dyninst::x86_64;
   mcontext_t* c = &old_context_.uc_mcontext;
 
@@ -259,6 +259,22 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg) {
     return c->gregs[REG_RDX];
   } else if (reg == rsp) {
     return c->gregs[REG_RSP];
+  } else if (reg == r8) {
+    return c->gregs[REG_R8];
+  } else if (reg == r9) {
+    return c->gregs[REG_R9];
+  } else if (reg == r10) {
+    return c->gregs[REG_R10];
+  } else if (reg == r11) {
+    return c->gregs[REG_R11];
+  } else if (reg == r12) {
+    return c->gregs[REG_R12];
+  } else if (reg == r13) {
+    return c->gregs[REG_R13];
+  } else if (reg == r14) {
+    return c->gregs[REG_R14];
+  } else if (reg == r15) {
+    return c->gregs[REG_R15];
   } else {
     assert(0);
   }

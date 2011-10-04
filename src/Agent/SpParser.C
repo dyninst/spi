@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <stack>
 
 #include "SpInstrumenter.h"
 #include "SpParser.h"
@@ -15,7 +16,10 @@
 #include "Function.h"
 #include "AddrLookup.h"
 #include "CodeObject.h"
+
 #include "Visitor.h"
+#include "Immediate.h"
+#include "BinaryFunction.h"
 
 using sp::SpParser;
 using sp::SpAddrSpace;
@@ -302,7 +306,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   // 1. Looking for direct call
   //-------------------------------------
   if (f) {
-    sp_debug("DIRECT CALL - call relative_addr");
+    sp_debug("DIRECT CALL - %s", f->name().c_str());
     return f;
   }
 
@@ -310,6 +314,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   // 2. Looking for indirect call
   //-------------------------------------
   if (parse_indirect) {
+    sp_debug("INDIRECT CALL - seeking ...");
     sp_print("INDIRECT CALL");
     using namespace Dyninst::InstructionAPI;
     PatchBlock* blk = pt->block();
@@ -317,45 +322,86 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     Expression::Ptr trg = insn->getControlFlowTarget();
     class SpVisitor : public Visitor {
       public:
-        SpVisitor() : Visitor() { }
-        virtual void visit(RegisterAST* r) { reg_ = r; }
-        virtual void visit(BinaryFunction* b) {}
-        virtual void visit(Immediate* i) {}
-        virtual void visit(Dereference* d) {}
+        SpVisitor(SpParser* p) : Visitor(), p_(p), call_addr_(0) { }
+        virtual void visit(RegisterAST* r) {
+          Dyninst::Address rval = p_->get_saved_reg(r->getID());
+          call_addr_ = rval;
+          sp_debug("REG: %s w/ %lx", r->getID().name().c_str(), rval);
+          stack_.push(call_addr_);
+        }
+        virtual void visit(BinaryFunction* b) {
+          Dyninst::Address i1 = stack_.top();
+          stack_.pop();
+          Dyninst::Address i2 = stack_.top();
+          stack_.pop();
 
-        RegisterAST* reg() { return reg_; }
+          if (b->isAdd()) {
+            call_addr_ = i1 + i2;
+            sp_debug("BINFUNC: %lx + %lx = %lx", i1, i2, call_addr_);
+
+          } else if (b->isMultiply()) {
+            call_addr_ = i1 * i2;
+            sp_debug("BINFUNC: %lx * %lx = %lx", i1, i2, call_addr_);
+          } else {
+            assert(0);
+          }
+          stack_.push(call_addr_);
+        }
+        virtual void visit(Immediate* i) {
+          Result res = i->eval();
+          switch (res.size()) {
+            case 1: {
+              call_addr_ =res.val.u8val;
+              break;
+            }
+            case 2: {
+              call_addr_ =res.val.u16val;
+              break;
+            }
+            case 4: {
+              call_addr_ =res.val.u32val;
+              break;
+            }
+            default: {
+              call_addr_ =res.val.u64val;
+              break;
+            }
+          }
+          sp_debug("IMM: %lx", call_addr_);
+          stack_.push(call_addr_);
+        }
+        virtual void visit(Dereference* d) {
+          Dyninst::Address* addr = (Dyninst::Address*)stack_.top();
+          stack_.pop();
+          call_addr_ = *addr;
+          sp_debug("DEREF: %lx => %lx", addr, call_addr_);
+          stack_.push(call_addr_);
+        }
+
+        Dyninst::Address call_addr() {
+          return call_addr_;
+        }
       private:
-        RegisterAST* reg_;
+        SpParser* p_;
+        std::stack<Dyninst::Address> stack_;
+        Dyninst::Address call_addr_;
     };
-    SpVisitor visitor;
+    SpVisitor visitor(this);
     trg->apply(&visitor);
 
-    //-------------------------------------
-    // 2.1 Try indirect call: call reg
-    //-------------------------------------
-    sp_debug("INDIRECT CALL - looking for call reg");
-    Dyninst::MachRegister reg = visitor.reg()->getID();
-    Dyninst::Address call_addr = get_saved_reg(reg);
+    Dyninst::Address call_addr = visitor.call_addr();
+
     f = findFunction(call_addr);
     if (f) {
       sp_debug("INDIRECT CALL - call %s @ %lx", f->name().c_str(), call_addr);
       return f;
     }
 
-    //-------------------------------------
-    // 2.2 Try indirect call: call [addr]
-    // TODO:
-    //  case 1: [imm]
-    //  case 2: [reg]
-    //  case 3: [reg + imm]
-    //-------------------------------------
-    sp_debug("INDIRECT CALL - looking for call [addr]");
-    if (f) {
-      sp_debug("INDIRECT CALL - call [addr]");
-      return f;
-    }
+    sp_print("CANNOT RESOLVE ADDR %lx, SKIP", call_addr);
+    return NULL;
   }
 
-  sp_print("CANNOT RESOLVE, SKIP");
+  sp_debug("PARSE INDIRECT CALL LATER ...");
+
   return NULL;
 }
