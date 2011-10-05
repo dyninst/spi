@@ -12,7 +12,7 @@ void foo() {
   printf("hello");
 }
 int main(int argc, char** argv) {
-  void* h = dlopen("/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/test/Agent/x86_64-unknown-linux2.4/parser_agent.so", RTLD_NOW);
+  void* h = dlopen("/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/test/Agent/i386-unknown-linux2.4/parser_agent.so", RTLD_NOW);
   if (!h) {
     fprintf(stderr, "%s", dlerror());
   }

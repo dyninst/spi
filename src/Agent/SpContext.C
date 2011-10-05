@@ -62,6 +62,7 @@ void SpContext::init_well_known_libs() {
    2. it should not be from some well known system libraries, including
  */
 PatchFunction* SpContext::get_first_inst_func() {
+
   std::vector<Frame> stackwalk;
   Walker *walker = Walker::newWalker();
   walker->walkStack(stackwalk);
@@ -92,6 +93,7 @@ PatchFunction* SpContext::get_first_inst_func() {
     sp_debug("FOUND - Function %s is the first instrumentable function", s.c_str());
     return func;
   }
+
   return NULL;
 }
 

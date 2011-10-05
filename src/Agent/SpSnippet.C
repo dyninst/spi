@@ -78,7 +78,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   offset += insnsize;
 
   // 3. call head payload
-  insnsize = emit_call_abs((long)head_, blob_, offset);
+  insnsize = emit_call_abs((long)head_, blob_, offset, true);
   offset += insnsize;
 
   // 4. restore context
@@ -90,7 +90,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   // 5. call ORIG_FUNCTION
   if (func_) {
     // Direct call
-    insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
+    insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   } else {
     // Indirect call
     insnsize = emit_call_orig((long)orig_insn_.c_str(),
@@ -107,7 +107,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   offset += insnsize;
 
   // 8. call payload
-  insnsize = emit_call_abs((long)tail_, blob_, offset);
+  insnsize = emit_call_abs((long)tail_, blob_, offset, true);
   offset += insnsize;
 
   // 9. restore context
@@ -141,7 +141,7 @@ void SpSnippet::fixup(PatchFunction* f) {
   size_t insnsize = 0;
 
   // 5. call ORIG_FUNCTION
-  insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
+  insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   offset += insnsize;
 
   // 6. save context
@@ -153,7 +153,7 @@ void SpSnippet::fixup(PatchFunction* f) {
   offset += insnsize;
 
   // 8. call payload
-  insnsize = emit_call_abs((long)tail_, blob_, offset);
+  insnsize = emit_call_abs((long)tail_, blob_, offset, true);
   offset += insnsize;
 
   // 9. restore context

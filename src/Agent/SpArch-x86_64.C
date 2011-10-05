@@ -174,7 +174,7 @@ static size_t emit_push_imm64(long imm, char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
-size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset) {
+size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
   char* p = buf + offset;
   size_t insnsize = 0;
   long retaddr = (long)p + 16 + 16 + 1;

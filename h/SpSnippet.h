@@ -55,7 +55,7 @@ class SpSnippet {
     static size_t emit_fault(char* buf, size_t offset);
     static size_t emit_pass_param(long point, long context,
                                   char* buf, size_t offset);
-    static size_t emit_call_abs(long callee, char* buf, size_t offset);
+    static size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
     static size_t emit_ret(char* buf, size_t offset);
     static size_t emit_call_jump(long callee, char* buf, size_t offset);
     static size_t emit_jump_abs(long trg, char* buf, size_t offset);
