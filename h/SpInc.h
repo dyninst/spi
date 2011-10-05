@@ -7,7 +7,6 @@
 #include "SpParser.h"
 #include "SpPropeller.h"
 #include "SpSnippet.h"
-#include "SpNextPoints.h"
 #include "SpPayload.h"
 
 #endif /* _SPINC_H_ */
