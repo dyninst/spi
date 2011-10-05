@@ -1,15 +1,15 @@
-#include "SpAgent.h"
-#include "SpContext.h"
-#include "SpNextPoints.h"
+#include "SpInc.h"
 
 using namespace Dyninst;
 using namespace PatchAPI;
+using namespace sp;
 
 int indent = 0;
 
 void print_head(Point* pt, sp::SpContext* context) {
 
-  PatchFunction* f = context->callee(pt);
+  SpPayload payload(pt, context);
+  PatchFunction* f = payload.callee();
   if (!f) return;
   string callee_name = f->name();
 
@@ -19,14 +19,12 @@ void print_head(Point* pt, sp::SpContext* context) {
   sp_print("%sEnter %s", fmt.c_str(), callee_name.c_str());
   ++indent;
 
-  sp::Points pts;
-  sp::CalleePoints(f, context, pts);
-  sp::SpPropeller::ptr p = sp::SpPropeller::create();
-  p->go(pts, context, context->init_head(), context->init_tail());
+  payload.default_propell();
 }
 
 void print_tail(Point* pt, sp::SpContext* context) {
-  PatchFunction* f = context->callee(pt);
+  SpPayload payload(pt, context);
+  PatchFunction* f = payload.callee();
   if (!f) return;
   string callee_name = f->name();
 
@@ -35,7 +33,6 @@ void print_tail(Point* pt, sp::SpContext* context) {
   for (int i = 0; i < indent; i++)
     fmt += ' ';
   sp_print("%sLeave %s", fmt.c_str(), callee_name.c_str());
-
 }
 
 AGENT_INIT

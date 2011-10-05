@@ -301,4 +301,9 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   }
 }
 
+bool SpParser::is_pc(Dyninst::MachRegister r) {
+  if (r == Dyninst::x86_64::rip) return true;
+  return false;
+}
+
 }

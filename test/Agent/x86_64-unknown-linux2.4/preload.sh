@@ -1,8 +1,9 @@
 SP=/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi
 BIN=/scratch/wenbin/binaries/bin/bin
 
-source ../make.config
+AGENT_NAME=parser_agent.so
 export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
+
 #export SP_DEBUG=0
 
 #echo 1; LD_PRELOAD="./$AGENT_NAME" $BIN/[
@@ -80,3 +81,4 @@ echo 56; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
 #echo 73; LD_PRELOAD="./$AGENT_NAME" $BIN/mkdir -p /tmp/tmp99/tmp3
 #echo 74; LD_PRELOAD="./$AGENT_NAME" $BIN/printf "abasdfaf%s" "aaa" 
 #echo 75; LD_PRELOAD="./$AGENT_NAME" $BIN/od /tmp/tmp
+

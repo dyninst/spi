@@ -63,10 +63,10 @@ MUTATEE: $(MUTATEE_EXE)
 	@echo "* All mutatees are done"
 $(MUTATEE_OBJS): %.o : $(MUTATEE_SRCS)
 	@echo "Compiling $@"
-	$(GCC) -o $@ $(TESTCASE_DIR)/$*.c $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) -c
+	@$(GCC) -o $@ $(TESTCASE_DIR)/$*.c $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) -c
 $(MUTATEE_EXE): % : $(MUTATEE_OBJS)
 	@echo "Linking $@"
-	$(GCC) -o $@ $*.o $(MUTATEE_LDFLAGS)
+	@$(GCC) -o $@ $*.o $(MUTATEE_LDFLAGS)
 
 DRIVER_DEP  = .DRIVER_DEPENDS
 DRIVER_DEPS:

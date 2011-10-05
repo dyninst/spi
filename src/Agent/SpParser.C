@@ -298,6 +298,85 @@ string SpParser::dump_insn(void* addr, size_t size) {
   return s;
 }
 
+using namespace Dyninst::InstructionAPI;
+class SpVisitor : public Visitor {
+public:
+  SpVisitor(SpParser* p, Point* pt)
+     : Visitor(), p_(p), call_addr_(0), pt_(pt), use_pc_(false) { }
+  virtual void visit(RegisterAST* r) {
+
+    if (p_->is_pc(r->getID())) use_pc_ = true;
+
+    Dyninst::Address rval = p_->get_saved_reg(r->getID(),
+                     pt_->block()->end() - pt_->block()->last());
+    call_addr_ = rval;
+    sp_debug("REG: %s w/ %lx", r->getID().name().c_str(), rval);
+    // sp_print("REG: %s w/ %lx", r->getID().name().c_str(), rval);
+    stack_.push(call_addr_);
+  }
+  virtual void visit(BinaryFunction* b) {
+    Dyninst::Address i1 = stack_.top();
+    stack_.pop();
+    Dyninst::Address i2 = stack_.top();
+    stack_.pop();
+
+    if (b->isAdd()) {
+      call_addr_ = i1 + i2;
+      sp_debug("BINFUNC: %lx + %lx = %lx", i1, i2, call_addr_);
+      // sp_print("BINFUNC: %lx + %lx = %lx", i1, i2, call_addr_);
+    } else if (b->isMultiply()) {
+      call_addr_ = i1 * i2;
+      sp_debug("BINFUNC: %lx * %lx = %lx", i1, i2, call_addr_);
+    } else {
+      assert(0);
+    }
+    stack_.push(call_addr_);
+  }
+  virtual void visit(Immediate* i) {
+    Result res = i->eval();
+    switch (res.size()) {
+    case 1: {
+      call_addr_ =res.val.u8val;
+      break;
+    }
+    case 2: {
+      call_addr_ =res.val.u16val;
+      break;
+    }
+    case 4: {
+      call_addr_ =res.val.u32val;
+      break;
+    }
+    default: {
+      call_addr_ =res.val.u64val;
+      break;
+    }
+    }
+    sp_debug("IMM: %lx", call_addr_);
+    // sp_print("IMM: %lx", call_addr_);
+    stack_.push(call_addr_);
+  }
+  virtual void visit(Dereference* d) {
+    Dyninst::Address* addr = (Dyninst::Address*)stack_.top();
+    stack_.pop();
+    call_addr_ = *addr;
+    sp_debug("End DEREF: %lx=>%lx", addr, call_addr_);
+    stack_.push(call_addr_);
+  }
+
+  Dyninst::Address call_addr() const {
+    return call_addr_;
+  }
+  bool use_pc() const {
+    return use_pc_;
+  }
+private:
+  SpParser* p_;
+  std::stack<Dyninst::Address> stack_;
+  Dyninst::Address call_addr_;
+  Point* pt_;
+  bool use_pc_;
+};
 
 PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
 
@@ -324,116 +403,27 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   if (parse_indirect) {
     sp_debug("INDIRECT CALL - seeking ...");
     //sp_print("INDIRECT CALL");
-    using namespace Dyninst::InstructionAPI;
     PatchBlock* blk = pt->block();
     Instruction::Ptr insn = blk->getInsn(blk->last());
     Expression::Ptr trg = insn->getControlFlowTarget();
-    class SpVisitor : public Visitor {
-      public:
-      SpVisitor(SpParser* p, Point* pt) : Visitor(), p_(p), call_addr_(0), pt_(pt), use_pc_(false) { }
-        virtual void visit(RegisterAST* r) {
-          if (r->getID() == Dyninst::x86_64::rip) use_pc_ = true;
-          Dyninst::Address rval = p_->get_saved_reg(r->getID(),
-                     pt_->block()->end() - pt_->block()->last());
-          call_addr_ = rval;
-          sp_debug("REG: %s w/ %lx", r->getID().name().c_str(), rval);
-          sp_print("REG: %s w/ %lx", r->getID().name().c_str(), rval);
-          stack_.push(call_addr_);
-          sp_print("current call-addr: %lx", call_addr_);
-        }
-        virtual void visit(BinaryFunction* b) {
-          Dyninst::Address i1 = stack_.top();
-          stack_.pop();
-          Dyninst::Address i2 = stack_.top();
-          stack_.pop();
-
-          if (b->isAdd()) {
-            call_addr_ = i1 + i2;
-            sp_debug("BINFUNC: %lx + %lx = %lx", i1, i2, call_addr_);
-            sp_print("BINFUNC: %lx + %lx = %lx", i1, i2, call_addr_);
-
-          } else if (b->isMultiply()) {
-            call_addr_ = i1 * i2;
-            sp_debug("BINFUNC: %lx * %lx = %lx", i1, i2, call_addr_);
-          } else {
-            assert(0);
-          }
-          stack_.push(call_addr_);
-          sp_print("current call-addr: %lx", call_addr_);
-        }
-        virtual void visit(Immediate* i) {
-          Result res = i->eval();
-          switch (res.size()) {
-            case 1: {
-              call_addr_ =res.val.u8val;
-              break;
-            }
-            case 2: {
-              call_addr_ =res.val.u16val;
-              break;
-            }
-            case 4: {
-              call_addr_ =res.val.u32val;
-              break;
-            }
-            default: {
-              call_addr_ =res.val.u64val;
-              break;
-            }
-          }
-          sp_debug("IMM: %lx", call_addr_);
-          sp_print("IMM: %lx", call_addr_);
-          stack_.push(call_addr_);
-          sp_print("current call-addr: %lx", call_addr_);
-        }
-        virtual void visit(Dereference* d) {
-          Dyninst::Address* addr = (Dyninst::Address*)stack_.top();
-          stack_.pop();
-          sp_print("Start DEREF: %lx", addr);
-          call_addr_ = *addr;
-          sp_debug("End DEREF: %lx=>%lx", addr, call_addr_);
-          sp_print("DEREF: %lx => %lx", addr, call_addr_);
-          stack_.push(call_addr_);
-          sp_print("current call-addr: %lx", call_addr_);
-        }
-
-        Dyninst::Address call_addr() const {
-          return call_addr_;
-        }
-      bool use_pc() const {
-        return use_pc_;
-      }
-      private:
-        SpParser* p_;
-        std::stack<Dyninst::Address> stack_;
-        Dyninst::Address call_addr_;
-        Point* pt_;
-        bool use_pc_;
-    };
     SpVisitor visitor(this, pt);
     trg->apply(&visitor);
 
     Dyninst::Address call_addr = visitor.call_addr();
-    sp_print("Call address: %lx", call_addr);
+    // sp_print("Call address: %lx", call_addr);
 
     f = findFunction(call_addr);
     if (f) {
       sp_debug("INDIRECT CALL - call %s @ %lx", f->name().c_str(), call_addr);
       pt_to_callee_[pt] = f;
       if (visitor.use_pc()) {
-	sp_print("Doing fixup");
         using namespace Dyninst::PatchAPI;
         SpContext::InstMap& inst_map = g_context->inst_map();
-	if (inst_map.find(pt->block()->last()) == inst_map.end()) return f; 
+        if (inst_map.find(pt->block()->last()) == inst_map.end()) return f;
         InstancePtr instance = inst_map[pt->block()->last()];
-	if (!instance) {
-	  sp_print("nULL instance");
-	  return f;
-	}
         Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
         SpSnippet::ptr sp_snip = snip->rep();
-        sp_print("fixup starts");
-        sp_snip->fixup(f); 
+        sp_snip->fixup(f);
       }
       return f;
     }

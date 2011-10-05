@@ -29,6 +29,8 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     Dyninst::Address get_func_addr(string name);
     string dump_insn(void* addr, size_t size);
     bool injected() const { return injected_; }
+    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg, size_t orig_insn_size);
+    static bool is_pc(Dyninst::MachRegister);
 
     // only works for trap-based instrumentation
     void set_old_context(ucontext_t* c) { old_context_ = *c; }
@@ -46,7 +48,6 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     PtToCallee pt_to_callee_;
 
     SpParser();
-    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg, size_t orig_insn_size);
 };
 
 }
