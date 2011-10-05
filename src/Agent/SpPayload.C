@@ -1,7 +1,7 @@
 #include "SpPayload.h"
 #include "PatchCFG.h"
 #include "SpContext.h"
-#include "SpNextPoints.h"
+//#include "SpNextPoints.h"
 
 using sp::SpPayload;
 using Dyninst::PatchAPI::PatchFunction;
@@ -24,7 +24,7 @@ void default_head(Point* pt, sp::SpContext* context) {
   string callee_name = f->name();
   sp_print("Enter %s", callee_name.c_str());
 
-  payload.default_propell();
+  payload.propell();
 }
 
 void default_tail(Point* pt, sp::SpContext* context) {
@@ -48,12 +48,13 @@ Dyninst::PatchAPI::PatchFunction* SpPayload::callee() {
   return context_->callee(pt_);
 }
 
-void SpPayload::default_propell() {
+void SpPayload::propell() {
   PatchFunction* f = callee();
   if (!f) return;
-
+  /*
   sp::Points pts;
   sp::CalleePoints(f, context_, pts);
+  */
   sp::SpPropeller::ptr p = context_->init_propeller();
-  p->go(pts, context_, context_->init_head(), context_->init_tail());
+  p->go(f, context_, context_->init_head(), context_->init_tail());
 }

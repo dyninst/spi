@@ -15,7 +15,7 @@ class SpPayload {
     SpPayload(Dyninst::PatchAPI::Point*, SpContext* context);
 
     Dyninst::PatchAPI::PatchFunction* callee();
-    void default_propell();
+    void propell();
   protected:
     Dyninst::PatchAPI::Point* pt_;
     SpContext* context_;

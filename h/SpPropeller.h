@@ -12,14 +12,18 @@ class SpPropeller {
     typedef dyn_detail::boost::shared_ptr<SpPropeller> ptr;
     static ptr create();
     SpPropeller();
-    /*
-    virtual bool go(Dyninst::PatchAPI::PatchFunction*,
-                    SpContextPtr,
-                    PayloadFunc);*/
-    virtual bool go(Points&  pts,
-                    SpContext* context,
-                    PayloadFunc head,
-                    PayloadFunc tail);
+
+    bool go(Dyninst::PatchAPI::PatchFunction* func,
+            SpContext* context,
+            PayloadFunc head,
+            PayloadFunc tail);
+
+  protected:
+    //Points pts_;
+
+    virtual void next_points(Dyninst::PatchAPI::PatchFunction* func,
+                             Dyninst::PatchAPI::PatchMgrPtr mgr,
+                             Points& pts);
 };
 
 }

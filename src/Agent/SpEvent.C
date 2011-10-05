@@ -5,7 +5,7 @@
 #include "SpContext.h"
 #include "signal.h"
 #include "SpParser.h"
-#include "SpNextPoints.h"
+//#include "SpNextPoints.h"
 
 using sp::SpParser;
 using sp::SpEvent;
@@ -30,9 +30,9 @@ sp::SpContext* g_context = NULL;
 void async_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
-  sp::Points pts;
-  sp::CalleePoints(f, g_context, pts);
-  g_context->init_propeller()->go(pts, g_context,
+  //sp::Points pts;
+  //sp::CalleePoints(f, g_context, pts);
+  g_context->init_propeller()->go(f, g_context,
                                   g_context->init_head(),
                                   g_context->init_tail());
 }
@@ -55,9 +55,9 @@ void AsyncEvent::register_event(SpContext* c) {
 void sync_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
-  sp::Points pts;
-  sp::CalleePoints(f, g_context, pts);
-  g_context->init_propeller()->go(pts, g_context,
+  //sp::Points pts;
+  //sp::CalleePoints(f, g_context, pts);
+  g_context->init_propeller()->go(f, g_context,
                                   g_context->init_head(),
                                   g_context->init_tail());
 }
@@ -74,9 +74,9 @@ void SyncEvent::register_event(SpContext* c) {
   if (!g_context->parser()->injected()) {
     c->parse();
     PatchFunction* f = c->parser()->findFunction("main");
-    sp::Points pts;
-    sp::CalleePoints(f, c, pts);
-    c->init_propeller()->go(pts, c, c->init_head(), c->init_tail());
+    // sp::Points pts;
+    // sp::CalleePoints(f, c, pts);
+    c->init_propeller()->go(f, c, c->init_head(), c->init_tail());
   } else {
     struct sigaction act;
     act.sa_sigaction = (event_handler_t)handler_;

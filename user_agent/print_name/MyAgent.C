@@ -19,7 +19,7 @@ void print_head(Point* pt, sp::SpContext* context) {
   sp_print("%sEnter %s", fmt.c_str(), callee_name.c_str());
   ++indent;
 
-  payload.default_propell();
+  payload.propell();
 }
 
 void print_tail(Point* pt, sp::SpContext* context) {
