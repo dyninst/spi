@@ -133,7 +133,9 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
 
 void SpSnippet::fixup(PatchFunction* f) {
   sp_debug("FIXUP - for call imm(rip)");
+  sp_print("FIXUP - for call imm(rip)");
   if (!f) return;
+  func_ = f;
 
   size_t offset = before_call_orig_;
   size_t insnsize = 0;
@@ -171,6 +173,7 @@ void SpSnippet::fixup(PatchFunction* f) {
   sp_debug("DUMP INSN (%d bytes)- {", offset);
   sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
   sp_debug("DUMP INSN - }");
+  sp_print("finish fixup");
 }
 
 }

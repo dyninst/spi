@@ -432,6 +432,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
 	}
         Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
         SpSnippet::ptr sp_snip = snip->rep();
+        sp_print("fixup starts");
         sp_snip->fixup(f); 
       }
       return f;
