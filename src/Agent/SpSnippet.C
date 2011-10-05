@@ -15,15 +15,11 @@ SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
                      SpContext* c,
                      PayloadFunc head, PayloadFunc tail)
   : func_(f), point_(pt), context_(c), head_(head), tail_(tail), blob_size_(0) {
-  // FIXME: use AddrSpace::malloc later
+
   assert(context_ && "SpContext is NULL");
   Dyninst::PatchAPI::PatchMgrPtr mgr = c->mgr();
   Dyninst::PatchAPI::AddrSpace* as = mgr->as();
   blob_ = (char*)as->malloc(pt->obj(), 1024, pt->obj()->codeBase());
-  /*
-  blob_ = (char*)malloc(1024+ getpagesize() -1);
-  blob_ = (char*)(((Dyninst::Address)blob_ + getpagesize()-1) & ~(getpagesize()-1));
-  */
 }
 
 SpSnippet::~SpSnippet() {
@@ -42,26 +38,24 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 }
 
 
-/* For function call that is made by call insn, the blob contains:
+/* The generated code:
    1. Save context
-   2. Call head payload function
-   3. Restore context
-   4. Call original function
-   5. Save context
-   6. Call tail payload function
-   7. Restore context
-   8. Jump back original address
-
-   For function call that is made by jump insn, the blob contains:
-   1. Save context
-   2. Call payload function
-   3. Restore context
-   4. Jump to original function
+   2. Pass parameter to head payload
+   3. Call head payload function
+   4. Restore context
+   5. Call original function
+   6. Save context
+   7. Pass parameter to tail payload
+   8. Call tail payload function
+   9. Restore context
+   10. Jump back original address
  */
 
 char* SpSnippet::blob(Dyninst::Address ret_addr) {
   assert(context_);
-  // assert(func_);
+
+  ret_addr_ = ret_addr;
+
   if (func_)
     sp_debug("BLOB - patch area at %lx for calling %s, will return to %lx",
              blob_, func_->name().c_str(), ret_addr);
@@ -83,25 +77,20 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   insnsize = emit_pass_param((long)point_, (long)context_, blob_, offset);
   offset += insnsize;
 
-  // 3. call payload
+  // 3. call head payload
   insnsize = emit_call_abs((long)head_, blob_, offset);
   offset += insnsize;
 
-  // 3. restore context
+  // 4. restore context
   insnsize = emit_restore(blob_, offset);
   offset += insnsize;
 
-  // 4. call ORIG_FUNCTION
+  before_call_orig_ = offset;
+
+  // 5. call ORIG_FUNCTION
   if (func_) {
     // Direct call
-    if (ret_addr) {
-      // Case 1: using call instruction
-      insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
-    } else {
-      // Case 2: using jump instruction, for tail code optimization
-      sp_print("TAIL CALL");
-      insnsize = emit_call_jump((long)func_->addr(), blob_, offset);
-    }
+    insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
   } else {
     // Indirect call
     insnsize = emit_call_orig((long)orig_insn_.c_str(),
@@ -109,29 +98,30 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   }
   offset += insnsize;
 
-  // 1. save context
+  // 6. save context
   insnsize = emit_save(blob_, offset);
   offset += insnsize;
 
-  // 2. pass parameters
+  // 7. pass parameters
   insnsize = emit_pass_param((long)point_, (long)context_, blob_, offset);
   offset += insnsize;
 
-  // 3. call payload
+  // 8. call payload
   insnsize = emit_call_abs((long)tail_, blob_, offset);
   offset += insnsize;
 
-  // 3. restore context
+  // 9. restore context
   insnsize = emit_restore(blob_, offset);
   offset += insnsize;
 
-  // 6. jmp ORIG_INSN_ADDR
+  // 10. jmp ORIG_INSN_ADDR
   if (ret_addr) {
     insnsize = emit_jump_abs(ret_addr, blob_, offset);
-    offset += insnsize;
+  } else {
+    sp_debug("TAIL CALL");
+    insnsize = emit_ret(blob_, offset);
   }
-
-
+  offset += insnsize;
   blob_size_ = offset;
 
   sp_debug("DUMP INSN (%d bytes)- {", offset);
@@ -139,6 +129,48 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   sp_debug("DUMP INSN - }");
 
   return blob_;
+}
+
+void SpSnippet::fixup(PatchFunction* f) {
+  sp_debug("FIXUP - for call imm(rip)");
+  if (!f) return;
+
+  size_t offset = before_call_orig_;
+  size_t insnsize = 0;
+
+  // 5. call ORIG_FUNCTION
+  insnsize = emit_call_abs((long)func_->addr(), blob_, offset);
+  offset += insnsize;
+
+  // 6. save context
+  insnsize = emit_save(blob_, offset);
+  offset += insnsize;
+
+  // 7. pass parameters
+  insnsize = emit_pass_param((long)point_, (long)context_, blob_, offset);
+  offset += insnsize;
+
+  // 8. call payload
+  insnsize = emit_call_abs((long)tail_, blob_, offset);
+  offset += insnsize;
+
+  // 9. restore context
+  insnsize = emit_restore(blob_, offset);
+  offset += insnsize;
+
+  // 10. jmp ORIG_INSN_ADDR
+  if (ret_addr_) {
+    insnsize = emit_jump_abs(ret_addr_, blob_, offset);
+  } else {
+    sp_debug("TAIL CALL");
+    insnsize = emit_ret(blob_, offset);
+  }
+  offset += insnsize;
+  blob_size_ = offset;
+
+  sp_debug("DUMP INSN (%d bytes)- {", offset);
+  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
+  sp_debug("DUMP INSN - }");
 }
 
 }

@@ -46,7 +46,7 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     PtToCallee pt_to_callee_;
 
     SpParser();
-    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg);
+    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg, size_t orig_insn_size);
 };
 
 }

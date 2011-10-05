@@ -25,6 +25,8 @@ class SpSnippet {
     ~SpSnippet();
 
     char* blob(Dyninst::Address ret_addr);
+    void fixup(Dyninst::PatchAPI::PatchFunction* f);  // for call imm(rip)
+
     size_t size() { return blob_size_; }
 
     SpContext* context() { return context_; }
@@ -45,7 +47,8 @@ class SpSnippet {
     string orig_insn_;
     char* blob_;
     size_t blob_size_;
-
+    size_t before_call_orig_;
+    Dyninst::Address ret_addr_;
     // A bunch of code generation interfaces
     static size_t emit_save(char* buf, size_t offset);
     static size_t emit_restore( char* buf, size_t offset);
@@ -53,6 +56,7 @@ class SpSnippet {
     static size_t emit_pass_param(long point, long context,
                                   char* buf, size_t offset);
     static size_t emit_call_abs(long callee, char* buf, size_t offset);
+    static size_t emit_ret(char* buf, size_t offset);
     static size_t emit_call_jump(long callee, char* buf, size_t offset);
     static size_t emit_jump_abs(long trg, char* buf, size_t offset);
     static size_t emit_call_orig(long src, size_t size, char* buf, size_t offset);

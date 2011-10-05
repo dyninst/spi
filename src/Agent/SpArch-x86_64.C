@@ -193,6 +193,12 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
+size_t SpSnippet::emit_ret(char* buf, size_t offset) {
+  char* p = buf + offset;
+  *p++ = 0xc3;
+  return (p - (buf + offset));
+}
+
 // if the original call is performed by jump instruction (tail call optimization)
 // then we don't push the return address
 size_t SpSnippet::emit_call_jump(long callee, char* buf, size_t offset) {
@@ -231,7 +237,8 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
   ctx->uc_mcontext.gregs[REG_RIP] = pc;
 }
 
-Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg) {
+Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
+                                         size_t orig_insn_size) {
   sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
   // sp_print("call_addr in %s", reg.name().c_str());
 
@@ -248,6 +255,12 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg) {
     return c->gregs[REG_RDX];
   } else if (reg == esp) {
     return c->gregs[REG_RSP];
+  } else if (reg == esi) {
+    return c->gregs[REG_RSI];
+  } else if (reg == edi) {
+    return c->gregs[REG_RDI];
+  } else if (reg == ebp) {
+    return c->gregs[REG_RBP];
   } else if (reg == rax) {
     return c->gregs[REG_RAX];
   } else if (reg == rbx) {
@@ -274,7 +287,16 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg) {
     return c->gregs[REG_R14];
   } else if (reg == r15) {
     return c->gregs[REG_R15];
+  } else if (reg == rip) {
+    return c->gregs[REG_RIP]-1+orig_insn_size;
+  } else if (reg == rsi) {
+    return c->gregs[REG_RSI];
+  } else if (reg == rdi) {
+    return c->gregs[REG_RDI];
+  } else if (reg == rbp) {
+    return c->gregs[REG_RBP];
   } else {
+    sp_print("get saved register %s", reg.name().c_str());
     assert(0);
   }
 }
