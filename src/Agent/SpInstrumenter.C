@@ -178,6 +178,7 @@ bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
     sp_debug("MPROTECT - Failed to restore memory access permission");
   }
+
   sp::install_end();
   return true;
 }

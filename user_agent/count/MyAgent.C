@@ -15,7 +15,7 @@ void print_head(Point* pt, sp::SpContext* context) {
   sp::payload_start();
   SpPayload payload(pt, context);
   callcount++;
-  //  sp_print("%d", callcount);
+  sp_print("%d", callcount);
   //indent++;
   //int max = 3093050;
   //if (callcount < (max/100000))
@@ -28,11 +28,17 @@ void print_tail(Point* pt, sp::SpContext* context) {
   //indent--;
 }
 
+void segv_handler(int num) {
+  sp_print("dump maps");
+}
+
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
   sp::SpParser::ptr parser = sp::SpParser::create();
   sp::SyncEvent::ptr event = sp::SyncEvent::create();
+
+  signal(SIGSEGV, segv_handler);
 
   agent->set_parser(parser);
   //agent->set_init_event(event);
@@ -41,7 +47,11 @@ void MyAgent() {
   if (getenv("SP_JUMP")) {
     agent->set_directcall_only(true);
     agent->set_jump_inst(true);
+    sp_print("Jump-based");
+  } else {
+    sp_print("Trap-based");
   }
+ // }
   agent->go();
 }
 

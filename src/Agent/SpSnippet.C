@@ -95,7 +95,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
     // Indirect call
     insnsize = emit_call_orig((long)orig_insn_.c_str(),
                               orig_insn_.size(), blob_, offset);
-    // sp_print("********indirect call!");
+    //sp_print("********indirect call!");
   }
   offset += insnsize;
 

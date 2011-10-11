@@ -1355,7 +1355,8 @@ SpPayload.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Command.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpUtils.h
 SpContext.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpContext.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpContext.h \

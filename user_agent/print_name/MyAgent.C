@@ -56,9 +56,9 @@ void MyAgent() {
   //agent->set_init_event(event);
   agent->set_init_head("print_head");
   agent->set_init_tail("print_tail");
-  if (getenv("SP_JUMP")) {
-    agent->set_directcall_only(true);
-    agent->set_jump_inst(true);
-  }
+//  if (getenv("SP_JUMP")) {
+  //agent->set_directcall_only(true);
+  //      agent->set_jump_inst(true);
+ // }
   agent->go();
 }
