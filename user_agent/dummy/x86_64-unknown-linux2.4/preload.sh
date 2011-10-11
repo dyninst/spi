@@ -79,33 +79,11 @@ START=`date`
 #echo 71; LD_PRELOAD="./$AGENT_NAME" $BIN/mktemp
 #echo 72; LD_PRELOAD="./$AGENT_NAME" $BIN/groups
 #echo 73; LD_PRELOAD="./$AGENT_NAME" $BIN/mkdir -p /tmp/tmp99/tmp3
-#echo 74; LD_PRELOAD="./$AGENT_NAME" $BIN/printf "abasdfaf%s" "aaa"
+#echo 74; LD_PRELOAD="./$AGENT_NAME" $BIN/printf "abasdfaf%s" "aaa" 
 #echo 75; LD_PRELOAD="./$AGENT_NAME" $BIN/od /tmp/tmp
 #LD_PRELOAD="./$AGENT_NAME" find /scratch -name "*.h"
-#time LD_PRELOAD="./$AGENT_NAME" $BIN/cat /scratch/wenbin/binaries/coreutils-8.12/src/*.c
+time LD_PRELOAD="./$AGENT_NAME" $BIN/cat /scratch/wenbin/binaries/coreutils-8.12/src/*.c
 #$BIN/cat /scratch/wenbin/binaries/coreutils-8.12/src/*.c
-
-
-#time LD_PRELOAD="./$AGENT_NAME" /afs/cs.wisc.edu/s/gcc-4.1.0/amd64_cent40/libexec/gcc/x86_64-unknown-linux-gnu/4.1.0/cc1plus  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/util.C -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/include -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g -Dos_linux -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4  -Dcap_ptrace -Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_heap -Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen -Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -Dcap_registers -Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement -Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
-
-time LD_PRELOAD="./$AGENT_NAME" /afs/cs.wisc.edu/s/gcc-4.1.0/amd64_cent40/libexec/gcc/x86_64-unknown-linux-gnu/4.1.0/cc1plus  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/unix.C -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/include -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g -Dos_linux -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4  -Dcap_ptrace -Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_heap -Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen -Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -Dcap_registers -Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement -Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
-
-#time /afs/cs.wisc.edu/s/gcc-4.1.0/amd64_cent40/libexec/gcc/x86_64-unknown-linux-gnu/4.1.0/cc1plus  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/unix.C -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/include -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g -Dos_linux -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4  -Dcap_ptrace -Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_heap -Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen -Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -Dcap_registers -Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement -Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
-
-
-#echo 75; time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
-#echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
-
-#time ./sort /tmp/tmp
-#echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/ls
-#$BIN/uptime
-#gprof $BIN/ls
-#echo 75; time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
-
-#echo 75; valgrind --tool=callgrind "time LD_PRELOAD="./$AGENT_NAME" $BIN/wc -w ~/devel/dyninst/dyninst/dyninstAPI/src/*.C"
-#echo 75; time $BIN/wc -w ~/devel/dyninst/dyninst/dyninstAPI/src/*.C
-#echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/wc -w ~/devel/dyninst/dyninst/dyninstAPI/src/*.C
-
 END=`date`
 echo "START $START"
 echo "END $END"

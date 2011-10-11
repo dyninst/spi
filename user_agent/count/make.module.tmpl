@@ -1,0 +1,33 @@
+GXX        = g++
+RM         = rm -f
+
+all: $(AGENT_NAME) CPLIBAGENT
+
+AGENT_DIR      = ../
+AGENT_OBJS    += $(notdir $(AGENT_SRCS:%.C=%.o))
+
+AG_LDFLAGS    += -L$(SP_DIR)/$(PLATFORM)
+AG_LDFLAGS    += -lagent
+
+AGENT_DEP  = .AGENT_DEPENDS
+AGENT_DEPS:
+	$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AGENT_DEP)
+include $(AGENT_DEP)
+
+$(AGENT_OBJS): %.o : $(AGENT_SRCS)
+	@echo Compiling $*.C
+	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_DIR)/$*.C
+
+$(AGENT_NAME): $(AGENT_OBJS)
+	@echo Linking $@
+	@$(GXX) -o $@  $(AGENT_OBJS) $(AG_LDFLAGS)
+
+CPLIBAGENT:
+	@echo "Copying libagent.so ..."
+	@cp -f $(SP_DIR)/$(PLATFORM)/libagent.so ./
+#==============================================
+# clean up
+#==============================================
+clean:
+	$(RM) *.o *.so
+	make AGENT_DEPS

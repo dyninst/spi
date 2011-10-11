@@ -4,46 +4,28 @@ using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
 
-int indent = 0;
-
+int callcount = 0;
 namespace sp {
   extern void payload_start();
   extern void payload_end();
   extern void report_timer();
 }
-int callcount = 0;
-
+int indent = 0; 
 void print_head(Point* pt, sp::SpContext* context) {
   sp::payload_start();
-
   SpPayload payload(pt, context);
-  PatchFunction* f = payload.callee();
-  if (!f) return;
-  string callee_name = f->name();
-  callcount ++;
-
-  string fmt;
-  for (int i = 0; i < indent; i++)
-    fmt += ' ';
-  sp_print("%sEnter %s %d", fmt.c_str(), callee_name.c_str(), callcount);
-  ++indent;
-
+  callcount++;
+  //  sp_print("%d", callcount);
+  //indent++;
+  //int max = 3093050;
+  //if (callcount < (max/100000))
   payload.propell();
   sp::payload_end();
   //sp::report_timer();
 }
 
 void print_tail(Point* pt, sp::SpContext* context) {
-  SpPayload payload(pt, context);
-  PatchFunction* f = payload.callee();
-  if (!f) return;
-  string callee_name = f->name();
-
-  --indent;
-  string fmt;
-  for (int i = 0; i < indent; i++)
-    fmt += ' ';
-  sp_print("%sLeave %s", fmt.c_str(), callee_name.c_str());
+  //indent--;
 }
 
 AGENT_INIT
@@ -61,4 +43,9 @@ void MyAgent() {
     agent->set_jump_inst(true);
   }
   agent->go();
+}
+
+__attribute__((destructor))
+void DumpOutput() {
+  printf("# of calls: %d\n", callcount);
 }
