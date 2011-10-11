@@ -1,0 +1,4 @@
+# Parse all loaded libraries excluding dyninst-related ones
+# Instrument direct call + indirect call
+# Count # of all function invocations
+

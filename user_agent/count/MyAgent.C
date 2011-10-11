@@ -11,11 +11,11 @@ namespace sp {
   extern void report_timer();
 }
 int indent = 0; 
-void print_head(Point* pt, sp::SpContext* context) {
+void print_head(Point* pt) {
   sp::payload_start();
-  SpPayload payload(pt, context);
+  SpPayload payload(pt);
   callcount++;
-  sp_print("%d", callcount);
+  //sp_print("%d", callcount);
   //indent++;
   //int max = 3093050;
   //if (callcount < (max/100000))
@@ -24,12 +24,12 @@ void print_head(Point* pt, sp::SpContext* context) {
   //sp::report_timer();
 }
 
-void print_tail(Point* pt, sp::SpContext* context) {
+void print_tail(Point* pt) {
   //indent--;
 }
 
 void segv_handler(int num) {
-  sp_print("dump maps");
+  //sp_print("dump maps");
 }
 
 AGENT_INIT
@@ -38,12 +38,10 @@ void MyAgent() {
   sp::SpParser::ptr parser = sp::SpParser::create();
   sp::SyncEvent::ptr event = sp::SyncEvent::create();
 
-  signal(SIGSEGV, segv_handler);
-
   agent->set_parser(parser);
   //agent->set_init_event(event);
   agent->set_init_head("print_head");
-  agent->set_init_tail("print_tail");
+  // agent->set_init_tail("print_tail");
   if (getenv("SP_JUMP")) {
     agent->set_directcall_only(true);
     agent->set_jump_inst(true);

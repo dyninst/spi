@@ -74,7 +74,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   offset += insnsize;
 
   // 2. pass parameters
-  insnsize = emit_pass_param((long)point_, (long)context_, blob_, offset);
+  insnsize = emit_pass_param((long)point_, blob_, offset);
   offset += insnsize;
 
   // 3. call head payload
@@ -98,22 +98,23 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
     //sp_print("********indirect call!");
   }
   offset += insnsize;
+  if (tail_) {
+    // 6. save context
+    insnsize = emit_save(blob_, offset);
+    offset += insnsize;
 
-  // 6. save context
-  insnsize = emit_save(blob_, offset);
-  offset += insnsize;
+    // 7. pass parameters
+    insnsize = emit_pass_param((long)point_, blob_, offset);
+    offset += insnsize;
 
-  // 7. pass parameters
-  insnsize = emit_pass_param((long)point_, (long)context_, blob_, offset);
-  offset += insnsize;
+    // 8. call payload
+    insnsize = emit_call_abs((long)tail_, blob_, offset, true);
+    offset += insnsize;
 
-  // 8. call payload
-  insnsize = emit_call_abs((long)tail_, blob_, offset, true);
-  offset += insnsize;
-
-  // 9. restore context
-  insnsize = emit_restore(blob_, offset);
-  offset += insnsize;
+    // 9. restore context
+    insnsize = emit_restore(blob_, offset);
+    offset += insnsize;
+  }
 
   // 10. jmp ORIG_INSN_ADDR
   if (ret_addr) {
@@ -145,21 +146,23 @@ void SpSnippet::fixup(PatchFunction* f) {
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   offset += insnsize;
 
-  // 6. save context
-  insnsize = emit_save(blob_, offset);
-  offset += insnsize;
+  if (tail_) {
+    // 6. save context
+    insnsize = emit_save(blob_, offset);
+    offset += insnsize;
 
-  // 7. pass parameters
-  insnsize = emit_pass_param((long)point_, (long)context_, blob_, offset);
-  offset += insnsize;
+    // 7. pass parameters
+    insnsize = emit_pass_param((long)point_, blob_, offset);
+    offset += insnsize;
 
-  // 8. call payload
-  insnsize = emit_call_abs((long)tail_, blob_, offset, true);
-  offset += insnsize;
+    // 8. call payload
+    insnsize = emit_call_abs((long)tail_, blob_, offset, true);
+    offset += insnsize;
 
-  // 9. restore context
-  insnsize = emit_restore(blob_, offset);
-  offset += insnsize;
+    // 9. restore context
+    insnsize = emit_restore(blob_, offset);
+    offset += insnsize;
+  }
 
   // 10. jmp ORIG_INSN_ADDR
   if (ret_addr_) {

@@ -1,0 +1,7 @@
+Step 1: run callgrind on instrumented sort
+
+  valgrind --tool=callgrind ./sort preload.sh
+
+Step 2: profiling
+
+  kcachegrind

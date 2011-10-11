@@ -1,0 +1,37 @@
+* program
+
+(instrumented) ./sort DYNINSTAPI_SRC/*.C
+
+* Last version (jump)
+
+real    0m28.799s
+user    0m27.072s
+sys     0m0.477s
+
+real    0m49.793s
+user    0m26.792s
+sys     0m0.202s
+
+real    0m27.379s
+user    0m26.572s
+sys     0m0.405s
+
+
+* Remove 2nd parameter (context) for payload, save 20 bytes per call (jump)
+
+real    0m27.717s
+user    0m26.963s
+sys     0m0.436s
+
+real    0m26.953s
+user    0m26.584s
+sys     0m0.320s
+
+real    0m30.755s
+user    0m26.839s
+sys     0m0.340s
+
+* Shorten function call instruction (jump)
+
+
+* Shorten jump back instruction (jump)

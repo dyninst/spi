@@ -1,0 +1,20 @@
+git-head: 9daeb4ae404e7f6a9cf53ee20e4cadc0b8f77688
+
+Command:
+
+time /afs/cs.wisc.edu/s/gcc-4.5.0/@sys/bin/g++ -S
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C
+-I/afs/cs.wisc\ .edu/p/paradyn/development/wenbin/dyninst/include
+-I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h
+-I/afs/cs.wisc.ed\ u/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h
+-I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g
+-Dos_linux\ -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4 -Dcap_ptrace
+-Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_h\ eap
+-Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen
+-Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -D\ cap_registers
+-Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement
+-Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D_\ _STDC_LIMIT_MACROS
+-D__STDC_CONSTANT_MACROS
+-I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
+
+(including source code of linux kernel, chrome, gcc, unix utilities)

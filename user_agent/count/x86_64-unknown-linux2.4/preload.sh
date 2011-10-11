@@ -88,28 +88,21 @@ START=`date`
 
 #time LD_PRELOAD="./$AGENT_NAME" /afs/cs.wisc.edu/s/gcc-4.1.0/amd64_cent40/libexec/gcc/x86_64-unknown-linux-gnu/4.1.0/cc1plus  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/util.C -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/include -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g -Dos_linux -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4  -Dcap_ptrace -Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_heap -Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen -Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -Dcap_registers -Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement -Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
 
-#time LD_PRELOAD="./$AGENT_NAME" /afs/cs.wisc.edu/s/gcc-4.1.0/amd64_cent40/libexec/gcc/x86_64-unknown-linux-gnu/4.1.0/cc1plus  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/unix.C -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/include -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g -Dos_linux -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4  -Dcap_ptrace -Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_heap -Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen -Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -Dcap_registers -Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement -Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
+time LD_PRELOAD="./$AGENT_NAME" /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 input/200.i
 
-#time /afs/cs.wisc.edu/s/gcc-4.1.0/amd64_cent40/libexec/gcc/x86_64-unknown-linux-gnu/4.1.0/cc1plus  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/unix.C -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/include -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g -Dos_linux -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4  -Dcap_ptrace -Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_heap -Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen -Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -Dcap_registers -Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement -Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
-
+#time /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 input/200.i
 
 #echo 75; time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
 #echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
-
-#time ./sort /tmp/tmp
-#echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/ls
-#$BIN/uptime
-#gprof $BIN/ls
-#echo 75; time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
 
 #echo 75; valgrind --tool=callgrind "time LD_PRELOAD="./$AGENT_NAME" $BIN/wc -w ~/devel/dyninst/dyninst/dyninstAPI/src/*.C"
 #echo 75; time $BIN/wc -w ~/devel/dyninst/dyninst/dyninstAPI/src/*.C
 #echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/wc -w ~/devel/dyninst/dyninst/dyninstAPI/src/*.C
 
 #valgrind --tool=callgrind ./uptime
-valgrind --tool=callgrind ./sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C
+#valgrind --tool=callgrind ./sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/c*.C
 #valgrind --tool=callgrind $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C
-#./sort preload.sh
+#time ./sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C
 
 
 END=`date`

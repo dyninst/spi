@@ -8,6 +8,8 @@
 
 using Dyninst::PatchAPI::PatchFunction;
 
+extern sp::SpContext* g_context;
+
 namespace sp {
 
 // dump context
@@ -145,8 +147,7 @@ static size_t emit_mov_imm64_rsi(long imm, char* buf, size_t offset) {
   return (2 + sizeof(long));
 }
 
-size_t SpSnippet::emit_pass_param(long point, long context,
-                                  char* buf, size_t offset) {
+size_t SpSnippet::emit_pass_param(long point, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
@@ -155,8 +156,8 @@ size_t SpSnippet::emit_pass_param(long point, long context,
   p += insnsize;
 
   // movq SP_CONTEXT, %rsi
-  insnsize = emit_mov_imm64_rsi((long)context, p, 0);
-  p += insnsize;
+  //insnsize = emit_mov_imm64_rsi((long)g_context, p, 0);
+  //p += insnsize;
 
   return (p - (buf + offset));
 }
@@ -176,19 +177,32 @@ static size_t emit_push_imm64(long imm, char* buf, size_t offset) {
 
 size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
   char* p = buf + offset;
+  Dyninst::Address retaddr = (Dyninst::Address)p+5;
   size_t insnsize = 0;
-  long retaddr = (long)p + 16 + 16 + 1;
-  // push return address
-  insnsize = emit_push_imm64(retaddr, p, 0);
-  p += insnsize;
-  // push callee address
-  insnsize = emit_push_imm64(callee, p, 0);
-  p += insnsize;
-  // ret
-  //*p = 0xcb;
-  *p = 0xc3;
-  p ++;
-  assert(retaddr == (long)p);
+  Dyninst::Address rel_addr = (callee - retaddr);
+  Dyninst::Address rel_addr_abs = (callee > retaddr) ?
+    (callee - retaddr) : (retaddr - callee);
+
+  // sp_print("%lx, %d", rel_addr_abs, (rel_addr_abs <= 0xffffffff));
+  if (rel_addr_abs <= 0xffffffff) {
+    *p++ = 0xe8;
+    int* rel_p = (int*)p;
+    *rel_p = rel_addr;
+    p += 4;
+  } else {
+    retaddr = (long)p + 16 + 16 + 1;
+    // push return address
+    insnsize = emit_push_imm64(retaddr, p, 0);
+    p += insnsize;
+    // push callee address
+    insnsize = emit_push_imm64(callee, p, 0);
+    p += insnsize;
+    // ret
+    //*p = 0xcb;
+    *p = 0xc3;
+    p ++;
+    assert(retaddr == (long)p);
+  }
 
   return (p - (buf + offset));
 }
@@ -218,11 +232,22 @@ size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
-  // push jump target
-  insnsize = emit_push_imm64(trg, p, 0);
-  p += insnsize;
-  // ret
-  *p++ = 0xc3;
+  Dyninst::Address retaddr = (Dyninst::Address)p+5;
+  Dyninst::Address rel_addr = (trg - retaddr);
+  Dyninst::Address rel_addr_abs = (trg > retaddr) ?
+    (trg - retaddr) : (retaddr - trg);
+  if (rel_addr_abs <= 0xffffffff) {
+    *p++ = 0xe9;
+    int* rel_p = (int*)p;
+    *rel_p = rel_addr;
+    p += 4;
+  } else {
+    // push jump target
+    insnsize = emit_push_imm64(trg, p, 0);
+    p += insnsize;
+    // ret
+    *p++ = 0xc3;
+  }
   return (p - (buf + offset));
 }
 

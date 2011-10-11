@@ -71,7 +71,7 @@ void SpAgent::go() {
   if (!init_event_) init_event_ = SyncEvent::create();
   if (!fini_event_) fini_event_ = SpEvent::create();
   if (init_head_.size() == 0) init_head_ = "default_head";
-  if (init_tail_.size() == 0) init_tail_ = "default_tail";
+  if (init_tail_.size() == 0) init_tail_ = "";
   if (!parser_) parser_ = SpParser::create();
   if (!init_propeller_) init_propeller_ = SpPropeller::create();
 

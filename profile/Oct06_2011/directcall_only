@@ -1,0 +1,35 @@
+#=====================================
+# time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C 
+#=====================================
+#jump base
+real    0m18.077s
+user    0m14.673s
+sys     0m3.341s
+
+#trap base
+real    0m38.706s
+user    0m31.064s
+sys     0m4.323s
+
+#baseline
+real    0m0.093s
+user    0m0.005s
+sys     0m0.007s
+
+#=====================================
+# time $BIN/wc -w /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C 
+#=====================================
+#jump base
+real    0m18.077s
+user    0m14.673s
+sys     0m3.341s
+
+#trap base
+real    0m38.706s
+user    0m31.064s
+sys     0m4.323s
+
+#baseline
+real    0m0.093s
+user    0m0.005s
+sys     0m0.007s

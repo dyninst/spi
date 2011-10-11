@@ -17,9 +17,9 @@ using Dyninst::PatchAPI::PatchObject;
 //-----------------------------------------
 // Default payload functions
 //-----------------------------------------
-void default_head(Point* pt, sp::SpContext* context) {
+void default_head(Point* pt) {
   //  sp::payload_start();
-  SpPayload payload(pt, context);
+  SpPayload payload(pt);
   PatchFunction* f = payload.callee();
   if (!f) return;
 
@@ -30,8 +30,8 @@ void default_head(Point* pt, sp::SpContext* context) {
   //  sp::payload_end();
 }
 
-void default_tail(Point* pt, sp::SpContext* context) {
-  SpPayload payload(pt, context);
+void default_tail(Point* pt) {
+  SpPayload payload(pt);
   PatchFunction* f = payload.callee();
   if (!f) return;
 
@@ -42,8 +42,9 @@ void default_tail(Point* pt, sp::SpContext* context) {
 //-----------------------------------------
 // SpPayload
 //-----------------------------------------
-SpPayload::SpPayload(Dyninst::PatchAPI::Point* pt, SpContext* context)
-  : pt_(pt), context_(context) {
+extern sp::SpContext* g_context;
+SpPayload::SpPayload(Dyninst::PatchAPI::Point* pt)
+  : pt_(pt), context_(g_context) {
   context_->callee(pt_);
 }
 

@@ -13,10 +13,10 @@ namespace sp {
 }
 int callcount = 0;
 
-void print_head(Point* pt, sp::SpContext* context) {
+void print_head(Point* pt) {
   sp::payload_start();
 
-  SpPayload payload(pt, context);
+  SpPayload payload(pt);
   PatchFunction* f = payload.callee();
   if (!f) return;
   string callee_name = f->name();
@@ -33,8 +33,8 @@ void print_head(Point* pt, sp::SpContext* context) {
   //sp::report_timer();
 }
 
-void print_tail(Point* pt, sp::SpContext* context) {
-  SpPayload payload(pt, context);
+void print_tail(Point* pt) {
+  SpPayload payload(pt);
   PatchFunction* f = payload.callee();
   if (!f) return;
   string callee_name = f->name();
