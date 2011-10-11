@@ -30,6 +30,10 @@ SpAgent::SpAgent() {
   init_event_ = SpEvent::ptr();
   fini_event_ = SpEvent::ptr();
   parser_ = SpParser::ptr();
+
+  parse_only_ = false;
+  directcall_only_ = false;
+  jump_ = false;
 }
 
 SpAgent::~SpAgent() {
@@ -71,11 +75,16 @@ void SpAgent::go() {
   if (!parser_) parser_ = SpParser::create();
   if (!init_propeller_) init_propeller_ = SpPropeller::create();
 
+  parser_->set_jump_inst(jump_);
+
   // 2. Prepare context
   context_ = SpContext::create(init_propeller_,
                                init_head_,
                                init_tail_,
                                parser_);
+  context_->set_directcall_only(directcall_only_);
+
+  if (parse_only_) return;
 
   // 3. Register Events
   init_event_->register_event(context_);

@@ -8,6 +8,7 @@
 #include "SpCommon.h"
 #include "SpContext.h"
 #include "SpAddrSpace.h"
+#include "SpUtils.h"
 
 #include "Point.h"
 #include "PatchMgr.h"
@@ -38,8 +39,11 @@ using Dyninst::PatchAPI::PatchBlock;
 using Dyninst::PatchAPI::PointMaker;
 using Dyninst::PatchAPI::Point;
 
+extern sp::SpContext* g_context;
+
 SpParser::SpParser()
   : exe_obj_(NULL), injected_(false) {
+  init_dyninst_libs();
 }
 
 SpParser::~SpParser() {
@@ -59,6 +63,24 @@ SpParser::ptr SpParser::create() {
 typedef struct {
   Dyninst::Address offsets[100];
 } IjLib;
+
+bool SpParser::is_dyninst_lib(string lib) {
+  for (int i = 0; i < dyninst_libs_.size(); i++) {
+    if (lib.find(dyninst_libs_[i]) != string::npos) return true;
+  }
+  return false;
+}
+
+void SpParser::init_dyninst_libs() {
+  dyninst_libs_.push_back("libpatchAPI.so");
+  dyninst_libs_.push_back("libparseAPI.so");
+  dyninst_libs_.push_back("libstackwalk.so");
+  dyninst_libs_.push_back("libsymtabAPI.so");
+  dyninst_libs_.push_back("libinstructionAPI.so");
+  dyninst_libs_.push_back("libelf.so");
+  dyninst_libs_.push_back("libdwarf.so");
+  dyninst_libs_.push_back("libcommon.so");
+}
 
 PatchMgrPtr SpParser::parse() {
   if (mgr_) return mgr_;
@@ -127,6 +149,11 @@ PatchMgrPtr SpParser::parse() {
         sp_debug("SKIP - parsing %s", sp_filename(sym->name().c_str()));
         continue;
       }
+    } else {
+      if (is_dyninst_lib(sym->name())) {
+        sp_debug("SKIP - parsing %s", sp_filename(sym->name().c_str()));
+        continue;
+      }
     }
 
     // Parse binary objects using ParseAPI::CodeObject::parse()
@@ -150,8 +177,12 @@ PatchMgrPtr SpParser::parse() {
 
   // Initialize PatchAPI stuffs
   AddrSpace* as = SpAddrSpace::create(exe_obj_);
-  Dyninst::PatchAPI::Instrumenter* inst = sp::TrapInstrumenter::create(as);
-  //Dyninst::PatchAPI::Instrumenter* inst = sp::JumpInstrumenter::create(as);
+  Dyninst::PatchAPI::Instrumenter* inst = NULL;
+  if (!jump_) { 
+    inst = sp::TrapInstrumenter::create(as);
+  } else {
+    inst = sp::JumpInstrumenter::create(as);
+  }
   mgr_ = PatchMgr::create(as, inst);
   for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
@@ -242,8 +273,15 @@ Dyninst::Address SpParser::get_func_addr(string name) {
   return 0;
 }
 
-extern sp::SpContext* g_context;
 PatchFunction* SpParser::findFunction(string name, bool skip) {
+  sp::findfunc_start();
+
+  if (real_func_map_.find(name) != real_func_map_.end()) {
+    // sp_print("HIT************************");
+    sp::findfunc_end();
+    return real_func_map_[name];
+  }
+
   sp_debug("FIND FUNC - %s", name.c_str());
   AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
@@ -267,11 +305,15 @@ PatchFunction* SpParser::findFunction(string name, bool skip) {
           continue;
         }
         sp_debug("FOUND - %s", name.c_str());
-        return obj->getFunc(*fit);
+        PatchFunction* found = obj->getFunc(*fit);
+        real_func_map_[name] = found;
+        sp::findfunc_end();
+        return found;
       }
     }
   }
   sp_debug("NOT FOUND - %s", name.c_str());
+  sp::findfunc_end();
   return NULL;
 }
 
@@ -379,11 +421,14 @@ private:
 };
 
 PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
+  sp::callee_start();
 
   //-------------------------------------
   // 0. Check the cache
   //-------------------------------------
+  //sp_print("size of pt_to_callee_: %ld", pt_to_callee_.size());
   if (pt_to_callee_.find(pt) != pt_to_callee_.end()) {
+    sp::callee_end();
     return pt_to_callee_[pt];
   }
 
@@ -394,6 +439,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   if (f) {
     sp_debug("DIRECT CALL - %s", f->name().c_str());
     pt_to_callee_[pt] = f;
+    sp::callee_end();
     return f;
   }
 
@@ -425,14 +471,18 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
         SpSnippet::ptr sp_snip = snip->rep();
         sp_snip->fixup(f);
       }
+
+      sp::callee_end();
       return f;
     }
 
     sp_print("CANNOT RESOLVE ADDR %lx, SKIP", call_addr);
+    sp::callee_end();
     return NULL;
   }
 
   sp_debug("PARSE INDIRECT CALL LATER ...");
 
+  sp::callee_end();
   return NULL;
 }

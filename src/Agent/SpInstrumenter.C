@@ -7,6 +7,7 @@
 #include "SpSnippet.h"
 #include "SpContext.h"
 #include "SpAddrSpace.h"
+#include "SpUtils.h"
 
 using sp::SpContext;
 using sp::SpSnippet;
@@ -35,6 +36,8 @@ TrapInstrumenter::TrapInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
 }
 
 void trap_handler(int sig, siginfo_t* info, void* c) {
+  //sp_print("trap_handler");
+
   // get pc
   Dyninst::Address pc = sp::SpSnippet::get_pre_signal_pc(c) - 1;
   sp_debug("TRAP - Executing payload code for address %lx", pc);
@@ -72,11 +75,14 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   sp_snip->dump_context((ucontext_t*)c);
   g_context->parser()->set_old_context((ucontext_t*)c);
   // set pc to patch area
-  sp_debug("GOTO BLOB - go go go");
+  sp_debug("GOTO BLOB - go go go to %lx", blob);
   sp::SpSnippet::set_pc((Dyninst::Address)blob, c);
 }
 
 bool TrapInstrumenter::run() {
+  sp::instrumenter_start();
+
+  //sp_print("TrapInstrumenter::run");
   sp_debug("CODE GEN - Start trap_instrumentation and generate binary, %d commands to go", user_commands_.size());
 
   // Use trap to do instrumentation
@@ -91,13 +97,15 @@ bool TrapInstrumenter::run() {
     if (command) {
       InstancePtr instance = command->instance();
       Point* pt = instance->point();
+      if (!pt->getCallee() && g_context->directcall_only()) continue;
+
       Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
       SpSnippet::ptr sp_snip = snip->rep();
 
       // 1. Logically link snippet to the point (build map)
       Dyninst::Address eip = pt->block()->last();
       SpContext::InstMap& inst_map = g_context->inst_map();
-
+      //sp_print("sizeof inst_map: %ld", inst_map.size());
       // 2. If this point is already instrumented, skip it
       if (inst_map.find(eip) == inst_map.end()) {
         inst_map[eip] = instance;
@@ -133,10 +141,13 @@ bool TrapInstrumenter::run() {
   user_commands_.clear();
   // Things to be restored
   g_context->set_old_act(old_act);
-
+  sp::instrumenter_end();
 }
 
 bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
+  //sp_print("TrapInstrumenter::install");
+  sp::install_start();
+
   string int3;
   int3 += (char)0xcc;
 
@@ -167,7 +178,7 @@ bool TrapInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
     sp_debug("MPROTECT - Failed to restore memory access permission");
   }
-
+  sp::install_end();
   return true;
 }
 
@@ -185,12 +196,16 @@ JumpInstrumenter::JumpInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
 }
 
 bool JumpInstrumenter::run() {
+  sp::instrumenter_start();
+
   sp_debug("CODE GEN - Start trap_instrumentation and generate binary, %d commands to go", user_commands_.size());
   for (CommandList::iterator c = user_commands_.begin(); c != user_commands_.end(); c++) {
     PushBackCommand* command = dynamic_cast<PushBackCommand*>(*c);
     if (command) {
       InstancePtr instance = command->instance();
       Point* pt = instance->point();
+      if (!pt->getCallee() && g_context->directcall_only()) continue;
+
       Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
       SpSnippet::ptr sp_snip = snip->rep();
       // 1. Logically link snippet to the point (build map)
@@ -248,10 +263,13 @@ bool JumpInstrumenter::run() {
   }
   user_commands_.clear();
 
+  sp::instrumenter_end();
   return true;
 }
 
 bool JumpInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
+  sp::install_start();
+
   char jump[5];
   char* p = jump;
   *p++ = 0xe9;
@@ -288,5 +306,6 @@ bool JumpInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
     sp_debug("MPROTECT - Failed to restore memory access permission");
   }
 
+  sp::install_end();
   return true;
 }

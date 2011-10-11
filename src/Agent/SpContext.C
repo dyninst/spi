@@ -56,6 +56,7 @@ void SpContext::init_well_known_libs() {
     well_known_libs_.push_back(parser_->get_agent_name());
 }
 
+
 /* Get the first instrumentable function.
    Here, an instrumentable function should fulfill all of the following requirements:
    1. it should be resovled by the parser.
@@ -108,6 +109,7 @@ bool SpContext::is_well_known_lib(string lib) {
   return false;
 }
 
+
 void SpContext::restore() {
   // Restore trap handler
   sigaction(SIGTRAP, &old_act_, NULL);
@@ -115,5 +117,5 @@ void SpContext::restore() {
 
 
 Dyninst::PatchAPI::PatchFunction* SpContext::callee(Dyninst::PatchAPI::Point* pt) {
-  return parser()->callee(pt, true);
+  return parser()->callee(pt, directcall_only_ == false);
 }

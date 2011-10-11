@@ -3,6 +3,7 @@
 #include "PatchMgr.h"
 #include "SpSnippet.h"
 #include "Instruction.h"
+#include "SpUtils.h"
 
 using sp::SpPropeller;
 using sp::SpContext;
@@ -27,7 +28,7 @@ bool SpPropeller::go(PatchFunction* func,
                      SpContext* context,
                      PayloadFunc head,
                      PayloadFunc tail) {
-  // if (pts.size() == 0) return false;
+  sp::propeller_start();
 
   // 1. Find points according to type
   Points pts;
@@ -41,6 +42,7 @@ bool SpPropeller::go(PatchFunction* func,
   Dyninst::PatchAPI::Patcher patcher(mgr);
   for (int i = 0; i < pts.size(); i++) {
     Point* pt = pts[i];
+
     sp_debug("SNIP INSERT - insert snippet");
     PatchFunction* callee = context->parser()->callee(pt);
     if (!callee) sp_debug("INDIRECT CALL - instrumenting indirect call");
@@ -54,11 +56,14 @@ bool SpPropeller::go(PatchFunction* func,
   }
   sp_debug("CODE GEN - starting");
   patcher.commit();
+  sp::propeller_end();
+
   return true;
 }
 
 void SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& pts) {
-  //PatchFunction* cur_func = context->parser()->findFunction(func);
+  sp::next_point_start();
+
   Scope scope(cur_func);
   Points tmp_pts;
   if (!mgr->findPoints(scope, Point::PreCall, back_inserter(tmp_pts))) {
@@ -66,13 +71,7 @@ void SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& 
   }
   sp_debug("POINTS - %d in total", tmp_pts.size());
   for (Points::iterator pi = tmp_pts.begin(); pi != tmp_pts.end(); pi++) {
-    // if (!context->parser()->callee(*pi)) continue;
     pts.push_back(*pi);
-    /*
-    sp_debug("%s at %lx (%d pts) - Call %s at Block %lx ~ %lx",
-             cur_func->name().c_str(), cur_func->addr(), pts.size(),
-             context->parser()->callee(*pi)->name().c_str(),
-             (*pi)->block()->start(), (*pi)->block()->end());
-    */
   }
+  sp::next_point_end();
 }
