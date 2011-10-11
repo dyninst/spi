@@ -670,6 +670,7 @@ SpParser.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpAddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpUtils.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/Point.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Symbol.h \
@@ -1130,7 +1131,8 @@ SpPropeller.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/PatchMgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/instructionAPI/h/Instruction.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/instructionAPI/h/Instruction.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpUtils.h
 SpPayload.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpPayload.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpPayload.h \
@@ -1812,7 +1814,8 @@ SpInstrumenter.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpAddrSpace.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h/AddrSpace.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpUtils.h
 SpAddrSpace.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpAddrSpace.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpAddrSpace.h \
@@ -2248,3 +2251,27 @@ SpSnippet.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpEvent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpSnippet.h
+SpUtils.o:  \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpUtils.C \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/SpUtils.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/h/SpCommon.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/config.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/config/suffix.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/config/no_tr1/memory.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/assert.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/checked_delete.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/throw_exception.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/workaround.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/shared_count.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/bad_weak_ptr.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/sp_counted_base.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/sp_counted_base_gcc_x86.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/sp_typeinfo.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/sp_counted_impl.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/sp_convertible.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/spinlock_pool.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/spinlock.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/spinlock_sync.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/yield_k.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/memory_order.hpp

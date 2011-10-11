@@ -4,6 +4,7 @@
 #include "PatchObject.h"
 #include "PatchMgr.h"
 #include <ucontext.h>
+#include <ext/hash_map>
 
 namespace sp {
 
@@ -31,7 +32,8 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     bool injected() const { return injected_; }
     Dyninst::Address get_saved_reg(Dyninst::MachRegister reg, size_t orig_insn_size);
     static bool is_pc(Dyninst::MachRegister);
-
+    bool is_dyninst_lib(string lib);
+    void set_jump_inst(bool b) { jump_ = b; }
     // only works for trap-based instrumentation
     void set_old_context(ucontext_t* c) { old_context_ = *c; }
   protected:
@@ -42,12 +44,20 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     bool injected_;
     ucontext_t old_context_;
+    std::vector<string> dyninst_libs_;
+    bool jump_;
 
     typedef std::map<Dyninst::PatchAPI::Point*,
                      Dyninst::PatchAPI::PatchFunction*> PtToCallee;
+    //typedef __gnu_cxx::hash_map<Dyninst::PatchAPI::Point*,
+    //                 Dyninst::PatchAPI::PatchFunction*> PtToCallee;
     PtToCallee pt_to_callee_;
+    typedef std::map<string,
+      Dyninst::PatchAPI::PatchFunction*> RealFuncMap;
+    RealFuncMap real_func_map_;
 
     SpParser();
+    void init_dyninst_libs();
 };
 
 }

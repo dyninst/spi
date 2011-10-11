@@ -34,6 +34,7 @@
     else ; \
 } while(0)
 
+
 #define sp_filename(path) basename(path)
 
 namespace Dyninst {
