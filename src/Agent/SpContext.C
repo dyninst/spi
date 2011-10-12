@@ -3,6 +3,7 @@
 #include "SpParser.h"
 #include "PatchMgr.h"
 #include "PatchCFG.h"
+#include "SpUtils.h"
 
 #include "frame.h"
 #include "walker.h"
@@ -25,7 +26,12 @@ SpContext::SpContext(SpPropeller::ptr p,
                      SpParser::ptr parser) {
   init_propeller_ = p;
   parser_ = parser;
+  //sp::SetupTimer(0);
+  //sp::StartTimer(0);
   parse();
+  //sp::StopTimer(0);
+  //sp_print("parse time: %f", sp::GetTimer(0));
+
   init_well_known_libs();
 }
 
@@ -119,3 +125,4 @@ void SpContext::restore() {
 Dyninst::PatchAPI::PatchFunction* SpContext::callee(Dyninst::PatchAPI::Point* pt) {
   return parser()->callee(pt, directcall_only_ == false);
 }
+

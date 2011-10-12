@@ -101,13 +101,13 @@ void payload_end() {
 
 void  report_timer() {
   sp_print("=== dump timer ===");
-  sp_print("payload - %ld", payload_timer);
+  //  sp_print("payload - %ld", payload_timer);
   sp_print("  Propeller::go - %ld", propeller_timer);
-  sp_print("    instrumenter::go - %ld", instrumenter_timer);
-  sp_print("      instrumenter::install - %ld", install_timer);
-  sp_print("    propeller::next_points - %ld", next_point_timer);
-  sp_print("    parser::find_func - %ld", findfunc_timer);
-  sp_print("    parser::callee - %ld", callee_timer);
+  //  sp_print("    instrumenter::go - %ld", instrumenter_timer);
+  //  sp_print("      instrumenter::install - %ld", install_timer);
+  //  sp_print("    propeller::next_points - %ld", next_point_timer);
+  //  sp_print("    parser::find_func - %ld", findfunc_timer);
+  //  sp_print("    parser::callee - %ld", callee_timer);
 }
 
 void SetupTimer(int i) {

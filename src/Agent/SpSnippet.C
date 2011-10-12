@@ -16,7 +16,7 @@ SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
                      PayloadFunc head, PayloadFunc tail)
   : func_(f), point_(pt), context_(c), head_(head), tail_(tail), blob_size_(0) {
 
-  assert(context_ && "SpContext is NULL");
+  // assert(context_ && "SpContext is NULL");
   Dyninst::PatchAPI::PatchMgrPtr mgr = c->mgr();
   Dyninst::PatchAPI::AddrSpace* as = mgr->as();
   blob_ = (char*)as->malloc(pt->obj(), 1024, pt->obj()->codeBase());
@@ -56,13 +56,12 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
 
   ret_addr_ = ret_addr;
 
-  if (func_)
-    sp_debug("BLOB - patch area at %lx for calling %s, will return to %lx",
-             blob_, func_->name().c_str(), ret_addr);
+  //if (func_)
+  //  sp_debug("BLOB - patch area at %lx for calling %s, will return to %lx", blob_, func_->name().c_str(), ret_addr);
 
   if (blob_size_ > 0) {
-    if (func_) sp_debug("BLOB - Blob is constructed for calling %s(), just grab it!",
-                        func_->name().c_str());
+    //if (func_) sp_debug("BLOB - Blob is constructed for calling %s(), just grab it!",
+    //                    func_->name().c_str());
     return blob_;
   }
 
@@ -95,7 +94,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
     // Indirect call
     insnsize = emit_call_orig((long)orig_insn_.c_str(),
                               orig_insn_.size(), blob_, offset);
-    //sp_print("********indirect call!");
+    // sp_print("********indirect call!");
   }
   offset += insnsize;
   if (tail_) {
@@ -126,15 +125,15 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   offset += insnsize;
   blob_size_ = offset;
 
-  sp_debug("DUMP INSN (%d bytes)- {", offset);
-  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
-  sp_debug("DUMP INSN - }");
+  // sp_debug("DUMP INSN (%d bytes)- {", offset);
+  // sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
+  // sp_debug("DUMP INSN - }");
 
   return blob_;
 }
 
 void SpSnippet::fixup(PatchFunction* f) {
-  sp_debug("FIXUP - for call instructions involving PC value");
+  // sp_debug("FIXUP - for call instructions involving PC value");
 
   if (!f) return;
   func_ = f;
@@ -168,15 +167,15 @@ void SpSnippet::fixup(PatchFunction* f) {
   if (ret_addr_) {
     insnsize = emit_jump_abs(ret_addr_, blob_, offset);
   } else {
-    sp_debug("TAIL CALL");
+    // sp_debug("TAIL CALL");
     insnsize = emit_ret(blob_, offset);
   }
   offset += insnsize;
   blob_size_ = offset;
 
-  sp_debug("DUMP INSN (%d bytes)- {", offset);
-  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
-  sp_debug("DUMP INSN - }");
+  // sp_debug("DUMP INSN (%d bytes)- {", offset);
+  // sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
+  // sp_debug("DUMP INSN - }");
 }
 
 }

@@ -24,6 +24,14 @@ sys     0m1.958s
 
 79.42x slowdown
 
+** Unique payload object version
+
+real    0m55.813s
+user    0m51.965s
+sys     0m2.462s
+
+7x slowdown
+
 * Difference from Alex's measurement and Drew's measurement
 
 ** Alex's approach

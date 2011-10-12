@@ -28,7 +28,6 @@ bool SpPropeller::go(PatchFunction* func,
                      SpContext* context,
                      PayloadFunc head,
                      PayloadFunc tail) {
-  sp::propeller_start();
 
   // 1. Find points according to type
   Points pts;
@@ -36,42 +35,29 @@ bool SpPropeller::go(PatchFunction* func,
   PatchFunction* cur_func = context->parser()->findFunction(func->name());
   next_points(cur_func, mgr, pts);
 
-  sp_debug("PROPELLING - To %d points", pts.size());
-
   // 2. Start instrumentation
   Dyninst::PatchAPI::Patcher patcher(mgr);
   for (int i = 0; i < pts.size(); i++) {
     Point* pt = pts[i];
 
-    sp_debug("SNIP INSERT - insert snippet");
+    // It's possible that callee will be NULL, which is an indirect call.
+    // In this case, we'll parse it later during runtime.
     PatchFunction* callee = context->parser()->callee(pt);
-    if (!callee) sp_debug("INDIRECT CALL - instrumenting indirect call");
-
     SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, head, tail);
-    sp_debug("CREATED - snip insert command");
-
     Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);
     patcher.add(PushBackCommand::create(pt, snip));
-    sp_debug("ADDED - snip insert command");
   }
-  sp_debug("CODE GEN - starting");
   patcher.commit();
-  sp::propeller_end();
-
   return true;
 }
 
 void SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& pts) {
-  sp::next_point_start();
-
   Scope scope(cur_func);
-  Points tmp_pts;
-  if (!mgr->findPoints(scope, Point::PreCall, back_inserter(tmp_pts))) {
-    sp_debug("NO POINT - cannot find any point for function %s", cur_func->name().c_str());
-  }
-  sp_debug("POINTS - %d in total", tmp_pts.size());
+  //  Points tmp_pts;
+  mgr->findPoints(scope, Point::PreCall, back_inserter(pts));
+  /*
   for (Points::iterator pi = tmp_pts.begin(); pi != tmp_pts.end(); pi++) {
     pts.push_back(*pi);
   }
-  sp::next_point_end();
+  */
 }

@@ -1,0 +1,3 @@
+- should go gcc
+- instrument gcc crashes
+- Allow user to specify what libraries to skip parsing

@@ -41,12 +41,14 @@ class SpContext {
     InstMap& inst_map() { return inst_map_; }
 
     // Point -> propagated?
-    typedef std::map<Dyninst::PatchAPI::Point*, bool> PropMap;
-    PropMap& prop_map() { return prop_map_; }
+    //typedef std::map<Dyninst::PatchAPI::Point*, bool> PropMap;
+    //typedef std::set<Dyninst::PatchAPI::Point*> PropMap;
+    //PropMap& prop_map() { return prop_map_; }
 
     bool is_well_known_lib(string);
     void set_directcall_only(bool b) { directcall_only_ = b; }
     bool directcall_only() { return directcall_only_; }
+
   protected:
     SpPropeller::ptr init_propeller_;
     PayloadFunc init_head_;
@@ -59,7 +61,7 @@ class SpContext {
     // Things to be restored
     struct sigaction old_act_;
     InstMap inst_map_;
-    PropMap prop_map_;
+    // PropMap prop_map_;
 
     SpContext(SpPropeller::ptr,
               SpParser::ptr);

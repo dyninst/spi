@@ -1,10 +1,10 @@
 #include "SpPayload.h"
 #include "PatchCFG.h"
 #include "SpContext.h"
-//#include "SpNextPoints.h"
+#include "SpPoint.h"
 #include "SpUtils.h"
 
-using sp::SpPayload;
+//using sp::SpPayload;
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Point;
 using Dyninst::PatchAPI::PatchMgrPtr;
@@ -19,20 +19,18 @@ using Dyninst::PatchAPI::PatchObject;
 //-----------------------------------------
 void default_head(Point* pt) {
   //  sp::payload_start();
-  SpPayload payload(pt);
-  PatchFunction* f = payload.callee();
+  PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
   string callee_name = f->name();
   sp_print("Enter %s", callee_name.c_str());
 
-  payload.propell();
+  sp::propel(pt);
   //  sp::payload_end();
 }
 
 void default_tail(Point* pt) {
-  SpPayload payload(pt);
-  PatchFunction* f = payload.callee();
+  PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
   string callee_name = f->name();
@@ -43,28 +41,22 @@ void default_tail(Point* pt) {
 // SpPayload
 //-----------------------------------------
 extern sp::SpContext* g_context;
-SpPayload::SpPayload(Dyninst::PatchAPI::Point* pt)
-  : pt_(pt), context_(g_context) {
-  context_->callee(pt_);
+Dyninst::PatchAPI::PatchFunction* sp::callee(Dyninst::PatchAPI::Point* pt_) {
+  return g_context->callee(pt_);
 }
 
-Dyninst::PatchAPI::PatchFunction* SpPayload::callee() {
-  return context_->callee(pt_);
-}
-
-void SpPayload::propell() {
-
+void sp::propel(Dyninst::PatchAPI::Point* pt_) {
   // Skip if we have already propagated from this point
-  SpContext::PropMap& prop_map = context_->prop_map();
-  if (prop_map.find(pt_) != prop_map.end()) {
+  sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
+  if (spt->propagated()) {
     return;
   }
 
-  PatchFunction* f = callee();
+  PatchFunction* f = callee(pt_);
   if (!f) return;
 
-  sp::SpPropeller::ptr p = context_->init_propeller();
-  p->go(f, context_, context_->init_head(), context_->init_tail());
-  prop_map[pt_] = true;
+  sp::SpPropeller::ptr p = g_context->init_propeller();
+  p->go(f, g_context, g_context->init_head(), g_context->init_tail());
+  spt->set_propagated(true);
 }
 

@@ -9,6 +9,8 @@
 #include "SpContext.h"
 #include "SpAddrSpace.h"
 #include "SpUtils.h"
+#include "SpPoint.h"
+#include "SpPointMaker.h"
 
 #include "Point.h"
 #include "PatchMgr.h"
@@ -90,7 +92,6 @@ PatchMgrPtr SpParser::parse() {
   al->refresh();
   std::vector<Symtab*> tabs;
   al->getAllSymtabs(tabs);
-  sp_debug("FOUND - %d symtabs", tabs.size());
 
   // Determine whether the agent is injected or preloaded.
   // - true: injected by other process
@@ -98,7 +99,6 @@ PatchMgrPtr SpParser::parse() {
   for (std::vector<Symtab*>::iterator i = tabs.begin(); i != tabs.end(); i++) {
     Symtab* sym = *i;
     if (sym->name().find("libijagent.so") != string::npos) {
-      sp_debug("INJECTED - this agent is injected by Injector process");
       injected_ = true;
       break;
     }
@@ -116,8 +116,6 @@ PatchMgrPtr SpParser::parse() {
       perror("shmat");
       exit(1);
     }
-  } else {
-    sp_debug("PRELOADED - this agent is preloaded");
   }
 
   // Build lookup map, to parse those libraries that are loaded before
@@ -146,12 +144,10 @@ PatchMgrPtr SpParser::parse() {
       if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
           (sym->name().find(sp_filename(sp_filename(get_agent_name()))) == string::npos) &&
           (sym->name().find("libagent.so") == string::npos)) {
-        sp_debug("SKIP - parsing %s", sp_filename(sym->name().c_str()));
         continue;
       }
     } else {
       if (is_dyninst_lib(sym->name())) {
-        sp_debug("SKIP - parsing %s", sp_filename(sym->name().c_str()));
         continue;
       }
     }
@@ -167,10 +163,7 @@ PatchMgrPtr SpParser::parse() {
     PatchObject* patch_obj = PatchObject::create(co, load_addr);
     patch_objs.push_back(patch_obj);
     if (sym->isExec()) {
-      sp_debug("PARSED - Executable %s at %lx", sp_filename(sym->name().c_str()), load_addr);
       exe_obj_ = patch_obj;
-    } else {
-      sp_debug("PARSED - Library %s at %lx", sp_filename(sym->name().c_str()), load_addr);
     }
   } // End of symtab iteration
   assert(exe_obj_);
@@ -178,12 +171,14 @@ PatchMgrPtr SpParser::parse() {
   // Initialize PatchAPI stuffs
   AddrSpace* as = SpAddrSpace::create(exe_obj_);
   Dyninst::PatchAPI::Instrumenter* inst = NULL;
-  if (!jump_) { 
+  if (!jump_) {
     inst = sp::TrapInstrumenter::create(as);
   } else {
     inst = sp::JumpInstrumenter::create(as);
   }
-  mgr_ = PatchMgr::create(as, inst);
+
+  sp::SpPointMaker* pm = new SpPointMaker;
+  mgr_ = PatchMgr::create(as, inst, pm);
   for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
       as->loadObject(*i);
@@ -209,11 +204,8 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
     Dyninst::Address lower_bound = obj->codeBase();
     if (!lower_bound) lower_bound = sym->getLoadOffset();
     Dyninst::Address upper_bound = lower_bound + cs->length();
-    sp_debug("LOOK FOR - %lx in [%lx, %lx)?", addr, lower_bound, upper_bound);
-    if (addr >= lower_bound && addr <= upper_bound) {
-      sp_debug("FOUND - In range [%lx, %lx) in library %s",
-              lower_bound, upper_bound, sp_filename(sym->name().c_str()));
 
+    if (addr >= lower_bound && addr <= upper_bound) {
       Dyninst::Address address = addr;
       Dyninst::SymtabAPI::Function* f;
       if (!sym->getContainingFunction(address, f)) {
@@ -225,7 +217,6 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
         obj->co()->findFuncs(*ri, address, funcs);
         if (funcs.size() > 0) {
           PatchFunction* pfunc = obj->getFunc(*funcs.begin());
-          sp_debug("FOUND - Function %s with %d callees", pfunc->name().c_str(), pfunc->calls().size());
           return pfunc;
         }
       }
@@ -251,7 +242,6 @@ char* SpParser::get_agent_name() {
   if ((char*)(msg_shm = (IjMsg*)shmat(shmid, NULL, 0)) == (char *) -1) {
     sp_perror("FATAL - Failed to get agent library name");
   }
-  sp_debug("GET AGENT NAME - %s", msg_shm->libname);
   return msg_shm->libname;
 }
 
@@ -264,12 +254,10 @@ Dyninst::Address SpParser::get_func_addr(string name) {
     for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
       if ((*fit)->name().compare(name) == 0) {
         Dyninst::Address addr = (*fit)->addr() + obj->codeBase();
-        sp_debug("FOUND - Absolute address of function %s is %lx", name.c_str(), addr);
         return addr;
       }
     }
   }
-  sp_debug("NO FOUND - Absolute address of function %s cannot be found", name.c_str());
   return 0;
 }
 
@@ -277,12 +265,10 @@ PatchFunction* SpParser::findFunction(string name, bool skip) {
   sp::findfunc_start();
 
   if (real_func_map_.find(name) != real_func_map_.end()) {
-    // sp_print("HIT************************");
     sp::findfunc_end();
     return real_func_map_[name];
   }
 
-  sp_debug("FIND FUNC - %s", name.c_str());
   AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
 
@@ -292,19 +278,15 @@ PatchFunction* SpParser::findFunction(string name, bool skip) {
     SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
     Symtab* sym = cs->getSymtabObject();
     if (skip && g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
-      sp_debug("WELL KNOWN - Bypassing well known lib %s", sp_filename(sym->name().c_str()));
       continue;
     }
-    sp_debug("IN LIB -  %s", sp_filename(sym->name().c_str()));
 
     for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
       if ((*fit)->name().compare(name) == 0) {
         Dyninst::SymtabAPI::Region* region = sym->findEnclosingRegion((*fit)->addr());
         if (region && region->getRegionName().compare(".plt") == 0) {
-          sp_debug("PLT - %s is in plt", name.c_str());
           continue;
         }
-        sp_debug("FOUND - %s", name.c_str());
         PatchFunction* found = obj->getFunc(*fit);
         real_func_map_[name] = found;
         sp::findfunc_end();
@@ -312,7 +294,6 @@ PatchFunction* SpParser::findFunction(string name, bool skip) {
       }
     }
   }
-  sp_debug("NOT FOUND - %s", name.c_str());
   sp::findfunc_end();
   return NULL;
 }
@@ -352,8 +333,6 @@ public:
     Dyninst::Address rval = p_->get_saved_reg(r->getID(),
                      pt_->block()->end() - pt_->block()->last());
     call_addr_ = rval;
-    sp_debug("REG: %s w/ %lx", r->getID().name().c_str(), rval);
-    // sp_print("REG: %s w/ %lx", r->getID().name().c_str(), rval);
     stack_.push(call_addr_);
   }
   virtual void visit(BinaryFunction* b) {
@@ -364,11 +343,8 @@ public:
 
     if (b->isAdd()) {
       call_addr_ = i1 + i2;
-      sp_debug("BINFUNC: %lx + %lx = %lx", i1, i2, call_addr_);
-      // sp_print("BINFUNC: %lx + %lx = %lx", i1, i2, call_addr_);
     } else if (b->isMultiply()) {
       call_addr_ = i1 * i2;
-      sp_debug("BINFUNC: %lx * %lx = %lx", i1, i2, call_addr_);
     } else {
       assert(0);
     }
@@ -394,15 +370,12 @@ public:
       break;
     }
     }
-    sp_debug("IMM: %lx", call_addr_);
-    // sp_print("IMM: %lx", call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(Dereference* d) {
     Dyninst::Address* addr = (Dyninst::Address*)stack_.top();
     stack_.pop();
     call_addr_ = *addr;
-    sp_debug("End DEREF: %lx=>%lx", addr, call_addr_);
     stack_.push(call_addr_);
   }
 
@@ -421,12 +394,9 @@ private:
 };
 
 PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
-  sp::callee_start();
-
   //-------------------------------------
   // 0. Check the cache
   //-------------------------------------
-  //sp_print("size of pt_to_callee_: %ld", pt_to_callee_.size());
   if (pt_to_callee_.find(pt) != pt_to_callee_.end()) {
     sp::callee_end();
     return pt_to_callee_[pt];
@@ -437,7 +407,6 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   //-------------------------------------
   PatchFunction* f = pt->getCallee();
   if (f) {
-    sp_debug("DIRECT CALL - %s", f->name().c_str());
     pt_to_callee_[pt] = f;
     sp::callee_end();
     return f;
@@ -447,8 +416,6 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   // 2. Looking for indirect call
   //-------------------------------------
   if (parse_indirect) {
-    sp_debug("INDIRECT CALL - seeking ...");
-    //sp_print("INDIRECT CALL");
     PatchBlock* blk = pt->block();
     Instruction::Ptr insn = blk->getInsn(blk->last());
     Expression::Ptr trg = insn->getControlFlowTarget();
@@ -456,11 +423,9 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     trg->apply(&visitor);
 
     Dyninst::Address call_addr = visitor.call_addr();
-    // sp_print("Call address: %lx", call_addr);
 
     f = findFunction(call_addr);
     if (f) {
-      sp_debug("INDIRECT CALL - call %s @ %lx", f->name().c_str(), call_addr);
       pt_to_callee_[pt] = f;
       if (visitor.use_pc()) {
         using namespace Dyninst::PatchAPI;
@@ -481,8 +446,5 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     return NULL;
   }
 
-  sp_debug("PARSE INDIRECT CALL LATER ...");
-
-  sp::callee_end();
   return NULL;
 }

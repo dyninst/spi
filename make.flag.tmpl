@@ -42,7 +42,7 @@ AG_DIR      = $(SP_DIR)/src/Agent
 VPATH      += $(AG_DIR)
 
 AG_FLAGS   += $(COMMON_FLAGS)
-AG_FLAGS   += -fPIC -Dos_linux
+AG_FLAGS   += -fPIC -Dos_linux -O4
 
 AG_LDFLAGS += $(COMMON_LDFLAGS)
 AG_LDFLAGS += -lpatchAPI
