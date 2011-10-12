@@ -43,7 +43,7 @@ export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 #echo 35; LD_PRELOAD="./$AGENT_NAME" $BIN/link /tmp/tmp /tmp/tmp3
 #echo 36; LD_PRELOAD="./$AGENT_NAME" $BIN/sha256sum /tmp/tmp
 #echo 37; LD_PRELOAD="./$AGENT_NAME" $BIN/tee
-echo 38; LD_PRELOAD="./$AGENT_NAME" $BIN/vdir
+#echo 38; LD_PRELOAD="./$AGENT_NAME" $BIN/vdir
 #echo 39; LD_PRELOAD="./$AGENT_NAME" $BIN/wc -c /tmp/tmp
 #echo 40; LD_PRELOAD="./$AGENT_NAME" $BIN/chown wenbin /tmp/tmp
 #echo 41; LD_PRELOAD="./$AGENT_NAME" $BIN/env
@@ -90,7 +90,7 @@ echo 38; LD_PRELOAD="./$AGENT_NAME" $BIN/vdir
 
 #time LD_PRELOAD="./$AGENT_NAME" /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 200.i
 
-#time /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 ~/local/200.i
+time /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 200.i
 
 #echo 75; time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
 #echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
