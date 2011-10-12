@@ -1,0 +1,28 @@
+compile 200.i
+
+* uninstrumented gcc
+
+real    0m7.120s
+user    0m5.944s
+sys     0m0.609s
+
+* replace map with set for prop_map
+
+real    0m46.069s
+user    0m42.714s
+sys     0m1.872s
+
+real    0m45.895s
+user    0m42.723s
+sys     0m1.861s
+
+* don't use map, extend point
+
+real    0m38.796s
+user    0m35.583s
+sys     0m1.892s
+
+parse time: 12.096956 sec
+
+total: 5.4x slowdown
+runtime+instrumentation: 3.76x slowdown

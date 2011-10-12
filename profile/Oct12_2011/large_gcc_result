@@ -1,0 +1,15 @@
+compile large 200.i
+
+* uninstrumented version
+
+real    1m35.631s
+user    1m28.114s
+sys     0m7.145s
+
+* instrumented version
+
+real    5m4.532s
+user    4m49.691s
+sys     0m13.375s
+
+3.18x slowdown
