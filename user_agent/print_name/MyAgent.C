@@ -12,12 +12,14 @@ namespace sp {
   extern void report_timer();
 }
 int callcount = 0;
+//SpPayload payload(NULL);
 
 void print_head(Point* pt) {
-  sp::payload_start();
+  //sp::payload_start();
 
-  SpPayload payload(pt);
-  PatchFunction* f = payload.callee();
+  //SpPayload payload(pt);
+  //payload.set_point(pt);
+  PatchFunction* f = sp::callee(pt);
   if (!f) return;
   string callee_name = f->name();
   callcount ++;
@@ -28,14 +30,17 @@ void print_head(Point* pt) {
   sp_print("%sEnter %s %d", fmt.c_str(), callee_name.c_str(), callcount);
   ++indent;
 
-  payload.propell();
-  sp::payload_end();
+  sp::propel(pt);
+  //sp::payload_end();
   //sp::report_timer();
 }
 
 void print_tail(Point* pt) {
-  SpPayload payload(pt);
-  PatchFunction* f = payload.callee();
+  // SpPayload payload(pt);
+  //  SpPayload* payload = payload_mgr(pt);
+  //payload.set_point(pt);
+
+  PatchFunction* f = sp::callee(pt);
   if (!f) return;
   string callee_name = f->name();
 
@@ -56,9 +61,12 @@ void MyAgent() {
   //agent->set_init_event(event);
   agent->set_init_head("print_head");
   agent->set_init_tail("print_tail");
-//  if (getenv("SP_JUMP")) {
-  //agent->set_directcall_only(true);
-  //      agent->set_jump_inst(true);
- // }
+  if (getenv("SP_JUMP")) {
+    sp_print("jump version");
+    agent->set_directcall_only(true);
+    agent->set_jump_inst(true);
+  } else {
+    sp_print("trap version");
+    }
   agent->go();
 }

@@ -5,7 +5,7 @@ source ../make.config
 export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 #export SP_DEBUG=0
 
-START=`date`
+#START=`date`
 #echo 1; LD_PRELOAD="./$AGENT_NAME" $BIN/[
 #echo 2; LD_PRELOAD="./$AGENT_NAME" $BIN/base64 /tmp/tmp
 #echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
@@ -67,7 +67,7 @@ START=`date`
 #echo 59; LD_PRELOAD="./$AGENT_NAME" $BIN/sleep 2
 #echo 60; LD_PRELOAD="./$AGENT_NAME" $BIN/sort /tmp/tmp
 #echo 61; LD_PRELOAD="./$AGENT_NAME" $BIN/tsort /tmp/tmp
-#echo 62; LD_PRELOAD="./$AGENT_NAME" $BIN/pwd
+#echo 62; time LD_PRELOAD="./$AGENT_NAME" $BIN/pwd
 #echo 63; LD_PRELOAD="./$AGENT_NAME" $BIN/md5sum /tmp/tmp
 #echo 64; LD_PRELOAD="./$AGENT_NAME" $BIN/ptx /tmp/tmp
 #echo 65; LD_PRELOAD="./$AGENT_NAME" $BIN/stat /tmp/tmp
@@ -90,7 +90,7 @@ START=`date`
 
 time LD_PRELOAD="./$AGENT_NAME" /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 input/200.i
 
-#time /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 input/200.i
+#time /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 ~/local/200.i
 
 #echo 75; time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
 #echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
@@ -100,11 +100,11 @@ time LD_PRELOAD="./$AGENT_NAME" /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64
 #echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/wc -w ~/devel/dyninst/dyninst/dyninstAPI/src/*.C
 
 #valgrind --tool=callgrind ./uptime
-#valgrind --tool=callgrind ./sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/c*.C
+#valgrind --tool=callgrind ./sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/h/*.h
 #valgrind --tool=callgrind $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C
-#time ./sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C
+#time sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/*.C /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/h/*.h
 
 
-END=`date`
-echo "START $START"
-echo "END $END"
+#END=`date`
+#echo "START $START"
+#echo "END $END"
