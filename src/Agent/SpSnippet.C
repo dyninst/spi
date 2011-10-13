@@ -113,16 +113,16 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   if (ret_addr) {
     insnsize = emit_jump_abs(ret_addr, blob_, offset);
   } else {
-    sp_debug("TAIL CALL");
+    //    sp_print("TAIL CALL");
     insnsize = emit_ret(blob_, offset);
   }
   offset += insnsize;
   blob_size_ = offset;
   /*
-  sp_print("DUMP INSN (%d bytes)- {", offset);
+  sp_print("DUMP INSN (%d bytes)- for %s @ %lx -> %lx{", offset, func_->name().c_str(), func_->addr(), ret_addr);
   sp_print("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
   sp_print("DUMP INSN - }");
-  */
+*/
   return blob_;
 }
 

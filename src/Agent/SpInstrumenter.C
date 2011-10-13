@@ -197,6 +197,7 @@ bool JumpInstrumenter::run() {
 
         // If the call is made by a jump, which may be tail call optimization
         if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
+	  sp_print("jump call");
           ret_addr = 0;
         }
 
@@ -207,6 +208,7 @@ bool JumpInstrumenter::run() {
         //        - original call insn_size >= 5 and
         //        - relative addr to snippet <= 4
         if ((insn_size < 5) || (abs_rel_addr > 0xffffffff)) {
+	  sp_print("can't inst indirect call");
           continue;
         }
 
@@ -236,7 +238,11 @@ bool JumpInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   char* p = jump;
   *p++ = 0xe9;
   long* lp = (long*)p;
-
+  /*
+  sp_print("before install");
+  sp_print("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
+  sp_print("DUMP INSN - }");
+  */
   // Build the jump instruction
   Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
@@ -263,5 +269,10 @@ bool JumpInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
+  /*
+  sp_print("after install");
+  sp_print("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
+  sp_print("DUMP INSN - }");
+*/
   return true;
 }
