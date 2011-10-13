@@ -45,8 +45,8 @@ void SpSnippet::dump_context(ucontext_t* context) {
 size_t SpSnippet::emit_save(char* buf, size_t offset) {
   char* p = buf + offset;
 
-  *p++ = 0x54; // push rsp
-  *p++ = 0x9c; // pushfq
+  //*p++ = 0x54; // push rsp
+  //*p++ = 0x9c; // pushfq
 
   *p++ = 0x57; // push rdi
   *p++ = 0x56; // push rsi
@@ -56,10 +56,10 @@ size_t SpSnippet::emit_save(char* buf, size_t offset) {
   *p++ = 0x50;
   *p++ = 0x41; // r9
   *p++ = 0x51;
-  *p++ = 0x41; // r10
-  *p++ = 0x52;
-  *p++ = 0x41; // r11
-  *p++ = 0x53;
+  //*p++ = 0x41; // r10 unused in C
+  //*p++ = 0x52;
+  //*p++ = 0x41; // r11 for linker
+  //*p++ = 0x53;
   *p++ = 0x50; // %rax
 
   /* Callee-saved: rbp, rbx, r12 ~ r15 */
@@ -93,10 +93,10 @@ size_t SpSnippet::emit_restore( char* buf, size_t offset) {
   *p++ = 0x5b; // rbx
   */
   *p++ = 0x58; // rax
-  *p++ = 0x41; // r11
-  *p++ = 0x5b;
-  *p++ = 0x41; // r10
-  *p++ = 0x5a;
+  //*p++ = 0x41; // r11
+  //*p++ = 0x5b;
+  //*p++ = 0x41; // r10
+  //*p++ = 0x5a;
   *p++ = 0x41; // pop r9
   *p++ = 0x59;
   *p++ = 0x41; // pop r8
@@ -106,8 +106,8 @@ size_t SpSnippet::emit_restore( char* buf, size_t offset) {
   *p++ = 0x5e; // pop rsi
   *p++ = 0x5f; // pop rdi
 
-  *p++ = 0x9d; // popfq
-  *p++ = 0x5c; // pop rsp
+  //*p++ = 0x9d; // popfq
+  //*p++ = 0x5c; // pop rsp
 
   return (p - (buf + offset));
 }
@@ -204,6 +204,7 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
     p ++;
     assert(retaddr == (long)p);
 */
+    /*
     *p++ = 0x55; // push rbp
 
     *p++ = 0x48; // movq call_addr, %rbp
@@ -216,6 +217,16 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
     *p++ = 0xd5;
 
     *p++ = 0x5d; // pop rbp
+*/
+
+    *p++ = 0x48; // movq call_addr, %rax
+    *p++ = 0xb8;
+    long* call_addr = (long*)p;
+    *call_addr = callee;
+    p += sizeof(long);
+
+    *p++ = 0xff; // call %rax
+    *p++ = 0xd0;
   }
 
   return (p - (buf + offset));

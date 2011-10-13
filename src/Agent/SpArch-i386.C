@@ -34,31 +34,34 @@ void SpSnippet::dump_context(ucontext_t* context) {
 size_t SpSnippet::emit_save(char* buf, size_t offset) {
   char* p = buf + offset;
 
-  *p++ = 0x54; // push esp
-  *p++ = 0x9c; // pushf
-
+  //  *p++ = 0x54; // push esp
+  //  *p++ = 0x9c; // pushf
+  /*
   *p++ = 0x57; // push edi
   *p++ = 0x56; // push esi
   *p++ = 0x52; // push edx
   *p++ = 0x51; // push ecx
   *p++ = 0x53; // push ebx
   *p++ = 0x50; // push eax
-
+*/
+  *p++ = 0x60; // pusha
   return (p - (buf + offset));
 }
 
 size_t SpSnippet::emit_restore( char* buf, size_t offset) {
   char* p = buf + offset;
+  *p++ = 0x61; // popa
 
+  /*
   *p++ = 0x58; // pop eax
   *p++ = 0x5b; // pop ebx
   *p++ = 0x59; // pop ecx
   *p++ = 0x5a; // pop edx
   *p++ = 0x5e; // pop esi
   *p++ = 0x5f; // pop edi
-
-  *p++ = 0x9d; // popf
-  *p++ = 0x5c; // pop esp
+  */
+  //  *p++ = 0x9d; // popf
+  //  *p++ = 0x5c; // pop esp
 
   return (p - (buf + offset));
 }
@@ -99,35 +102,31 @@ static size_t emit_pop_imm32(char* buf, size_t offset) {
   char* p = buf + offset;
 
   // add $0x4, %esp
+  /*
   *p++ = 0x83;
   *p++ = 0xc4;
   *p++ = 0x04;
-
+  */
+  *p++ = 0x58;  // pop eax
   return (p - (buf + offset));
 }
 
-size_t SpSnippet::emit_pass_param(long point, long context,
-                                  char* buf, size_t offset) {
+size_t SpSnippet::emit_pass_param(long point, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
-
-  // push SP_CONTEXT
-  insnsize = emit_push_imm32((long)context, p, 0);
-  p += insnsize;
 
   // push POINT
   insnsize = emit_push_imm32((long)point, p, 0);
   p += insnsize;
-
 
   return (p - (buf + offset));
 }
 
 
 size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool restore) {
+  /*
   char* p = buf + offset;
   size_t insnsize = 0;
-
   long retaddr = (long)p + 5 + 5 + 1;
 
   // push return address
@@ -139,13 +138,25 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool rest
   // ret
   *p++ = 0xc3;
   assert(retaddr == (long)p);
+  */
+  char* p = buf + offset;
+  Dyninst::Address retaddr = (Dyninst::Address)p+5;
+  size_t insnsize = 0;
+  Dyninst::Address rel_addr = (callee - retaddr);
+  Dyninst::Address rel_addr_abs = (callee > retaddr) ?
+    (callee - retaddr) : (retaddr - callee);
+
+  if (rel_addr_abs <= 0xffffffff) {
+    *p++ = 0xe8;
+    int* rel_p = (int*)p;
+    *rel_p = rel_addr;
+    p += 4;
+  } else {
+    sp_perror("larger than 4 bytes for call address");
+  }
 
   if (restore) {
-    // pop param 1
-    insnsize = emit_pop_imm32(p, 0);
-    p += insnsize;
-
-    // pop param 2
+    // pop param
     insnsize = emit_pop_imm32(p, 0);
     p += insnsize;
   }
@@ -178,13 +189,31 @@ size_t SpSnippet::emit_call_jump(long callee, char* buf, size_t offset) {
 size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
-
+  /*
   // push jump target
   insnsize = emit_push_imm32(trg, p, 0);
   p += insnsize;
 
   // ret
   *p++ = 0xc3;
+  */
+
+  Dyninst::Address retaddr = (Dyninst::Address)p+5;
+  Dyninst::Address rel_addr = (trg - retaddr);
+  Dyninst::Address rel_addr_abs = (trg > retaddr) ?
+    (trg - retaddr) : (retaddr - trg);
+  if (rel_addr_abs <= 0xffffffff) {
+    *p++ = 0xe9;
+    int* rel_p = (int*)p;
+    *rel_p = rel_addr;
+    p += 4;
+  } else {
+    // push jump target
+    insnsize = emit_push_imm32(trg, p, 0);
+    p += insnsize;
+    // ret
+    *p++ = 0xc3;
+  }
 
   return (p - (buf + offset));
 }
