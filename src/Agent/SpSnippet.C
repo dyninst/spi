@@ -81,10 +81,16 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   before_call_orig_ = offset;
 
   // 5. call ORIG_FUNCTION
-  if (func_) {
+  /*  if (!ret_addr) {
+    //insnsize = emit_call_jump((long)func_->addr(), blob_, offset);
+    insnsize = emit_jump_abs((long)func_->addr(), blob_, offset);
+  } else*/
+if (func_) {
+  if (point_->block()->last() == 0x8056675) sp_print("in call");
     // Direct call
     insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   } else {
+  if (point_->block()->last() == 0x8056675) sp_print("in orig insn");
     // Indirect call
     insnsize = emit_call_orig((long)orig_insn_.c_str(),
                               orig_insn_.size(), blob_, offset);
@@ -92,6 +98,8 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   }
   offset += insnsize;
   if (tail_) {
+  if (point_->block()->last() == 0x8056675) sp_print("in tail");
+
     // 6. save context
     insnsize = emit_save(blob_, offset);
     offset += insnsize;
@@ -111,18 +119,19 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
 
   // 10. jmp ORIG_INSN_ADDR
   if (ret_addr) {
+  if (point_->block()->last() == 0x8056675) sp_print("in abs");
     insnsize = emit_jump_abs(ret_addr, blob_, offset);
   } else {
-    //    sp_print("TAIL CALL");
+        sp_print("TAIL CALL");
     insnsize = emit_ret(blob_, offset);
   }
   offset += insnsize;
   blob_size_ = offset;
-  /*
+  if (getenv("SP_DUMP")) {
   sp_print("DUMP INSN (%d bytes)- for %s @ %lx -> %lx{", offset, func_->name().c_str(), func_->addr(), ret_addr);
   sp_print("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
   sp_print("DUMP INSN - }");
-*/
+  }
   return blob_;
 }
 

@@ -138,7 +138,8 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool rest
   // ret
   *p++ = 0xc3;
   assert(retaddr == (long)p);
-  */
+*/
+
   char* p = buf + offset;
   Dyninst::Address retaddr = (Dyninst::Address)p+5;
   size_t insnsize = 0;
@@ -177,12 +178,11 @@ size_t SpSnippet::emit_call_jump(long callee, char* buf, size_t offset) {
   size_t insnsize = 0;
 
   // push callee address
-  /*
-  insnsize = emit_push_imm64(callee, p, 0);
+  insnsize = emit_push_imm32(callee, p, 0);
   p += insnsize;
   // ret
   *p++ = 0xc3;
-*/
+
   return (p - (buf + offset));
 }
 

@@ -27,7 +27,7 @@ void print_head(Point* pt) {
   string fmt;
   for (int i = 0; i < indent; i++)
     fmt += ' ';
-  sp_print("%sEnter %s %d", fmt.c_str(), callee_name.c_str(), callcount);
+  sp_print("%sEnter %s %d @ %lx", fmt.c_str(), callee_name.c_str(), callcount, pt->block()->last());
   ++indent;
 
   sp::propel(pt);
@@ -48,7 +48,8 @@ void print_tail(Point* pt) {
   string fmt;
   for (int i = 0; i < indent; i++)
     fmt += ' ';
-  sp_print("%sLeave %s", fmt.c_str(), callee_name.c_str());
+  //sp_print("%sLeave %s", fmt.c_str(), callee_name.c_str());
+  sp_print("%sLeave %s %d @ %lx", fmt.c_str(), callee_name.c_str(), callcount, pt->block()->last());
 }
 
 AGENT_INIT

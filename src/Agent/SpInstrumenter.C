@@ -197,7 +197,7 @@ bool JumpInstrumenter::run() {
 
         // If the call is made by a jump, which may be tail call optimization
         if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
-	  sp_print("jump call");
+	  //	  sp_print("jump call");
           ret_addr = 0;
         }
 
@@ -208,7 +208,7 @@ bool JumpInstrumenter::run() {
         //        - original call insn_size >= 5 and
         //        - relative addr to snippet <= 4
         if ((insn_size < 5) || (abs_rel_addr > 0xffffffff)) {
-	  sp_print("can't inst indirect call");
+	  //	  sp_print("can't inst indirect call");
           continue;
         }
 
