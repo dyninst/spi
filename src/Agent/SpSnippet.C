@@ -53,15 +53,9 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 
 char* SpSnippet::blob(Dyninst::Address ret_addr) {
   assert(context_);
-
   ret_addr_ = ret_addr;
 
-  //if (func_)
-  //  sp_debug("BLOB - patch area at %lx for calling %s, will return to %lx", blob_, func_->name().c_str(), ret_addr);
-
   if (blob_size_ > 0) {
-    //if (func_) sp_debug("BLOB - Blob is constructed for calling %s(), just grab it!",
-    //                    func_->name().c_str());
     return blob_;
   }
 
@@ -124,11 +118,11 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   }
   offset += insnsize;
   blob_size_ = offset;
-
-  // sp_debug("DUMP INSN (%d bytes)- {", offset);
-  // sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
-  // sp_debug("DUMP INSN - }");
-
+  /*
+  sp_print("DUMP INSN (%d bytes)- {", offset);
+  sp_print("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
+  sp_print("DUMP INSN - }");
+  */
   return blob_;
 }
 

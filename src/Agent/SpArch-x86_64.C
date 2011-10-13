@@ -190,6 +190,7 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
     *rel_p = rel_addr;
     p += 4;
   } else {
+    /*
     retaddr = (long)p + 16 + 16 + 1;
     // push return address
     insnsize = emit_push_imm64(retaddr, p, 0);
@@ -202,6 +203,19 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
     *p = 0xc3;
     p ++;
     assert(retaddr == (long)p);
+*/
+    *p++ = 0x55; // push rbp
+
+    *p++ = 0x48; // movq call_addr, %rbp
+    *p++ = 0xbd;
+    long* call_addr = (long*)p;
+    *call_addr = callee;
+    p += sizeof(long);
+
+    *p++ = 0xff; // call %rbp
+    *p++ = 0xd5;
+
+    *p++ = 0x5d; // pop rbp
   }
 
   return (p - (buf + offset));

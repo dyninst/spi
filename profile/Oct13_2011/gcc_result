@@ -1,0 +1,52 @@
+compile large 200.i
+
+* uninstrumented version
+
+real    1m35.631s
+user    1m28.114s
+sys     0m7.145s
+
+* instrumented version, improve call_abs
+
+# of calls: 1603893478
+
+real    4m23.723s
+user    4m10.826s
+sys     0m11.355s
+
+2.76842105x slowdown
+
+DUMP INSN (64 bytes)- {
+    3ea8d000( 1 bytes): push RSP, RSP             | 54 
+    3ea8d001( 1 bytes): pushfd FLAGS, RSP         | 9c 
+    3ea8d002( 1 bytes): push RDI, RSP             | 57 
+    3ea8d003( 1 bytes): push RSI, RSP             | 56 
+    3ea8d004( 1 bytes): push RDX, RSP             | 52 
+    3ea8d005( 1 bytes): push RCX, RSP             | 51 
+    3ea8d006( 2 bytes): push R8, RSP              | 41 50 
+    3ea8d008( 2 bytes): push R9, RSP              | 41 51 
+    3ea8d00a( 2 bytes): push R10, RSP             | 41 52 
+    3ea8d00c( 2 bytes): push R11, RSP             | 41 53 
+    3ea8d00e( 1 bytes): push RAX, RSP             | 50          (11 insns, 15 bytes)
+
+    3ea8d00f(10 bytes): mov RDI, 227f7d40         | 48 bf 40 7d 7f 22 00 00 00 00 
+    3ea8d019( 1 bytes): push RBP, RSP             | 55 
+    3ea8d01a(10 bytes): mov RBP, 539c2a20         | 48 bd 20 2a 9c 53 df 2a 00 00 
+    3ea8d024( 2 bytes): call EBP                  | ff d5  (4 insns, 23 bytes)
+
+    3ea8d026( 1 bytes): pop RBP, RSP              | 5d 
+    3ea8d027( 1 bytes): pop RAX, RSP              | 58 
+    3ea8d028( 2 bytes): pop R11, RSP              | 41 5b 
+    3ea8d02a( 2 bytes): pop R10, RSP              | 41 5a 
+    3ea8d02c( 2 bytes): pop R9, RSP               | 41 59 
+    3ea8d02e( 2 bytes): pop R8, RSP               | 41 58 
+    3ea8d030( 1 bytes): pop RCX, RSP              | 59 
+    3ea8d031( 1 bytes): pop RDX, RSP              | 5a 
+    3ea8d032( 1 bytes): pop RSI, RSP              | 5e 
+    3ea8d033( 1 bytes): pop RDI, RSP              | 5f 
+    3ea8d034( 1 bytes): popfd FLAGS, RSP          | 9d 
+    3ea8d035( 1 bytes): pop RSP, RSP              | 5c  (11 insns, 15 bytes)
+
+    3ea8d036( 5 bytes): call 65ccb0               | e8 75 fc bc c1  (1 insn, 5 bytes)
+
+    3ea8d03b( 5 bytes): jmp 65d3b3                | e9 73 03 bd c1  (1 insn, 5 bytes)
