@@ -60,7 +60,7 @@ export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 #echo 52; LD_PRELOAD="./$AGENT_NAME" $BIN/who
 #echo 53; LD_PRELOAD="./$AGENT_NAME" $BIN/cksum /tmp/tmp
 #echo 54; LD_PRELOAD="./$AGENT_NAME" $BIN/whoami
-echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls /
+#echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls /
 #echo 56; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
 #echo 57; LD_PRELOAD="./$AGENT_NAME" $BIN/true
 #echo 58; LD_PRELOAD="./$AGENT_NAME" $BIN/false
@@ -88,7 +88,7 @@ echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls /
 
 #time LD_PRELOAD="./$AGENT_NAME" /afs/cs.wisc.edu/s/gcc-4.1.0/amd64_cent40/libexec/gcc/x86_64-unknown-linux-gnu/4.1.0/cc1plus  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dyninstAPI/src/util.C -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/include -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/common/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst -Wall -g -Dos_linux -Darch_x86_64 -Darch_64bit -Dx86_64_unknown_linux2_4  -Dcap_ptrace -Dcap_stripped_binaries -Dcap_async_events -Dcap_threads -Dcap_dynamic_heap -Dcap_relocation -Dcap_dwarf -Dcap_32_64 -Dcap_liveness -Dcap_fixpoint_gen -Dcap_noaddr_gen -Dcap_mutatee_traps -Dcap_binary_rewriter -Dcap_registers -Dcap_instruction_api -Dcap_serialization -Dcap_instruction_replacement -Dcap_tramp_liveness -Dbug_syscall_changepc_rewind -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -I/afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/patchAPI/h
 
-#time LD_PRELOAD="./$AGENT_NAME" /afs/cs.wisc.edu/s/gcc-4.6.0/i386_rhel5/libexec/gcc/i686-pc-linux-gnu/4.6.0/cc1 200.i
+time LD_PRELOAD="./$AGENT_NAME" /afs/cs.wisc.edu/s/gcc-4.6.0/i386_rhel5/libexec/gcc/i686-pc-linux-gnu/4.6.0/cc1 200.i
 
 #time /afs/cs.wisc.edu/s/gcc-4.6.0/i386_rhel5/libexec/gcc/i686-pc-linux-gnu/4.6.0/cc1 200.i
 

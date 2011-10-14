@@ -33,17 +33,6 @@ void SpSnippet::dump_context(ucontext_t* context) {
 // a bunch of code generation functions
 size_t SpSnippet::emit_save(char* buf, size_t offset) {
   char* p = buf + offset;
-
-  //  *p++ = 0x54; // push esp
-  //  *p++ = 0x9c; // pushf
-  /*
-  *p++ = 0x57; // push edi
-  *p++ = 0x56; // push esi
-  *p++ = 0x52; // push edx
-  *p++ = 0x51; // push ecx
-  *p++ = 0x53; // push ebx
-  *p++ = 0x50; // push eax
-*/
   *p++ = 0x60; // pusha
   return (p - (buf + offset));
 }
@@ -51,25 +40,12 @@ size_t SpSnippet::emit_save(char* buf, size_t offset) {
 size_t SpSnippet::emit_restore( char* buf, size_t offset) {
   char* p = buf + offset;
   *p++ = 0x61; // popa
-
-  /*
-  *p++ = 0x58; // pop eax
-  *p++ = 0x5b; // pop ebx
-  *p++ = 0x59; // pop ecx
-  *p++ = 0x5a; // pop edx
-  *p++ = 0x5e; // pop esi
-  *p++ = 0x5f; // pop edi
-  */
-  //  *p++ = 0x9d; // popf
-  //  *p++ = 0x5c; // pop esp
-
   return (p - (buf + offset));
 }
 
 // for debug, cause segment fault
 size_t SpSnippet::emit_fault(char* buf, size_t offset) {
   char* p = buf + offset;
-  // mov 0, 0
 
   *p++ = (char)0xc7;
   *p++ = (char)0x05;
@@ -100,13 +76,6 @@ static size_t emit_push_imm32(long imm, char* buf, size_t offset) {
 
 static size_t emit_pop_imm32(char* buf, size_t offset) {
   char* p = buf + offset;
-
-  // add $0x4, %esp
-  /*
-  *p++ = 0x83;
-  *p++ = 0xc4;
-  *p++ = 0x04;
-  */
   *p++ = 0x58;  // pop eax
   return (p - (buf + offset));
 }
@@ -124,22 +93,6 @@ size_t SpSnippet::emit_pass_param(long point, char* buf, size_t offset) {
 
 
 size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool restore) {
-  /*
-  char* p = buf + offset;
-  size_t insnsize = 0;
-  long retaddr = (long)p + 5 + 5 + 1;
-
-  // push return address
-  insnsize = emit_push_imm32(retaddr, p, 0);
-  p += insnsize;
-  // push callee address
-  insnsize = emit_push_imm32(callee, p, 0);
-  p += insnsize;
-  // ret
-  *p++ = 0xc3;
-  assert(retaddr == (long)p);
-*/
-
   char* p = buf + offset;
   Dyninst::Address retaddr = (Dyninst::Address)p+5;
   size_t insnsize = 0;
@@ -189,14 +142,6 @@ size_t SpSnippet::emit_call_jump(long callee, char* buf, size_t offset) {
 size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
-  /*
-  // push jump target
-  insnsize = emit_push_imm32(trg, p, 0);
-  p += insnsize;
-
-  // ret
-  *p++ = 0xc3;
-  */
 
   Dyninst::Address retaddr = (Dyninst::Address)p+5;
   Dyninst::Address rel_addr = (trg - retaddr);
@@ -232,7 +177,6 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
                                          size_t orig_insn_size) {
   sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
-  // sp_print("call_addr in %s", reg.name().c_str());
 
   using namespace Dyninst::x86;
   mcontext_t* c = &old_context_.uc_mcontext;

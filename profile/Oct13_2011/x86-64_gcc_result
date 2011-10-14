@@ -1,0 +1,23 @@
+==================================
+4.5.0
+==================================
+compile large 200.i
+
+* uninstrumented version
+
+real    1m46.311s
+user    1m30.718s
+sys     0m6.376s
+
+* instrumented version, improve call_abs
+
+# of calls: 1603893480
+
+real    4m0.358s
+user    3m47.844s
+sys     0m10.835s
+
+Parsing 13 sec
+
+2.5x slowdown
+2.36x slowdown w/ parsing

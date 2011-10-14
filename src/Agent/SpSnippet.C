@@ -84,7 +84,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   if (!ret_addr) {
     // tail call
     insnsize = emit_jump_abs((long)func_->addr(), blob_, offset);
-  } else if (func_) {
+    } else if (func_) {
     // Direct call
     insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   } else {
@@ -114,13 +114,14 @@ char* SpSnippet::blob(Dyninst::Address ret_addr) {
   }
 
   // 10. jmp ORIG_INSN_ADDR
-  //  if (ret_addr) {
-  insnsize = emit_jump_abs(ret_addr, blob_, offset);
-    /*
-  } else {
+  /*
+  if (!ret_addr) {
     insnsize = emit_ret(blob_, offset);
+  } else */
+    {
+    insnsize = emit_jump_abs(ret_addr, blob_, offset);
   }
-    */
+
   offset += insnsize;
   blob_size_ = offset;
 /*

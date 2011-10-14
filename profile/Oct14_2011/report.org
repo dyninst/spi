@@ -1,0 +1,71 @@
+* Workload
+** gcc
+time \
+/afs/cs.wisc.edu/s/gcc-4.6.0/i386_rhel5/libexec/gcc/i686-pc-linux-gnu/4.6.0/cc1
+200.i
+
+time LD_PRELOAD="./$AGENT_NAME" \
+/afs/cs.wisc.edu/s/gcc-4.6.0/i386_rhel5/libexec/gcc/i686-pc-linux-gnu/4.6.0/cc1
+200.i
+
+** tight loop
+* 32-bit x86
+** Code generated per function call
+23 bytes, 7 insns
+
+    1b030000( 1 bytes): pushad EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI, ESP | 60 
+    1b030001( 5 bytes): push 18932498, ESP        | 68 98 24 93 18 
+    1b030006( 5 bytes): call 5c8470               | e8 65 84 59 e5 
+    1b03000b( 1 bytes): pop EAX, ESP              | 58 
+    1b03000c( 1 bytes): popad EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI, ESP | 61 
+    1b03000d( 5 bytes): call 8727880              | e8 6e 78 6f ed 
+    1b030012( 5 bytes): jmp 84beb85               | e9 6e eb 48 ed 
+
+** Result
+
+Slowdown = Wall time of instrumented program / Wall time of original program
+
+| Workload   | Uninstrumented | Instrumented | Slowdown | Without parsing | w/o parsing slowdown |
+| gcc        | 86.726s        | 141.716s     | 1.63x    | 128.7 s         | 1.48                 |
+| tight loop |                |              |          |                 |                      |
+
+** Overhead breakdown
+*** Save / Restore Context + jump back
+*** Call empty payload + jump back
+*** Call relocated function + jump back
+*** Summary
+
+* 64-bit x86
+** Code generated per function call
+19 insns, 60 bytes
+
+    37315000( 1 bytes): push RDI, RSP             | 57 
+    37315001( 1 bytes): push RSI, RSP             | 56 
+    37315002( 1 bytes): push RDX, RSP             | 52 
+    37315003( 1 bytes): push RCX, RSP             | 51 
+    37315004( 2 bytes): push R8, RSP              | 41 50 
+    37315006( 2 bytes): push R9, RSP              | 41 51 
+    37315008( 1 bytes): push RAX, RSP             | 50 
+    37315009(10 bytes): mov RDI, 37306fe0         | 48 bf e0 6f 30 37 00 00 00 00 
+    37315013(10 bytes): mov RAX, 5791fa20         | 48 b8 20 fa 91 57 5b 2b 00 00 
+    3731501d( 2 bytes): call EAX                  | ff d0 
+    3731501f( 1 bytes): pop RAX, RSP              | 58 
+    37315020( 2 bytes): pop R9, RSP               | 41 59 
+    37315022( 2 bytes): pop R8, RSP               | 41 58 
+    37315024( 1 bytes): pop RCX, RSP              | 59 
+    37315025( 1 bytes): pop RDX, RSP              | 5a 
+    37315026( 1 bytes): pop RSI, RSP              | 5e 
+    37315027( 1 bytes): pop RDI, RSP              | 5f 
+    37315028( 5 bytes): call ac85e0               | e8 b3 35 7b c9 
+    3731502d( 5 bytes): jmp acc9c7                | e9 95 79 7b c9 
+
+** Result
+| Workload   | Uninstrumented | Instrumented | Slowdown | Without parsing | w/o parsing slowdown |
+| gcc        | 104.931s       | 137.98s      |    1.31x | 124.88s         |                1.19x |
+| tight loop |                |              |          |                 |                      |
+
+** Overhead breakdown
+*** Save / Restore Context + jump back
+*** Call empty payload + jump back
+*** Call relocated function + jump back
+*** Summary
