@@ -5,20 +5,13 @@ using namespace PatchAPI;
 using namespace sp;
 
 int indent = 0;
-
-namespace sp {
-  extern void payload_start();
-  extern void payload_end();
-  extern void report_timer();
-}
 int callcount = 0;
-//SpPayload payload(NULL);
 
-void print_head(Point* pt) {
-  //sp::payload_start();
-
-  //SpPayload payload(pt);
-  //payload.set_point(pt);
+void print_head(SpPoint* pt) {
+  if (pt->tailcall()) {
+    sp::propel(pt);
+    return;
+  }
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
   string callee_name = f->name();
@@ -31,15 +24,9 @@ void print_head(Point* pt) {
   ++indent;
 
   sp::propel(pt);
-  //sp::payload_end();
-  //sp::report_timer();
 }
 
 void print_tail(Point* pt) {
-  // SpPayload payload(pt);
-  //  SpPayload* payload = payload_mgr(pt);
-  //payload.set_point(pt);
-
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
   string callee_name = f->name();
@@ -48,7 +35,6 @@ void print_tail(Point* pt) {
   string fmt;
   for (int i = 0; i < indent; i++)
     fmt += ' ';
-  //sp_print("%sLeave %s", fmt.c_str(), callee_name.c_str());
   sp_print("%sLeave %s %d @ %lx", fmt.c_str(), callee_name.c_str(), callcount, pt->block()->last());
 }
 

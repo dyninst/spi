@@ -8,5 +8,6 @@
 #include "SpPropeller.h"
 #include "SpSnippet.h"
 #include "SpPayload.h"
+#include "SpPoint.h"
 
 #endif /* _SPINC_H_ */

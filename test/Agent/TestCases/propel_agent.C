@@ -18,8 +18,8 @@ void init_propel() {
   SpAgent::ptr agent = SpAgent::create();
   SpParser::ptr parser = SpParser::create();
   agent->set_parser(parser);
-  SyncEvent::ptr event = SyncEvent::create();
-  agent->set_init_event(event);
+  // SyncEvent::ptr event = SyncEvent::create();
+  // agent->set_init_event(event);
   // agent->set_init_payload("simple_payload");
 
   agent->go();

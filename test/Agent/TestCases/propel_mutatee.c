@@ -3,18 +3,18 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <errno.h>
-
-double recursion() {
-return 0.0;
+  
+#include <stdio.h>
+extern int atoi2(const char *str, int n)
+{
+  if (str == 0 || *str == 0)
+    return n;
+  return atoi2(str+1, n*10 + *str-'0');
 }
-
-void foo() {
-  printf("hello");
-}
-int main(int argc, char** argv) {
-  void* h = dlopen("/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/test/Agent/i386-unknown-linux2.4/parser_agent.so", RTLD_NOW);
-  if (!h) {
-    fprintf(stderr, "%s", dlerror());
-  }
-  recursion();
+int main(int argc, char **argv)
+{
+  int i;
+  for (i = 1; i != argc; ++i)
+    printf("%s -> %d\n", argv[i], atoi2(argv[i], 0));
+  return 0;
 }
