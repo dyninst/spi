@@ -8,10 +8,12 @@ int indent = 0;
 int callcount = 0;
 
 void print_head(SpPoint* pt) {
-  if (pt->tailcall()) {
+/*
+if (pt->tailcall()) {
     sp::propel(pt);
     return;
   }
+  */
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
   string callee_name = f->name();
