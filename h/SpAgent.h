@@ -37,7 +37,6 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
 
     void set_parse_only(bool b) { parse_only_ = b; }
     void set_directcall_only(bool b) { directcall_only_ = b; }
-    void set_jump_inst(bool b) { jump_ = b; }
 
     void go();
 
@@ -53,7 +52,6 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
 
     bool parse_only_;
     bool directcall_only_;
-    bool jump_;
 
     SpAgent();
 };
