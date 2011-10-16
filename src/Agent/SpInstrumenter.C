@@ -12,7 +12,6 @@
 
 using sp::SpContext;
 using sp::SpSnippet;
-using sp::TrapInstrumenter;
 using sp::JumpInstrumenter;
 
 using Dyninst::PatchAPI::PushBackCommand;

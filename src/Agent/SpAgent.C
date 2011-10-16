@@ -33,7 +33,6 @@ SpAgent::SpAgent() {
 
   parse_only_ = false;
   directcall_only_ = false;
-  jump_ = false;
 }
 
 SpAgent::~SpAgent() {
@@ -74,8 +73,6 @@ void SpAgent::go() {
   if (init_tail_.size() == 0) init_tail_ = "";
   if (!parser_) parser_ = SpParser::create();
   if (!init_propeller_) init_propeller_ = SpPropeller::create();
-
-  parser_->set_jump_inst(jump_);
 
   // 2. Prepare context
   context_ = SpContext::create(init_propeller_,
