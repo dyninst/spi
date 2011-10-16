@@ -171,11 +171,7 @@ PatchMgrPtr SpParser::parse() {
   // Initialize PatchAPI stuffs
   AddrSpace* as = SpAddrSpace::create(exe_obj_);
   Dyninst::PatchAPI::Instrumenter* inst = NULL;
-  if (!jump_) {
-    inst = sp::TrapInstrumenter::create(as);
-  } else {
-    inst = sp::JumpInstrumenter::create(as);
-  }
+  inst = sp::JumpInstrumenter::create(as);
 
   sp::SpPointMaker* pm = new SpPointMaker;
   mgr_ = PatchMgr::create(as, inst, pm);
