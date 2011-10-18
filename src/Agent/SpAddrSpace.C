@@ -52,14 +52,14 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
     if ((a >= start && code_end < end) ||
         (a <= start && code_end >= start && code_end <= end) ||
         (a >= start && a < end && code_end >= end)) {
-      sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
+      //sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
       if (mprotect((void*)start, end - start, perm) < 0) {
         sp_print("MPROTECT - Failed to change memory access permission");
         perror("mprotect");
         return false;
       } else {
-        sp_debug("PERM - successfully change the access permission to %lx",
-                 PROT_READ | PROT_WRITE | PROT_EXEC);
+        //sp_debug("PERM - successfully change the access permission to %lx",
+        //         PROT_READ | PROT_WRITE | PROT_EXEC);
         ret = true;
       }
     } else {
@@ -78,8 +78,8 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
       perror("mprotect");
       return false;
     } else {
-      sp_debug("PERM - successfully change the access permission to %lx",
-               PROT_READ | PROT_WRITE | PROT_EXEC);
+      //sp_debug("PERM - successfully change the access permission to %lx",
+      //         PROT_READ | PROT_WRITE | PROT_EXEC);
       ret = true;
     }
   }
@@ -97,12 +97,12 @@ bool SpAddrSpace::restore_range_perm(Dyninst::Address a, size_t length) {
     if ((a >= start && code_end < end) ||
         (a <= start && code_end >= start && code_end <= end) ||
         (a >= start && a < end && code_end >= end)) {
-      sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
+      //sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
       if (mprotect((void*)start, end - start, mem_maps_[start].perms) < 0) {
         sp_print("MPROTECT - Failed to change memory access permission");
         return false;
       } else {
-        sp_debug("PERM - successfully change the access permission to %lx", mem_maps_[start].perms);
+        //sp_debug("PERM - successfully change the access permission to %lx", mem_maps_[start].perms);
         ret = true;
       }
     }
@@ -112,7 +112,7 @@ bool SpAddrSpace::restore_range_perm(Dyninst::Address a, size_t length) {
 
 // Parse /proc/pid/maps file to build memory mappings
 void SpAddrSpace::update_mem_maps() {
-  sp_debug("UPDATE - Memory mappings");
+  //sp_debug("UPDATE - Memory mappings");
   char maps_file[256];
   sprintf(maps_file, "/proc/%d/maps", getpid());
 

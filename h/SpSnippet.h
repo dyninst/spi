@@ -24,7 +24,9 @@ class SpSnippet {
               PayloadFunc head, PayloadFunc tail);
     ~SpSnippet();
 
-    char* blob(Dyninst::Address ret_addr);
+    char* direct_blob(Dyninst::Address ret_addr);
+    char* indirect_blob(Dyninst::Address ret_addr);
+
     void fixup(Dyninst::PatchAPI::PatchFunction* f);  // for call imm(rip)
 
     size_t size() { return blob_size_; }
@@ -34,10 +36,12 @@ class SpSnippet {
     PayloadFunc tail() { return tail_; }
     string& orig_insn() { return orig_insn_; }
     Dyninst::PatchAPI::PatchFunction* func() { return func_; }
+    Dyninst::Address buf() const { return (Dyninst::Address)blob_; }
 
     static void dump_context(ucontext_t* context);
     static Dyninst::Address get_pre_signal_pc(void* context);
     static Dyninst::Address set_pc(Dyninst::Address pc, void* context);
+    static size_t jump_abs_size();
   protected:
     Dyninst::PatchAPI::PatchFunction* func_;
     Dyninst::PatchAPI::Point* point_;

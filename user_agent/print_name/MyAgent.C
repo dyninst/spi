@@ -50,6 +50,6 @@ void MyAgent() {
   //agent->set_init_event(event);
   agent->set_init_head("print_head");
   agent->set_init_tail("print_tail");
-  agent->set_directcall_only(true);
+  //agent->set_directcall_only(true);
   agent->go();
 }

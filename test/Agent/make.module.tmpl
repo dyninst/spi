@@ -28,7 +28,7 @@ MUTATEE_OBJS          = $(notdir $(MUTATEE_SRCS:%.c=%.o))
 MUTATEE_EXE           = $(notdir $(MUTATEE_SRCS:%.c=%))
 MUTATEE_LDFLAGS       = -ldl
 MUTATEE_IFLAGS        =
-MUTATEE_FLAGS         = -fPIC -O2
+MUTATEE_FLAGS         = -fPIC -O0
 
 # Rules
 #.PHONY: all

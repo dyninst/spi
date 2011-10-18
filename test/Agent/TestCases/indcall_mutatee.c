@@ -1,11 +1,11 @@
 #include "test_case.h"
 
 void foo() {
-  printf("indirect call from foo\n");
+  //  printf("indirect call from foo\n");
 }
 
 void bar() {
-  printf("indirect call from bar\n");
+  // printf("indirect call from bar\n");
 }
 
 typedef void (*foo_t)();

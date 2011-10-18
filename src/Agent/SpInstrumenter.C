@@ -21,6 +21,7 @@ using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Snippet;
 using Dyninst::PatchAPI::AddrSpace;
 using Dyninst::PatchAPI::PatchMgrPtr;
+using Dyninst::PatchAPI::PatchBlock;
 
 extern sp::SpContext* g_context;
 
@@ -51,7 +52,6 @@ bool JumpInstrumenter::run() {
       // If it is not a direct call, and we don't want to instrument direct call
       if (!pt->getCallee() && g_context->directcall_only()) continue;
 
-
       if (!spt->instrumented()) {
         Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
         SpSnippet::ptr sp_snip = snip->rep();
@@ -69,28 +69,44 @@ bool JumpInstrumenter::run() {
           ret_addr = 0;
         }
 
-        char* blob = sp_snip->blob(ret_addr);
+        char* blob = (char*)sp_snip->buf();
         long abs_rel_addr = ((long)blob > (long)eip) ? ((long)blob - (long)eip) : ((long)eip - (long)blob);
 
-        // FIXME: for now, we only instrument:
-        //        - original call insn_size >= 5 and
-        //        - relative addr to snippet <= 4
+        //---------------------------------------------------------
+        // Indirect call or call insn will be bigger than 5 bytes
+        //---------------------------------------------------------
         if ((insn_size < 5) || (abs_rel_addr > 0xffffffff)) {
-          continue;
+          bool jump_abs = false;
+          if (abs_rel_addr > 0xffffffff) jump_abs = true;
+          if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
+            spt->set_instrumented(true);
+          } else {
+            sp_print("FAILED");
+            //sp_print("FAILED - Failed to install instrumentation at %lx for calling %s",
+            //         pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
+          }
         }
 
-        // Save the original instruction, in case we want to restore it later
-        for (int i = 0; i < insn_size; i++) {
-          orig_insn += insn[i];
-        }
+        //---------------------------------------------------------
+        // Direct call
+        //---------------------------------------------------------
+        else {
+          blob = sp_snip->direct_blob(ret_addr);
 
-        // Install the blob to pt
-        if (install(pt, blob, sp_snip->size())) {
-          spt->set_instrumented(true);
-        } else {
-          sp_print("FAILED - Failed to install instrumentation at %lx for calling %s",
-                   pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
-        }
+          // Save the original instruction, in case we want to restore it later
+          for (int i = 0; i < insn_size; i++) {
+            orig_insn += insn[i];
+          }
+
+          // Install the blob to pt
+          if (install_direct(pt, blob, sp_snip->size())) {
+            spt->set_instrumented(true);
+          } else {
+            sp_print("FAILED - Failed to install instrumentation at %lx for calling %s",
+                     pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
+          }
+        } // direct call
+
       } // If not yet instrumented
     } // If it is a valid command
   } // For each command
@@ -99,7 +115,7 @@ bool JumpInstrumenter::run() {
   return true;
 }
 
-bool JumpInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
+bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
 
   char jump[5];
   char* p = jump;
@@ -141,5 +157,89 @@ bool JumpInstrumenter::install(Dyninst::PatchAPI::Point* point, char* blob, size
   sp_print("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
   sp_print("DUMP INSN - }");
 */
+  return true;
+}
+
+bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
+                                        sp::SpSnippet::ptr snip, bool jump_abs,
+                                        Dyninst::Address ret_addr) {
+  sp_debug("INDIRECT");
+
+  PatchBlock* blk = point->block();
+  size_t blk_size = blk->size();
+
+  size_t limit = 0;
+  char* addr = NULL;
+
+  SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
+  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+
+  char insn[64];
+  if (!jump_abs) {
+    sp_debug("JUMP REL");
+
+    limit = 5; // one jump_rel insn
+    char* p = insn;
+    *p++ = 0xe9;
+    long* lp = (long*)p;
+    *lp = (long)snip->buf();
+  } else {
+    sp_debug("JUMP ABS");
+    limit = snip->jump_abs_size();
+
+    //XXX: skip for now
+    return true;
+  }
+
+  if (blk_size >= limit) {
+    sp_debug("RELOC BLK - jump");
+    return install_jump(blk, insn, limit, snip, ret_addr);
+  }
+
+  sp_debug("SPRING - jump; skip for now");
+  return install_spring();
+}
+
+bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
+                                    char* insn, size_t insn_size,
+                                    sp::SpSnippet::ptr snip,
+                                    Dyninst::Address ret_addr) {
+  sp_debug("before install");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
+  char* addr = (char*)blk->start();
+
+  // Write a "jump" instruction to call block
+  Dyninst::PatchAPI::PatchObject* obj = blk->obj();
+  SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
+  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  if (as->set_range_perm((Dyninst::Address)addr, insn_size, perm)) {
+    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)insn, insn_size);
+  } else {
+    sp_print("MPROTECT - Failed to change memory access permission");
+  }
+
+  // Build blob & change the permission of snippet
+  char* blob = snip->indirect_blob(ret_addr);
+  if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
+    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
+    as->dump_mem_maps();
+    exit(0);
+  }
+
+  // Restore the permission of memory mapping
+  if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {
+    sp_print("MPROTECT - Failed to restore memory access permission");
+  }
+
+  sp_debug("after install");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
+  return true;
+}
+
+bool JumpInstrumenter::install_spring() {
   return true;
 }
