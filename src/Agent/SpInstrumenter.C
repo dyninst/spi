@@ -79,7 +79,7 @@ bool JumpInstrumenter::run() {
         //---------------------------------------------------------
         // Indirect call or call insn will be bigger than 5 bytes
         //---------------------------------------------------------
-        if ((insn_size < 5) || (abs_rel_addr > 0xffffffff)) {
+        if ((insn_size < 5) || (abs_rel_addr > 0x7fffffff)) {
           bool jump_abs = false;
           if (abs_rel_addr > 0xffffffff) jump_abs = true;
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
@@ -191,15 +191,14 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
     sp_debug("JUMP ABS");
     limit = snip->jump_abs_size();
 
-    //XXX: skip for now
-    return true;
+    SpSnippet::emit_jump_abs((long)snip->buf(), insn, 0, /*abs=*/true);
   }
-  /*
+
   if (blk_size >= limit) {
     sp_debug("RELOC BLK - jump");
     return install_jump(blk, insn, limit, snip, ret_addr);
   }
-*/
+
   return install_spring(blk, snip, ret_addr);
 }
 

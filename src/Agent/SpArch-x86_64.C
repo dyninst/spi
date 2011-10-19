@@ -184,7 +184,7 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
     (callee - retaddr) : (retaddr - callee);
 
   // sp_print("%lx, %d", rel_addr_abs, (rel_addr_abs <= 0xffffffff));
-  if (rel_addr_abs <= 0xffffffff) {
+  if (rel_addr_abs <= 0x7fffffff) {
     *p++ = 0xe8;
     int* rel_p = (int*)p;
     *rel_p = rel_addr;
@@ -261,7 +261,7 @@ size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset) {
   Dyninst::Address rel_addr = (trg - retaddr);
   Dyninst::Address rel_addr_abs = (trg > retaddr) ?
     (trg - retaddr) : (retaddr - trg);
-  if (rel_addr_abs <= 0xffffffff) {
+  if (rel_addr_abs <= 0x7fffffff) {
     *p++ = 0xe9;
     int* rel_p = (int*)p;
     *rel_p = rel_addr;
