@@ -209,11 +209,11 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   const int EAX = 28;
 
 #define reg_val(i) (*(long*)(sp+(i)))
-  /*
-  for (int i = -64; i < 128; i+=4) {
+
+  for (int i = 0; i < 32; i+=4) {
     sp_debug("i: %d, EDI: %lx", i, reg_val(i));
   }
-  */
+
   using namespace Dyninst::x86;
   if (reg == edi) return reg_val(EDI);
   if (reg == esi) return reg_val(ESI);
@@ -257,16 +257,12 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
   Instruction::Ptr insn = i->second;
   if (insn->getCategory() == Dyninst::InstructionAPI::c_CallInsn &&
       a != last)  {
-    // calculate relative addr of thunk
-    char call[5];
-    char* thunk_call = (char*)insn->ptr();
-    call[0] = thunk_call[0];
-    long* thunk = (long*)&thunk_call[1];
-    long abs_thunk = *thunk + a + 5;
-    long* trg_thunk = (long*)&call[1];
-    *trg_thunk = abs_thunk - ((long)p + 5);
-    sp_debug("THUNK - orig_rel: %lx, orig_abs: %lx, new_rel: %lx", *thunk, abs_thunk, *trg_thunk);
-    memcpy(p, call, 5);
+
+    // What thunk does, is to move current pc value to ebx.
+    // mov orig_pc, ebx
+    *p++ = 0xbb;
+    long* new_ebx = (long*)p;
+    *new_ebx = (long)(a+5);
     return 5;
   } else if (a == last) {
     return 0;

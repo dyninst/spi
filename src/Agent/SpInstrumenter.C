@@ -165,6 +165,8 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
   PatchBlock* blk = point->block();
   size_t blk_size = blk->size();
   string& orig_blk = snip->orig_blk();
+
+
   char* raw_blk = (char*)blk->start();
   for (int i = 0; i < blk_size; i++) {
     orig_blk += raw_blk[i];
@@ -199,13 +201,15 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
   }
 
   sp_debug("SPRING - jump; skip for now");
-  return install_spring();
+  // return install_spring();
+  return true;
 }
 
 bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
                                     char* insn, size_t insn_size,
                                     sp::SpSnippet::ptr snip,
                                     Dyninst::Address ret_addr) {
+
   sp_debug("before install");
   sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
   sp_debug("DUMP INSN - }");
@@ -242,6 +246,70 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   return true;
 }
 
-bool JumpInstrumenter::install_spring() {
+bool JumpInstrumenter::install_spring(/*Dyninst::PatchAPI::PatchBlock* callblk,
+                                      sp::SpSnippet::ptr snip,
+                                      Dyninst::Address ret_addr*/) {
+
+#if 0
+  sp_debug("before install");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->end()- callblk->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
+  // Find a spring block. A spring block should:
+  // - big enough to hold two absolute jumps
+  // - close enough to short jump from call block
+  // if we cannot find one available spring block, just use trap or ignore this call
+  PatchBlock* springblk = snip->spring_blk();
+  if (!springblk) return false;
+
+  // Build blob & change the permission of snippet
+  char* blob = snip->blob(ret_addr, /*reloc=*/true, /*spring=*/true);
+  Dyninst::PatchAPI::PatchObject* obj = callblk->obj();
+  SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
+  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
+    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
+    as->dump_mem_maps();
+    exit(0);
+  }
+
+  //------------------------------------------------------
+  // Handle call block
+  //------------------------------------------------------
+  // Write a "jump" instruction to call block
+  char* addr = (char*)callblk->start();
+  char callblk_insn[2];
+  if (as->set_range_perm((Dyninst::Address)addr, callblk->size(), perm)) {
+    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)callblk_insn, 2);
+  } else {
+    sp_print("MPROTECT - Failed to change memory access permission");
+  }
+  // Restore the permission of memory mapping
+  if (!as->restore_range_perm((Dyninst::Address)addr, callblk->size())) {
+    sp_print("MPROTECT - Failed to restore memory access permission");
+  }
+  sp_debug("after install (call block)");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->end()-callblk->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
+  //------------------------------------------------------
+  // Handle spring block
+  //------------------------------------------------------
+  // Write a "jump" instruction to call block
+  addr = (char*)springblk->start();
+  if (as->set_range_perm((Dyninst::Address)addr, springblk->size(), perm)) {
+    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)insn, springblk->size());
+  } else {
+    sp_print("MPROTECT - Failed to change memory access permission");
+  }
+  // Restore the permission of memory mapping
+  if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {
+    sp_print("MPROTECT - Failed to restore memory access permission");
+  }
+  sp_debug("after install (call block)");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
+#endif
   return true;
 }
