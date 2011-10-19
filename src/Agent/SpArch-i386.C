@@ -157,15 +157,19 @@ size_t SpSnippet::emit_call_jump(long callee, char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
-size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset) {
+size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
   char* p = buf + offset;
   size_t insnsize = 0;
+
+  sp_debug("EMIT JUMP START");
 
   Dyninst::Address retaddr = (Dyninst::Address)p+5;
   Dyninst::Address rel_addr = (trg - retaddr);
   Dyninst::Address rel_addr_abs = (trg > retaddr) ?
     (trg - retaddr) : (retaddr - trg);
-  if (rel_addr_abs <= 0xffffffff) {
+  if (rel_addr_abs <= 0xffffffff && !abs) {
+    sp_debug("REL JUMP START");
+
     *p++ = 0xe9;
     int* rel_p = (int*)p;
     *rel_p = rel_addr;

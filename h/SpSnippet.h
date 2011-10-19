@@ -36,7 +36,7 @@ class SpSnippet {
 
     string& orig_insn() { return orig_insn_; }
     string& orig_blk() { return orig_blk_; }
-    string& orig_spring_blk() { return spring_blk_; }
+    string& orig_spring_blk() { return orig_spring_blk_; }
     Dyninst::PatchAPI::PatchBlock* spring_blk();
 
     Dyninst::PatchAPI::PatchFunction* func() { return func_; }
@@ -46,6 +46,8 @@ class SpSnippet {
     static Dyninst::Address get_pre_signal_pc(void* context);
     static Dyninst::Address set_pc(Dyninst::Address pc, void* context);
     static size_t jump_abs_size();
+    static size_t emit_jump_abs(long trg, char* buf, size_t offset, bool abs = false);
+
   protected:
     Dyninst::PatchAPI::PatchFunction* func_;
     Dyninst::PatchAPI::Point* point_;
@@ -54,13 +56,14 @@ class SpSnippet {
     PayloadFunc tail_;
     string orig_insn_;
     string orig_blk_;
-    string spring_blk_;
+    string orig_spring_blk_;
     char* blob_;
     size_t blob_size_;
     size_t before_call_orig_;
     Dyninst::Address ret_addr_;
     char* spring_;
     size_t spring_size_;
+    Dyninst::PatchAPI::PatchBlock* spring_blk_;
 
     // A bunch of code generation interfaces
     static size_t emit_save(char* buf, size_t offset);
@@ -70,7 +73,6 @@ class SpSnippet {
     static size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
     static size_t emit_ret(char* buf, size_t offset);
     static size_t emit_call_jump(long callee, char* buf, size_t offset);
-    static size_t emit_jump_abs(long trg, char* buf, size_t offset);
     static size_t emit_call_orig(long src, size_t size, char* buf, size_t offset);
     static size_t emit_save_sp(long loc, char* buf, size_t offset);
 

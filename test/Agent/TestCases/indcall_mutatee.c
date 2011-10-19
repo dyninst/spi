@@ -31,9 +31,5 @@ int main(int argc, char** argv) {
   d.f = bar;
   d.f();
 
-  foo_t f[3] = {foo, bar, foo};
-  f[0]();
-  f[1]();
-
   return 0;
 }
