@@ -356,4 +356,14 @@ bool SpParser::is_pc(Dyninst::MachRegister r) {
   return false;
 }
 
+    /* For x86_64
+       if (has rip && ! last insn) {
+         adjust it
+       } else if (has rip && last insn) {
+         parse func_
+       } else {
+         relocate
+       }
+     */
+
 }

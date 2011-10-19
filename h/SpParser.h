@@ -30,7 +30,7 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     Dyninst::Address get_func_addr(string name);
     string dump_insn(void* addr, size_t size);
     bool injected() const { return injected_; }
-    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg, size_t orig_insn_size);
+    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg, Dyninst::Address sp, size_t orig_insn_size);
     static bool is_pc(Dyninst::MachRegister);
     bool is_dyninst_lib(string lib);
     void set_jump_inst(bool b) { jump_ = b; }

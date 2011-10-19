@@ -31,7 +31,7 @@ void MyAgent() {
 
   agent->set_parser(parser);
   agent->set_init_head("print_head");
-  agent->set_directcall_only(true);
+  //  agent->set_directcall_only(true);
   agent->go();
 }
 

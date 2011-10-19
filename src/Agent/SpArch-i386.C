@@ -63,6 +63,19 @@ size_t SpSnippet::emit_fault(char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
+size_t SpSnippet::emit_save_sp(long loc, char* buf, size_t offset) {
+  char* p = buf + offset;
+  // mov %esp, (loc)
+  *p++ = 0x89;
+  *p++ = 0x25;
+
+  long* l = (long*)p;
+  *l = loc;
+  p += sizeof(long);
+
+  return (p - (buf + offset));
+}
+
 static size_t emit_push_imm32(long imm, char* buf, size_t offset) {
   char* p = buf + offset;
 
@@ -77,6 +90,11 @@ static size_t emit_push_imm32(long imm, char* buf, size_t offset) {
 static size_t emit_pop_imm32(char* buf, size_t offset) {
   char* p = buf + offset;
   *p++ = 0x58;  // pop eax
+/*
+  *p++ = 0x83;  // add $0x4, esp
+  *p++ = 0xc4;
+  *p++ = 0x04;
+  */
   return (p - (buf + offset));
 }
 
@@ -175,39 +193,38 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 }
 
 Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
+                                         Dyninst::Address sp,
                                          size_t orig_insn_size) {
   sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
+  sp_debug("SAVED CONTEXT - at %lx", sp);
+  /* Push(EAX); Push(ECX); Push(EDX); Push(EBX); Push(Temp); Push(EBP); Push(ESI); Push(EDI); */
 
-  using namespace Dyninst::x86;
-  mcontext_t* c = &old_context_.uc_mcontext;
+  const int EDI = 0;
+  const int ESI = 4;
+  const int EBP = 8;
+  const int ESP = 12;
+  const int EBX = 16;
+  const int EDX = 20;
+  const int ECX = 24;
+  const int EAX = 28;
 
-  if (reg == eax) {
-    return c->gregs[REG_EAX];
-  } else if (reg == ebx) {
-    return c->gregs[REG_EBX];
-  } else if (reg == ecx) {
-    return c->gregs[REG_ECX];
-  } else if (reg == edx) {
-    return c->gregs[REG_EDX];
-  } else if (reg == esp) {
-    return c->gregs[REG_ESP];
-  } else if (reg == esi) {
-    return c->gregs[REG_ESI];
-  } else if (reg == edi) {
-    return c->gregs[REG_EDI];
-  } else if (reg == ebp) {
-    return c->gregs[REG_EBP];
-  } else if (reg == eip) {
-    return c->gregs[REG_EIP]-1+orig_insn_size;
-  } else if (reg == esi) {
-    return c->gregs[REG_ESI];
-  } else if (reg == edi) {
-    return c->gregs[REG_EDI];
-  } else {
-    sp_print("get saved register %s", reg.name().c_str());
-    assert(0);
+#define reg_val(i) (*(long*)(sp+(i)))
+  /*
+  for (int i = -64; i < 128; i+=4) {
+    sp_debug("i: %d, EDI: %lx", i, reg_val(i));
   }
-
+  */
+  using namespace Dyninst::x86;
+  if (reg == edi) return reg_val(EDI);
+  if (reg == esi) return reg_val(ESI);
+  if (reg == ebp) return reg_val(EBP);
+  if (reg == esp) return reg_val(ESP);
+  if (reg == ebx) return reg_val(EBX);
+  if (reg == edx) return reg_val(EDX);
+  if (reg == ecx) return reg_val(ECX);
+  if (reg == eax) return reg_val(EAX);
+  sp_debug("NO FOUND");
+  return 0;
 }
 
 bool SpParser::is_pc(Dyninst::MachRegister r) {
@@ -215,5 +232,48 @@ bool SpParser::is_pc(Dyninst::MachRegister r) {
   return false;
 }
 
+size_t SpSnippet::jump_abs_size() {
+  // pushl imm;
+  // ret
+  return 7;
+}
+
+/* For i386
+ if (call insn && ! last insn) {
+   adjust thunk relative addr
+   relocate
+ } else if (last insn) {
+   skip
+ } else {
+   relocate
+ }
+  */
+size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
+                             Dyninst::Address last,
+                             char* buf) {
+  using namespace Dyninst::InstructionAPI;
+  char* p = buf;
+  Dyninst::Address a = i->first;
+  Instruction::Ptr insn = i->second;
+  if (insn->getCategory() == Dyninst::InstructionAPI::c_CallInsn &&
+      a != last)  {
+    // calculate relative addr of thunk
+    char call[5];
+    char* thunk_call = (char*)insn->ptr();
+    call[0] = thunk_call[0];
+    long* thunk = (long*)&thunk_call[1];
+    long abs_thunk = *thunk + a + 5;
+    long* trg_thunk = (long*)&call[1];
+    *trg_thunk = abs_thunk - ((long)p + 5);
+    sp_debug("THUNK - orig_rel: %lx, orig_abs: %lx, new_rel: %lx", *thunk, abs_thunk, *trg_thunk);
+    memcpy(p, call, 5);
+    return 5;
+  } else if (a == last) {
+    return 0;
+  } else {
+    memcpy(p, insn->ptr(), insn->size());
+    return insn->size();
+  }
+}
 
 }

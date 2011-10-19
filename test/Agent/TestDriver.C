@@ -38,6 +38,7 @@ bool TestDriver::run_preloaded_testcase(std::string name) {
   // 3. Exec
   char cmd[1024];
   sprintf(cmd, "LD_PRELOAD=./%s %s", agent.c_str(), mutatee.c_str());
+  std::cerr << cmd << "\n";
   system(cmd);
 
   return true;

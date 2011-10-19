@@ -71,6 +71,10 @@ bool JumpInstrumenter::run() {
 
         char* blob = (char*)sp_snip->buf();
         long abs_rel_addr = ((long)blob > (long)eip) ? ((long)blob - (long)eip) : ((long)eip - (long)blob);
+        // Save the original instruction, in case we want to restore it later
+        for (int i = 0; i < insn_size; i++) {
+          orig_insn += insn[i];
+        }
 
         //---------------------------------------------------------
         // Indirect call or call insn will be bigger than 5 bytes
@@ -91,12 +95,7 @@ bool JumpInstrumenter::run() {
         // Direct call
         //---------------------------------------------------------
         else {
-          blob = sp_snip->direct_blob(ret_addr);
-
-          // Save the original instruction, in case we want to restore it later
-          for (int i = 0; i < insn_size; i++) {
-            orig_insn += insn[i];
-          }
+          blob = sp_snip->blob(ret_addr);
 
           // Install the blob to pt
           if (install_direct(pt, blob, sp_snip->size())) {
@@ -163,10 +162,13 @@ bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blo
 bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
                                         sp::SpSnippet::ptr snip, bool jump_abs,
                                         Dyninst::Address ret_addr) {
-  sp_debug("INDIRECT");
-
   PatchBlock* blk = point->block();
   size_t blk_size = blk->size();
+  string& orig_blk = snip->orig_blk();
+  char* raw_blk = (char*)blk->start();
+  for (int i = 0; i < blk_size; i++) {
+    orig_blk += raw_blk[i];
+  }
 
   size_t limit = 0;
   char* addr = NULL;
@@ -182,7 +184,7 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
     char* p = insn;
     *p++ = 0xe9;
     long* lp = (long*)p;
-    *lp = (long)snip->buf();
+    *lp = (long)snip->buf() - (long)blk->start() - 5;
   } else {
     sp_debug("JUMP ABS");
     limit = snip->jump_abs_size();
@@ -208,25 +210,25 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
   sp_debug("DUMP INSN - }");
 
-  char* addr = (char*)blk->start();
-
-  // Write a "jump" instruction to call block
+  // Build blob & change the permission of snippet
+  char* blob = snip->blob(ret_addr, /*reloc=*/true);
   Dyninst::PatchAPI::PatchObject* obj = blk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
+    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
+    as->dump_mem_maps();
+    exit(0);
+  }
+
+  char* addr = (char*)blk->start();
+  // Write a "jump" instruction to call block
   if (as->set_range_perm((Dyninst::Address)addr, insn_size, perm)) {
     as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)insn, insn_size);
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
 
-  // Build blob & change the permission of snippet
-  char* blob = snip->indirect_blob(ret_addr);
-  if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
-    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
-    as->dump_mem_maps();
-    exit(0);
-  }
 
   // Restore the permission of memory mapping
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {

@@ -325,8 +325,8 @@ public:
   virtual void visit(RegisterAST* r) {
 
     if (p_->is_pc(r->getID())) use_pc_ = true;
-
-    Dyninst::Address rval = p_->get_saved_reg(r->getID(),
+    sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
+    Dyninst::Address rval = p_->get_saved_reg(r->getID(), *spt->saved_context_ptr(),
                      pt_->block()->end() - pt_->block()->last());
     call_addr_ = rval;
     stack_.push(call_addr_);
@@ -394,7 +394,6 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   // 0. Check the cache
   //-------------------------------------
   if (pt_to_callee_.find(pt) != pt_to_callee_.end()) {
-    sp::callee_end();
     return pt_to_callee_[pt];
   }
 
@@ -404,7 +403,6 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   PatchFunction* f = pt->getCallee();
   if (f) {
     pt_to_callee_[pt] = f;
-    sp::callee_end();
     return f;
   }
 
@@ -412,6 +410,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   // 2. Looking for indirect call
   //-------------------------------------
   if (parse_indirect) {
+    sp_debug("PARSE INDIRECT CALL");
     PatchBlock* blk = pt->block();
     Instruction::Ptr insn = blk->getInsn(blk->last());
     Expression::Ptr trg = insn->getControlFlowTarget();
@@ -420,9 +419,11 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
 
     Dyninst::Address call_addr = visitor.call_addr();
 
+    sp_debug("INDIRECT - to %lx", call_addr);
     f = findFunction(call_addr);
     if (f) {
       pt_to_callee_[pt] = f;
+/*
       if (visitor.use_pc()) {
         using namespace Dyninst::PatchAPI;
         SpContext::InstMap& inst_map = g_context->inst_map();
@@ -432,13 +433,12 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
         SpSnippet::ptr sp_snip = snip->rep();
         sp_snip->fixup(f);
       }
-
       sp::callee_end();
+*/
       return f;
     }
 
     sp_print("CANNOT RESOLVE ADDR %lx, SKIP", call_addr);
-    sp::callee_end();
     return NULL;
   }
 
