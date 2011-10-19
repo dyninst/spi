@@ -25,16 +25,19 @@ class SpSnippet {
     ~SpSnippet();
 
     char* blob(Dyninst::Address ret_addr, bool reloc = false,  bool spring = false);
+    char* spring(Dyninst::Address ret_addr);
     void fixup(Dyninst::PatchAPI::PatchFunction* f);  // for call imm(rip)
 
     size_t size() { return blob_size_; }
+    size_t spring_size() {return spring_size_; }
     SpContext* context() { return context_; }
     PayloadFunc head() { return head_; }
     PayloadFunc tail() { return tail_; }
 
     string& orig_insn() { return orig_insn_; }
     string& orig_blk() { return orig_blk_; }
-    string& spring_blk() { return spring_blk_; }
+    string& orig_spring_blk() { return spring_blk_; }
+    Dyninst::PatchAPI::PatchBlock* spring_blk();
 
     Dyninst::PatchAPI::PatchFunction* func() { return func_; }
     Dyninst::Address buf() const { return (Dyninst::Address)blob_; }
@@ -56,6 +59,8 @@ class SpSnippet {
     size_t blob_size_;
     size_t before_call_orig_;
     Dyninst::Address ret_addr_;
+    char* spring_;
+    size_t spring_size_;
 
     // A bunch of code generation interfaces
     static size_t emit_save(char* buf, size_t offset);
@@ -70,7 +75,7 @@ class SpSnippet {
     static size_t emit_save_sp(long loc, char* buf, size_t offset);
 
     // relocate
-    size_t reloc_block(Dyninst::PatchAPI::PatchBlock* blk, size_t offset);
+    size_t reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, size_t offset);
     size_t reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
                       Dyninst::Address last, char* p);
 };

@@ -40,6 +40,10 @@ class SpContext {
     typedef std::map<Dyninst::Address, Dyninst::PatchAPI::InstancePtr> InstMap;
     InstMap& inst_map() { return inst_map_; }
 
+    typedef std::set<Dyninst::PatchAPI::PatchBlock*> SpringSet;
+    bool in_spring_set(Dyninst::PatchAPI::PatchBlock* b) { return (spring_set_.find(b) != spring_set_.end()); }
+    void add_spring(Dyninst::PatchAPI::PatchBlock* b) { spring_set_.insert(b); }
+
     // Point -> propagated?
     //typedef std::map<Dyninst::PatchAPI::Point*, bool> PropMap;
     //typedef std::set<Dyninst::PatchAPI::Point*> PropMap;
@@ -61,7 +65,7 @@ class SpContext {
     // Things to be restored
     struct sigaction old_act_;
     InstMap inst_map_;
-    // PropMap prop_map_;
+    SpringSet spring_set_;
 
     SpContext(SpPropeller::ptr,
               SpParser::ptr);

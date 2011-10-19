@@ -3,15 +3,15 @@
 #include <sys/ucontext.h>
 #include <ucontext.h>
 
+typedef void (*foo_t)();
+
 void foo() {
   printf("indirect call from foo\n");
 }
 
 void bar() {
-  printf("indirect call from bar\n");
 }
 
-typedef void (*foo_t)();
 
 typedef struct {
   foo_t f;
@@ -24,29 +24,16 @@ int main(int argc, char** argv) {
   }
   */
 
-
   dummy d;
   d.f = foo;
-  //printf("ccc");
-  /*
-  ucontext_t c;
-  getcontext(&c);
-  mcontext_t m = c.uc_mcontext;
-
-  printf("edi: %lx\n", m.gregs[0]);
-  printf("esi: %lx\n", m.gregs[1]);
-  printf("ebp: %lx\n", m.gregs[2]);
-  printf("esp: %lx\n", m.gregs[3]);
-  printf("edx: %lx\n", m.gregs[4]);
-  printf("ebx: %lx\n", m.gregs[5]);
-  printf("ecx: %lx\n", m.gregs[6]);
-  printf("eax: %lx\n", m.gregs[7]);
-  */
   d.f();
 
   d.f = bar;
   d.f();
 
+  foo_t f[3] = {foo, bar, foo};
+  f[0]();
+  f[1]();
 
   return 0;
 }

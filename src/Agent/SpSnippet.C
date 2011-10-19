@@ -17,7 +17,7 @@ SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
                      Dyninst::PatchAPI::Point* pt,
                      SpContext* c,
                      PayloadFunc head, PayloadFunc tail)
-  : func_(f), point_(pt), context_(c), head_(head), tail_(tail), blob_size_(0) {
+  : func_(f), point_(pt), context_(c), head_(head), tail_(tail), blob_size_(0), spring_size_(0) {
 
   // assert(context_ && "SpContext is NULL");
   Dyninst::PatchAPI::PatchMgrPtr mgr = c->mgr();
@@ -65,15 +65,15 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   size_t offset = 0;
   size_t insnsize = 0;
 
-  // 5. relocate block
+  // 5. relocate call block
   if (reloc) {
     PatchBlock* blk = NULL;
-    if (!spring) {
+    //if (!spring) {
       blk = point_->block();
-    } else {
-      blk = NULL;
-    }
-    insnsize = reloc_block(blk, offset);
+      //} else {
+      // blk = NULL;
+      //}
+    insnsize = reloc_block(blk, blob_, offset);
     offset += insnsize;
   }
 
@@ -212,8 +212,8 @@ class BlkInsnVisitor : public Visitor{
     }
 };
 */
-size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, size_t offset) {
-  char* p = blob_ + offset;
+size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, size_t offset) {
+  char* p = buf + offset;
   size_t insnsize = 0;
   Dyninst::Address call_addr = blk->last();
 
@@ -230,15 +230,62 @@ size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, size_t offset)
 
     insnsize = reloc_insn(i, call_addr, p);
     p += insnsize;
-
-    /*
-    Expression::Ptr trg = insn->getControlFlowTarget();
-    BlkInsnVisitor visitor;
-    trg->apply(&visitor);
-    */
   }
 
   return (p - (blob_ + offset));
+}
+
+PatchBlock* SpSnippet::spring_blk() {
+  size_t min_springblk_size = jump_abs_size() * 2;
+  PatchBlock* callblk = point_->block();
+  long after_jmp = callblk->start() + 2; // short jump 2 bytes
+
+  // Find a nearby block
+  // XXX: this algorithm sucks! Need a smarter one.
+  size_t rel = 0;
+  PatchBlock* springblk = NULL;
+  bool done = false;
+  Dyninst::PatchAPI::PatchObject* obj = callblk->obj();
+  std::vector<PatchBlock*> blks;
+  using namespace Dyninst::ParseAPI;
+  CodeObject* co = obj->co();
+  CodeObject::funclist& funcs = co->funcs();
+  for (CodeObject::funclist::iterator fi = funcs.begin(); fi != funcs.end(); fi++) {
+    PatchFunction* f = obj->getFunc(*fi);
+    const PatchFunction::Blockset& blks = f->getAllBlocks();
+    for (PatchFunction::Blockset::iterator bi = blks.begin(); bi != blks.end(); bi++) {
+      PatchBlock* b = *bi;
+      // For simplicity, we don't want call block
+      if (b->containsCall()) continue;
+      // For simplicity, we don't relocate used spring block
+      if (context_->in_spring_set(b)) continue;
+      rel = b->start() - after_jmp;
+      // A qualified spring block should be within 128 bytes from current call block, and
+      // should be able to hold two absolute jumps
+      sp_debug("CANDIDATE - size %d", b->size());
+      if (std::abs((long)rel) <= 128 && b->size() >= min_springblk_size) {
+        sp_debug("GOT SPRING - at %lx, relative addr from %lx is %lx, size %d >= %d (two abs jumps)",
+                 b->start(), callblk->start(), rel, b->size(), min_springblk_size);
+        springblk = b;
+        context_->add_spring(b);
+        break;
+      }
+    } // for each block
+    if (springblk) break;
+  } // for each function
+
+  return springblk;
+}
+
+char* SpSnippet::spring(Dyninst::Address ret_add) {
+  Dyninst::PatchAPI::PatchMgrPtr mgr = context_->mgr();
+  Dyninst::PatchAPI::AddrSpace* as = mgr->as();
+  spring_ = (char*)as->malloc(point_->obj(), 1024, point_->obj()->codeBase());
+
+  // 1, relocate spring block
+  // 2, jump back
+
+  return spring_;
 }
 
 }

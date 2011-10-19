@@ -194,15 +194,13 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
     //XXX: skip for now
     return true;
   }
-
+  /*
   if (blk_size >= limit) {
     sp_debug("RELOC BLK - jump");
     return install_jump(blk, insn, limit, snip, ret_addr);
   }
-
-  sp_debug("SPRING - jump; skip for now");
-  // return install_spring();
-  return true;
+*/
+  return install_spring(blk, snip, ret_addr);
 }
 
 bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
@@ -246,14 +244,10 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   return true;
 }
 
-bool JumpInstrumenter::install_spring(/*Dyninst::PatchAPI::PatchBlock* callblk,
+bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
                                       sp::SpSnippet::ptr snip,
-                                      Dyninst::Address ret_addr*/) {
+                                      Dyninst::Address ret_addr) {
 
-#if 0
-  sp_debug("before install");
-  sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->end()- callblk->start()).c_str());
-  sp_debug("DUMP INSN - }");
 
   // Find a spring block. A spring block should:
   // - big enough to hold two absolute jumps
@@ -273,12 +267,28 @@ bool JumpInstrumenter::install_spring(/*Dyninst::PatchAPI::PatchBlock* callblk,
     exit(0);
   }
 
+  // Relocate spring block & change the permission of the relocated spring block
+  char* spring = snip->spring(springblk->end());
+  obj = springblk->obj();
+  if (!as->set_range_perm((Dyninst::Address)spring, snip->spring_size(), perm)) {
+    sp_print("MPROTECT - Failed to change memory access permission for relocated spring blk at %lx", spring);
+    as->dump_mem_maps();
+    exit(0);
+  }
+
   //------------------------------------------------------
   // Handle call block
   //------------------------------------------------------
   // Write a "jump" instruction to call block
+  sp_debug("before install (call block)");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->end()- callblk->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
   char* addr = (char*)callblk->start();
   char callblk_insn[2];
+  callblk_insn[0] = 0xeb;
+  callblk_insn[1] = (char)(springblk->start() - callblk->start());
+
   if (as->set_range_perm((Dyninst::Address)addr, callblk->size(), perm)) {
     as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)callblk_insn, 2);
   } else {
@@ -292,24 +302,31 @@ bool JumpInstrumenter::install_spring(/*Dyninst::PatchAPI::PatchBlock* callblk,
   sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->end()-callblk->start()).c_str());
   sp_debug("DUMP INSN - }");
 
+
   //------------------------------------------------------
   // Handle spring block
   //------------------------------------------------------
+  sp_debug("before install (spring block)");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)springblk->start(),
+           springblk->end()-springblk->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
   // Write a "jump" instruction to call block
+  char springblk_insn[64];
   addr = (char*)springblk->start();
   if (as->set_range_perm((Dyninst::Address)addr, springblk->size(), perm)) {
-    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)insn, springblk->size());
+    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)springblk_insn, springblk->size());
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
   // Restore the permission of memory mapping
-  if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {
+  if (!as->restore_range_perm((Dyninst::Address)addr, springblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
-  sp_debug("after install (call block)");
-  sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
+  sp_debug("after install (spring block)");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)springblk->start(), springblk->end()-springblk->start()).c_str());
   sp_debug("DUMP INSN - }");
 
-#endif
+
   return true;
 }
