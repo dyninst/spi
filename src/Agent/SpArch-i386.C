@@ -276,4 +276,7 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
   }
 }
 
+void SpSnippet::find_pcsen_func() {
+}
+
 }

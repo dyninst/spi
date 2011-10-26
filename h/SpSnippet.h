@@ -80,6 +80,8 @@ class SpSnippet {
     size_t reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, size_t offset);
     size_t reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
                       Dyninst::Address last, char* p);
+
+    void find_pcsen_func();
 };
 
 }

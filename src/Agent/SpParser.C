@@ -323,7 +323,6 @@ public:
   SpVisitor(SpParser* p, Point* pt)
      : Visitor(), p_(p), call_addr_(0), pt_(pt), use_pc_(false) { }
   virtual void visit(RegisterAST* r) {
-
     if (p_->is_pc(r->getID())) {
       use_pc_ = true;
       call_addr_ = pt_->block()->end();
@@ -333,6 +332,7 @@ public:
                                                 pt_->block()->end() - pt_->block()->last());
       call_addr_ = rval;
     }
+    sp_debug("VISIT REG - %s, push %lx", r->getID().name().c_str(), call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(BinaryFunction* b) {
@@ -348,6 +348,8 @@ public:
     } else {
       assert(0);
     }
+    sp_debug("VISIT OP - push %lx", call_addr_);
+
     stack_.push(call_addr_);
   }
   virtual void visit(Immediate* i) {
@@ -370,12 +372,14 @@ public:
       break;
     }
     }
+    sp_debug("VISIT IMM - push %lx", call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(Dereference* d) {
     Dyninst::Address* addr = (Dyninst::Address*)stack_.top();
     stack_.pop();
     call_addr_ = *addr;
+    sp_debug("VISIT DEF - push %lx", call_addr_);
     stack_.push(call_addr_);
   }
 
@@ -409,6 +413,8 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     //if (real_func) f = real_func;
     spt->set_callee(f);
     return f;
+  } else if (spt->callee()) {
+    return spt->callee();
   }
 
   //-------------------------------------
@@ -416,11 +422,13 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   //-------------------------------------
   if (parse_indirect) {
     sp_debug("PARSE INDIRECT CALL");
+
     PatchBlock* blk = pt->block();
     Instruction::Ptr insn = blk->getInsn(blk->last());
     Expression::Ptr trg = insn->getControlFlowTarget();
     SpVisitor visitor(this, pt);
     trg->apply(&visitor);
+    sp_debug("%s", g_context->parser()->dump_insn((void*)blk->last(), insn->size()).c_str());
 
     Dyninst::Address call_addr = visitor.call_addr();
 
@@ -428,18 +436,6 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     f = findFunction(call_addr);
     if (f) {
       spt->set_callee(f);
-/*
-      if (visitor.use_pc()) {
-        using namespace Dyninst::PatchAPI;
-        SpContext::InstMap& inst_map = g_context->inst_map();
-        if (inst_map.find(pt->block()->last()) == inst_map.end()) return f;
-        InstancePtr instance = inst_map[pt->block()->last()];
-        Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
-        SpSnippet::ptr sp_snip = snip->rep();
-        sp_snip->fixup(f);
-      }
-      sp::callee_end();
-*/
       return f;
     }
 

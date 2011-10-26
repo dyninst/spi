@@ -5,8 +5,6 @@ SpInjector-x86_64.o: ../src/Injector/SpInjector-x86_64.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_regs.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/util.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyntypes.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_regs.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/proccontrol/h/EventType.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/config.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/config/suffix.hpp \
@@ -27,6 +25,9 @@ SpInjector-x86_64.o: ../src/Injector/SpInjector-x86_64.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/spinlock_sync.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/yield_k.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/memory_order.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_regs.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/proccontrol/h/EventType.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/weak_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp
 SpInjector.o:  \
@@ -37,8 +38,6 @@ SpInjector.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_regs.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/util.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyntypes.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_regs.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/proccontrol/h/EventType.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/config.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/config/suffix.hpp \
@@ -59,6 +58,9 @@ SpInjector.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/spinlock_sync.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/detail/yield_k.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/memory_order.hpp \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_regs.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/proccontrol/h/EventType.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/weak_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/dyninst/dyninst/symtabAPI/h/Symtab.h \

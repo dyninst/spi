@@ -100,6 +100,11 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
 
   before_call_orig_ = offset;
 
+  // 5. See if the call is pc-sensitive, if so, we can get the func_ right away.
+  if (!func_) {
+    find_pcsen_func();
+  }
+
   // 6. call ORIG_FUNCTION
   if (!ret_addr) {
     // tail call

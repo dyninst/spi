@@ -6,6 +6,8 @@
 #include "SpContext.h"
 #include "SpSnippet.h"
 
+#include "Visitor.h"
+
 using Dyninst::PatchAPI::PatchFunction;
 
 extern sp::SpContext* g_context;
@@ -289,24 +291,28 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   sp_debug("SAVED CONTEXT - at %lx", sp);
   // sp_print("call_addr in %s", reg.name().c_str());
 
-  const int RAX = 0;
-  const int R9 = 8;
-  const int R8 = 16;
-  const int RCX = 24;
-  const int RDX = 32;
-  const int RSI = 40;
-  const int RDI = 48;
-  const int RBP = 56;
-  const int R15 = 64;
-  const int R14 = 72;
-  const int R13 = 80;
-  const int R12 = 88;
-  const int RBX = 96;
-  const int R11 = 104;
-  const int R10 = 112;
-  const int RSP = 120;
+  const int RAX = 1*8;
+  const int R9  = 2*8;
+  const int R8  = 3*8;
+  const int RCX = 4*8;
+  const int RDX = 5*8;
+  const int RSI = 6*8;
+  const int RDI = 7*8;
+  const int RBP = 8*8;
+  const int R15 = 9*8;
+  const int R14 = 10*8;
+  const int R13 = 11*8;
+  const int R12 = 12*8;
+  const int RBX = 13*8;
+  const int R11 = 14*8;
+  const int R10 = 15*8;
+  const int RSP = 16*8;
 
 #define reg_val(i) (*(long*)(sp+(i)))
+
+  for (int i = 0; i < 16; i++) {
+    sp_debug("DUMP SAVED REGS: %lx", reg_val((i*8)));
+  }
 
   using namespace Dyninst::x86_64;
 
@@ -341,9 +347,31 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
 }
 
 bool SpParser::is_pc(Dyninst::MachRegister r) {
+  sp_debug("IS PC ? - %s", r.name().c_str());
   if (r == Dyninst::x86_64::rip) return true;
   return false;
 }
+
+using namespace Dyninst::InstructionAPI;
+class RelocVisitor : public Visitor {
+  public:
+    RelocVisitor(SpParser::ptr p) : Visitor(), p_(p), use_pc_(false) {}
+    virtual void visit(RegisterAST* r) {
+      if (p_->is_pc(r->getID())) {
+        use_pc_ = true;
+      }
+    }
+    virtual void visit(BinaryFunction* b) {
+    }
+    virtual void visit(Immediate* i) {
+    }
+    virtual void visit(Dereference* d) {
+    }
+    bool use_pc() const { return use_pc_; }
+  private:
+    SpParser::ptr p_;
+    bool use_pc_;
+};
 
 size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
                              Dyninst::Address last,
@@ -352,13 +380,68 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
   char* p = buf;
   Dyninst::Address a = i->first;
   Instruction::Ptr insn = i->second;
+  bool use_pc = false;
+  set<Expression::Ptr> readSet;
+  insn->getMemoryReadOperands(readSet);
+  for (set<Expression::Ptr>::iterator i = readSet.begin(); i != readSet.end(); i++) {
+    sp_debug("check reads");
+    RelocVisitor visitor(context_->parser());
+    (*i)->apply(&visitor);
+    use_pc = visitor.use_pc();
+  }
+  set<Expression::Ptr> writeSet;
+  insn->getMemoryWriteOperands(writeSet);
+  for (set<Expression::Ptr>::iterator i = writeSet.begin(); i != writeSet.end(); i++) {
+    sp_debug("check writes");
+    RelocVisitor visitor(context_->parser());
+    (*i)->apply(&visitor);
+    use_pc = visitor.use_pc();
+  }
 
   if (a == last) {
     return 0;
+  } else if (use_pc) {
+    sp_debug("USE PC");
+    char insn_buf[20];
+    memcpy(insn_buf, insn->ptr(), insn->size());
+    long* dis_buf = (long*)&insn_buf[insn->size() - 4];
+    long old_rip = a;
+    long new_rip = (long)p;
+    long old_dis = *dis_buf;
+    *dis_buf += (old_rip - new_rip);
+    /*
+    sp_debug("old_rip: %lx, new_rip: %lx, old dis: %x, new dis: %x, equal: %d",
+             old_rip, new_rip, old_dis, *dis_buf, ((old_dis + old_rip) == (*dis_buf + new_rip)));
+    */
+    // long abs_dis = (*dis_buf >= 0) ? *dis_buf : (0-(*dis_buf));
+    // sp_print("%d, abs:%d, 0-:%d", *dis_buf, abs(*dis_buf), abs_dis);
+
+    //if (abs_dis <= 0xffffffff) {
+      memcpy(p, insn_buf, insn->size());
+      return insn->size();
+      //} else {
+      //  sp_perror("New displacement > 2^31");
+      // }
   } else {
     memcpy(p, insn->ptr(), insn->size());
     return insn->size();
   }
+}
+
+void SpSnippet::find_pcsen_func() {
+  // Get the call instruction
+
+  // See if the call instruction involve rip
+
+  // If so, set find function and set func_
+
+  // Set Point's callee
+}
+
+size_t SpSnippet::jump_abs_size() {
+  // push x 4
+  // ret
+  return 17;
 }
 
 }
