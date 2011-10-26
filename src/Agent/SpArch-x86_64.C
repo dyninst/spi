@@ -286,27 +286,27 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 
 Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
                                          Dyninst::Address sp,
-                                         size_t orig_insn_size) {
+                                         size_t offset) {
   sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
   sp_debug("SAVED CONTEXT - at %lx", sp);
   // sp_print("call_addr in %s", reg.name().c_str());
 
-  const int RAX = 1*8;
-  const int R9  = 2*8;
-  const int R8  = 3*8;
-  const int RCX = 4*8;
-  const int RDX = 5*8;
-  const int RSI = 6*8;
-  const int RDI = 7*8;
-  const int RBP = 8*8;
-  const int R15 = 9*8;
-  const int R14 = 10*8;
-  const int R13 = 11*8;
-  const int R12 = 12*8;
-  const int RBX = 13*8;
-  const int R11 = 14*8;
-  const int R10 = 15*8;
-  const int RSP = 16*8;
+  const int RAX = 0+offset;
+  const int R9  = 8+offset;
+  const int R8  = 16+offset;
+  const int RCX = 24+offset;
+  const int RDX = 32+offset;
+  const int RSI = 40+offset;
+  const int RDI = 48+offset;
+  const int RBP = 56+offset;
+  const int R15 = 64+offset;
+  const int R14 = 72+offset;
+  const int R13 = 80+offset;
+  const int R12 = 88+offset;
+  const int RBX = 96+offset;
+  const int R11 = 104+offset;
+  const int R10 = 112+offset;
+  const int RSP = 120+offset;
 
 #define reg_val(i) (*(long*)(sp+(i)))
 
@@ -409,33 +409,24 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     long new_rip = (long)p;
     long old_dis = *dis_buf;
     *dis_buf += (old_rip - new_rip);
-    /*
-    sp_debug("old_rip: %lx, new_rip: %lx, old dis: %x, new dis: %x, equal: %d",
-             old_rip, new_rip, old_dis, *dis_buf, ((old_dis + old_rip) == (*dis_buf + new_rip)));
-    */
-    // long abs_dis = (*dis_buf >= 0) ? *dis_buf : (0-(*dis_buf));
-    // sp_print("%d, abs:%d, 0-:%d", *dis_buf, abs(*dis_buf), abs_dis);
-
     //if (abs_dis <= 0xffffffff) {
       memcpy(p, insn_buf, insn->size());
       return insn->size();
       //} else {
       //  sp_perror("New displacement > 2^31");
       // }
+
+    // TODO:
+    //  if the displacement is too big, then we have to emulate that insn:
+    //   mov REG, disp(%rip)
+    //   =>
+    //   push REG' (REG' is different from REG)
+    //   mov REG (abs memory)
+    //   pop REG'
   } else {
     memcpy(p, insn->ptr(), insn->size());
     return insn->size();
   }
-}
-
-void SpSnippet::find_pcsen_func() {
-  // Get the call instruction
-
-  // See if the call instruction involve rip
-
-  // If so, set find function and set func_
-
-  // Set Point's callee
 }
 
 size_t SpSnippet::jump_abs_size() {

@@ -198,19 +198,19 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 
 Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
                                          Dyninst::Address sp,
-                                         size_t orig_insn_size) {
+                                         size_t offset) {
   sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
   sp_debug("SAVED CONTEXT - at %lx", sp);
   /* Push(EAX); Push(ECX); Push(EDX); Push(EBX); Push(Temp); Push(EBP); Push(ESI); Push(EDI); */
 
-  const int EDI = 0;
-  const int ESI = 4;
-  const int EBP = 8;
-  const int ESP = 12;
-  const int EBX = 16;
-  const int EDX = 20;
-  const int ECX = 24;
-  const int EAX = 28;
+  const int EDI = 0+offset;
+  const int ESI = 4+offset;
+  const int EBP = 8+offset;
+  const int ESP = 12+offset;
+  const int EBX = 16+offset;
+  const int EDX = 20+offset;
+  const int ECX = 24+offset;
+  const int EAX = 28+offset;
 
 #define reg_val(i) (*(long*)(sp+(i)))
 
@@ -274,9 +274,6 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     memcpy(p, insn->ptr(), insn->size());
     return insn->size();
   }
-}
-
-void SpSnippet::find_pcsen_func() {
 }
 
 }

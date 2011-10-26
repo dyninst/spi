@@ -92,6 +92,8 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   // 3. call head payload
   insnsize = emit_call_abs((long)head_, blob_, offset, true);
   offset += insnsize;
+  // This is to adjust the offset of sp for our saved registers.
+  if (insnsize != 5) context_->parser()->set_sp_offset(sizeof(long));
 
   // 4. restore context
   insnsize = emit_restore(blob_, offset, reloc);
@@ -101,9 +103,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   before_call_orig_ = offset;
 
   // 5. See if the call is pc-sensitive, if so, we can get the func_ right away.
-  if (!func_) {
-    find_pcsen_func();
-  }
+  // TODO (wenbin)
 
   // 6. call ORIG_FUNCTION
   if (!ret_addr) {

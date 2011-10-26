@@ -81,7 +81,6 @@ class SpSnippet {
     size_t reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
                       Dyninst::Address last, char* p);
 
-    void find_pcsen_func();
 };
 
 }

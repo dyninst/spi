@@ -44,7 +44,7 @@ using Dyninst::PatchAPI::Point;
 extern sp::SpContext* g_context;
 
 SpParser::SpParser()
-  : exe_obj_(NULL), injected_(false) {
+  : exe_obj_(NULL), injected_(false),sp_offset_(0) {
   init_dyninst_libs();
 }
 
@@ -329,7 +329,7 @@ public:
     } else {
       sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
       Dyninst::Address rval = p_->get_saved_reg(r->getID(), *spt->saved_context_ptr(),
-                                                pt_->block()->end() - pt_->block()->last());
+                                                p_->sp_offset());
       call_addr_ = rval;
     }
     sp_debug("VISIT REG - %s, push %lx", r->getID().name().c_str(), call_addr_);
