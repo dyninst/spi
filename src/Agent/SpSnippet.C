@@ -66,14 +66,11 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   size_t offset = 0;
   size_t insnsize = 0;
 
+  sp_debug("ret_addr: %d, reloc: %d, spring: %d", ret_addr, reloc, spring);
   // 5. relocate call block
   if (reloc) {
     PatchBlock* blk = NULL;
-    //if (!spring) {
-      blk = point_->block();
-      //} else {
-      // blk = NULL;
-      //}
+    blk = point_->block();
     insnsize = reloc_block(blk, blob_, offset);
     offset += insnsize;
   }
@@ -106,8 +103,9 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   // 6. call ORIG_FUNCTION
   if (!ret_addr) {
     // tail call
-    sp_debug("TAIL");
+    sp_debug("TAIL to %s", func_->name().c_str());
     insnsize = emit_jump_abs((long)func_->addr(), blob_, offset);
+    goto EXIT;
   } else if (func_) {
     // Direct call
     sp_debug("DIRECT");
@@ -141,6 +139,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   // 11. jmp ORIG_INSN_ADDR
   insnsize = emit_jump_abs(ret_addr, blob_, offset);
 
+EXIT:
   offset += insnsize;
   blob_size_ = offset;
 

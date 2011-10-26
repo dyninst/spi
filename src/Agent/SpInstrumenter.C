@@ -79,7 +79,7 @@ bool JumpInstrumenter::run() {
         //---------------------------------------------------------
         // Indirect call or call insn will be bigger than 5 bytes
         //---------------------------------------------------------
-        if ((insn_size < 5) || (abs_rel_addr > 0x7fffffff)) {
+        if ((insn_size != 5) || (abs_rel_addr > 0x7fffffff)) {
           bool jump_abs = false;
           if (abs_rel_addr > 0xffffffff) jump_abs = true;
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {

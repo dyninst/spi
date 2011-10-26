@@ -183,42 +183,12 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
   Dyninst::Address rel_addr_abs = (callee > retaddr) ?
     (callee - retaddr) : (retaddr - callee);
 
-  // sp_print("%lx, %d", rel_addr_abs, (rel_addr_abs <= 0xffffffff));
   if (rel_addr_abs <= 0x7fffffff) {
     *p++ = 0xe8;
     int* rel_p = (int*)p;
     *rel_p = rel_addr;
     p += 4;
   } else {
-    /*
-    retaddr = (long)p + 16 + 16 + 1;
-    // push return address
-    insnsize = emit_push_imm64(retaddr, p, 0);
-    p += insnsize;
-    // push callee address
-    insnsize = emit_push_imm64(callee, p, 0);
-    p += insnsize;
-    // ret
-    //*p = 0xcb;
-    *p = 0xc3;
-    p ++;
-    assert(retaddr == (long)p);
-*/
-    /*
-    *p++ = 0x55; // push rbp
-
-    *p++ = 0x48; // movq call_addr, %rbp
-    *p++ = 0xbd;
-    long* call_addr = (long*)p;
-    *call_addr = callee;
-    p += sizeof(long);
-
-    *p++ = 0xff; // call %rbp
-    *p++ = 0xd5;
-
-    *p++ = 0x5d; // pop rbp
-*/
-
     *p++ = 0x48; // movq call_addr, %rax
     *p++ = 0xb8;
     long* call_addr = (long*)p;
@@ -253,7 +223,7 @@ size_t SpSnippet::emit_call_jump(long callee, char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
-size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset) {
+size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
@@ -261,7 +231,7 @@ size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset) {
   Dyninst::Address rel_addr = (trg - retaddr);
   Dyninst::Address rel_addr_abs = (trg > retaddr) ?
     (trg - retaddr) : (retaddr - trg);
-  if (rel_addr_abs <= 0x7fffffff) {
+  if (rel_addr_abs <= 0x7fffffff && !abs) {
     *p++ = 0xe9;
     int* rel_p = (int*)p;
     *rel_p = rel_addr;
@@ -288,11 +258,25 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 }
 
 Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
+                                         Dyninst::Address sp,
                                          size_t orig_insn_size) {
   sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
+  sp_debug("SAVED CONTEXT - at %lx", sp);
   // sp_print("call_addr in %s", reg.name().c_str());
 
+  const int  = 0;
+  const int ESI = 4;
+  const int EBP = 8;
+  const int ESP = 12;
+  const int EBX = 16;
+  const int EDX = 20;
+  const int ECX = 24;
+  const int EAX = 28;
+
+#define reg_val(i) (*(long*)(sp+(i)))
+
   using namespace Dyninst::x86_64;
+  /*
   mcontext_t* c = &old_context_.uc_mcontext;
 
   if (reg == eax) {
@@ -349,6 +333,7 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
     sp_print("get saved register %s", reg.name().c_str());
     assert(0);
   }
+  */
 }
 
 bool SpParser::is_pc(Dyninst::MachRegister r) {

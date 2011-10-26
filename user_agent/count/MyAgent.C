@@ -4,7 +4,7 @@ using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
 
-int callcount = 0;
+unsigned long long callcount = 0;
 namespace sp {
   extern void payload_start();
   extern void payload_end();
@@ -31,11 +31,11 @@ void MyAgent() {
 
   agent->set_parser(parser);
   agent->set_init_head("print_head");
-  //  agent->set_directcall_only(true);
+  agent->set_directcall_only(true);
   agent->go();
 }
 
 __attribute__((destructor))
 void DumpOutput() {
-  printf("# of calls: %d\n", callcount);
+  printf("# of calls: %ul\n", callcount);
 }

@@ -80,3 +80,5 @@ export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 #echo 73; LD_PRELOAD="./$AGENT_NAME" $BIN/mkdir -p /tmp/tmp99/tmp3
 #echo 74; LD_PRELOAD="./$AGENT_NAME" $BIN/printf "abasdfaf%s" "aaa" 
 echo 75; LD_PRELOAD="./$AGENT_NAME" $BIN/od /tmp/tmp
+#$BIN/od /tmp/tmp
+#$BIN/ls
