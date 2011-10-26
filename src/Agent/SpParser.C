@@ -258,10 +258,10 @@ Dyninst::Address SpParser::get_func_addr(string name) {
 }
 
 PatchFunction* SpParser::findFunction(string name, bool skip) {
-  sp::findfunc_start();
+  // sp::findfunc_start();
 
   if (real_func_map_.find(name) != real_func_map_.end()) {
-    sp::findfunc_end();
+    // sp::findfunc_end();
     return real_func_map_[name];
   }
 
@@ -285,12 +285,12 @@ PatchFunction* SpParser::findFunction(string name, bool skip) {
         }
         PatchFunction* found = obj->getFunc(*fit);
         real_func_map_[name] = found;
-        sp::findfunc_end();
+        //sp::findfunc_end();
         return found;
       }
     }
   }
-  sp::findfunc_end();
+  //sp::findfunc_end();
   return NULL;
 }
 
@@ -324,11 +324,15 @@ public:
      : Visitor(), p_(p), call_addr_(0), pt_(pt), use_pc_(false) { }
   virtual void visit(RegisterAST* r) {
 
-    if (p_->is_pc(r->getID())) use_pc_ = true;
-    sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
-    Dyninst::Address rval = p_->get_saved_reg(r->getID(), *spt->saved_context_ptr(),
-                     pt_->block()->end() - pt_->block()->last());
-    call_addr_ = rval;
+    if (p_->is_pc(r->getID())) {
+      use_pc_ = true;
+      call_addr_ = pt_->block()->end();
+    } else {
+      sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
+      Dyninst::Address rval = p_->get_saved_reg(r->getID(), *spt->saved_context_ptr(),
+                                                pt_->block()->end() - pt_->block()->last());
+      call_addr_ = rval;
+    }
     stack_.push(call_addr_);
   }
   virtual void visit(BinaryFunction* b) {
@@ -393,16 +397,17 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   //-------------------------------------
   // 0. Check the cache
   //-------------------------------------
-  if (pt_to_callee_.find(pt) != pt_to_callee_.end()) {
-    return pt_to_callee_[pt];
-  }
+  sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt);
+  if (spt->callee()) return spt->callee();
 
   //-------------------------------------
   // 1. Looking for direct call
   //-------------------------------------
   PatchFunction* f = pt->getCallee();
   if (f) {
-    pt_to_callee_[pt] = f;
+    //PatchFunction* real_func = findFunction(f->name());
+    //if (real_func) f = real_func;
+    spt->set_callee(f);
     return f;
   }
 
@@ -422,7 +427,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     sp_debug("INDIRECT - to %lx", call_addr);
     f = findFunction(call_addr);
     if (f) {
-      pt_to_callee_[pt] = f;
+      spt->set_callee(f);
 /*
       if (visitor.use_pc()) {
         using namespace Dyninst::PatchAPI;

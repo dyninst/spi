@@ -76,7 +76,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   }
 
   // 1. save context
-  insnsize = emit_save(blob_, offset);
+  insnsize = emit_save(blob_, offset, reloc);
   offset += insnsize;
   if (!func_) {
     sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
@@ -94,7 +94,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   offset += insnsize;
 
   // 4. restore context
-  insnsize = emit_restore(blob_, offset);
+  insnsize = emit_restore(blob_, offset, reloc);
   offset += insnsize;
 
 
@@ -120,7 +120,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   if (tail_) {
 
     // 7. save context
-    insnsize = emit_save(blob_, offset);
+    insnsize = emit_save(blob_, offset, reloc);
     offset += insnsize;
 
     // 8. pass parameters
@@ -132,7 +132,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     offset += insnsize;
 
     // 10. restore context
-    insnsize = emit_restore(blob_, offset);
+    insnsize = emit_restore(blob_, offset, reloc);
     offset += insnsize;
   }
 

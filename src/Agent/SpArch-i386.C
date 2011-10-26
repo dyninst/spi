@@ -31,13 +31,13 @@ void SpSnippet::dump_context(ucontext_t* context) {
 }
 
 // a bunch of code generation functions
-size_t SpSnippet::emit_save(char* buf, size_t offset) {
+size_t SpSnippet::emit_save(char* buf, size_t offset, bool) {
   char* p = buf + offset;
   *p++ = 0x60; // pusha
   return (p - (buf + offset));
 }
 
-size_t SpSnippet::emit_restore( char* buf, size_t offset) {
+size_t SpSnippet::emit_restore( char* buf, size_t offset, bool) {
   char* p = buf + offset;
   *p++ = 0x61; // popa
   return (p - (buf + offset));

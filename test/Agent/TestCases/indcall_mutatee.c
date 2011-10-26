@@ -31,5 +31,7 @@ int main(int argc, char** argv) {
   d.f = bar;
   d.f();
 
+  bar();
+
   return 0;
 }

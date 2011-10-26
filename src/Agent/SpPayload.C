@@ -56,7 +56,11 @@ void sp::propel(Dyninst::PatchAPI::Point* pt_) {
   if (!f) return;
 
   sp::SpPropeller::ptr p = g_context->init_propeller();
-  p->go(f, g_context, g_context->init_head(), g_context->init_tail());
+  /*
+  PatchFunction* cur_func = g_context->parser()->findFunction(f->name());
+  f = cur_func;
+  */
+  p->go(f, g_context, g_context->init_head(), g_context->init_tail(), pt_);
   spt->set_propagated(true);
 }
 

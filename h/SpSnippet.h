@@ -66,8 +66,8 @@ class SpSnippet {
     Dyninst::PatchAPI::PatchBlock* spring_blk_;
 
     // A bunch of code generation interfaces
-    static size_t emit_save(char* buf, size_t offset);
-    static size_t emit_restore( char* buf, size_t offset);
+    static size_t emit_save(char* buf, size_t offset, bool indirect=false);
+    static size_t emit_restore( char* buf, size_t offset, bool indirect=false);
     static size_t emit_fault(char* buf, size_t offset);
     static size_t emit_pass_param(long point, char* buf, size_t offset);
     static size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);

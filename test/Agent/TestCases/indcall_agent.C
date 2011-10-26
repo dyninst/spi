@@ -11,5 +11,7 @@ void init_indcall() {
   dprint("AGENT: init_indcall @ process %d", getpid());
 
   SpAgent::ptr agent = SpAgent::create();
+  // agent->set_directcall_only(true);
+
   agent->go();
 }

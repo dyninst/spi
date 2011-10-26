@@ -47,11 +47,6 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     std::vector<string> dyninst_libs_;
     bool jump_;
 
-    typedef std::map<Dyninst::PatchAPI::Point*,
-                     Dyninst::PatchAPI::PatchFunction*> PtToCallee;
-    //typedef __gnu_cxx::hash_map<Dyninst::PatchAPI::Point*,
-    //                 Dyninst::PatchAPI::PatchFunction*> PtToCallee;
-    PtToCallee pt_to_callee_;
     typedef std::map<string,
       Dyninst::PatchAPI::PatchFunction*> RealFuncMap;
     RealFuncMap real_func_map_;

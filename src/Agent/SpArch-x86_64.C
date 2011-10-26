@@ -42,12 +42,29 @@ void SpSnippet::dump_context(ucontext_t* context) {
 }
 
 // a bunch of code generation functions
-size_t SpSnippet::emit_save(char* buf, size_t offset) {
+size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
   char* p = buf + offset;
 
-  //*p++ = 0x54; // push rsp
-  //*p++ = 0x9c; // pushfq
+  // Saved for indirect call
+  if (indirect) {
+    *p++ = 0x54; // push rsp
+    *p++ = 0x41; // r10 unused in C
+    *p++ = 0x52;
+    *p++ = 0x41; // r11 for linker
+    *p++ = 0x53;
+    *p++ = 0x53; // %rbx
+    *p++ = 0x41; // r12
+    *p++ = 0x54;
+    *p++ = 0x41; // r13
+    *p++ = 0x55;
+    *p++ = 0x41; // r14
+    *p++ = 0x56;
+    *p++ = 0x41; // r15
+    *p++ = 0x57;
+    *p++ = 0x55; // rbp
+  }
 
+  // Saved for direct/indirect call
   *p++ = 0x57; // push rdi
   *p++ = 0x56; // push rsi
   *p++ = 0x52; // push rdx
@@ -56,47 +73,17 @@ size_t SpSnippet::emit_save(char* buf, size_t offset) {
   *p++ = 0x50;
   *p++ = 0x41; // r9
   *p++ = 0x51;
-  //*p++ = 0x41; // r10 unused in C
-  //*p++ = 0x52;
-  //*p++ = 0x41; // r11 for linker
-  //*p++ = 0x53;
   *p++ = 0x50; // %rax
 
-  /* Callee-saved: rbp, rbx, r12 ~ r15 */
-  /*
-  *p++ = 0x53; // %rbx
-  *p++ = 0x41; // r12
-  *p++ = 0x54;
-  *p++ = 0x41; // r13
-  *p++ = 0x55;
-  *p++ = 0x41; // r14
-  *p++ = 0x56;
-  *p++ = 0x41; // r15
-  *p++ = 0x57;
-  *p++ = 0x55; // rbp
-  */
+
   return (p - (buf + offset));
 }
 
-size_t SpSnippet::emit_restore( char* buf, size_t offset) {
+size_t SpSnippet::emit_restore( char* buf, size_t offset, bool indirect) {
   char* p = buf + offset;
-  /*
-  *p++ = 0x5d; // rbp
-  *p++ = 0x41; // r15
-  *p++ = 0x5f;
-  *p++ = 0x41; // r14
-  *p++ = 0x5e;
-  *p++ = 0x41; // r13
-  *p++ = 0x5d;
-  *p++ = 0x41; // r12
-  *p++ = 0x5c;
-  *p++ = 0x5b; // rbx
-  */
+
+  // Restored for direct/indirect call
   *p++ = 0x58; // rax
-  //*p++ = 0x41; // r11
-  //*p++ = 0x5b;
-  //*p++ = 0x41; // r10
-  //*p++ = 0x5a;
   *p++ = 0x41; // pop r9
   *p++ = 0x59;
   *p++ = 0x41; // pop r8
@@ -106,8 +93,46 @@ size_t SpSnippet::emit_restore( char* buf, size_t offset) {
   *p++ = 0x5e; // pop rsi
   *p++ = 0x5f; // pop rdi
 
-  //*p++ = 0x9d; // popfq
-  //*p++ = 0x5c; // pop rsp
+  // Restored for indirect call
+  if (indirect) {
+    *p++ = 0x5d; // rbp
+    *p++ = 0x41; // r15
+    *p++ = 0x5f;
+    *p++ = 0x41; // r14
+    *p++ = 0x5e;
+    *p++ = 0x41; // r13
+    *p++ = 0x5d;
+    *p++ = 0x41; // r12
+    *p++ = 0x5c;
+    *p++ = 0x5b; // rbx
+    *p++ = 0x41; // r11
+    *p++ = 0x5b;
+    *p++ = 0x41; // r10
+    *p++ = 0x5a;
+    *p++ = 0x5c; // pop rsp
+  }
+  return (p - (buf + offset));
+}
+
+size_t SpSnippet::emit_save_sp(long loc, char* buf, size_t offset) {
+  char* p = buf + offset;
+  /*
+  400448:       50                      push   %rax
+  400449:       48 b8 56 34 12 90 78    mov    $0x1234567890123456,%rax
+  400450:       56 34 12 
+  400453:       48 89 20                mov    %rsp,(%rax)
+  400456:       58                      pop    %rax
+   */
+  *p++ = 0x50;  // push %rax
+  *p++ = 0x48;  // mov loc, %rax
+  *p++ = 0xb8;
+  long* l = (long*)p;
+  *l = loc;
+  p += sizeof(long);
+  *p++ = 0x48;  // mov %rsp, (%rax)
+  *p++ = 0x89;
+  *p++ = 0x20;
+  *p++ = 0x58;  // pop %rax
 
   return (p - (buf + offset));
 }
@@ -264,76 +289,55 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   sp_debug("SAVED CONTEXT - at %lx", sp);
   // sp_print("call_addr in %s", reg.name().c_str());
 
-  const int  = 0;
-  const int ESI = 4;
-  const int EBP = 8;
-  const int ESP = 12;
-  const int EBX = 16;
-  const int EDX = 20;
-  const int ECX = 24;
-  const int EAX = 28;
+  const int RAX = 0;
+  const int R9 = 8;
+  const int R8 = 16;
+  const int RCX = 24;
+  const int RDX = 32;
+  const int RSI = 40;
+  const int RDI = 48;
+  const int RBP = 56;
+  const int R15 = 64;
+  const int R14 = 72;
+  const int R13 = 80;
+  const int R12 = 88;
+  const int RBX = 96;
+  const int R11 = 104;
+  const int R10 = 112;
+  const int RSP = 120;
 
 #define reg_val(i) (*(long*)(sp+(i)))
 
   using namespace Dyninst::x86_64;
-  /*
-  mcontext_t* c = &old_context_.uc_mcontext;
 
-  if (reg == eax) {
-    return c->gregs[REG_RAX];
-  } else if (reg == ebx) {
-    return c->gregs[REG_RBX];
-  } else if (reg == ecx) {
-    return c->gregs[REG_RCX];
-  } else if (reg == edx) {
-    return c->gregs[REG_RDX];
-  } else if (reg == esp) {
-    return c->gregs[REG_RSP];
-  } else if (reg == esi) {
-    return c->gregs[REG_RSI];
-  } else if (reg == edi) {
-    return c->gregs[REG_RDI];
-  } else if (reg == ebp) {
-    return c->gregs[REG_RBP];
-  } else if (reg == rax) {
-    return c->gregs[REG_RAX];
-  } else if (reg == rbx) {
-    return c->gregs[REG_RBX];
-  } else if (reg == rcx) {
-    return c->gregs[REG_RCX];
-  } else if (reg == rdx) {
-    return c->gregs[REG_RDX];
-  } else if (reg == rsp) {
-    return c->gregs[REG_RSP];
-  } else if (reg == r8) {
-    return c->gregs[REG_R8];
-  } else if (reg == r9) {
-    return c->gregs[REG_R9];
-  } else if (reg == r10) {
-    return c->gregs[REG_R10];
-  } else if (reg == r11) {
-    return c->gregs[REG_R11];
-  } else if (reg == r12) {
-    return c->gregs[REG_R12];
-  } else if (reg == r13) {
-    return c->gregs[REG_R13];
-  } else if (reg == r14) {
-    return c->gregs[REG_R14];
-  } else if (reg == r15) {
-    return c->gregs[REG_R15];
-  } else if (reg == rip) {
-    return c->gregs[REG_RIP]-1+orig_insn_size;
-  } else if (reg == rsi) {
-    return c->gregs[REG_RSI];
-  } else if (reg == rdi) {
-    return c->gregs[REG_RDI];
-  } else if (reg == rbp) {
-    return c->gregs[REG_RBP];
-  } else {
-    sp_print("get saved register %s", reg.name().c_str());
-    assert(0);
-  }
-  */
+  if (reg == rax) return reg_val(RAX);
+  if (reg == rbx) return reg_val(RBX);
+  if (reg == rcx) return reg_val(RCX);
+  if (reg == rdx) return reg_val(RDX);
+  if (reg == rsi) return reg_val(RSI);
+  if (reg == rdi) return reg_val(RDI);
+  if (reg == r8) return reg_val(R8);
+  if (reg == r9) return reg_val(R9);
+  if (reg == r10) return reg_val(R10);
+  if (reg == r11) return reg_val(R11);
+  if (reg == r12) return reg_val(R12);
+  if (reg == r13) return reg_val(R13);
+  if (reg == r14) return reg_val(R14);
+  if (reg == r15) return reg_val(R15);
+  if (reg == rsp) return reg_val(RSP);
+  if (reg == rbp) return reg_val(RBP);
+
+  if (reg == eax) return reg_val(RAX);
+  if (reg == ebx) return reg_val(RBX);
+  if (reg == ecx) return reg_val(RCX);
+  if (reg == edx) return reg_val(RDX);
+  if (reg == esi) return reg_val(RSI);
+  if (reg == edi) return reg_val(RDI);
+  if (reg == esp) return reg_val(RSP);
+  if (reg == ebp) return reg_val(RBP);
+
+  sp_print("Cannot find register %s", reg.name().c_str());
+  return 0;
 }
 
 bool SpParser::is_pc(Dyninst::MachRegister r) {
@@ -341,14 +345,20 @@ bool SpParser::is_pc(Dyninst::MachRegister r) {
   return false;
 }
 
-    /* For x86_64
-       if (has rip && ! last insn) {
-         adjust it
-       } else if (has rip && last insn) {
-         parse func_
-       } else {
-         relocate
-       }
-     */
+size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
+                             Dyninst::Address last,
+                             char* buf) {
+  using namespace Dyninst::InstructionAPI;
+  char* p = buf;
+  Dyninst::Address a = i->first;
+  Instruction::Ptr insn = i->second;
+
+  if (a == last) {
+    return 0;
+  } else {
+    memcpy(p, insn->ptr(), insn->size());
+    return insn->size();
+  }
+}
 
 }

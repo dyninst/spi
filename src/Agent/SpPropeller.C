@@ -27,12 +27,19 @@ SpPropeller::ptr SpPropeller::create() {
 bool SpPropeller::go(PatchFunction* func,
                      SpContext* context,
                      PayloadFunc head,
-                     PayloadFunc tail) {
+                     PayloadFunc tail,
+                     Point* pt) {
 
   // 1. Find points according to type
   Points pts;
   PatchMgrPtr mgr = context->mgr();
-  PatchFunction* cur_func = context->parser()->findFunction(func->name());
+  PatchFunction* cur_func = NULL;
+  if (pt) {
+    cur_func = func;
+  } else {
+    // sp_print("cur_func: %s", func->name().c_str());
+    cur_func = context->parser()->findFunction(func->name());
+  }
   next_points(cur_func, mgr, pts);
 
   // 2. Start instrumentation

@@ -74,8 +74,6 @@ void SyncEvent::register_event(SpContext* c) {
   if (!g_context->parser()->injected()) {
     c->parse();
     PatchFunction* f = c->parser()->findFunction("main");
-    // sp::Points pts;
-    // sp::CalleePoints(f, c, pts);
     c->init_propeller()->go(f, c, c->init_head(), c->init_tail());
   } else {
     struct sigaction act;

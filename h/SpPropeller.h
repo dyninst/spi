@@ -16,7 +16,8 @@ class SpPropeller {
     bool go(Dyninst::PatchAPI::PatchFunction* func,
             SpContext* context,
             PayloadFunc head,
-            PayloadFunc tail);
+            PayloadFunc tail,
+            Dyninst::PatchAPI::Point* pt = NULL);
 
   protected:
     //Points pts_;
