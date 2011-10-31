@@ -276,4 +276,15 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
   }
 }
 
+size_t SpSnippet::emit_call_orig(long src, size_t size,
+                                 char* buf, size_t offset,bool) {
+  char* p = buf + offset;
+  char* psrc = (char*)src;
+
+  for (size_t i = 0; i < size; i++)
+    *p++ = psrc[i];
+
+  return (p - (buf + offset));
+}
+
 }

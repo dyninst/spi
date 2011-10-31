@@ -7,7 +7,7 @@ export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 
 #echo 1; LD_PRELOAD="./$AGENT_NAME" $BIN/[
 #echo 2; LD_PRELOAD="./$AGENT_NAME" $BIN/base64 /tmp/tmp
-#echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
+echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
 #echo 4; LD_PRELOAD="./$AGENT_NAME" $BIN/cat /tmp/tmp
 #echo 5; LD_PRELOAD="./$AGENT_NAME" $BIN/chmod 755 /tmp/tmp
 #echo 6; LD_PRELOAD="./$AGENT_NAME" $BIN/head /tmp/tmp
@@ -60,7 +60,7 @@ export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 #echo 53; LD_PRELOAD="./$AGENT_NAME" $BIN/cksum /tmp/tmp
 #echo 54; LD_PRELOAD="./$AGENT_NAME" $BIN/whoami
 #echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
-echo 56; LD_PRELOAD="./$AGENT_NAME" $BIN/ls $1
+#echo 56; LD_PRELOAD="./$AGENT_NAME" $BIN/ls $1
 #echo 57; LD_PRELOAD="./$AGENT_NAME" $BIN/true
 #echo 58; LD_PRELOAD="./$AGENT_NAME" $BIN/false
 #echo 59; LD_PRELOAD="./$AGENT_NAME" $BIN/sleep 2

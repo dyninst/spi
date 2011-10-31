@@ -70,10 +70,10 @@ class SpSnippet {
     static size_t emit_restore( char* buf, size_t offset, bool indirect=false);
     static size_t emit_fault(char* buf, size_t offset);
     static size_t emit_pass_param(long point, char* buf, size_t offset);
-    static size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
+    size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
     static size_t emit_ret(char* buf, size_t offset);
     static size_t emit_call_jump(long callee, char* buf, size_t offset);
-    static size_t emit_call_orig(long src, size_t size, char* buf, size_t offset);
+    size_t emit_call_orig(long src, size_t size, char* buf, size_t offset,bool tail);
     static size_t emit_save_sp(long loc, char* buf, size_t offset);
 
     // relocate

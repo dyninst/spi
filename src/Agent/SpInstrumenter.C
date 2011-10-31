@@ -55,6 +55,7 @@ bool JumpInstrumenter::run() {
       if (!spt->instrumented()) {
         Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
         SpSnippet::ptr sp_snip = snip->rep();
+        spt->set_snip(sp_snip);
         Dyninst::Address eip = pt->block()->last();
         char* insn = (char*)eip;
 

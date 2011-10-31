@@ -1,12 +1,16 @@
 #include <signal.h>
 #include <ucontext.h>
+#include <stack>
 
 #include "SpEvent.h"
 #include "SpParser.h"
 #include "SpContext.h"
 #include "SpSnippet.h"
+#include "SpPoint.h"
 
 #include "Visitor.h"
+#include "BinaryFunction.h"
+#include "Immediate.h"
 
 using Dyninst::PatchAPI::PatchFunction;
 
@@ -224,6 +228,8 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
 
     *p++ = 0xff; // call %rax
     *p++ = 0xd0;
+
+    context_->parser()->set_sp_offset(sizeof(long));
   }
 
   return (p - (buf + offset));
@@ -433,6 +439,59 @@ size_t SpSnippet::jump_abs_size() {
   // push x 4
   // ret
   return 17;
+}
+
+class CallInsnVisitor : public Visitor {
+  public:
+    CallInsnVisitor(SpParser::ptr p)
+      : Visitor(), p_(p), use_pc_(false) {}
+    virtual void visit(RegisterAST* r) {
+      if (p_->is_pc(r->getID())) {
+        use_pc_ = true;
+      }
+    }
+    virtual void visit(BinaryFunction* b) {
+    }
+    virtual void visit(Immediate* i) {
+    }
+    virtual void visit(Dereference* d) {
+    }
+    bool use_pc() const { return use_pc_; }
+  private:
+    SpParser::ptr p_;
+    bool use_pc_;
+};
+
+size_t SpSnippet::emit_call_orig(long src, size_t size,
+                                 char* buf, size_t offset,
+                                 bool tail) {
+  char* p = buf + offset;
+  char* psrc = (char*)src;
+  bool use_pc = false;
+
+  // Check whether the call instruction uses RIP
+  Dyninst::PatchAPI::PatchBlock* blk = point_->block();
+  Instruction::Ptr insn = blk->getInsn(blk->last());
+  CallInsnVisitor visitor(context_->parser());
+  Expression::Ptr trg = insn->getControlFlowTarget();
+  if (trg) {
+    trg->apply(&visitor);
+    use_pc = visitor.use_pc();
+  }
+
+  if (!use_pc) {
+    sp_debug("Emit orig call");
+    // If not using RIP, then copy the instruction
+    for (size_t i = 0; i < size; i++)
+      *p++ = psrc[i];
+  } else {
+    // assert(0 && "RIP-sensitive call");
+    sp_debug("Emit RIP call");
+    before_call_orig_ = offset;
+    memset(p, 0x90, 12);
+    p += 12; // reserve 12 bytes for future fixup
+  }
+  return (p - (buf + offset));
 }
 
 }

@@ -327,6 +327,7 @@ public:
       use_pc_ = true;
       call_addr_ = pt_->block()->end();
     } else {
+      // Non-pc case, x86-32 always goes this way
       sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
       Dyninst::Address rval = p_->get_saved_reg(r->getID(), *spt->saved_context_ptr(),
                                                 p_->sp_offset());
@@ -400,6 +401,7 @@ private:
 PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   //-------------------------------------
   // 0. Check the cache
+  // TODO: Should always re-parse indirect call
   //-------------------------------------
   sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt);
   if (spt->callee()) return spt->callee();
@@ -426,19 +428,23 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     PatchBlock* blk = pt->block();
     Instruction::Ptr insn = blk->getInsn(blk->last());
     Expression::Ptr trg = insn->getControlFlowTarget();
-    SpVisitor visitor(this, pt);
-    trg->apply(&visitor);
-    sp_debug("%s", g_context->parser()->dump_insn((void*)blk->last(), insn->size()).c_str());
-
-    Dyninst::Address call_addr = visitor.call_addr();
-
-    sp_debug("INDIRECT - to %lx", call_addr);
-    f = findFunction(call_addr);
-    if (f) {
-      spt->set_callee(f);
-      return f;
+    Dyninst::Address call_addr = 0;
+    if (trg) {
+      SpVisitor visitor(this, pt);
+      trg->apply(&visitor);
+      sp_debug("%s", g_context->parser()->dump_insn((void*)blk->last(), insn->size()).c_str());
+      call_addr = visitor.call_addr();
+      sp_debug("INDIRECT - to %lx", call_addr);
+      f = findFunction(call_addr);
+      if (f) {
+        spt->set_callee(f);
+        if (visitor.use_pc()) {
+          // assert(0 && "Not implemented");
+          spt->snip()->fixup(f);
+        }
+        return f;
+      }
     }
-
     sp_print("CANNOT RESOLVE ADDR %lx, SKIP", call_addr);
     return NULL;
   }

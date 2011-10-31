@@ -30,6 +30,7 @@ SpSnippet::~SpSnippet() {
   free(blob_);
 }
 
+  /*
 size_t SpSnippet::emit_call_orig(long src, size_t size,
                                  char* buf, size_t offset) {
   char* p = buf + offset;
@@ -40,7 +41,7 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 
   return (p - (buf + offset));
 }
-
+  */
 
 /* The generated code:
    1. Save context
@@ -92,35 +93,38 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   // 3. call head payload
   insnsize = emit_call_abs((long)head_, blob_, offset, true);
   offset += insnsize;
-  // This is to adjust the offset of sp for our saved registers.
-  if (insnsize != 5) context_->parser()->set_sp_offset(sizeof(long));
 
   // 4. restore context
   insnsize = emit_restore(blob_, offset, reloc);
   offset += insnsize;
 
-
-  before_call_orig_ = offset;
-
-  // 5. See if the call is pc-sensitive, if so, we can get the func_ right away.
-  // TODO (wenbin)
+  // before_call_orig_ = offset;
 
   // 6. call ORIG_FUNCTION
-  if (!ret_addr) {
-    // tail call
+  // There are four cases need to consider:
+  // Case 1: tail call and direct call
+  // Case 2: non tail call and direct call
+  // Case 3: indirect call (tail call or non tail call)
+  //  - x86-32: just relocate the orig insn
+  //  - x86-64: relocate the orig insn for non-pc-sensitive insn
+  //            emulate the insn for pc-sensitive insn
+  if (!ret_addr && func_) {
+    // tail call and direct call
     sp_debug("TAIL to %s", func_->name().c_str());
     insnsize = emit_jump_abs((long)func_->addr(), blob_, offset);
     goto EXIT;
-  } else if (func_) {
-    // Direct call
+  } else if (ret_addr && func_) {
+    // non tail call and Direct call
     sp_debug("DIRECT");
     insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   } else {
-    // Indirect call
+    // indirect call
     sp_debug("INDIRECT");
     insnsize = emit_call_orig((long)orig_insn_.c_str(),
-                              orig_insn_.size(), blob_, offset);
+                              orig_insn_.size(), blob_, offset,
+                              /*tail call?*/(ret_addr == 0));
   }
+
   offset += insnsize;
   if (tail_) {
 
@@ -156,7 +160,10 @@ EXIT:
 }
 
 void SpSnippet::fixup(PatchFunction* f) {
-  // sp_debug("FIXUP - for call instructions involving PC value");
+  sp_debug("FIXUP - for call instructions involving PC value");
+  sp_debug("BEFORE FIXUP DUMP INSN (%d bytes)- {", blob_size_);
+  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
+  sp_debug("DUMP INSN - }");
 
   if (!f) return;
   func_ = f;
@@ -166,39 +173,12 @@ void SpSnippet::fixup(PatchFunction* f) {
 
   // 5. call ORIG_FUNCTION
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
-  offset += insnsize;
+  //offset += insnsize;
+  //blob_size_ = offset;
 
-  if (tail_) {
-    // 6. save context
-    insnsize = emit_save(blob_, offset);
-    offset += insnsize;
-
-    // 7. pass parameters
-    insnsize = emit_pass_param((long)point_, blob_, offset);
-    offset += insnsize;
-
-    // 8. call payload
-    insnsize = emit_call_abs((long)tail_, blob_, offset, true);
-    offset += insnsize;
-
-    // 9. restore context
-    insnsize = emit_restore(blob_, offset);
-    offset += insnsize;
-  }
-
-  // 10. jmp ORIG_INSN_ADDR
-  if (ret_addr_) {
-    insnsize = emit_jump_abs(ret_addr_, blob_, offset);
-  } else {
-    // sp_debug("TAIL CALL");
-    insnsize = emit_ret(blob_, offset);
-  }
-  offset += insnsize;
-  blob_size_ = offset;
-
-  // sp_debug("DUMP INSN (%d bytes)- {", offset);
-  // sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
-  // sp_debug("DUMP INSN - }");
+  sp_debug("AFTER FIXUP DUMP INSN (%d bytes)- {", blob_size_);
+  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
+  sp_debug("DUMP INSN - }");
 }
 
 
