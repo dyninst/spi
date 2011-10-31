@@ -129,7 +129,7 @@ size_t SpSnippet::emit_save_sp(long loc, char* buf, size_t offset) {
   400453:       48 89 20                mov    %rsp,(%rax)
   400456:       58                      pop    %rax
    */
-  *p++ = 0x50;  // push %rax
+  //*p++ = 0x50;  // push %rax
   *p++ = 0x48;  // mov loc, %rax
   *p++ = 0xb8;
   long* l = (long*)p;
@@ -138,7 +138,7 @@ size_t SpSnippet::emit_save_sp(long loc, char* buf, size_t offset) {
   *p++ = 0x48;  // mov %rsp, (%rax)
   *p++ = 0x89;
   *p++ = 0x20;
-  *p++ = 0x58;  // pop %rax
+  //*p++ = 0x58;  // pop %rax
 
   return (p - (buf + offset));
 }
@@ -229,7 +229,8 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
     *p++ = 0xff; // call %rax
     *p++ = 0xd0;
 
-    context_->parser()->set_sp_offset(sizeof(long));
+    //sp_debug("SHIFT OFFSET BY 4");
+    //context_->parser()->set_sp_offset(sizeof(long));
   }
 
   return (p - (buf + offset));
@@ -410,17 +411,22 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     sp_debug("USE PC");
     char insn_buf[20];
     memcpy(insn_buf, insn->ptr(), insn->size());
-    long* dis_buf = (long*)&insn_buf[insn->size() - 4];
+    int* dis_buf = NULL;
+    if (readSet.size() > 0) {
+      dis_buf = (int*)&insn_buf[insn->size() - 4];
+    } else {
+      dis_buf = (int*)&insn_buf[2];
+    }
     long old_rip = a;
     long new_rip = (long)p;
     long old_dis = *dis_buf;
-    *dis_buf += (old_rip - new_rip);
-    //if (abs_dis <= 0xffffffff) {
-      memcpy(p, insn_buf, insn->size());
-      return insn->size();
-      //} else {
-      //  sp_perror("New displacement > 2^31");
-      // }
+    *dis_buf += (int)(old_rip - new_rip);
+    int new1 = (int)*dis_buf;
+    sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d, %d",
+             old_rip, new_rip, old_dis, (old_rip-new_rip), new1, (old_rip-new_rip));
+    assert(((old_rip - new_rip) == new1) && "DISPLACEMENT >= 32-bit");
+    memcpy(p, insn_buf, insn->size());
+    return insn->size();
 
     // TODO:
     //  if the displacement is too big, then we have to emulate that insn:

@@ -79,6 +79,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   // 1. save context
   insnsize = emit_save(blob_, offset, reloc);
   offset += insnsize;
+  sp_debug("func_: %lx", func_);
   if (!func_) {
     sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
     long* l = spt->saved_context_ptr();

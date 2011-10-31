@@ -379,6 +379,7 @@ public:
   virtual void visit(Dereference* d) {
     Dyninst::Address* addr = (Dyninst::Address*)stack_.top();
     stack_.pop();
+    sp_debug("DEREFERENCING - at %lx", (long)addr);
     call_addr_ = *addr;
     sp_debug("VISIT DEF - push %lx", call_addr_);
     stack_.push(call_addr_);

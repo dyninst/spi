@@ -7,7 +7,9 @@ export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 
 #echo 1; LD_PRELOAD="./$AGENT_NAME" $BIN/[
 #echo 2; LD_PRELOAD="./$AGENT_NAME" $BIN/base64 /tmp/tmp
-echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
+#echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
+#$BIN/basename /tmp/tmp
+cp $BIN/basename ./
 #echo 4; LD_PRELOAD="./$AGENT_NAME" $BIN/cat /tmp/tmp
 #echo 5; LD_PRELOAD="./$AGENT_NAME" $BIN/chmod 755 /tmp/tmp
 #echo 6; LD_PRELOAD="./$AGENT_NAME" $BIN/head /tmp/tmp
