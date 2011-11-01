@@ -67,7 +67,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   size_t offset = 0;
   size_t insnsize = 0;
 
-  sp_debug("ret_addr: %d, reloc: %d, spring: %d", ret_addr, reloc, spring);
+  sp_debug("ret_addr: %lx, reloc: %d, spring: %d", ret_addr, reloc, spring);
   // 5. relocate call block
   if (reloc) {
     PatchBlock* blk = NULL;

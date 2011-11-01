@@ -379,7 +379,7 @@ class RelocVisitor : public Visitor {
 };
 
 using namespace Dyninst::InstructionAPI;
-static int* get_disp(Instruction::Ptr insn, char* insn_buf) {
+static int* get_disp(Instruction::Ptr insn, char* insn_buf, bool* use_rax) {
   int* disp = NULL;
 
   /*
@@ -419,9 +419,180 @@ static int* get_disp(Instruction::Ptr insn, char* insn_buf) {
     ++disp_offset;
   }
 
+  *use_rax = false;
+
   disp = (int*)(insn_buf + disp_offset);
 
   return disp;
+}
+
+class EmuVisitor : public Visitor {
+public:
+  EmuVisitor(Dyninst::Address a)
+    : Visitor(), imm_(0), a_(a) { }
+  virtual void visit(RegisterAST* r) {
+    imm_ = a_;
+    stack_.push(imm_);
+  }
+  virtual void visit(BinaryFunction* b) {
+    Dyninst::Address i1 = stack_.top();
+    stack_.pop();
+    Dyninst::Address i2 = stack_.top();
+    stack_.pop();
+
+    if (b->isAdd()) {
+      imm_ = i1 + i2;
+    } else if (b->isMultiply()) {
+      imm_ = i1 * i2;
+    } else {
+      assert(0);
+    }
+    stack_.push(imm_);
+  }
+  virtual void visit(Immediate* i) {
+    Result res = i->eval();
+    switch (res.size()) {
+    case 1: {
+      imm_ =res.val.u8val;
+      break;
+    }
+    case 2: {
+      imm_ =res.val.u16val;
+      break;
+    }
+    case 4: {
+      imm_ =res.val.u32val;
+      break;
+    }
+    default: {
+      imm_ =res.val.u64val;
+      break;
+    }
+    }
+    stack_.push(imm_);
+  }
+  virtual void visit(Dereference* d) {
+  }
+
+  Dyninst::Address imm() const {
+    return imm_;
+  }
+
+private:
+  std::stack<Dyninst::Address> stack_;
+  Dyninst::Address imm_;
+  Dyninst::Address a_;
+};
+
+/* We emulate the instruction by this sequence:
+   Case 1: if RAX is not used in this instruction
+    push %r8
+    mov IMM, %r8
+    modified original instruction
+    pop %r8
+
+   Case 2: if RAX is used in this instruciton
+    push %r9
+    mov IMM, %r9
+    modified original instruction
+    pop %r9
+ */
+static size_t emulate_pcsen(Instruction::Ptr insn, set<Expression::Ptr>& e,
+                            Dyninst::Address a, char* buf) {
+  char* p = buf;
+  char* insn_buf = (char*)insn->ptr();
+
+  //--------------------------------------------------------
+  // Step 1: see if %r8 is used, so get register first
+  //--------------------------------------------------------
+  // Get REX prefix, if it has one
+  char rex = 0;
+  int modrm_offset = 1;
+  if ((insn_buf[0] & 0xf0) == 0x40) {
+    sp_debug("GOT REX prefix - %x", insn_buf[0]);
+    rex = insn_buf[0];
+    ++modrm_offset;
+  }
+
+  // Get ModRM
+  char modrm = insn_buf[modrm_offset];
+
+  // Get the register used
+  char reg = 0;
+  if (rex) {
+    if (rex & 0x04) reg |= 0x08; // 64-bit reg
+  }
+  reg |= ((modrm & 0x38) >> 3);
+
+  //--------------------------------------------------------
+  // Step 2: push %r8 | push %r9
+  //--------------------------------------------------------
+  // Push
+  if (reg != 0x08) {
+    // Can use R8
+    *p++ = 0x41; // push %r8
+    *p++ = 0x50;
+  } else {
+    // Use R9
+    *p++ = 0x41; // push %r9
+    *p++ = 0x51;
+  }
+
+  //--------------------------------------------------------
+  // Step 3: mov imm, %r8 | mov imm, %r9
+  //--------------------------------------------------------
+  // Mov IMM64, %REG
+  *p++ = 0x49;
+  if (reg != 0x08) {
+    *p++ = 0xb8; // mov imm64, %r8
+  } else {
+    *p++ = 0xb9; // mov imm64, %r9
+  }
+  long* l = (long*)p;
+  // Get IMM64
+  EmuVisitor visitor(a+insn->size());
+  for (set<Expression::Ptr>::iterator i = e.begin(); i != e.end(); i++) {
+    (*i)->apply(&visitor);
+  }
+  *l = visitor.imm();
+  p += sizeof(l);
+
+  // Set rex
+  if (rex) {
+    rex |= 0x01;
+    *p++ = rex;
+  } else {
+    *p++ = 0x48;
+  }
+  // Copy opcode
+  *p++ = insn_buf[modrm_offset-1];
+  char new_modrm = modrm;
+  if (reg != 0x08) {
+    new_modrm &= 0xf8; // (R8)
+  } else {
+    new_modrm &= 0xf9; // (R9)
+  }
+  *p++ = new_modrm;
+  // Copy imm after displacement
+  for (int i = modrm_offset+1+4; i < insn->size(); i++) {
+    *p++ = insn_buf[i];
+  }
+  //--------------------------------------------------------
+  // Step 4: pop %rax | pop %rbx
+  //--------------------------------------------------------
+  // Pop
+  if (reg != 0x08) {
+    // Can use RAX
+    *p++ = 0x41; // pop %r8
+    *p++ = 0x58;
+  } else {
+    // Use RBX
+    *p++ = 0x41; // pop %rbx
+    *p++ = 0x59;
+  }
+
+  sp_debug("REX: %x, ModRM: %x, Reg: %x", rex, modrm, reg);
+  return (size_t)(p - buf);
 }
 
 size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
@@ -447,8 +618,9 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
   } else if (use_pc) {
     sp_debug("USE PC");
     char insn_buf[20];
+    bool use_rax = false;
     memcpy(insn_buf, insn->ptr(), insn->size());
-    int* dis_buf = get_disp(insn, insn_buf);
+    int* dis_buf = get_disp(insn, insn_buf, &use_rax);
 
     long old_rip = a;
     long new_rip = (long)p;
@@ -456,21 +628,17 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     long long_new_dis = (old_rip - new_rip) + *dis_buf;
     sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
              old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
-    if (sp::is_disp32(long_new_dis)) {
+
+    if (!sp::is_disp32(long_new_dis)) {
       *dis_buf = (int)long_new_dis;
       memcpy(p, insn_buf, insn->size());
       return insn->size();
     } else {
-      sp_print("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
-               old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
-      assert(0 && "Not implemented");
-    // TODO:
-    //  if the displacement is too big, then we have to emulate that insn:
-    //   XXX REG, disp(%rip)  || XXX disp(%rip), REG
-    //   =>
-    //   push REG' (REG' is different from REG)
-    //   mov REG (abs memory) || XXX (abs memory), REG
-    //   pop REG'
+      size_t insn_size = emulate_pcsen(insn, opSet, a, p);
+      sp_debug("DUMP EMULATE INSN (%d bytes) - {", insn_size);
+      sp_debug("%s", context_->parser()->dump_insn((void*)p, insn_size).c_str());
+      sp_debug("DUMP EMULATE INSN - }");
+      return insn_size;
     }
   } else {
     memcpy(p, insn->ptr(), insn->size());
