@@ -559,18 +559,18 @@ static size_t emulate_pcsen(Instruction::Ptr insn, set<Expression::Ptr>& e,
 
   // Set rex
   if (rex) {
-    rex |= 0x01;
+    rex |= 0x01;  // We use %r8 or %r9, so the last bit should be 1
     *p++ = rex;
   } else {
-    *p++ = 0x48;
+    *p++ = 0x41;  // If original no rex, then default it to be 32-bit thing
   }
   // Copy opcode
   *p++ = insn_buf[modrm_offset-1];
   char new_modrm = modrm;
   if (reg != 0x08) {
-    new_modrm &= 0xf8; // (R8)
+    new_modrm &= 0xf8; // (R8), the last 3-bit should be 000
   } else {
-    new_modrm &= 0xf9; // (R9)
+    new_modrm &= 0xf9; // (R9), the last 3-bit should be 001
   }
   *p++ = new_modrm;
   // Copy imm after displacement
@@ -578,7 +578,7 @@ static size_t emulate_pcsen(Instruction::Ptr insn, set<Expression::Ptr>& e,
     *p++ = insn_buf[i];
   }
   //--------------------------------------------------------
-  // Step 4: pop %rax | pop %rbx
+  // Step 4: pop %r8 | pop %r9
   //--------------------------------------------------------
   // Pop
   if (reg != 0x08) {
@@ -602,6 +602,7 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
   Dyninst::Address a = i->first;
   Instruction::Ptr insn = i->second;
 
+  // See if this instruction is a pc-sensitive instruction
   set<Expression::Ptr> opSet;
   if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
   else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
@@ -614,8 +615,10 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
   }
 
   if (a == last) {
+    // We don't handle last instruction for now
     return 0;
   } else if (use_pc) {
+    // Deal with PC-sensitive instruction
     sp_debug("USE PC");
     char insn_buf[20];
     bool use_rax = false;
@@ -629,11 +632,13 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
              old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
 
-    if (!sp::is_disp32(long_new_dis)) {
+    if (sp::is_disp32(long_new_dis)) {
+      // Easy case: just modify the displacement
       *dis_buf = (int)long_new_dis;
       memcpy(p, insn_buf, insn->size());
       return insn->size();
     } else {
+      // General purpose: emulate the instruction
       size_t insn_size = emulate_pcsen(insn, opSet, a, p);
       sp_debug("DUMP EMULATE INSN (%d bytes) - {", insn_size);
       sp_debug("%s", context_->parser()->dump_insn((void*)p, insn_size).c_str());
@@ -641,6 +646,7 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
       return insn_size;
     }
   } else {
+    // For non-pc-sensitive and non-last instruction, just copy it
     memcpy(p, insn->ptr(), insn->size());
     return insn->size();
   }
