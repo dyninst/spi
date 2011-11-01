@@ -427,13 +427,15 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     sp_debug("PARSE INDIRECT CALL");
 
     PatchBlock* blk = pt->block();
-    Instruction::Ptr insn = blk->getInsn(blk->last());
+    //Instruction::Ptr insn = blk->getInsn(blk->last());
+    Instruction::Ptr insn = spt->snip()->get_orig_call_insn();
+    sp_debug("CALL INSN SIZE - %d", insn->size());
     Expression::Ptr trg = insn->getControlFlowTarget();
     Dyninst::Address call_addr = 0;
     if (trg) {
       SpVisitor visitor(this, pt);
       trg->apply(&visitor);
-      sp_debug("%s", g_context->parser()->dump_insn((void*)blk->last(), insn->size()).c_str());
+      sp_debug("%s", g_context->parser()->dump_insn((void*)insn->ptr(), insn->size()).c_str());
       call_addr = visitor.call_addr();
       sp_debug("INDIRECT - to %lx", call_addr);
       f = findFunction(call_addr);

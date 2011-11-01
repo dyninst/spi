@@ -34,7 +34,9 @@ class SpSnippet {
     PayloadFunc head() { return head_; }
     PayloadFunc tail() { return tail_; }
 
-    string& orig_insn() { return orig_insn_; }
+    //string& orig_insn() { return orig_insn_; }
+    Dyninst::InstructionAPI::Instruction::Ptr get_orig_call_insn() const { return orig_call_insn_;}
+    void set_orig_call_insn(Dyninst::InstructionAPI::Instruction::Ptr i) {orig_call_insn_ = i;}
     string& orig_blk() { return orig_blk_; }
     string& orig_spring_blk() { return orig_spring_blk_; }
     Dyninst::PatchAPI::PatchBlock* spring_blk();
@@ -54,7 +56,7 @@ class SpSnippet {
     SpContext* context_;
     PayloadFunc head_;
     PayloadFunc tail_;
-    string orig_insn_;
+    //string orig_insn_;
     string orig_blk_;
     string orig_spring_blk_;
     char* blob_;
@@ -64,6 +66,7 @@ class SpSnippet {
     char* spring_;
     size_t spring_size_;
     Dyninst::PatchAPI::PatchBlock* spring_blk_;
+    Dyninst::InstructionAPI::Instruction::Ptr orig_call_insn_;
 
     // A bunch of code generation interfaces
     static size_t emit_save(char* buf, size_t offset, bool indirect=false);

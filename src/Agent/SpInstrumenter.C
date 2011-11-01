@@ -59,7 +59,7 @@ bool JumpInstrumenter::run() {
         Dyninst::Address eip = pt->block()->last();
         char* insn = (char*)eip;
 
-        string& orig_insn = sp_snip->orig_insn();
+        //string& orig_insn = sp_snip->orig_insn();
         Dyninst::Address insn_size = pt->block()->end() - eip;
         Dyninst::Address ret_addr = pt->block()->end();
         Dyninst::InstructionAPI::Instruction::Ptr callinsn = pt->block()->getInsn(eip);
@@ -73,9 +73,7 @@ bool JumpInstrumenter::run() {
         char* blob = (char*)sp_snip->buf();
         long rel_addr = (long)blob - (long)eip;
         // Save the original instruction, in case we want to restore it later
-        for (int i = 0; i < insn_size; i++) {
-          orig_insn += insn[i];
-        }
+	sp_snip->set_orig_call_insn(callinsn);
 
         //---------------------------------------------------------
         // Indirect call or call insn will be bigger than 5 bytes
@@ -84,10 +82,13 @@ bool JumpInstrumenter::run() {
 
           bool jump_abs = false;
           if (!sp::is_disp32(rel_addr)) jump_abs = true;
+	  sp_debug("INSTALL INDIRECT - ret_addr: %lx", ret_addr);
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
           } else {
-            sp_print("FAILED");
+            sp_print("FAILED to use JUMP - TRY TO USE TRAP");
+	    //if (install_trap()) {
+	    //}
           }
         }
 
@@ -216,6 +217,7 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   sp_debug("DUMP INSN - }");
 
   // Build blob & change the permission of snippet
+  sp_debug("INSTALL JUMP - ret_addr: %lx", ret_addr);
   char* blob = snip->blob(ret_addr, /*reloc=*/true);
   Dyninst::PatchAPI::PatchObject* obj = blk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);

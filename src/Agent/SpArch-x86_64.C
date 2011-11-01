@@ -413,7 +413,7 @@ static int* get_disp(Instruction::Ptr insn, char* insn_buf) {
   // Get REX prefix, if it has one
   char rex = 0;
   int disp_offset = 2;
-  if (insn_buf[0] & 0x40) {
+  if ((insn_buf[0] & 0xf0) == 0x40) {
     sp_debug("GOT REX prefix - %x", insn_buf[0]);
     rex = insn_buf[0];
     ++disp_offset;
@@ -514,7 +514,8 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 
   // Check whether the call instruction uses RIP
   Dyninst::PatchAPI::PatchBlock* blk = point_->block();
-  Instruction::Ptr insn = blk->getInsn(blk->last());
+  //Instruction::Ptr insn = blk->getInsn(blk->last());
+  Instruction::Ptr insn = get_orig_call_insn();
   CallInsnVisitor visitor(context_->parser());
   Expression::Ptr trg = insn->getControlFlowTarget();
   if (trg) {

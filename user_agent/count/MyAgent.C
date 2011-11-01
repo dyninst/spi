@@ -13,8 +13,8 @@ namespace sp {
 int indent = 0; 
 
 void print_head(Point* pt) {
-  PatchFunction* f = sp::callee(pt);
-  sp_print("PRINT_HEAD: %s", f->name().c_str());
+  //  PatchFunction* f = sp::callee(pt);
+  //  sp_print("PRINT_HEAD: %s", f->name().c_str());
   callcount++;
   sp::propel(pt);
 }

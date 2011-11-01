@@ -121,8 +121,8 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   } else {
     // indirect call
     sp_debug("INDIRECT");
-    insnsize = emit_call_orig((long)orig_insn_.c_str(),
-                              orig_insn_.size(), blob_, offset,
+    insnsize = emit_call_orig((long)orig_call_insn_->ptr(),
+                              orig_call_insn_->size(), blob_, offset,
                               /*tail call?*/(ret_addr == 0));
   }
 
@@ -297,5 +297,6 @@ char* SpSnippet::spring(Dyninst::Address ret_addr) {
 
   return spring_;
 }
+
 
 }
