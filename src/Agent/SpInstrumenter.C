@@ -71,7 +71,7 @@ bool JumpInstrumenter::run() {
         }
 
         char* blob = (char*)sp_snip->buf();
-        long abs_rel_addr = ((long)blob > (long)eip) ? ((long)blob - (long)eip) : ((long)eip - (long)blob);
+        long rel_addr = (long)blob - (long)eip;
         // Save the original instruction, in case we want to restore it later
         for (int i = 0; i < insn_size; i++) {
           orig_insn += insn[i];
@@ -80,15 +80,14 @@ bool JumpInstrumenter::run() {
         //---------------------------------------------------------
         // Indirect call or call insn will be bigger than 5 bytes
         //---------------------------------------------------------
-        if ((insn_size != 5) || (abs_rel_addr > 0x7fffffff)) {
+        if ((insn[0] != (char)0xe8)) {
+
           bool jump_abs = false;
-          if (abs_rel_addr > 0xffffffff) jump_abs = true;
+          if (!sp::is_disp32(rel_addr)) jump_abs = true;
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
           } else {
             sp_print("FAILED");
-            //sp_print("FAILED - Failed to install instrumentation at %lx for calling %s",
-            //         pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
           }
         }
 
@@ -195,10 +194,14 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
     SpSnippet::emit_jump_abs((long)snip->buf(), insn, 0, /*abs=*/true);
   }
 
+  sp_debug("blk_size: %d , limit: %d, at block: %lx", blk_size, limit, blk->start());
   if (blk_size >= limit) {
     sp_debug("RELOC BLK - jump");
     return install_jump(blk, insn, limit, snip, ret_addr);
   }
+  sp_debug("small block - {");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk_size).c_str());
+  sp_debug("DUMP INSN - }");
 
   return install_spring(blk, snip, ret_addr);
 }

@@ -172,6 +172,7 @@ void SpSnippet::fixup(PatchFunction* f) {
   size_t offset = before_call_orig_;
   size_t insnsize = 0;
 
+  sp_print("FIXUP: %s", func_->name().c_str());
   // 5. call ORIG_FUNCTION
   insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   //offset += insnsize;
@@ -241,6 +242,10 @@ PatchBlock* SpSnippet::spring_blk() {
   for (CodeObject::funclist::iterator fi = funcs.begin(); fi != funcs.end(); fi++) {
     PatchFunction* f = obj->getFunc(*fi);
     const PatchFunction::Blockset& blks = f->getAllBlocks();
+
+    //PatchFunction::Blockset::iterator bi = blks.end();
+    //bi--;
+    //for (; bi != blks.begin(); bi--) {
     for (PatchFunction::Blockset::iterator bi = blks.begin(); bi != blks.end(); bi++) {
       PatchBlock* b = *bi;
       // For simplicity, we don't want call block

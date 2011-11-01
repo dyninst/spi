@@ -2,6 +2,7 @@
 #define _SPUTILS_H_
 
 #include <sys/time.h>
+#include "SpCommon.h"
 
 namespace sp {
   void SetupTimer(int);
@@ -34,6 +35,14 @@ namespace sp {
   void payload_end();
 
   void report_timer();
+  inline bool is_disp32(long d) {
+    const long max_int32 = 2147483647;
+    const long min_int32 = (-2147483647-1);
+    sp_debug("%lx <= %lx == (%d) && %lx >= %lx == (%d)", d, max_int32, (d <= max_int32),
+	     d, min_int32, (d >= min_int32));
+    return ((d <= max_int32) && (d >= min_int32));
+  }
+
 }
 
 #endif /* _SPUTILS_H_ */

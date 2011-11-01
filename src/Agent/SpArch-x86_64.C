@@ -7,6 +7,7 @@
 #include "SpContext.h"
 #include "SpSnippet.h"
 #include "SpPoint.h"
+#include "SpUtils.h"
 
 #include "Visitor.h"
 #include "BinaryFunction.h"
@@ -211,10 +212,8 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
   Dyninst::Address retaddr = (Dyninst::Address)p+5;
   size_t insnsize = 0;
   Dyninst::Address rel_addr = (callee - retaddr);
-  Dyninst::Address rel_addr_abs = (callee > retaddr) ?
-    (callee - retaddr) : (retaddr - callee);
 
-  if (rel_addr_abs <= 0x7fffffff) {
+  if (sp::is_disp32(rel_addr)) {
     *p++ = 0xe8;
     int* rel_p = (int*)p;
     *rel_p = rel_addr;
@@ -263,9 +262,8 @@ size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
 
   Dyninst::Address retaddr = (Dyninst::Address)p+5;
   Dyninst::Address rel_addr = (trg - retaddr);
-  Dyninst::Address rel_addr_abs = (trg > retaddr) ?
-    (trg - retaddr) : (retaddr - trg);
-  if (rel_addr_abs <= 0x7fffffff && !abs) {
+
+  if (sp::is_disp32(rel_addr) && !abs) {
     *p++ = 0xe9;
     int* rel_p = (int*)p;
     *rel_p = rel_addr;
@@ -380,26 +378,65 @@ class RelocVisitor : public Visitor {
     bool use_pc_;
 };
 
+using namespace Dyninst::InstructionAPI;
+static int* get_disp(Instruction::Ptr insn, char* insn_buf) {
+  int* disp = NULL;
+
+  /*
+    1. Instruction format
+    | REX prefix (1B) | Opcode (1~3B) | ModRM (1B) | SIB (1B) | Displacement | IMM |
+
+    2. REX prefix ( 1 bytes)
+    | 0100 | WRXB |
+
+    W: if 1, then in 64-bit operand size
+    R: concatenate w/ REG field in ModRM
+    X: if 1, then use SIB
+    B: concatenate w/ RM field in ModRM
+
+    3. ModRM (1 byte)
+    | Mod (2-bit) | REG (3-bit) | RM (3-bit)|
+
+    RM: e.g., 101 means disp32(%rip)
+    REG table:
+    | REG | name |        | REG  | name |
+    | 000 | rax  |        | 1000 | r8   |
+    | 001 | rcx  |        | 1001 | r9   |
+    | 010 | rdx  |        | 1010 | r10  |
+    | 011 | rbx  |        | 1011 | r11  |
+    | 100 | rsp  |        | 1100 | r12  |
+    | 101 | rbp  |        | 1101 | r13  |
+    | 110 | rsi  |        | 1110 | r14  |
+    | 111 | rdi  |        | 1111 | r15  |
+   */
+
+  // Get REX prefix, if it has one
+  char rex = 0;
+  int disp_offset = 2;
+  if (insn_buf[0] & 0x40) {
+    sp_debug("GOT REX prefix - %x", insn_buf[0]);
+    rex = insn_buf[0];
+    ++disp_offset;
+  }
+
+  disp = (int*)(insn_buf + disp_offset);
+
+  return disp;
+}
+
 size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
                              Dyninst::Address last,
                              char* buf) {
-  using namespace Dyninst::InstructionAPI;
   char* p = buf;
   Dyninst::Address a = i->first;
   Instruction::Ptr insn = i->second;
+
+  set<Expression::Ptr> opSet;
+  if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
+  else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
+
   bool use_pc = false;
-  set<Expression::Ptr> readSet;
-  insn->getMemoryReadOperands(readSet);
-  for (set<Expression::Ptr>::iterator i = readSet.begin(); i != readSet.end(); i++) {
-    sp_debug("check reads");
-    RelocVisitor visitor(context_->parser());
-    (*i)->apply(&visitor);
-    use_pc = visitor.use_pc();
-  }
-  set<Expression::Ptr> writeSet;
-  insn->getMemoryWriteOperands(writeSet);
-  for (set<Expression::Ptr>::iterator i = writeSet.begin(); i != writeSet.end(); i++) {
-    sp_debug("check writes");
+  for (set<Expression::Ptr>::iterator i = opSet.begin(); i != opSet.end(); i++) {
     RelocVisitor visitor(context_->parser());
     (*i)->apply(&visitor);
     use_pc = visitor.use_pc();
@@ -411,30 +448,30 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     sp_debug("USE PC");
     char insn_buf[20];
     memcpy(insn_buf, insn->ptr(), insn->size());
-    int* dis_buf = NULL;
-    if (readSet.size() > 0) {
-      dis_buf = (int*)&insn_buf[insn->size() - 4];
-    } else {
-      dis_buf = (int*)&insn_buf[2];
-    }
+    int* dis_buf = get_disp(insn, insn_buf);
+
     long old_rip = a;
     long new_rip = (long)p;
     long old_dis = *dis_buf;
-    *dis_buf += (int)(old_rip - new_rip);
-    int new1 = (int)*dis_buf;
-    sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d, %d",
-             old_rip, new_rip, old_dis, (old_rip-new_rip), new1, (old_rip-new_rip));
-    assert(((old_rip - new_rip) == new1) && "DISPLACEMENT >= 32-bit");
-    memcpy(p, insn_buf, insn->size());
-    return insn->size();
-
+    long long_new_dis = (old_rip - new_rip) + *dis_buf;
+    sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
+             old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
+    if (sp::is_disp32(long_new_dis)) {
+      *dis_buf = (int)long_new_dis;
+      memcpy(p, insn_buf, insn->size());
+      return insn->size();
+    } else {
+      sp_print("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
+               old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
+      assert(0 && "Not implemented");
     // TODO:
     //  if the displacement is too big, then we have to emulate that insn:
-    //   mov REG, disp(%rip)
+    //   XXX REG, disp(%rip)  || XXX disp(%rip), REG
     //   =>
     //   push REG' (REG' is different from REG)
-    //   mov REG (abs memory)
+    //   mov REG (abs memory) || XXX (abs memory), REG
     //   pop REG'
+    }
   } else {
     memcpy(p, insn->ptr(), insn->size());
     return insn->size();
