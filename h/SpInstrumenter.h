@@ -21,6 +21,7 @@ class JumpInstrumenter : public Dyninst::PatchAPI::Instrumenter {
                       sp::SpSnippet::ptr snip, Dyninst::Address ret_addr);
     bool install_spring(Dyninst::PatchAPI::PatchBlock* callblk, sp::SpSnippet::ptr snip,
                         Dyninst::Address ret_addr);
+    bool install_trap(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size);
 };
 
 }

@@ -33,6 +33,7 @@ class SpSnippet {
     SpContext* context() { return context_; }
     PayloadFunc head() { return head_; }
     PayloadFunc tail() { return tail_; }
+    Dyninst::PatchAPI::Point* point() const { return point_; }
 
     //string& orig_insn() { return orig_insn_; }
     Dyninst::InstructionAPI::Instruction::Ptr get_orig_call_insn() const { return orig_call_insn_;}
