@@ -4,7 +4,7 @@
 #include "PatchObject.h"
 #include "PatchMgr.h"
 #include <ucontext.h>
-#include <ext/hash_map>
+//#include <ext/hash_map>
 
 namespace sp {
 

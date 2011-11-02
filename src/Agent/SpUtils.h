@@ -36,15 +36,15 @@ namespace sp {
 
   void report_timer();
   inline bool is_disp32(long d) {
-    const long max_int32 = 2147483647;
-    const long min_int32 = (-2147483647-1);
-    sp_debug("%lx <= %lx (%d) and %lx >= %lx (%d)", d, max_int32, (d <= max_int32), d, min_int32, (d >= min_int32));
-    return ((d <= max_int32) && (d >= min_int32));
+    const long max_int32 = 2147483646;
+    const long min_int32 = -2147483647;
+    //sp_debug("%lx <= %lx (%d) and %lx >= %lx (%d)", d, max_int32, (d <= max_int32), d, min_int32, (d >= min_int32));
+    return ((d < max_int32) && (d >= min_int32));
   }
   inline bool is_disp8(long d) {
-    const long max_int8 = 128;
+    const long max_int8 = 127;
     const long min_int8 = -128;
-    return ((d <= max_int8) && (d >= min_int8));
+    return ((d < max_int8) && (d >= min_int8));
   }
 }
 

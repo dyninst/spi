@@ -1,7 +1,7 @@
 #ifndef SP_CONTEXT_H_
 #define SP_CONTEXT_H_
 
-#include <ext/hash_map>
+//#include <ext/hash_map>
 
 #include "SpCommon.h"
 #include "SpPayload.h"

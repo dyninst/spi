@@ -7,6 +7,7 @@
 #include "SpSnippet.h"
 #include "Visitor.h"
 #include "SpPoint.h"
+#include "SpUtils.h"
 
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::PatchBlock;
@@ -223,6 +224,7 @@ size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, siz
 }
 
 PatchBlock* SpSnippet::spring_blk() {
+#if 0
   if (spring_blk_) return spring_blk_;
 
   size_t min_springblk_size = jump_abs_size() * 2;
@@ -268,6 +270,91 @@ PatchBlock* SpSnippet::spring_blk() {
     } // for each block
     if (springblk) break;
   } // for each function
+
+  spring_blk_ = springblk;
+  return springblk;
+#endif
+
+  if (spring_blk_) return spring_blk_;
+
+  size_t min_springblk_size = jump_abs_size() * 2;
+  PatchBlock* callblk = point_->block();
+  long after_jmp = callblk->start() + 2; // short jump 2 bytes
+  bool done = false;
+
+  // Find a nearby block
+  PatchBlock* springblk = NULL;
+  Dyninst::PatchAPI::PatchObject* obj = callblk->obj();
+
+  using namespace Dyninst::ParseAPI;
+  CodeObject* co = obj->co();
+  CodeSource* cs = co->cs();
+  std::vector<CodeRegion*> regions = cs->regions();
+  sp_debug("REGION - %d regions found", regions.size());
+
+  // -128 <= b->start() + jump_abs_size() - after_jmp < 127
+  long upper = 127 + after_jmp - jump_abs_size();
+  long lower = -128 + after_jmp - jump_abs_size();
+  sp_debug("RANGE - upper: %lx, lower: %lx; jump from %lx", upper, lower, after_jmp);
+
+  for (int i = 0; i < regions.size(); i++) {
+    CodeRegion* cr = regions[i];
+    sp_debug("REGION %d - low: %lx, high: %lx", i, cr->low(), cr->high());
+    if ((lower <= cr->low() && cr->low() < upper) ||
+        (cr->low() <= lower && upper < cr->high()) ||
+        (lower <= cr->high() && cr->high() < upper)
+       ) {
+      // XXX: Not any method to iterate blocks in a region?
+      Dyninst::Address span_addr = lower;
+      do {
+        set<Block*> blks;
+        co->findBlocks(cr, span_addr, blks);
+        if (blks.size() == 0) {
+          ++span_addr;
+          continue;
+        }
+        Block* b;
+        for (set<Block*>::iterator bi = blks.begin(); bi != blks.end(); bi++) {
+          b = *bi;
+          sp_debug("BLK - low: %lx, high: %lx; callblock(%lx, %lx)",
+                   (*bi)->start(), (*bi)->end(), callblk->start(), callblk->end());
+        }
+        size_t rel = b->start() + jump_abs_size() - after_jmp;
+        if (!sp::is_disp8(rel)) {
+          sp_debug("TOO FAR AWAY");
+          span_addr = b->end();
+          continue;
+        }
+        size_t s = b->lastInsnAddr() - b->start();
+        if (s < min_springblk_size) {
+          sp_debug("TOO SMALL - %d < %d", s, min_springblk_size);
+          span_addr = b->end();
+          continue;
+        }
+        sp_debug("CANDIDATE - size %d, rel: %d", s, (long)rel);
+        PatchBlock* pb = obj->getBlock(b);
+        // For simplicity, we don't want call block
+        if (pb->containsCall()) {
+          sp_debug("HAS CALL");
+          span_addr = b->end();
+          continue;
+        }
+
+        // For simplicity, we don't relocate used spring block
+        if (context_->in_spring_set(pb)) {
+          sp_debug("ALREADY A SPRING BLK");
+          span_addr = b->end();
+          continue;
+        }
+        sp_debug("GOT IT");
+        springblk = pb;
+        context_->add_spring(pb);
+        done = true;
+        break;
+      } while (span_addr < upper);
+      if (done) break;
+    }
+  }
 
   spring_blk_ = springblk;
   return springblk;

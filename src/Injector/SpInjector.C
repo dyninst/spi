@@ -206,7 +206,7 @@ void SpInjector::invoke_ijagent() {
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(), pid_);
   }
-  Dyninst::Address ij_agent_addr = find_func("ij_agent");
+  Dyninst::Address ij_agent_addr = find_func((char*)"ij_agent");
   if (ij_agent_addr > 0) {
     sp_debug("FOUND - Address of ij_agent function at %lx", ij_agent_addr);
   }
@@ -241,7 +241,7 @@ void SpInjector::inject_internal(const char* lib_name) {
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
   // Find do_dlopen function
-  Dyninst::Address do_dlopen_addr = find_func("do_dlopen");
+  Dyninst::Address do_dlopen_addr = find_func((char*)"do_dlopen");
   if (do_dlopen_addr > 0) {
     sp_debug("FOUND - Address of do_dlopen function at %lx", do_dlopen_addr);
   }

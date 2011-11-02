@@ -73,7 +73,7 @@ bool JumpInstrumenter::run() {
         char* blob = (char*)sp_snip->buf();
         long rel_addr = (long)blob - (long)eip;
         // Save the original instruction, in case we want to restore it later
-	sp_snip->set_orig_call_insn(callinsn);
+        sp_snip->set_orig_call_insn(callinsn);
 
         //---------------------------------------------------------
         // Indirect call or call insn will be bigger than 5 bytes
@@ -82,13 +82,13 @@ bool JumpInstrumenter::run() {
 
           bool jump_abs = false;
           if (!sp::is_disp32(rel_addr)) jump_abs = true;
-	  sp_debug("INSTALL INDIRECT - ret_addr: %lx", ret_addr);
+          sp_debug("INSTALL INDIRECT - ret_addr: %lx", ret_addr);
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
           } else {
             sp_print("FAILED to use JUMP - TRY TO USE TRAP");
-	    //if (install_trap()) {
-	    //}
+            //if (install_trap()) {
+            //}
           }
         }
 
@@ -196,10 +196,13 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
   }
 
   sp_debug("blk_size: %d , limit: %d, at block: %lx", blk_size, limit, blk->start());
+ /* Uncomment this line
   if (blk_size >= limit) {
     sp_debug("RELOC BLK - jump");
     return install_jump(blk, insn, limit, snip, ret_addr);
   }
+  and this line to debug spring board technique*/
+
   sp_debug("small block - {");
   sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk_size).c_str());
   sp_debug("DUMP INSN - }");
