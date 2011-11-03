@@ -637,9 +637,6 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     return 0;
   } else if (use_pc) {
     // Deal with PC-sensitive instruction
-    //REMOVEME {
-    //return 0;
-    //}
 
     sp_debug("USE PC");
     char insn_buf[20];
@@ -654,27 +651,12 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
              old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
 
-    // REMOVEME{
-    /*
-    if (!sp::is_disp32(long_new_dis)) {
-      sp_debug("SHORTCUT, REMOVE FOR NOW");
-      size_t insn_size = emulate_pcsen(insn, opSet, a, p);
-      sp_debug("ORIGINAL %s", context_->parser()->dump_insn((void*)insn_buf, insn->size()).c_str());
-      sp_debug("DUMP REVERSE INSN (%d bytes) - {", insn_size);
-      sp_debug("%s", context_->parser()->dump_insn((void*)p, insn_size).c_str());
-      sp_debug("DUMP REVERSE INSN - }");
-      return -1;
-      // }
-      */
     if (sp::is_disp32(long_new_dis)) {
       // Easy case: just modify the displacement
       *dis_buf = (int)long_new_dis;
       memcpy(p, insn_buf, insn->size());
       return insn->size();
     } else {
-      // REMOVEME {
-      //      return -1;
-      // }
       // General purpose: emulate the instruction
       size_t insn_size = emulate_pcsen(insn, opSet, a, p);
       sp_debug("DUMP EMULATE INSN (%d bytes) - {", insn_size);
@@ -725,7 +707,6 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 
   // Check whether the call instruction uses RIP
   Dyninst::PatchAPI::PatchBlock* blk = point_->block();
-  //Instruction::Ptr insn = blk->getInsn(blk->last());
   Instruction::Ptr insn = get_orig_call_insn();
   CallInsnVisitor visitor(context_->parser());
   Expression::Ptr trg = insn->getControlFlowTarget();
@@ -733,6 +714,8 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
     trg->apply(&visitor);
     use_pc = visitor.use_pc();
   }
+  set<Expression::Ptr> opSet;
+  opSet.insert(trg);
 
   if (!use_pc) {
     sp_debug("Emit orig call");
@@ -745,9 +728,40 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
     //return 0;
     //}
     sp_debug("Emit RIP call");
+    /* REMOVEME
     before_call_orig_ = offset;
-    memset(p, 0x90, 12);
-    p += 12; // reserve 12 bytes for future fixup
+    size_t approx_size = 50;
+    memset(p, 0x90, approx_size);
+    p += approx_size; // reserve approx_size bytes for future fixup
+    REMOVEME */
+    char insn_buf[20];
+    bool use_rax = false;
+    memcpy(insn_buf, insn->ptr(), insn->size());
+    int* dis_buf = get_disp(insn, insn_buf);
+
+    long old_rip = (long)point_->block()->last();
+    long new_rip = (long)p;
+    long old_dis = *dis_buf;
+    long long_new_dis = (old_rip - new_rip) + *dis_buf;
+    sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
+             old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
+
+    if (sp::is_disp32(long_new_dis)) {
+      // Easy case: just modify the displacement
+      *dis_buf = (int)long_new_dis;
+      memcpy(p, insn_buf, insn->size());
+      sp_debug("DUMP SHORTCUT INSN (%d bytes) - {", insn->size());
+       sp_debug("%s", context_->parser()->dump_insn((void*)p, insn->size()).c_str());
+      sp_debug("DUMP SHORTCUT INSN - }");
+       return insn->size();
+    } else {
+      // General purpose: emulate the instruction
+      size_t insn_size = emulate_pcsen(insn, opSet, point_->block()->last(), p);
+      sp_debug("DUMP EMULATE INSN (%d bytes) - {", insn_size);
+      sp_debug("%s", context_->parser()->dump_insn((void*)p, insn_size).c_str());
+      sp_debug("DUMP EMULATE INSN - }");
+      return insn_size;
+    }
   }
   return (p - (buf + offset));
 }

@@ -61,9 +61,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     PatchBlock* blk = NULL;
     blk = point_->block();
     insnsize = reloc_block(blk, blob_, offset);
-    // REMOVEME {
-    //if (insnsize==-1) return NULL;
-    // }
     offset += insnsize;
   }
 
@@ -160,7 +157,11 @@ void SpSnippet::fixup(PatchFunction* f) {
   sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
   sp_debug("DUMP INSN - }");
 
-  if (!f) return;
+  assert(f);
+  if (!f) {
+    sp_print("NULL FUNCTION?!");
+    return;
+  }
   func_ = f;
 
   size_t offset = before_call_orig_;
@@ -210,9 +211,6 @@ size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, siz
     sp_debug("RELOC INSN - %lx : %s", a, context_->parser()->dump_insn((void*)a, insn->size()).c_str());
 
     insnsize = reloc_insn(i, call_addr, p);
-    // REMOVEME {
-    //if (insnsize == -1) return -1;
-    // }
     p += insnsize;
   }
 

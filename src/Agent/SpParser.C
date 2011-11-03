@@ -439,16 +439,23 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
       call_addr = visitor.call_addr();
       sp_debug("INDIRECT - to %lx", call_addr);
       f = findFunction(call_addr);
+      //f = findFunction(f->name().c_str());
       if (f) {
         spt->set_callee(f);
+	/*REMOVEME
         if (visitor.use_pc()) {
           // assert(0 && "Not implemented");
           spt->snip()->fixup(f);
         }
+	REMOVEME*/
         return f;
       }
     }
     sp_print("CANNOT RESOLVE ADDR %lx, SKIP", call_addr);
+    sp_print("DUMP Unresolve CALL INSN (%d bytes) - {", insn->size());
+    sp_print("%s", g_context->parser()->dump_insn((void*)insn->ptr(), insn->size()).c_str());
+    sp_print("DUMP Unresolve CALL INSN - }");
+
     return NULL;
   }
 

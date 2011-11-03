@@ -123,7 +123,7 @@ bool JumpInstrumenter::run() {
             spt->set_instrumented(true);
           } else {
             // REMOVEME{
-            //continue;
+            // continue;
             // }
             sp_print("FAILED to use JUMP - TRY TO USE TRAP");
 
@@ -179,11 +179,11 @@ bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blo
   char* p = jump;
   *p++ = 0xe9;
   long* lp = (long*)p;
-  /*
-  sp_print("before install");
-  sp_print("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
-  sp_print("DUMP INSN - }");
-  */
+
+  sp_debug("before install");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
   // Build the jump instruction
   Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
@@ -210,11 +210,11 @@ bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blo
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
-  /*
-  sp_print("after install");
-  sp_print("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
-  sp_print("DUMP INSN - }");
-*/
+
+  sp_debug("after install {");
+  sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
+  sp_debug("DUMP INSN - }");
+
   return true;
 }
 
@@ -262,7 +262,7 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
   //and this line to debug spring board technique*/
 
   // REMOVEME{
-  //return false;
+  // return false;
   // }
   sp_debug("small block - {");
   sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk_size).c_str());
