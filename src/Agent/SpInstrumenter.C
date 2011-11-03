@@ -122,6 +122,9 @@ bool JumpInstrumenter::run() {
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
           } else {
+            // REMOVEME{
+            //continue;
+            // }
             sp_print("FAILED to use JUMP - TRY TO USE TRAP");
 
             //---------------------------------------------------------
@@ -136,6 +139,10 @@ bool JumpInstrumenter::run() {
 
             g_inst_map[eip] = sp_snip;
             blob = sp_snip->blob(ret_addr);
+	  // REMOVEME {
+	    //	  if (!blob) return false;
+	  // }
+
             if (install_trap(pt, blob, sp_snip->size())) {
               spt->set_instrumented(true);
             } else {
@@ -149,7 +156,6 @@ bool JumpInstrumenter::run() {
         //---------------------------------------------------------
         else {
           blob = sp_snip->blob(ret_addr);
-
           // Install the blob to pt
           if (install_direct(pt, blob, sp_snip->size())) {
             spt->set_instrumented(true);
@@ -255,6 +261,9 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
   }
   //and this line to debug spring board technique*/
 
+  // REMOVEME{
+  //return false;
+  // }
   sp_debug("small block - {");
   sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk_size).c_str());
   sp_debug("DUMP INSN - }");
@@ -274,6 +283,10 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   // Build blob & change the permission of snippet
   sp_debug("INSTALL JUMP - ret_addr: %lx", ret_addr);
   char* blob = snip->blob(ret_addr, /*reloc=*/true);
+  // REMOVEME {
+  //if (!blob) return false;
+  // }
+
   Dyninst::PatchAPI::PatchObject* obj = blk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;

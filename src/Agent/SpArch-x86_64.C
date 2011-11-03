@@ -378,13 +378,9 @@ class RelocVisitor : public Visitor {
     bool use_pc_;
 };
 
-using namespace Dyninst::InstructionAPI;
-static int* get_disp(Instruction::Ptr insn, char* insn_buf, bool* use_rax) {
-  int* disp = NULL;
-
   /*
     1. Instruction format
-    | REX prefix (1B) | Opcode (1~3B) | ModRM (1B) | SIB (1B) | Displacement | IMM |
+    | REX prefix (1B) | ESCAPE (1B) | Opcode (1~3B) | ModRM (1B) | SIB (1B) | Displacement | IMM |
 
     2. REX prefix ( 1 bytes)
     | 0100 | WRXB |
@@ -409,20 +405,30 @@ static int* get_disp(Instruction::Ptr insn, char* insn_buf, bool* use_rax) {
     | 110 | rsi  |        | 1110 | r14  |
     | 111 | rdi  |        | 1111 | r15  |
    */
+using namespace Dyninst::InstructionAPI;
+static int* get_disp(Instruction::Ptr insn, char* insn_buf) {
+  int* disp = NULL;
 
-  // Get REX prefix, if it has one
-  char rex = 0;
-  int disp_offset = 2;
-  if ((insn_buf[0] & 0xf0) == 0x40) {
-    sp_debug("GOT REX prefix - %x", insn_buf[0]);
-    rex = insn_buf[0];
+  int disp_offset = 0;
+  // Any REX?
+  if ((insn_buf[disp_offset] & 0xf0) == 0x40) {
+    sp_debug("GOT REX prefix - %x", insn_buf[disp_offset]);
     ++disp_offset;
   }
 
-  *use_rax = false;
+  // Any ESCAPE?
+  if (insn_buf[disp_offset] == 0x0f) {
+    sp_debug("GOT REX prefix - %x", insn_buf[disp_offset]);
+    ++disp_offset;
+  }
 
-  disp = (int*)(insn_buf + disp_offset);
+  // OPCODE
+  ++disp_offset;
 
+  // MODRM
+  ++disp_offset;
+
+  disp = (int*)&insn_buf[disp_offset];
   return disp;
 }
 
@@ -514,6 +520,13 @@ static size_t emulate_pcsen(Instruction::Ptr insn, set<Expression::Ptr>& e,
     ++modrm_offset;
   }
 
+  char escape = 0;
+  if (insn_buf[modrm_offset-1] == 0x0f) {
+    sp_debug("GOT 0x0f");
+    escape = 0x0f;
+    ++modrm_offset;
+  }
+
   // Get ModRM
   char modrm = insn_buf[modrm_offset];
 
@@ -564,6 +577,11 @@ static size_t emulate_pcsen(Instruction::Ptr insn, set<Expression::Ptr>& e,
   } else {
     *p++ = 0x41;  // If original no rex, then default it to be 32-bit thing
   }
+  // Copy 0x0f
+  if (escape) {
+    *p++ = 0x0f;
+  }
+
   // Copy opcode
   *p++ = insn_buf[modrm_offset-1];
   char new_modrm = modrm;
@@ -619,11 +637,15 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     return 0;
   } else if (use_pc) {
     // Deal with PC-sensitive instruction
+    //REMOVEME {
+    //return 0;
+    //}
+
     sp_debug("USE PC");
     char insn_buf[20];
     bool use_rax = false;
     memcpy(insn_buf, insn->ptr(), insn->size());
-    int* dis_buf = get_disp(insn, insn_buf, &use_rax);
+    int* dis_buf = get_disp(insn, insn_buf);
 
     long old_rip = a;
     long new_rip = (long)p;
@@ -632,12 +654,27 @@ size_t SpSnippet::reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
     sp_debug("old_rip: %lx, new_rip: %lx, old_dis: %lx, new_dis: %lx, %d",
              old_rip, new_rip, old_dis, long_new_dis, long_new_dis);
 
+    // REMOVEME{
+    /*
+    if (!sp::is_disp32(long_new_dis)) {
+      sp_debug("SHORTCUT, REMOVE FOR NOW");
+      size_t insn_size = emulate_pcsen(insn, opSet, a, p);
+      sp_debug("ORIGINAL %s", context_->parser()->dump_insn((void*)insn_buf, insn->size()).c_str());
+      sp_debug("DUMP REVERSE INSN (%d bytes) - {", insn_size);
+      sp_debug("%s", context_->parser()->dump_insn((void*)p, insn_size).c_str());
+      sp_debug("DUMP REVERSE INSN - }");
+      return -1;
+      // }
+      */
     if (sp::is_disp32(long_new_dis)) {
       // Easy case: just modify the displacement
       *dis_buf = (int)long_new_dis;
       memcpy(p, insn_buf, insn->size());
       return insn->size();
     } else {
+      // REMOVEME {
+      //      return -1;
+      // }
       // General purpose: emulate the instruction
       size_t insn_size = emulate_pcsen(insn, opSet, a, p);
       sp_debug("DUMP EMULATE INSN (%d bytes) - {", insn_size);
@@ -704,6 +741,9 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
       *p++ = psrc[i];
   } else {
     // assert(0 && "RIP-sensitive call");
+    //REMOVEME {
+    //return 0;
+    //}
     sp_debug("Emit RIP call");
     before_call_orig_ = offset;
     memset(p, 0x90, 12);

@@ -31,19 +31,6 @@ SpSnippet::~SpSnippet() {
   free(blob_);
 }
 
-  /*
-size_t SpSnippet::emit_call_orig(long src, size_t size,
-                                 char* buf, size_t offset) {
-  char* p = buf + offset;
-  char* psrc = (char*)src;
-
-  for (size_t i = 0; i < size; i++)
-    *p++ = psrc[i];
-
-  return (p - (buf + offset));
-}
-  */
-
 /* The generated code:
    1. Save context
    2. Pass parameter to head payload
@@ -74,6 +61,9 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     PatchBlock* blk = NULL;
     blk = point_->block();
     insnsize = reloc_block(blk, blob_, offset);
+    // REMOVEME {
+    //if (insnsize==-1) return NULL;
+    // }
     offset += insnsize;
   }
 
@@ -125,6 +115,9 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     insnsize = emit_call_orig((long)orig_call_insn_->ptr(),
                               orig_call_insn_->size(), blob_, offset,
                               /*tail call?*/(ret_addr == 0));
+    // REMOVEME {
+    //if (!insnsize) return NULL;
+    //}
   }
 
   offset += insnsize;
@@ -217,6 +210,9 @@ size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, siz
     sp_debug("RELOC INSN - %lx : %s", a, context_->parser()->dump_insn((void*)a, insn->size()).c_str());
 
     insnsize = reloc_insn(i, call_addr, p);
+    // REMOVEME {
+    //if (insnsize == -1) return -1;
+    // }
     p += insnsize;
   }
 

@@ -90,7 +90,7 @@ export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
 
 #time LD_PRELOAD="./$AGENT_NAME" /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 200.i
 
-time /scratch/wenbin/linux/gcc/out/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 200.i
+time /scratch/wenbin/software/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 200.i
 
 #echo 75; time $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
 #echo 75; time LD_PRELOAD="./$AGENT_NAME" $BIN/sort /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/src/Agent/*.C
