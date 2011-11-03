@@ -201,17 +201,21 @@ PatchFunction* SpParser::findFunction(Dyninst::Address addr) {
     if (!lower_bound) lower_bound = sym->getLoadOffset();
     Dyninst::Address upper_bound = lower_bound + cs->length();
 
+    //sp_print("lower_bound: %lx, upper_bound: %lx, addr: %lx", lower_bound, upper_bound, addr);
     if (addr >= lower_bound && addr <= upper_bound) {
       Dyninst::Address address = addr;
       Dyninst::SymtabAPI::Function* f;
       if (!sym->getContainingFunction(address, f)) {
         address -= lower_bound;
       }
+      //sp_print("Address: %lx",address);
       for (std::vector<CodeRegion*>::const_iterator ri = cs->regions().begin();
            ri != cs->regions().end(); ri++) {
         std::set<Dyninst::ParseAPI::Function*> funcs;
         obj->co()->findFuncs(*ri, address, funcs);
+	//sp_print("funcs: %d",funcs.size());
         if (funcs.size() > 0) {
+	  //sp_print("funcs.size > 0");
           PatchFunction* pfunc = obj->getFunc(*funcs.begin());
           return pfunc;
         }
@@ -325,15 +329,21 @@ public:
   virtual void visit(RegisterAST* r) {
     if (p_->is_pc(r->getID())) {
       use_pc_ = true;
+      //      call_addr_ = pt_->block()->end();
+      //sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
+      //call_addr_ = spt->snip()->reloc_rip();
+      //call_addr_ = (Dyninst::Address)spt->snip()->reloc_rip();
       call_addr_ = pt_->block()->end();
+      //sp_print("RELOC RIP - %lx", call_addr_);
     } else {
       // Non-pc case, x86-32 always goes this way
       sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
       Dyninst::Address rval = p_->get_saved_reg(r->getID(), *spt->saved_context_ptr(),
                                                 p_->sp_offset());
+      //sp_print("SP_OFFSET: %d", p_->sp_offset());
       call_addr_ = rval;
     }
-    sp_debug("VISIT REG - %s, push %lx", r->getID().name().c_str(), call_addr_);
+    //sp_print("VISIT REG - %s, push %lx", r->getID().name().c_str(), call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(BinaryFunction* b) {
@@ -349,7 +359,7 @@ public:
     } else {
       assert(0);
     }
-    sp_debug("VISIT OP - push %lx", call_addr_);
+    //sp_print("VISIT OP - push %lx", call_addr_);
 
     stack_.push(call_addr_);
   }
@@ -373,15 +383,15 @@ public:
       break;
     }
     }
-    sp_debug("VISIT IMM - push %lx", call_addr_);
+    //sp_print("VISIT IMM %d - push %lx", res.size(), call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(Dereference* d) {
     Dyninst::Address* addr = (Dyninst::Address*)stack_.top();
     stack_.pop();
-    sp_debug("DEREFERENCING - at %lx", (long)addr);
+    //sp_print("DEREFERENCING - at %lx", (long)addr);
     call_addr_ = *addr;
-    sp_debug("VISIT DEF - push %lx", call_addr_);
+    //sp_print("VISIT DEF - push %lx", call_addr_);
     stack_.push(call_addr_);
   }
 
@@ -429,6 +439,7 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     PatchBlock* blk = pt->block();
     //Instruction::Ptr insn = blk->getInsn(blk->last());
     Instruction::Ptr insn = spt->snip()->get_orig_call_insn();
+    //Instruction::Ptr insn = spt->snip()->get_reloc_call_insn();
     sp_debug("CALL INSN SIZE - %d", insn->size());
     Expression::Ptr trg = insn->getControlFlowTarget();
     Dyninst::Address call_addr = 0;
@@ -451,11 +462,25 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
         return f;
       }
     }
-    sp_print("CANNOT RESOLVE ADDR %lx, SKIP", call_addr);
-    sp_print("DUMP Unresolve CALL INSN (%d bytes) - {", insn->size());
-    sp_print("%s", g_context->parser()->dump_insn((void*)insn->ptr(), insn->size()).c_str());
-    sp_print("DUMP Unresolve CALL INSN - }");
 
+    sp_print("CANNOT RESOLVE ADDR %lx, SKIP for blob %lx", call_addr, spt->snip()->buf());
+    /*
+    sp_print("DUMP blob - {");
+    sp_print("%s", g_context->parser()->dump_insn((void*)spt->snip()->buf(), spt->snip()->size()).c_str());
+    sp_print("DUMP - }");
+
+    sp_print("DUMP original block - {");
+    sp_print("%s", g_context->parser()->dump_insn((void*)spt->block()->start(), spt->block()->end() - spt->block()->start()).c_str());
+    sp_print("DUMP - }");
+
+    sp_print("DUMP Unresolve orig CALL INSN (%d bytes) - {", insn->size());
+    sp_print("%s", g_context->parser()->dump_insn((void*)spt->snip()->reloc_rip(), insn->size()).c_str());
+    sp_print("DUMP Unresolve CALL INSN - }");
+    sp_print("DUMP Unresolve reloc CALL INSN (%d bytes) - {", insn->size());
+    sp_print("%s", g_context->parser()->dump_insn((void*)spt->snip()->get_reloc_call_insn()->ptr(), 
+                   spt->snip()->get_reloc_call_insn()->size()).c_str());
+    sp_print("DUMP Unresolve CALL INSN - }");
+    */
     return NULL;
   }
 

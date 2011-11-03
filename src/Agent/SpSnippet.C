@@ -68,7 +68,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   insnsize = emit_save(blob_, offset, reloc);
   offset += insnsize;
   sp_debug("func_: %lx", func_);
-  if (!func_) {
+  if (!func_||reloc) {
     sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
     long* l = spt->saved_context_ptr();
     insnsize = emit_save_sp((long)l, blob_, offset);
@@ -379,5 +379,21 @@ char* SpSnippet::spring(Dyninst::Address ret_addr) {
   return spring_;
 }
 
+/*
+void SpSnippet::set_reloc_call_insn(char* p, size_t size) {
+  using namespace Dyninst::InstructionAPI;
+  InstructionDecoder deco(p,
+                          size,
+                          point_->block()->obj()->co()->cs()->getArch());
+  Instruction::Ptr insn = deco.decode();
+  assert(insn);
+  sp_print("Addr: %lx", p);
+  sp_print("DUMP RELOC CALL INSN (%d bytes)- {", insn->size());
+  sp_print("%s", context_->parser()->dump_insn((void*)p, size).c_str());
+  sp_print("DUMP INSN - }");
+  reloc_rip_ = (long)p;
+  reloc_call_insn_ = insn;
+}
+*/
 
 }

@@ -37,6 +37,7 @@ class SpSnippet {
 
     //string& orig_insn() { return orig_insn_; }
     Dyninst::InstructionAPI::Instruction::Ptr get_orig_call_insn() const { return orig_call_insn_;}
+    //Dyninst::InstructionAPI::Instruction::Ptr get_reloc_call_insn() const { return reloc_call_insn_;}
     void set_orig_call_insn(Dyninst::InstructionAPI::Instruction::Ptr i) {orig_call_insn_ = i;}
     string& orig_blk() { return orig_blk_; }
     string& orig_spring_blk() { return orig_spring_blk_; }
@@ -44,7 +45,7 @@ class SpSnippet {
 
     Dyninst::PatchAPI::PatchFunction* func() { return func_; }
     Dyninst::Address buf() const { return (Dyninst::Address)blob_; }
-
+    //long reloc_rip() const { return reloc_rip_;}
     static void dump_context(ucontext_t* context);
     static Dyninst::Address get_pre_signal_pc(void* context);
     static Dyninst::Address set_pc(Dyninst::Address pc, void* context);
@@ -68,6 +69,8 @@ class SpSnippet {
     size_t spring_size_;
     Dyninst::PatchAPI::PatchBlock* spring_blk_;
     Dyninst::InstructionAPI::Instruction::Ptr orig_call_insn_;
+    //Dyninst::InstructionAPI::Instruction::Ptr reloc_call_insn_;
+    //long reloc_rip_;
 
     // A bunch of code generation interfaces
     static size_t emit_save(char* buf, size_t offset, bool indirect=false);
@@ -84,7 +87,7 @@ class SpSnippet {
     size_t reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, size_t offset);
     size_t reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
                       Dyninst::Address last, char* p);
-
+    //void set_reloc_call_insn(char* p, size_t size);
 };
 
 }

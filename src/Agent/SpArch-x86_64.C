@@ -720,6 +720,7 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
   if (!use_pc) {
     sp_debug("Emit orig call");
     // If not using RIP, then copy the instruction
+    //set_reloc_call_insn(psrc, size);
     for (size_t i = 0; i < size; i++)
       *p++ = psrc[i];
   } else {
@@ -750,17 +751,23 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
       // Easy case: just modify the displacement
       *dis_buf = (int)long_new_dis;
       memcpy(p, insn_buf, insn->size());
+      //set_reloc_call_insn(p, insn->size());
+      // reloc_rip_ = (long)p;// + insn->size();
       sp_debug("DUMP SHORTCUT INSN (%d bytes) - {", insn->size());
-       sp_debug("%s", context_->parser()->dump_insn((void*)p, insn->size()).c_str());
+      sp_debug("%s", context_->parser()->dump_insn((void*)p, insn->size()).c_str());
       sp_debug("DUMP SHORTCUT INSN - }");
-       return insn->size();
+      //return insn->size();
+      p += insn->size();
     } else {
       // General purpose: emulate the instruction
       size_t insn_size = emulate_pcsen(insn, opSet, point_->block()->last(), p);
+      //set_reloc_call_insn((p+12), (insn->size()-12-2));
+      //reloc_rip_ = (long)p;// + (insn->size() - 2);
       sp_debug("DUMP EMULATE INSN (%d bytes) - {", insn_size);
       sp_debug("%s", context_->parser()->dump_insn((void*)p, insn_size).c_str());
       sp_debug("DUMP EMULATE INSN - }");
-      return insn_size;
+      //return insn_size;
+      p+=insn_size;
     }
   }
   return (p - (buf + offset));
