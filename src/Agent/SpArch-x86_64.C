@@ -26,9 +26,25 @@ namespace sp {
 size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
   char* p = buf + offset;
 
+  // Saved for direct/indirect call
+  *p++ = 0x57; // push rdi
+  *p++ = 0x56; // push rsi
+  *p++ = 0x52; // push rdx
+  *p++ = 0x51; // push rcx
+  *p++ = 0x41; // r8
+  *p++ = 0x50;
+  *p++ = 0x41; // r9
+  *p++ = 0x51;
+  *p++ = 0x50; // %rax
+
+  sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
+  long* l = spt->saved_context_ptr();
+  size_t insnsize = emit_save_sp((long)l, p, 0);
+  p += insnsize;
+
   // Saved for indirect call
   if (indirect) {
-    *p++ = 0x54; // push rsp
+    // *p++ = 0x54; // push rsp
     *p++ = 0x41; // push r10 -- unused in C
     *p++ = 0x52;
     *p++ = 0x41; // push r11 -- for linker
@@ -45,16 +61,7 @@ size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
     *p++ = 0x55; // push rbp
   }
 
-  // Saved for direct/indirect call
-  *p++ = 0x57; // push rdi
-  *p++ = 0x56; // push rsi
-  *p++ = 0x52; // push rdx
-  *p++ = 0x51; // push rcx
-  *p++ = 0x41; // r8
-  *p++ = 0x50;
-  *p++ = 0x41; // r9
-  *p++ = 0x51;
-  *p++ = 0x50; // %rax
+
 
   return (p - (buf + offset));
 }
@@ -62,17 +69,6 @@ size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
 // Restore context after calling payload
 size_t SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
   char* p = buf + offset;
-
-  // Restored for direct/indirect call
-  *p++ = 0x58; // pop rax
-  *p++ = 0x41; // pop r9
-  *p++ = 0x59;
-  *p++ = 0x41; // pop r8
-  *p++ = 0x58;
-  *p++ = 0x59; // pop rcx
-  *p++ = 0x5a; // pop rdx
-  *p++ = 0x5e; // pop rsi
-  *p++ = 0x5f; // pop rdi
 
   // Restored for indirect call
   if (indirect) {
@@ -90,8 +86,21 @@ size_t SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
     *p++ = 0x5b;
     *p++ = 0x41; // r10
     *p++ = 0x5a;
-    *p++ = 0x5c; // pop rsp
+    // *p++ = 0x5c; // pop rsp
   }
+
+  // Restored for direct/indirect call
+  *p++ = 0x58; // pop rax
+  *p++ = 0x41; // pop r9
+  *p++ = 0x59;
+  *p++ = 0x41; // pop r8
+  *p++ = 0x58;
+  *p++ = 0x59; // pop rcx
+  *p++ = 0x5a; // pop rdx
+  *p++ = 0x5e; // pop rsi
+  *p++ = 0x5f; // pop rdi
+
+
   return (p - (buf + offset));
 }
 
@@ -241,7 +250,7 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
                                          Dyninst::Address sp,
                                          size_t offset) {
   //sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
-
+  /*
   const int RAX = 0+offset;
   const int R9  = 8+offset;
   const int R8  = 16+offset;
@@ -258,6 +267,24 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   const int R11 = 104+offset;
   const int R10 = 112+offset;
   const int RSP = 120+offset;
+  */
+
+#define RAX (0)
+#define R9 (8)
+#define R8 (16)
+#define RCX (24)
+#define RDX (32)
+#define RSI (40)
+#define RDI (48)
+
+#define R10 (-8)
+#define R11 (-16)
+#define RBX (-24)
+#define R12 (-32)
+#define R13 (-40)
+#define R14 (-48)
+#define R15 (-56)
+#define RBP (-64)
 
 #define reg_val(i) (*(long*)(sp+(i)))
   /*
@@ -281,7 +308,7 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   if (reg == r13) return reg_val(R13);
   if (reg == r14) return reg_val(R14);
   if (reg == r15) return reg_val(R15);
-  if (reg == rsp) return reg_val(RSP);
+  if (reg == rsp) return (sp+RDI+8);
   if (reg == rbp) return reg_val(RBP);
 
   if (reg == eax) return reg_val(RAX);
@@ -290,7 +317,7 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   if (reg == edx) return reg_val(RDX);
   if (reg == esi) return reg_val(RSI);
   if (reg == edi) return reg_val(RDI);
-  if (reg == esp) return reg_val(RSP);
+  if (reg == esp) return (sp+RDI+8);
   if (reg == ebp) return reg_val(RBP);
 
   //sp_print("Cannot find register %s", reg.name().c_str());

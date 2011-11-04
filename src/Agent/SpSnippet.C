@@ -61,12 +61,8 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   insnsize = emit_save(blob_, offset, reloc);
   offset += insnsize;
   //sp_debug("func_: %lx", func_);
-  if (!func_||reloc) {
-    sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
-    long* l = spt->saved_context_ptr();
-    insnsize = emit_save_sp((long)l, blob_, offset);
-    offset += insnsize;
-  }
+  //  if (!func_||reloc) {
+  //  }
 
   //-------------------------------------------
   // 3. Pass parameter

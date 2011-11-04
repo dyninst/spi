@@ -7,6 +7,7 @@
 #include "SpContext.h"
 #include "SpSnippet.h"
 #include "SpUtils.h"
+#include "SpPoint.h"
 
 namespace sp {
 
@@ -18,6 +19,12 @@ namespace sp {
 size_t SpSnippet::emit_save(char* buf, size_t offset, bool) {
   char* p = buf + offset;
   *p++ = 0x60; // pusha
+
+  sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
+  long* l = spt->saved_context_ptr();
+  size_t insnsize = emit_save_sp((long)l, p, 0);
+  p += insnsize;
+
   return (p - (buf + offset));
 }
 
