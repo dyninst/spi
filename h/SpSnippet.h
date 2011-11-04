@@ -9,6 +9,7 @@
 namespace sp {
 
 class SpSnippet {
+  friend class JumpInstrumenter;
   public:
     typedef dyn_detail::boost::shared_ptr<SpSnippet> ptr;
     static ptr create(Dyninst::PatchAPI::PatchFunction* f,
@@ -24,33 +25,41 @@ class SpSnippet {
               PayloadFunc head, PayloadFunc tail);
     ~SpSnippet();
 
+    // Return the pointer to blob, but blob is empty
+    Dyninst::Address buf() const { return (Dyninst::Address)blob_; }
+
+    // Return the pointer to blob, and fill the blob
     char* blob(Dyninst::Address ret_addr, bool reloc = false,  bool spring = false);
+
+    // Return the pointer to spring, and fill in spring
     char* spring(Dyninst::Address ret_addr);
-    void fixup(Dyninst::PatchAPI::PatchFunction* f);  // for call imm(rip)
 
-    size_t size() { return blob_size_; }
-    size_t spring_size() {return spring_size_; }
-    SpContext* context() { return context_; }
-    PayloadFunc head() { return head_; }
-    PayloadFunc tail() { return tail_; }
+    // blob size
+    size_t size() const { return blob_size_; }
+
+    // spring block size
+    size_t spring_size() const {return spring_size_; }
+
+    // Some getters
+    SpContext* context() const { return context_; }
+    PayloadFunc head() const { return head_; }
+    PayloadFunc tail() const { return tail_; }
     Dyninst::PatchAPI::Point* point() const { return point_; }
+    Dyninst::PatchAPI::PatchFunction* func() const { return func_; }
 
-    //string& orig_insn() { return orig_insn_; }
     Dyninst::InstructionAPI::Instruction::Ptr get_orig_call_insn() const { return orig_call_insn_;}
-    //Dyninst::InstructionAPI::Instruction::Ptr get_reloc_call_insn() const { return reloc_call_insn_;}
     void set_orig_call_insn(Dyninst::InstructionAPI::Instruction::Ptr i) {orig_call_insn_ = i;}
+
     string& orig_blk() { return orig_blk_; }
     string& orig_spring_blk() { return orig_spring_blk_; }
+
+    // Find and return a spring block; if not found, return NULL
     Dyninst::PatchAPI::PatchBlock* spring_blk();
 
-    Dyninst::PatchAPI::PatchFunction* func() { return func_; }
-    Dyninst::Address buf() const { return (Dyninst::Address)blob_; }
-    //long reloc_rip() const { return reloc_rip_;}
-    static void dump_context(ucontext_t* context);
+
     static Dyninst::Address get_pre_signal_pc(void* context);
     static Dyninst::Address set_pc(Dyninst::Address pc, void* context);
     static size_t jump_abs_size();
-    static size_t emit_jump_abs(long trg, char* buf, size_t offset, bool abs = false);
 
   protected:
     Dyninst::PatchAPI::PatchFunction* func_;
@@ -58,36 +67,46 @@ class SpSnippet {
     SpContext* context_;
     PayloadFunc head_;
     PayloadFunc tail_;
-    //string orig_insn_;
-    string orig_blk_;
-    string orig_spring_blk_;
+
+    // Blob things
     char* blob_;
     size_t blob_size_;
-    size_t before_call_orig_;
+
     Dyninst::Address ret_addr_;
+
+    // Spring block things
     char* spring_;
     size_t spring_size_;
+    string orig_blk_;
+    string orig_spring_blk_;
     Dyninst::PatchAPI::PatchBlock* spring_blk_;
+
     Dyninst::InstructionAPI::Instruction::Ptr orig_call_insn_;
-    //Dyninst::InstructionAPI::Instruction::Ptr reloc_call_insn_;
-    //long reloc_rip_;
+    // TODO(wenbin): 
+    // Instruction::Ptr orig_call_insn_
+    // size_t orig_call_size_
+    // Address orig_call_addr_
+    // Address orig_call_pc_ 
 
     // A bunch of code generation interfaces
-    static size_t emit_save(char* buf, size_t offset, bool indirect=false);
-    static size_t emit_restore( char* buf, size_t offset, bool indirect=false);
-    static size_t emit_fault(char* buf, size_t offset);
-    static size_t emit_pass_param(long point, char* buf, size_t offset);
+    size_t emit_save(char* buf, size_t offset, bool indirect=false);
+    size_t emit_restore( char* buf, size_t offset, bool indirect=false);
+    size_t emit_fault(char* buf, size_t offset);
+    size_t emit_pass_param(long point, char* buf, size_t offset);
     size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
-    static size_t emit_ret(char* buf, size_t offset);
-    static size_t emit_call_jump(long callee, char* buf, size_t offset);
-    size_t emit_call_orig(long src, size_t size, char* buf, size_t offset,bool tail);
-    static size_t emit_save_sp(long loc, char* buf, size_t offset);
+    size_t emit_call_orig(long src, size_t size, char* buf, size_t offset);
+    size_t emit_save_sp(long loc, char* buf, size_t offset);
+    size_t emit_jump_abs(long trg, char* buf, size_t offset, bool abs = false);
 
     // relocate
-    size_t reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, size_t offset);
-    size_t reloc_insn(Dyninst::PatchAPI::PatchBlock::Insns::iterator i,
-                      Dyninst::Address last, char* p);
-    //void set_reloc_call_insn(char* p, size_t size);
+    size_t reloc_block(Dyninst::PatchAPI::PatchBlock* blk,
+                       char* buf,
+                       size_t offset);
+    size_t reloc_insn(Dyninst::Address src_insn,
+                      Dyninst::InstructionAPI::Instruction::Ptr insn,
+                      Dyninst::Address last,
+                      char* buf);
+
 };
 
 }

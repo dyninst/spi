@@ -11,11 +11,12 @@
 
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::PatchBlock;
+using Dyninst::PatchAPI::Point;
 
 namespace sp {
 
-SpSnippet::SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
-                     Dyninst::PatchAPI::Point* pt,
+SpSnippet::SpSnippet(PatchFunction* f,
+                     Point* pt,
                      SpContext* c,
                      PayloadFunc head, PayloadFunc tail)
   : func_(f), point_(pt), context_(c), head_(head), tail_(tail), blob_size_(0),
@@ -31,19 +32,7 @@ SpSnippet::~SpSnippet() {
   free(blob_);
 }
 
-/* The generated code:
-   1. Save context
-   2. Pass parameter to head payload
-   3. Call head payload function
-   4. Restore context
-   5. Call original function
-   6. Save context
-   7. Pass parameter to tail payload
-   8. Call tail payload function
-   9. Restore context
-   10. Jump back original address
- */
-
+// The core part of code generation for the patch area
 char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   assert(context_);
   ret_addr_ = ret_addr;
@@ -55,8 +44,10 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   size_t offset = 0;
   size_t insnsize = 0;
 
-  sp_debug("ret_addr: %lx, reloc: %d, spring: %d", ret_addr, reloc, spring);
-  // 5. relocate call block
+  //sp_debug("ret_addr: %lx, reloc: %d, spring: %d", ret_addr, reloc, spring);
+  //-------------------------------------------
+  // 1. Relocate call block, if it's indirect call
+  //-------------------------------------------
   if (reloc) {
     PatchBlock* blk = NULL;
     blk = point_->block();
@@ -64,10 +55,12 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     offset += insnsize;
   }
 
-  // 1. save context
+  //-------------------------------------------
+  // 2. Save context
+  //-------------------------------------------
   insnsize = emit_save(blob_, offset, reloc);
   offset += insnsize;
-  sp_debug("func_: %lx", func_);
+  //sp_debug("func_: %lx", func_);
   if (!func_||reloc) {
     sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
     long* l = spt->saved_context_ptr();
@@ -75,131 +68,97 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     offset += insnsize;
   }
 
-  // 2. pass parameters
+  //-------------------------------------------
+  // 3. Pass parameter
+  //-------------------------------------------
   insnsize = emit_pass_param((long)point_, blob_, offset);
   offset += insnsize;
 
-  // 3. call head payload
+  //-------------------------------------------
+  // 4. Call head payload
+  //-------------------------------------------
   insnsize = emit_call_abs((long)head_, blob_, offset, true);
   offset += insnsize;
 
-  // 4. restore context
+  //-------------------------------------------
+  // 5. Restore context
+  //-------------------------------------------
   insnsize = emit_restore(blob_, offset, reloc);
   offset += insnsize;
 
-  // before_call_orig_ = offset;
-
+  //-------------------------------------------
   // 6. call ORIG_FUNCTION
   // There are four cases need to consider:
   // Case 1: tail call and direct call
   // Case 2: non tail call and direct call
   // Case 3: indirect call (tail call or non tail call)
-  //  - x86-32: just relocate the orig insn
-  //  - x86-64: relocate the orig insn for non-pc-sensitive insn
-  //            emulate the insn for pc-sensitive insn
+  //-------------------------------------------
   if (!ret_addr && func_) {
-    // tail call and direct call
-    sp_debug("TAIL to %s", func_->name().c_str());
+    // 6.1. tail call and direct call
+    //sp_debug("TAIL to %s", func_->name().c_str());
     insnsize = emit_jump_abs((long)func_->addr(), blob_, offset);
     goto EXIT;
   } else if (ret_addr && func_) {
-    // non tail call and Direct call
-    sp_debug("DIRECT");
+    // 6.2. non tail call and Direct call
+    //sp_debug("DIRECT");
     insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   } else {
-    // indirect call
-    sp_debug("INDIRECT");
-    insnsize = emit_call_orig((long)orig_call_insn_->ptr(),
-                              orig_call_insn_->size(), blob_, offset,
-                              /*tail call?*/(ret_addr == 0));
-    // REMOVEME {
-    //if (!insnsize) return NULL;
-    //}
+    // 6.3. indirect call
+    //sp_debug("INDIRECT");
+    insnsize = emit_call_orig((long)point_->block()->last(),
+                              orig_call_insn_->size(), blob_, offset);
   }
-
   offset += insnsize;
-  if (tail_) {
 
+  if (tail_) {
+    //-------------------------------------------
     // 7. save context
+    //-------------------------------------------
     insnsize = emit_save(blob_, offset, reloc);
     offset += insnsize;
 
+    //-------------------------------------------
     // 8. pass parameters
+    //-------------------------------------------
     insnsize = emit_pass_param((long)point_, blob_, offset);
     offset += insnsize;
 
+    //-------------------------------------------
     // 9. call payload
+    //-------------------------------------------
     insnsize = emit_call_abs((long)tail_, blob_, offset, true);
     offset += insnsize;
 
+    //-------------------------------------------
     // 10. restore context
+    //-------------------------------------------
     insnsize = emit_restore(blob_, offset, reloc);
     offset += insnsize;
   }
 
+  //-------------------------------------------
   // 11. jmp ORIG_INSN_ADDR
+  //-------------------------------------------
   insnsize = emit_jump_abs(ret_addr, blob_, offset);
 
 EXIT:
   offset += insnsize;
   blob_size_ = offset;
-
+  /*
   sp_debug("DUMP INSN (%d bytes)- {", offset);
   sp_debug("%s", context_->parser()->dump_insn((void*)blob_, offset).c_str());
   sp_debug("DUMP INSN - }");
-
+  */
   return blob_;
 }
 
-void SpSnippet::fixup(PatchFunction* f) {
-  sp_debug("FIXUP - for call instructions involving PC value");
-  sp_debug("BEFORE FIXUP DUMP INSN (%d bytes)- {", blob_size_);
-  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
-  sp_debug("DUMP INSN - }");
-
-  assert(f);
-  if (!f) {
-    sp_print("NULL FUNCTION?!");
-    return;
-  }
-  func_ = f;
-
-  size_t offset = before_call_orig_;
-  size_t insnsize = 0;
-
-  sp_print("FIXUP: %s", func_->name().c_str());
-  // 5. call ORIG_FUNCTION
-  insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
-  //offset += insnsize;
-  //blob_size_ = offset;
-
-  sp_debug("AFTER FIXUP DUMP INSN (%d bytes)- {", blob_size_);
-  sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
-  sp_debug("DUMP INSN - }");
-}
-
-
-/*
-class BlkInsnVisitor : public Visitor{
-  public:
-    BlkInsnVisitor() : Visitor() {}
-
-    virtual void visit(RegisterAST* r) {
-    }
-    virtual void visit(BinaryFunction* b) {
-    }
-    virtual void visit(Immediate* i) {
-    }
-    virtual void visit(Dereference* d) {
-    }
-};
-*/
-size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, size_t offset) {
+// Relocate a block
+size_t SpSnippet::reloc_block(PatchBlock* blk, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
   Dyninst::Address call_addr = blk->last();
 
-  sp_debug("RELOC BLOCK - begin");
+  //sp_debug("RELOC BLOCK - begin");
 
   PatchBlock::Insns insns;
   blk->getInsns(insns);
@@ -208,67 +167,26 @@ size_t SpSnippet::reloc_block(Dyninst::PatchAPI::PatchBlock* blk, char* buf, siz
 
     Dyninst::Address a = i->first;
     Instruction::Ptr insn = i->second;
-    sp_debug("RELOC INSN - %lx : %s", a, context_->parser()->dump_insn((void*)a, insn->size()).c_str());
-
-    insnsize = reloc_insn(i, call_addr, p);
+    //sp_debug("RELOC INSN - %lx : %s", a, context_->parser()->dump_insn((void*)a, insn->size()).c_str());
+    insnsize = reloc_insn(a, insn, call_addr, p);
     p += insnsize;
   }
 
   return (p - (buf + offset));
 }
 
+// Find and return a spring block
+// For now, the algorithm looks for a spring block conservatively. 
+// A spring block returned should fulfill all the requirements:
+//
+// 1. Only in the same object of the call block
+// 2. not a call block itself
+// 3. large enough to host two absolute jump
+// 4. close enough to the call block (within 128-byte)
+//
+// We iterate through all CodeRegions, and get then narrow down the search
+// space in one, two, or up to three CodeRegions. 
 PatchBlock* SpSnippet::spring_blk() {
-#if 0
-  if (spring_blk_) return spring_blk_;
-
-  size_t min_springblk_size = jump_abs_size() * 2;
-  PatchBlock* callblk = point_->block();
-  long after_jmp = callblk->start() + 2; // short jump 2 bytes
-
-  // Find a nearby block
-  // XXX: this algorithm sucks! Need a smarter one.
-  size_t rel = 0;
-  PatchBlock* springblk = NULL;
-  bool done = false;
-  Dyninst::PatchAPI::PatchObject* obj = callblk->obj();
-  std::vector<PatchBlock*> blks;
-  using namespace Dyninst::ParseAPI;
-  CodeObject* co = obj->co();
-  CodeObject::funclist& funcs = co->funcs();
-  for (CodeObject::funclist::iterator fi = funcs.begin(); fi != funcs.end(); fi++) {
-    PatchFunction* f = obj->getFunc(*fi);
-    const PatchFunction::Blockset& blks = f->getAllBlocks();
-
-    //PatchFunction::Blockset::iterator bi = blks.end();
-    //bi--;
-    //for (; bi != blks.begin(); bi--) {
-    for (PatchFunction::Blockset::iterator bi = blks.begin(); bi != blks.end(); bi++) {
-      PatchBlock* b = *bi;
-      // For simplicity, we don't want call block
-      if (b->containsCall()) continue;
-      // For simplicity, we don't relocate used spring block
-      if (context_->in_spring_set(b)) continue;
-      rel = b->start() + jump_abs_size() - after_jmp;
-      // A qualified spring block should be within 128 bytes from current call block, and
-      // should be able to hold two absolute jumps before the last insn in that block -
-      // this simplifies our relocation
-      size_t s = b->last() - b->start();
-      sp_debug("CANDIDATE - size %d, rel: %d", s, std::abs((long)rel));
-      if (std::abs((long)rel) <= 128 && s >= min_springblk_size) {
-        sp_debug("GOT SPRING - at %lx, relative addr from %lx is %lx, size %d >= %d (two abs jumps)",
-                 b->start(), callblk->start(), rel, s, min_springblk_size);
-        springblk = b;
-        context_->add_spring(b);
-        break;
-      }
-    } // for each block
-    if (springblk) break;
-  } // for each function
-
-  spring_blk_ = springblk;
-  return springblk;
-#endif
-
   if (spring_blk_) return spring_blk_;
 
   size_t min_springblk_size = jump_abs_size() * 2;
@@ -284,16 +202,16 @@ PatchBlock* SpSnippet::spring_blk() {
   CodeObject* co = obj->co();
   CodeSource* cs = co->cs();
   std::vector<CodeRegion*> regions = cs->regions();
-  sp_debug("REGION - %d regions found", regions.size());
+  // sp_debug("REGION - %d regions found", regions.size());
 
   // -128 <= b->start() + jump_abs_size() - after_jmp < 127
   long upper = 127 + after_jmp - jump_abs_size();
   long lower = -128 + after_jmp - jump_abs_size();
-  sp_debug("RANGE - upper: %lx, lower: %lx; jump from %lx", upper, lower, after_jmp);
+  // sp_debug("RANGE - upper: %lx, lower: %lx; jump from %lx", upper, lower, after_jmp);
 
   for (int i = 0; i < regions.size(); i++) {
     CodeRegion* cr = regions[i];
-    sp_debug("REGION %d - low: %lx, high: %lx", i, cr->low(), cr->high());
+    // sp_debug("REGION %d - low: %lx, high: %lx", i, cr->low(), cr->high());
     if ((lower <= cr->low() && cr->low() < upper) ||
         (cr->low() <= lower && upper < cr->high()) ||
         (lower <= cr->high() && cr->high() < upper)
@@ -310,37 +228,37 @@ PatchBlock* SpSnippet::spring_blk() {
         Block* b;
         for (set<Block*>::iterator bi = blks.begin(); bi != blks.end(); bi++) {
           b = *bi;
-          sp_debug("BLK - low: %lx, high: %lx; callblock(%lx, %lx)",
-                   (*bi)->start(), (*bi)->end(), callblk->start(), callblk->end());
+          // sp_debug("BLK - low: %lx, high: %lx; callblock(%lx, %lx)",
+          //         (*bi)->start(), (*bi)->end(), callblk->start(), callblk->end());
         }
         size_t rel = b->start() + jump_abs_size() - after_jmp;
         if (!sp::is_disp8(rel)) {
-          sp_debug("TOO FAR AWAY");
+          // sp_debug("TOO FAR AWAY");
           span_addr = b->end();
           continue;
         }
         size_t s = b->lastInsnAddr() - b->start();
         if (s < min_springblk_size) {
-          sp_debug("TOO SMALL - %d < %d", s, min_springblk_size);
+          // sp_debug("TOO SMALL - %d < %d", s, min_springblk_size);
           span_addr = b->end();
           continue;
         }
-        sp_debug("CANDIDATE - size %d, rel: %d", s, (long)rel);
+        // sp_debug("CANDIDATE - size %d, rel: %d", s, (long)rel);
         PatchBlock* pb = obj->getBlock(b);
         // For simplicity, we don't want call block
         if (pb->containsCall()) {
-          sp_debug("HAS CALL");
+          // sp_debug("HAS CALL");
           span_addr = b->end();
           continue;
         }
 
         // For simplicity, we don't relocate used spring block
         if (context_->in_spring_set(pb)) {
-          sp_debug("ALREADY A SPRING BLK");
+          // sp_debug("ALREADY A SPRING BLK");
           span_addr = b->end();
           continue;
         }
-        sp_debug("GOT IT");
+        // sp_debug("GOT IT");
         springblk = pb;
         context_->add_spring(pb);
         done = true;
@@ -354,6 +272,7 @@ PatchBlock* SpSnippet::spring_blk() {
   return springblk;
 }
 
+// Build the spring block
 char* SpSnippet::spring(Dyninst::Address ret_addr) {
   Dyninst::PatchAPI::PatchMgrPtr mgr = context_->mgr();
   Dyninst::PatchAPI::AddrSpace* as = mgr->as();
@@ -364,7 +283,7 @@ char* SpSnippet::spring(Dyninst::Address ret_addr) {
   size_t insnsize = reloc_block(spring_blk_, spring_, 0);
   offset += insnsize;
 
-  sp_debug("DONE RELOC - w/ offset: %d", offset);
+  // sp_debug("DONE RELOC - w/ offset: %d", offset);
 
   // 2, jump back
   insnsize = emit_jump_abs(ret_addr, spring_, offset);
@@ -372,28 +291,11 @@ char* SpSnippet::spring(Dyninst::Address ret_addr) {
 
   spring_size_ = offset;
 
-  sp_debug("DUMP RELOC SPRING INSN (%d bytes)- {", offset);
-  sp_debug("%s", context_->parser()->dump_insn((void*)spring_, spring_size_).c_str());
-  sp_debug("DUMP INSN - }");
+  // sp_debug("DUMP RELOC SPRING INSN (%d bytes)- {", offset);
+  // sp_debug("%s", context_->parser()->dump_insn((void*)spring_, spring_size_).c_str());
+  // sp_debug("DUMP INSN - }");
 
   return spring_;
 }
-
-/*
-void SpSnippet::set_reloc_call_insn(char* p, size_t size) {
-  using namespace Dyninst::InstructionAPI;
-  InstructionDecoder deco(p,
-                          size,
-                          point_->block()->obj()->co()->cs()->getArch());
-  Instruction::Ptr insn = deco.decode();
-  assert(insn);
-  sp_print("Addr: %lx", p);
-  sp_print("DUMP RELOC CALL INSN (%d bytes)- {", insn->size());
-  sp_print("%s", context_->parser()->dump_insn((void*)p, size).c_str());
-  sp_print("DUMP INSN - }");
-  reloc_rip_ = (long)p;
-  reloc_call_insn_ = insn;
-}
-*/
 
 }
