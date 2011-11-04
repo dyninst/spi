@@ -324,23 +324,16 @@ string SpParser::dump_insn(void* addr, size_t size) {
 using namespace Dyninst::InstructionAPI;
 class SpVisitor : public Visitor {
 public:
-  SpVisitor(SpParser* p, Point* pt)
-     : Visitor(), p_(p), call_addr_(0), pt_(pt), use_pc_(false) { }
+  SpVisitor(sp::SpPoint* pt)
+     : Visitor(), call_addr_(0), pt_(pt), use_pc_(false) { }
   virtual void visit(RegisterAST* r) {
-    if (p_->is_pc(r->getID())) {
+    if (SpParser::is_pc(r->getID())) {
       use_pc_ = true;
-      //      call_addr_ = pt_->block()->end();
-      //sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
-      //call_addr_ = spt->snip()->reloc_rip();
-      //call_addr_ = (Dyninst::Address)spt->snip()->reloc_rip();
       call_addr_ = pt_->block()->end();
       //sp_print("RELOC RIP - %lx", call_addr_);
     } else {
       // Non-pc case, x86-32 always goes this way
-      sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
-      Dyninst::Address rval = p_->get_saved_reg(r->getID(), *spt->saved_context_ptr(),
-                                                p_->sp_offset());
-      //sp_print("SP_OFFSET: %d", p_->sp_offset());
+      Dyninst::Address rval = pt_->snip()->get_saved_reg(r->getID());
       call_addr_ = rval;
     }
     //sp_print("VISIT REG - %s, push %lx", r->getID().name().c_str(), call_addr_);
@@ -402,13 +395,13 @@ public:
     return use_pc_;
   }
 private:
-  SpParser* p_;
   std::stack<Dyninst::Address> stack_;
   Dyninst::Address call_addr_;
-  Point* pt_;
+  sp::SpPoint* pt_;
   bool use_pc_;
 };
 
+// XXX(wenbin): is it okay to cache indirect callee?
 PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   //-------------------------------------
   // 0. Check the cache
@@ -422,11 +415,10 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   //-------------------------------------
   PatchFunction* f = pt->getCallee();
   if (f) {
-    //PatchFunction* real_func = findFunction(f->name());
-    //if (real_func) f = real_func;
     spt->set_callee(f);
     return f;
-  } else if (spt->callee()) {
+  }
+  else if (spt->callee()) {
     return spt->callee();
   }
 
@@ -437,50 +429,21 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
     // sp_debug("PARSE INDIRECT CALL");
 
     PatchBlock* blk = pt->block();
-    //Instruction::Ptr insn = blk->getInsn(blk->last());
     Instruction::Ptr insn = spt->snip()->get_orig_call_insn();
-    //Instruction::Ptr insn = spt->snip()->get_reloc_call_insn();
-    // sp_debug("CALL INSN SIZE - %d", insn->size());
     Expression::Ptr trg = insn->getControlFlowTarget();
     Dyninst::Address call_addr = 0;
     if (trg) {
-      SpVisitor visitor(this, pt);
+      SpVisitor visitor(spt);
       trg->apply(&visitor);
-      // sp_debug("%s", g_context->parser()->dump_insn((void*)insn->ptr(), insn->size()).c_str());
       call_addr = visitor.call_addr();
-      // sp_debug("INDIRECT - to %lx", call_addr);
       f = findFunction(call_addr);
-      //f = findFunction(f->name().c_str());
       if (f) {
         spt->set_callee(f);
-	/*REMOVEME
-        if (visitor.use_pc()) {
-          // assert(0 && "Not implemented");
-          spt->snip()->fixup(f);
-        }
-	REMOVEME*/
         return f;
       }
     }
 
     sp_print("CANNOT RESOLVE ADDR %lx, SKIP for blob %lx", call_addr, spt->snip()->buf());
-    /*
-    sp_print("DUMP blob - {");
-    sp_print("%s", g_context->parser()->dump_insn((void*)spt->snip()->buf(), spt->snip()->size()).c_str());
-    sp_print("DUMP - }");
-
-    sp_print("DUMP original block - {");
-    sp_print("%s", g_context->parser()->dump_insn((void*)spt->block()->start(), spt->block()->end() - spt->block()->start()).c_str());
-    sp_print("DUMP - }");
-
-    sp_print("DUMP Unresolve orig CALL INSN (%d bytes) - {", insn->size());
-    sp_print("%s", g_context->parser()->dump_insn((void*)spt->snip()->reloc_rip(), insn->size()).c_str());
-    sp_print("DUMP Unresolve CALL INSN - }");
-    sp_print("DUMP Unresolve reloc CALL INSN (%d bytes) - {", insn->size());
-    sp_print("%s", g_context->parser()->dump_insn((void*)spt->snip()->get_reloc_call_insn()->ptr(), 
-                   spt->snip()->get_reloc_call_insn()->size()).c_str());
-    sp_print("DUMP Unresolve CALL INSN - }");
-    */
     return NULL;
   }
 

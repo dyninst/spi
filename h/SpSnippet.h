@@ -40,6 +40,8 @@ class SpSnippet {
     // spring block size
     size_t spring_size() const {return spring_size_; }
 
+    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg);
+
     // Some getters
     SpContext* context() const { return context_; }
     PayloadFunc head() const { return head_; }
@@ -67,6 +69,7 @@ class SpSnippet {
     SpContext* context_;
     PayloadFunc head_;
     PayloadFunc tail_;
+    long saved_context_loc_;
 
     // Blob things
     char* blob_;
@@ -95,7 +98,7 @@ class SpSnippet {
     size_t emit_pass_param(long point, char* buf, size_t offset);
     size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
     size_t emit_call_orig(long src, size_t size, char* buf, size_t offset);
-    size_t emit_save_sp(long loc, char* buf, size_t offset);
+    size_t emit_save_sp(char* buf, size_t offset);
     size_t emit_jump_abs(long trg, char* buf, size_t offset, bool abs = false);
 
     // relocate

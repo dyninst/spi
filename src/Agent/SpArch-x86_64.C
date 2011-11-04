@@ -27,6 +27,7 @@ size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
   char* p = buf + offset;
 
   // Saved for direct/indirect call
+  //*p++ = 0x54; // push rsp
   *p++ = 0x57; // push rdi
   *p++ = 0x56; // push rsi
   *p++ = 0x52; // push rdx
@@ -37,14 +38,14 @@ size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
   *p++ = 0x51;
   *p++ = 0x50; // %rax
 
-  sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
-  long* l = spt->saved_context_ptr();
-  size_t insnsize = emit_save_sp((long)l, p, 0);
+  //sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
+  //long* l = spt->saved_context_ptr();
+  //size_t insnsize = emit_save_sp((long)l, p, 0);
+  size_t insnsize = emit_save_sp(p, 0);
   p += insnsize;
 
   // Saved for indirect call
   if (indirect) {
-    // *p++ = 0x54; // push rsp
     *p++ = 0x41; // push r10 -- unused in C
     *p++ = 0x52;
     *p++ = 0x41; // push r11 -- for linker
@@ -86,7 +87,6 @@ size_t SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
     *p++ = 0x5b;
     *p++ = 0x41; // r10
     *p++ = 0x5a;
-    // *p++ = 0x5c; // pop rsp
   }
 
   // Restored for direct/indirect call
@@ -99,7 +99,7 @@ size_t SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
   *p++ = 0x5a; // pop rdx
   *p++ = 0x5e; // pop rsi
   *p++ = 0x5f; // pop rdi
-
+  //*p++ = 0x5c; // pop rsp
 
   return (p - (buf + offset));
 }
@@ -107,13 +107,13 @@ size_t SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
 // Save stack pionter, for two purposes
 // 1. Resolve indirect call during runtime
 // 2. Get argument of callees in payload function
-size_t SpSnippet::emit_save_sp(long loc, char* buf, size_t offset) {
+size_t SpSnippet::emit_save_sp(char* buf, size_t offset) {
   char* p = buf + offset;
 
   *p++ = 0x48;  // mov loc, %rax
   *p++ = 0xb8;
   long* l = (long*)p;
-  *l = loc;
+  *l = (long)&saved_context_loc_;
   p += sizeof(long);
 
   *p++ = 0x48;  // mov %rsp, (%rax)
@@ -246,28 +246,8 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 }
 
 // Get the saved register, for resolving indirect call
-Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
-                                         Dyninst::Address sp,
-                                         size_t offset) {
+Dyninst::Address SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
   //sp_debug("INDIRECT - get saved register %s", reg.name().c_str());
-  /*
-  const int RAX = 0+offset;
-  const int R9  = 8+offset;
-  const int R8  = 16+offset;
-  const int RCX = 24+offset;
-  const int RDX = 32+offset;
-  const int RSI = 40+offset;
-  const int RDI = 48+offset;
-  const int RBP = 56+offset;
-  const int R15 = 64+offset;
-  const int R14 = 72+offset;
-  const int R13 = 80+offset;
-  const int R12 = 88+offset;
-  const int RBX = 96+offset;
-  const int R11 = 104+offset;
-  const int R10 = 112+offset;
-  const int RSP = 120+offset;
-  */
 
 #define RAX (0)
 #define R9 (8)
@@ -276,6 +256,7 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
 #define RDX (32)
 #define RSI (40)
 #define RDI (48)
+#define RSP (56)
 
 #define R10 (-8)
 #define R11 (-16)
@@ -286,7 +267,7 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
 #define R15 (-56)
 #define RBP (-64)
 
-#define reg_val(i) (*(long*)(sp+(i)))
+#define reg_val(i) (*(long*)(saved_context_loc_+(long)(i)))
   /*
   for (int i = 0; i < 16; i++) {
     sp_debug("DUMP SAVED REGS: %lx", reg_val((i*8)));
@@ -308,7 +289,8 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   if (reg == r13) return reg_val(R13);
   if (reg == r14) return reg_val(R14);
   if (reg == r15) return reg_val(R15);
-  if (reg == rsp) return (sp+RDI+8);
+  if (reg == rsp) return (saved_context_loc_+RSP);
+  //if (reg == rsp) return reg_val(RSP);
   if (reg == rbp) return reg_val(RBP);
 
   if (reg == eax) return reg_val(RAX);
@@ -317,7 +299,8 @@ Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
   if (reg == edx) return reg_val(RDX);
   if (reg == esi) return reg_val(RSI);
   if (reg == edi) return reg_val(RDI);
-  if (reg == esp) return (sp+RDI+8);
+  if (reg == esp) return (saved_context_loc_+RSP);
+  //if (reg == esp) return reg_val(RSP);
   if (reg == ebp) return reg_val(RBP);
 
   //sp_print("Cannot find register %s", reg.name().c_str());

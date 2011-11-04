@@ -12,7 +12,6 @@ class SpPoint : public Dyninst::PatchAPI::Point {
             Dyninst::PatchAPI::PatchFunction *f)
       : Dyninst::PatchAPI::Point(t,m,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
-      saved_context_ = new long;
     }
     SpPoint(Dyninst::PatchAPI::Point::Type t,
             Dyninst::PatchAPI::PatchMgrPtr m,
@@ -20,7 +19,6 @@ class SpPoint : public Dyninst::PatchAPI::Point {
             Dyninst::PatchAPI::PatchBlock *b)
       : Dyninst::PatchAPI::Point(t,m,f,b), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
-      saved_context_ = new long;
     }
     SpPoint(Dyninst::PatchAPI::Point::Type t,
             Dyninst::PatchAPI::PatchMgrPtr m,
@@ -28,7 +26,6 @@ class SpPoint : public Dyninst::PatchAPI::Point {
             Dyninst::PatchAPI::PatchFunction *f)
       : Dyninst::PatchAPI::Point(t,m,b,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
-      saved_context_ = new long;
     }
     SpPoint(Dyninst::PatchAPI::Point::Type t,
             Dyninst::PatchAPI::PatchMgrPtr m,
@@ -38,7 +35,6 @@ class SpPoint : public Dyninst::PatchAPI::Point {
             Dyninst::PatchAPI::PatchFunction *f)
       : Dyninst::PatchAPI::Point(t,m,b,a,i,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
-      saved_context_ = new long;
     }
     SpPoint(Dyninst::PatchAPI::Point::Type t,
             Dyninst::PatchAPI::PatchMgrPtr m,
@@ -46,10 +42,9 @@ class SpPoint : public Dyninst::PatchAPI::Point {
             Dyninst::PatchAPI::PatchFunction *f)
       : Dyninst::PatchAPI::Point(t,m,e,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
-      saved_context_ = new long;
     }
 
-    virtual ~SpPoint() { delete saved_context_; }
+    virtual ~SpPoint() { }
     void set_propagated(bool b) { propagated_ = b; }
     bool propagated() { return propagated_; }
 
@@ -59,7 +54,6 @@ class SpPoint : public Dyninst::PatchAPI::Point {
     void set_tailcall(bool b) { tail_call_ = b; }
     bool tailcall() { return tail_call_; }
 
-    long* saved_context_ptr() { return saved_context_; }
     Dyninst::PatchAPI::PatchFunction* callee() const { return callee_; }
     void set_callee(Dyninst::PatchAPI::PatchFunction* f) { callee_ = f; }
     SpSnippet::ptr snip() const { return spsnip_;}
@@ -68,7 +62,6 @@ class SpPoint : public Dyninst::PatchAPI::Point {
     bool propagated_;
     bool instrumented_;
     bool tail_call_;
-    long* saved_context_;
     Dyninst::PatchAPI::PatchFunction* callee_;
     SpSnippet::ptr spsnip_;
 };

@@ -20,9 +20,7 @@ size_t SpSnippet::emit_save(char* buf, size_t offset, bool) {
   char* p = buf + offset;
   *p++ = 0x60; // pusha
 
-  sp::SpPoint* spt = static_cast<sp::SpPoint*>(point_);
-  long* l = spt->saved_context_ptr();
-  size_t insnsize = emit_save_sp((long)l, p, 0);
+  size_t insnsize = emit_save_sp(p, 0);
   p += insnsize;
 
   return (p - (buf + offset));
@@ -58,14 +56,14 @@ size_t SpSnippet::emit_fault(char* buf, size_t offset) {
 // Save stack pionter, for two purposes
 // 1. Resolve indirect call during runtime
 // 2. Get argument of callees in payload function
-size_t SpSnippet::emit_save_sp(long loc, char* buf, size_t offset) {
+size_t SpSnippet::emit_save_sp(char* buf, size_t offset) {
   char* p = buf + offset;
 
   *p++ = 0x89;   // mov %esp, (loc)
   *p++ = 0x25;
 
   long* l = (long*)p;
-  *l = loc;
+  *l = (long)&saved_context_loc_;
   p += sizeof(long);
 
   return (p - (buf + offset));
@@ -219,22 +217,20 @@ Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
 }
 
 // Get the saved register, for resolving indirect call
-Dyninst::Address SpParser::get_saved_reg(Dyninst::MachRegister reg,
-                                         Dyninst::Address sp,
-                                         size_t offset) {
+Dyninst::Address SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 
   /* Pushed Left to right in order:
      Push(EAX); Push(ECX); Push(EDX); Push(EBX); Push(Temp); Push(EBP); Push(ESI); Push(EDI); */
-  const int EDI = 0+offset;
-  const int ESI = 4+offset;
-  const int EBP = 8+offset;
-  const int ESP = 12+offset;
-  const int EBX = 16+offset;
-  const int EDX = 20+offset;
-  const int ECX = 24+offset;
-  const int EAX = 28+offset;
+#define EDI  0
+#define ESI  4
+#define EBP  8
+#define ESP  12
+#define EBX  16
+#define EDX  20
+#define ECX  24
+#define EAX  28
 
-#define reg_val(i) (*(long*)(sp+(i)))
+#define reg_val(i) (*(long*)(saved_context_loc_+(i)))
   /*
   for (int i = 0; i < 32; i+=4) {
     sp_debug("i: %d, EDI: %lx", i, reg_val(i));
