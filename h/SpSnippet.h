@@ -41,6 +41,7 @@ class SpSnippet {
     size_t spring_size() const {return spring_size_; }
 
     Dyninst::Address get_saved_reg(Dyninst::MachRegister reg);
+    void* pop_argument(ArgumentHandle* h, size_t size);
 
     // Some getters
     SpContext* context() const { return context_; }
@@ -85,6 +86,8 @@ class SpSnippet {
     Dyninst::PatchAPI::PatchBlock* spring_blk_;
 
     Dyninst::InstructionAPI::Instruction::Ptr orig_call_insn_;
+    Dyninst::Address reloc_call_addr_;
+
     // TODO(wenbin): 
     // Instruction::Ptr orig_call_insn_
     // size_t orig_call_size_

@@ -7,6 +7,7 @@
  */
 
 #include "TestDriver.h"
+#include "string.h"
 
 using sp::TestDriver;
 
@@ -18,6 +19,7 @@ TestDriver::TestDriver() {
   add_testcase("event");
   add_testcase("propel");
   add_testcase("indcall");
+  add_testcase("param");
 }
 
 void TestDriver::add_testcase(std::string name) {

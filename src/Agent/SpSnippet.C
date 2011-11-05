@@ -8,6 +8,7 @@
 #include "Visitor.h"
 #include "SpPoint.h"
 #include "SpUtils.h"
+#include "SpObject.h"
 
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::PatchBlock;
@@ -25,7 +26,7 @@ SpSnippet::SpSnippet(PatchFunction* f,
   // assert(context_ && "SpContext is NULL");
   Dyninst::PatchAPI::PatchMgrPtr mgr = c->mgr();
   Dyninst::PatchAPI::AddrSpace* as = mgr->as();
-  blob_ = (char*)as->malloc(pt->obj(), 1024, pt->obj()->codeBase());
+  blob_ = (char*)as->malloc(pt->obj(), 1024, static_cast<sp::SpObject*>(pt->obj())->load_addr());
 }
 
 SpSnippet::~SpSnippet() {
@@ -272,7 +273,7 @@ PatchBlock* SpSnippet::spring_blk() {
 char* SpSnippet::spring(Dyninst::Address ret_addr) {
   Dyninst::PatchAPI::PatchMgrPtr mgr = context_->mgr();
   Dyninst::PatchAPI::AddrSpace* as = mgr->as();
-  spring_ = (char*)as->malloc(point_->obj(), 1024, point_->obj()->codeBase());
+  spring_ = (char*)as->malloc(point_->obj(), 1024, static_cast<sp::SpObject*>(point_->obj())->load_addr());
 
   // 1, relocate spring block
   size_t offset = 0;
@@ -293,5 +294,6 @@ char* SpSnippet::spring(Dyninst::Address ret_addr) {
 
   return spring_;
 }
+
 
 }

@@ -26,10 +26,33 @@ SpAddrSpace* SpAddrSpace::create(PatchObject* obj) {
 
 Dyninst::Address SpAddrSpace::malloc(PatchObject* obj,
                                      size_t size,
-                                     Dyninst::Address /*near*/) {
+                                     Dyninst::Address near) {
   Dyninst::Address buf = (Dyninst::Address)::malloc(size+ getpagesize() -1);
   if (!buf) return 0;
   buf = (((Dyninst::Address)buf + getpagesize()-1) & ~(getpagesize()-1));
+  return buf;
+
+  Dyninst::Address ps = getpagesize();
+  Dyninst::Address r_near = ((near + ps -1) & ~(ps - 1));
+  Dyninst::Address r_size = ((size + ps -1) & ~(ps - 1));
+  buf = r_near;
+
+  sp_print("page size: %d, near: %lx, r_near: %lx, size: %d, r_size: %d",
+           ps, near, r_near, size, r_size);
+  void* m = NULL;
+  int fd = -1;//open("/dev/zero", O_RDWR);                                                                                                   
+  while (!m | (long)m == -1) {
+    buf -= r_size;
+    sp_print("looking for %lx", buf);
+    m = mmap((void*)buf,
+	     r_size,
+	     PROT_WRITE | PROT_READ,
+	     MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS,
+	     fd,
+	     0);
+  }
+  if (!buf) return 0;
+  sp_print("get buf: %lx", buf);
   return buf;
 }
 

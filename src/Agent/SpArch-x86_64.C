@@ -268,8 +268,9 @@ Dyninst::Address SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 #define RBP (-64)
 
 #define reg_val(i) (*(long*)(saved_context_loc_+(long)(i)))
+
   /*
-  for (int i = 0; i < 16; i++) {
+  for (int i = -64; i < 48; i++) {
     sp_debug("DUMP SAVED REGS: %lx", reg_val((i*8)));
   }
   */
@@ -662,6 +663,44 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
     opSet.insert(trg);
   }
   return reloc_insn_internal(src, insn, opSet, use_pc, p);
+}
+
+void* SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
+  using namespace Dyninst::x86_64;
+  if (h->num < 6) {
+    Dyninst::Address a = 0;
+    switch(h->num) {
+    case 0:
+      a = get_saved_reg(rdi);
+      break;
+    case 1:
+      a = get_saved_reg(rsi);
+      break;
+    case 2:
+      a = get_saved_reg(rdx);
+      break;
+    case 3:
+      a = get_saved_reg(rcx);
+      break;
+    case 4:
+      a = get_saved_reg(r8);
+      break;
+    case 5:
+      a = get_saved_reg(r9);
+      break;
+    default:
+      assert(0);
+    }
+    char* b = h->insert_buf(size);
+    memcpy(b, &a, size);
+    ++h->num;
+    return b;
+  }
+
+  void* a = (void*)(saved_context_loc_ + RSP + h->offset);
+  h->offset += size;
+  ++h->num;
+  return a;
 }
 
 }

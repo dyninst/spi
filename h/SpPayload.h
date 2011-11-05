@@ -12,27 +12,16 @@ namespace sp {
   Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt_);
   void propel(Dyninst::PatchAPI::Point* pt_);
 
-/*
-class SpPayload {
-  public:
-    SpPayload(SpContext* c);
-    //static void create(SpContext* c);
-    //static void destroy();
+  struct ArgumentHandle {
+    ArgumentHandle();
+    ~ArgumentHandle();
+    char* insert_buf(size_t s);
 
-    Dyninst::PatchAPI::PatchFunction* callee();
-    void propell();
-    SpPayload* instance(Dyninst::PatchAPI::Point*);
-    //void set_point(Dyninst::PatchAPI::Point* p) { pt_ = p; }
-  protected:
-    // static SpPayload* instance_;
-    Dyninst::PatchAPI::Point* pt_;
-    SpContext* context_;
-};
-*/
-
+    long offset;
+    long num;
+    std::vector<char*> bufs;
+  };
+  void* pop_argument(Dyninst::PatchAPI::Point* pt, ArgumentHandle* h, size_t size);
 }
-//extern sp::SpPayload* g_payload;
-//#define payload_mgr(p) g_payload->instance(p)
-
 
 #endif /* SP_PAYLOAD_H_ */

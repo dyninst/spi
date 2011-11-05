@@ -41,13 +41,18 @@ void default_tail(Point* pt) {
 // SpPayload
 //-----------------------------------------
 extern sp::SpContext* g_context;
-Dyninst::PatchAPI::PatchFunction* sp::callee(Dyninst::PatchAPI::Point* pt_) {
+namespace sp {
+Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt_) {
   return g_context->callee(pt_);
 }
 
-void sp::propel(Dyninst::PatchAPI::Point* pt_) {
+void* pop_argument(Dyninst::PatchAPI::Point* pt, ArgumentHandle* h, size_t size) {
+  return static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
+}
+
+void propel(Dyninst::PatchAPI::Point* pt_) {
   // Skip if we have already propagated from this point
-  sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
+  SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
   if (spt->propagated()) {
     return;
   }
@@ -60,3 +65,16 @@ void sp::propel(Dyninst::PatchAPI::Point* pt_) {
   spt->set_propagated(true);
 }
 
+ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}
+
+char* ArgumentHandle::insert_buf(size_t s) {
+  char* b = new char[s];
+  bufs.push_back(b);
+  return b;
+}
+
+ArgumentHandle::~ArgumentHandle() {
+  for (long i = 0; i < bufs.size(); i++) delete bufs[i];
+}
+
+}

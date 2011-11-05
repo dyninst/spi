@@ -11,6 +11,7 @@
 #include "SpUtils.h"
 #include "SpPoint.h"
 #include "SpPointMaker.h"
+#include "SpObject.h"
 
 #include "Point.h"
 #include "PatchMgr.h"
@@ -160,7 +161,9 @@ PatchMgrPtr SpParser::parse() {
     co->parse();
 
     // Create PatchObjects
-    PatchObject* patch_obj = PatchObject::create(co, load_addr);
+    //PatchObject* patch_obj = PatchObject::create(co, load_addr);
+    PatchObject* patch_obj = new sp::SpObject(co, load_addr, NULL, NULL, load_addr?load_addr:scs->loadAddress());
+
     patch_objs.push_back(patch_obj);
     if (sym->isExec()) {
       exe_obj_ = patch_obj;
@@ -322,6 +325,9 @@ string SpParser::dump_insn(void* addr, size_t size) {
 }
 
 using namespace Dyninst::InstructionAPI;
+//RegisterAST* rr;
+//Dyninst::Address disp;
+//Dyninst::Address def;
 class SpVisitor : public Visitor {
 public:
   SpVisitor(sp::SpPoint* pt)
@@ -336,6 +342,7 @@ public:
       Dyninst::Address rval = pt_->snip()->get_saved_reg(r->getID());
       call_addr_ = rval;
     }
+    //rr = r;
     //sp_print("VISIT REG - %s, push %lx", r->getID().name().c_str(), call_addr_);
     stack_.push(call_addr_);
   }
@@ -377,6 +384,7 @@ public:
     }
     }
     //sp_print("VISIT IMM %d - push %lx", res.size(), call_addr_);
+    //disp = call_addr_;
     stack_.push(call_addr_);
   }
   virtual void visit(Dereference* d) {
@@ -442,8 +450,19 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
         return f;
       }
     }
+#if 0
+  sp_print("CANNOT RESOLVE ADDR %lx, SKIP for blob %lx", call_addr, spt->snip()->buf());
 
-    sp_print("CANNOT RESOLVE ADDR %lx, SKIP for blob %lx", call_addr, spt->snip()->buf());
+  long *d = (long*)(spt->snip()->get_saved_reg(rr->getID()) + disp);
+  sp_print("RR: %s, [%lx+%lx]=>%lx", rr->getID().name().c_str(), spt->snip()->get_saved_reg(rr->getID()), disp, *d);
+  sp_print("ORIG CALL DUMP INSN (%d bytes)- {", spt->snip()->get_orig_call_insn()->size());
+  sp_print("%s", dump_insn((void*)spt->snip()->get_orig_call_insn()->ptr(), spt->snip()->get_orig_call_insn()->size()).c_str());
+  sp_print("DUMP INSN - }");
+
+  sp_print("DUMP INSN (%d bytes)- {", spt->snip()->size());
+  sp_print("%s", dump_insn((void*)spt->snip()->buf(), spt->snip()->size()).c_str());
+  sp_print("DUMP INSN - }");
+#endif
     return NULL;
   }
 

@@ -262,4 +262,10 @@ size_t SpSnippet::jump_abs_size() {
   return 7;
 }
 
+void* SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
+  void* a = (void*)(saved_context_loc_ + 32 + h->offset);
+  h->offset += size;
+  return a;
+}
+
 }
