@@ -41,6 +41,7 @@ class SpSnippet {
     size_t spring_size() const {return spring_size_; }
 
     Dyninst::Address get_saved_reg(Dyninst::MachRegister reg);
+    long get_ret_val();
     void* pop_argument(ArgumentHandle* h, size_t size);
 
     // Some getters

@@ -77,4 +77,8 @@ ArgumentHandle::~ArgumentHandle() {
   for (long i = 0; i < bufs.size(); i++) delete bufs[i];
 }
 
+long retval(sp::SpPoint* pt) {
+  return pt->snip()->get_ret_val();
+}
+
 }

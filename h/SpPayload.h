@@ -6,11 +6,14 @@
 
 namespace sp {
   class SpContext;
+  class SpPoint;
+
   typedef void (*PayloadFunc_t)(Dyninst::PatchAPI::Point* pt);
   typedef void* PayloadFunc;
 
   Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt_);
   void propel(Dyninst::PatchAPI::Point* pt_);
+  long retval(SpPoint* pt);
 
   struct ArgumentHandle {
     ArgumentHandle();
