@@ -2,7 +2,7 @@
 #define _MISTCHECKER_H_
 
 #include "SpInc.h"
-#include "CheckerUtils.h"
+#include "MistUtils.h"
 
 //-----------------------------------------
 // Base classes
@@ -58,9 +58,10 @@ class ProcFiniChecker : public FiniChecker {
 class FileOpenChecker : public MistChecker {
   public:
     virtual bool check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
-    virtual bool post_check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee) { return false;}
+    virtual bool post_check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
   protected:
     void print_file_info(char* fname);
+    char* fname_;
 };
 
 // Dynamic loaded library
@@ -85,6 +86,38 @@ class ChangeIdChecker : public MistChecker {
   public:
     virtual bool check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
     virtual bool post_check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee) { return false; }
+};
+
+// Check when to exit
+class ExitChecker : public MistChecker {
+  public:
+    virtual bool check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
+};
+
+// Check mmap
+class MmapChecker : public MistChecker {
+  public:
+    virtual bool check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
+};
+
+// Check chmod
+class ChmodChecker : public MistChecker {
+  public:
+    virtual bool check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee) { return false; }
+};
+
+// Thread
+class ThreadChecker : public MistChecker {
+  public:
+    virtual bool check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt, Dyninst::PatchAPI::PatchFunction* callee);
+  protected:
+    // A primitive form of concurrency control
+    typedef std::map<long, pthread_t*> CalleeTidMap;
+    CalleeTidMap callee_tid_map_;
 };
 
 #endif /* _MISTCHECKER_H_ */

@@ -1,22 +1,12 @@
-#include "SpInc.h"
 #include <stack>
 
-#include "MistChecker.h"
-#include "CheckerUtils.h"
+#include "SpInc.h"
 #include "Mist.h"
 
 using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
 
-class Mist;
-extern Mist mist;
-
-// TODO: separate print strings by pid
-
-//--------------------------------------------------------
-// Standard self-propelled stuffs
-//--------------------------------------------------------
 Mist mist;
 void mist_head(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
@@ -45,8 +35,4 @@ void MyAgent() {
   agent->set_init_head("mist_head");
   agent->set_init_tail("mist_tail");
   agent->go();
-
-  sp_print("=============================================");
-  sp_print("========= CHECKING: for each call ===========");
-  sp_print("=============================================");
 }

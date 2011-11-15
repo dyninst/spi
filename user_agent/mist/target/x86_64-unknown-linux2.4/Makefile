@@ -12,10 +12,10 @@ $(TRG_OBJS): %.o : $(TRG_SRCS)
 
 $(TRG_EXE): % : $(TRG_OBJS)
 	@echo "Linking $@"
-	@$(CC) -o $(TRG_DIR)/$@ $*.o
+	@$(CC) -o $(TRG_DIR)/$@ $*.o -lpthread
 
 clean:
-	rm -rf $(TRG_OBJS) $(TRG_EXE)
+	rm -rf $(TRG_OBJS) $(TRG_EXE) splog*
 
 d:
 	echo $(TRG_SRCS)

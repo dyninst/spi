@@ -32,6 +32,7 @@ Dyninst::Address SpAddrSpace::malloc(PatchObject* obj,
   buf = (((Dyninst::Address)buf + getpagesize()-1) & ~(getpagesize()-1));
   return buf;
 
+  // TODO (wenbin): should have a better memory allocation subsystem
   Dyninst::Address ps = getpagesize();
   Dyninst::Address r_near = ((near + ps -1) & ~(ps - 1));
   Dyninst::Address r_size = ((size + ps -1) & ~(ps - 1));

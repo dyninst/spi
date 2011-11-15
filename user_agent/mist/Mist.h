@@ -19,6 +19,7 @@ class Mist {
     std::set<InitChecker*> init_checkers_; 
     std::set<MistChecker*> checkers_; 
     std::set<FiniChecker*> fini_checkers_;
+    CheckerUtils u_;
 };
 
 
