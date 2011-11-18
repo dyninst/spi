@@ -5,7 +5,7 @@ using sp::SpParser;
 using sp::SpAgent;
 using sp::SyncEvent;
 
-void param_head(Dyninst::PatchAPI::Point* pt) {
+void param_before(Dyninst::PatchAPI::Point* pt) {
   Dyninst::PatchAPI::PatchFunction* f = sp::callee(pt);
   sp::ArgumentHandle h;
 
@@ -34,7 +34,7 @@ void init_param() {
   dprint("AGENT: init_param @ process %d", getpid());
 
   SpAgent::ptr agent = SpAgent::create();
-  agent->set_init_head("param_head");
+  agent->set_init_before("param_before");
   agent->go();
   //Dyninst::PatchAPI::PatchFunction* mutatee_func = parser->findFunction("run_mutatee");
   //assert(mutatee_func);

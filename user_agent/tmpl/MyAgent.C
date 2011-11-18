@@ -88,7 +88,7 @@ void MyAgent() {
 
   agent->set_parser(parser);
   agent->set_init_event(event);
-  agent->set_init_head("print_before");
-  agent->set_init_tail("print_after");
+  agent->set_init_before("print_before");
+  agent->set_init_after("print_after");
   agent->go();
 }

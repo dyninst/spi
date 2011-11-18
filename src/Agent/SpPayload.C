@@ -17,7 +17,7 @@ using Dyninst::PatchAPI::PatchObject;
 //-----------------------------------------
 // Default payload functions
 //-----------------------------------------
-void default_head(Point* pt) {
+void default_before(Point* pt) {
   //  sp::payload_start();
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
@@ -29,7 +29,7 @@ void default_head(Point* pt) {
   //  sp::payload_end();
 }
 
-void default_tail(Point* pt) {
+void default_after(Point* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
@@ -61,7 +61,7 @@ void propel(Dyninst::PatchAPI::Point* pt_) {
   if (!f) return;
 
   sp::SpPropeller::ptr p = g_context->init_propeller();
-  p->go(f, g_context, g_context->init_head(), g_context->init_tail(), pt_);
+  p->go(f, g_context, g_context->init_before(), g_context->init_after(), pt_);
   spt->set_propagated(true);
 }
 

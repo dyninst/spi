@@ -8,7 +8,7 @@ using namespace PatchAPI;
 using namespace sp;
 
 Mist mist;
-void mist_head(SpPoint* pt) {
+void mist_before(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
@@ -20,7 +20,7 @@ void mist_head(SpPoint* pt) {
   sp::propel(pt);
 }
 
-void mist_tail(SpPoint* pt) {
+void mist_after(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
   mist.post_run(pt, f);
@@ -32,7 +32,7 @@ void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
   sp::SyncEvent::ptr event = sp::SyncEvent::create();
   agent->set_init_event(event);
-  agent->set_init_head("mist_head");
-  agent->set_init_tail("mist_tail");
+  agent->set_init_before("mist_before");
+  agent->set_init_after("mist_after");
   agent->go();
 }

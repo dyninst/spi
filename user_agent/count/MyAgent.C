@@ -14,7 +14,7 @@ namespace sp {
 }
 int indent = 0; 
 
-void print_head(Point* pt) {
+void print_before(Point* pt) {
   //  PatchFunction* f = sp::callee(pt);
   //  sp_print("PRINT_HEAD: %s", f->name().c_str());
   /*  struct rlimit core_limit;
@@ -28,7 +28,7 @@ void print_head(Point* pt) {
   sp::propel(pt);
 }
 
-void print_tail(Point* pt) {
+void print_after(Point* pt) {
 }
 
 void segv_handler(int num) {
@@ -41,7 +41,7 @@ void MyAgent() {
   sp::SyncEvent::ptr event = sp::SyncEvent::create();
 
   agent->set_parser(parser);
-  agent->set_init_head("print_head");
+  agent->set_init_before("print_before");
   //agent->set_directcall_only(true);
   agent->go();
 }

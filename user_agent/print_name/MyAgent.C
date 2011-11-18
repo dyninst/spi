@@ -7,7 +7,7 @@ using namespace sp;
 int indent = 0;
 int callcount = 0;
 
-void print_head(SpPoint* pt) {
+void print_before(SpPoint* pt) {
 
 if (pt->tailcall()) {
     sp::propel(pt);
@@ -28,7 +28,7 @@ if (pt->tailcall()) {
   sp::propel(pt);
 }
 
-void print_tail(Point* pt) {
+void print_after(Point* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
   string callee_name = f->name();
@@ -48,8 +48,8 @@ void MyAgent() {
 
   agent->set_parser(parser);
   //agent->set_init_event(event);
-  agent->set_init_head("print_head");
-  agent->set_init_tail("print_tail");
+  agent->set_init_before("print_before");
+  agent->set_init_after("print_after");
   //agent->set_directcall_only(true);
   agent->go();
 }

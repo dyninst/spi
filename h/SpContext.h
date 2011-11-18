@@ -21,8 +21,8 @@ class SpContext {
                            SpParser::ptr);
 
 
-    PayloadFunc init_head() { return init_head_; }
-    PayloadFunc init_tail() { return init_tail_; }
+    PayloadFunc init_before() { return init_before_; }
+    PayloadFunc init_after() { return init_after_; }
 
     SpPropeller::ptr init_propeller() { return init_propeller_; }
     bool propel(int, PayloadFunc);
@@ -55,8 +55,8 @@ class SpContext {
 
   protected:
     SpPropeller::ptr init_propeller_;
-    PayloadFunc init_head_;
-    PayloadFunc init_tail_;
+    PayloadFunc init_before_;
+    PayloadFunc init_after_;
     SpParser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     std::vector<string> well_known_libs_;

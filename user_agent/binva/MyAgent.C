@@ -155,7 +155,7 @@ class BinVa {
 };
 
 BinVa bv;
-void binva_head(SpPoint* pt) {
+void binva_before(SpPoint* pt) {
   bv.run(pt);
   sp::propel(pt);
 }
@@ -171,8 +171,8 @@ void MyAgent() {
   sp::SyncEvent::ptr event = sp::SyncEvent::create();
   agent->set_init_event(event);
 
-  agent->set_init_head("binva_head");
-  agent->set_init_tail("binva_tail");
+  agent->set_init_before("binva_before");
+  agent->set_init_after("binva_after");
 
   agent->go();
 }

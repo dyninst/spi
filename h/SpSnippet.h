@@ -15,14 +15,14 @@ class SpSnippet {
     static ptr create(Dyninst::PatchAPI::PatchFunction* f,
                       Dyninst::PatchAPI::Point* pt,
                       SpContext* c,
-                      PayloadFunc head, PayloadFunc tail) {
-      return ptr(new SpSnippet(f, pt, c, head, tail));
+                      PayloadFunc before, PayloadFunc after) {
+      return ptr(new SpSnippet(f, pt, c, before, after));
     }
 
     SpSnippet(Dyninst::PatchAPI::PatchFunction* f,
               Dyninst::PatchAPI::Point* pt,
               SpContext* c,
-              PayloadFunc head, PayloadFunc tail);
+              PayloadFunc before, PayloadFunc after);
     ~SpSnippet();
 
     // Return the pointer to blob, but blob is empty
@@ -46,8 +46,8 @@ class SpSnippet {
 
     // Some getters
     SpContext* context() const { return context_; }
-    PayloadFunc head() const { return head_; }
-    PayloadFunc tail() const { return tail_; }
+    PayloadFunc before() const { return before_; }
+    PayloadFunc after() const { return after_; }
     Dyninst::PatchAPI::Point* point() const { return point_; }
     Dyninst::PatchAPI::PatchFunction* func() const { return func_; }
 
@@ -69,8 +69,8 @@ class SpSnippet {
     Dyninst::PatchAPI::PatchFunction* func_;
     Dyninst::PatchAPI::Point* point_;
     SpContext* context_;
-    PayloadFunc head_;
-    PayloadFunc tail_;
+    PayloadFunc before_;
+    PayloadFunc after_;
     long saved_context_loc_;
 
     // Blob things

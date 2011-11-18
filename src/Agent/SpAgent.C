@@ -52,12 +52,12 @@ void SpAgent::set_fini_event(SpEvent::ptr e) {
   init_event_ = e;
 }
 
-void SpAgent::set_init_head(string p) {
-  init_head_ = p;
+void SpAgent::set_init_before(string p) {
+  init_before_ = p;
 }
 
-void SpAgent::set_init_tail(string p) {
-  init_tail_ = p;
+void SpAgent::set_init_after(string p) {
+  init_after_ = p;
 }
 
 void SpAgent::set_init_propeller(SpPropeller::ptr p) {
@@ -69,15 +69,15 @@ void SpAgent::go() {
   // 1. Sanity check. If not user configuration, use default ones
   if (!init_event_) init_event_ = SyncEvent::create();
   if (!fini_event_) fini_event_ = SpEvent::create();
-  if (init_head_.size() == 0) init_head_ = "default_head";
-  if (init_tail_.size() == 0) init_tail_ = "";
+  if (init_before_.size() == 0) init_before_ = "default_before";
+  if (init_after_.size() == 0) init_after_ = "";
   if (!parser_) parser_ = SpParser::create();
   if (!init_propeller_) init_propeller_ = SpPropeller::create();
 
   // 2. Prepare context
   context_ = SpContext::create(init_propeller_,
-                               init_head_,
-                               init_tail_,
+                               init_before_,
+                               init_after_,
                                parser_);
   context_->set_directcall_only(directcall_only_);
 

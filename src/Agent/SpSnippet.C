@@ -19,8 +19,8 @@ namespace sp {
 SpSnippet::SpSnippet(PatchFunction* f,
                      Point* pt,
                      SpContext* c,
-                     PayloadFunc head, PayloadFunc tail)
-  : func_(f), point_(pt), context_(c), head_(head), tail_(tail), blob_size_(0),
+                     PayloadFunc before, PayloadFunc after)
+  : func_(f), point_(pt), context_(c), before_(before), after_(after), blob_size_(0),
     spring_size_(0), spring_blk_(NULL) {
 
   // assert(context_ && "SpContext is NULL");
@@ -72,9 +72,9 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   offset += insnsize;
 
   //-------------------------------------------
-  // 4. Call head payload
+  // 4. Call before payload
   //-------------------------------------------
-  insnsize = emit_call_abs((long)head_, blob_, offset, true);
+  insnsize = emit_call_abs((long)before_, blob_, offset, true);
   offset += insnsize;
 
   //-------------------------------------------
@@ -107,7 +107,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   }
   offset += insnsize;
 
-  if (tail_) {
+  if (after_) {
     //-------------------------------------------
     // 7. save context
     //-------------------------------------------
@@ -123,7 +123,7 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     //-------------------------------------------
     // 9. call payload
     //-------------------------------------------
-    insnsize = emit_call_abs((long)tail_, blob_, offset, true);
+    insnsize = emit_call_abs((long)after_, blob_, offset, true);
     offset += insnsize;
 
     //-------------------------------------------

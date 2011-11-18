@@ -26,8 +26,8 @@ SpPropeller::ptr SpPropeller::create() {
 
 bool SpPropeller::go(PatchFunction* func,
                      SpContext* context,
-                     PayloadFunc head,
-                     PayloadFunc tail,
+                     PayloadFunc before,
+                     PayloadFunc after,
                      Point* pt) {
 
   // 1. Find points according to type
@@ -50,7 +50,7 @@ bool SpPropeller::go(PatchFunction* func,
     // It's possible that callee will be NULL, which is an indirect call.
     // In this case, we'll parse it later during runtime.
     PatchFunction* callee = context->parser()->callee(pt);
-    SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, head, tail);
+    SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, before, after);
     Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);
     patcher.add(PushBackCommand::create(pt, snip));
   }

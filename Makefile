@@ -1,7 +1,8 @@
+include make.config
 all:
-	cd $(PLATFORM); make
-	cd test/Agent/$(PLATFORM); make
-	cd test/Injector; make
+	cd $(PLATFORM); sh build.sh
+	cd test/Agent/$(PLATFORM); sh build.sh
+	cd test/Injector; sh build.sh
 
 clean:
 	cd $(PLATFORM); make clean

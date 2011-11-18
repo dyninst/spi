@@ -1,13 +1,19 @@
-SP=/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi
-BIN=/scratch/wenbin/binaries/bin/bin
+source ../../../make.config
+AGENT_NAME=libmyagent.so
+export LD_LIBRARY_PATH
+AGENT=`pwd`/$AGENT_NAME
 
-source ../make.config
-export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
-#export SP_DEBUG=0
+#---------------------
+# run program
+#---------------------
 
+# For injector
+#../../../$PLATFORM/Injector $PID `pwd`/lib*.so
+
+# For unix utility
 #echo 1; LD_PRELOAD="./$AGENT_NAME" $BIN/[
 #echo 2; LD_PRELOAD="./$AGENT_NAME" $BIN/base64 /tmp/tmp
-echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
+#echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
 #echo 4; LD_PRELOAD="./$AGENT_NAME" $BIN/cat /tmp/tmp
 #echo 5; LD_PRELOAD="./$AGENT_NAME" $BIN/chmod 755 /tmp/tmp
 #echo 6; LD_PRELOAD="./$AGENT_NAME" $BIN/head /tmp/tmp
@@ -78,5 +84,9 @@ echo 3; LD_PRELOAD="./$AGENT_NAME" $BIN/basename /tmp/tmp
 #echo 71; LD_PRELOAD="./$AGENT_NAME" $BIN/mktemp
 #echo 72; LD_PRELOAD="./$AGENT_NAME" $BIN/groups
 #echo 73; LD_PRELOAD="./$AGENT_NAME" $BIN/mkdir -p /tmp/tmp99/tmp3
-#echo 74; LD_PRELOAD="./$AGENT_NAME" $BIN/printf "abasdfaf%s" "aaa" 
+#echo 74; LD_PRELOAD="./$AGENT_NAME" $BIN/printf "abasdfaf%s" "aaa"
 #echo 75; LD_PRELOAD="./$AGENT_NAME" $BIN/od /tmp/tmp
+
+# For gcc
+#time LD_PRELOAD="$AGENT" /scratch/wenbin/software/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1 200.i
+

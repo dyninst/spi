@@ -31,8 +31,8 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
     void set_parser(SpParser::ptr);
     void set_init_event(SpEvent::ptr);
     void set_fini_event(SpEvent::ptr);
-    void set_init_head(string);
-    void set_init_tail(string);
+    void set_init_before(string);
+    void set_init_after(string);
     void set_init_propeller(SpPropeller::ptr);
 
     void set_parse_only(bool b) { parse_only_ = b; }
@@ -45,8 +45,8 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
     SpEvent::ptr fini_event_;
     SpParser::ptr parser_;
     SpPropeller::ptr init_propeller_;
-    string init_head_;
-    string init_tail_;
+    string init_before_;
+    string init_after_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     SpContext* context_;
 
