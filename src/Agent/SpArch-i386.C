@@ -269,7 +269,7 @@ void* SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
 }
 
 long  SpSnippet::get_ret_val() {
-  return get_saved_reg(Dyninst::x86::rax);
+  return get_saved_reg(Dyninst::x86::eax);
 }
 
 }
