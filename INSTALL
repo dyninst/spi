@@ -1,0 +1,9 @@
+(If you use build_sp.sh to build self-propelled instrumentation package, then ignore the instructions below.)
+ 
+
+1. Copy example-make.config to be "make.config".
+2. Edit make.config to define each macro variable.
+  - DYNINST_DIR: absolute path of Dyninst, which contains directories like dyninstAPI, parseAPI, ...
+  - SP_DIR: absolute path of this package (the output of `pwd`), because this file is also used by Makefile, I don't put `pwd` in it.
+  - PLATFORM: if it runs on x86 64-bit linux, then put "x86_64-unknown-linux2.4"; if it runs on x86 32-bit linux, then put "i386-unknown-linux2.4".
+  - LD_LIBRARY_PATH: place library paths for self-propelled instrumentation, dyninst, stackwalker, libelf, libdwarf, and libxml2
