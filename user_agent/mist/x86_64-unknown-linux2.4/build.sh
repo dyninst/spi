@@ -1,3 +1,4 @@
 source ../../../make.config
-
-make -f make.config $1
+export LD_LIBRARY_PATH
+echo $LD_LIBRARY_PATH
+make $1

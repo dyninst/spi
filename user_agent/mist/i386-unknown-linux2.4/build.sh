@@ -1,3 +1,3 @@
 source ../../../make.config
 
-make -f make.config $1
+make $1
