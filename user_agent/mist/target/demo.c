@@ -5,6 +5,7 @@
 
 void foo2() {
   FILE* fp1 = fopen("../files/test1_1", "r");
+  if (!fp1) return;
   fclose(fp1);
 }
 
@@ -47,6 +48,7 @@ void* f1(void* arg) {
 void foo3() {
   char* fname = "../files/test1_2";
   int fp2 = open(fname, O_RDONLY);
+  if (fp2 == -1) return;
   close(fp2);
 
   if (setuid(7132) == -1) {
