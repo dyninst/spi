@@ -37,7 +37,6 @@ bool SpPropeller::go(PatchFunction* func,
   if (pt) {
     cur_func = func;
   } else {
-    // sp_print("cur_func: %s", func->name().c_str());
     cur_func = context->parser()->findFunction(func->name());
   }
   next_points(cur_func, mgr, pts);
@@ -62,9 +61,4 @@ void SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& 
   Scope scope(cur_func);
   //  Points tmp_pts;
   mgr->findPoints(scope, Point::PreCall, back_inserter(pts));
-  /*
-  for (Points::iterator pi = tmp_pts.begin(); pi != tmp_pts.end(); pi++) {
-    pts.push_back(*pi);
-  }
-  */
 }

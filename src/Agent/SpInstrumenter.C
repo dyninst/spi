@@ -41,13 +41,10 @@ JumpInstrumenter::JumpInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
 typedef std::map<Dyninst::Address, sp::SpSnippet::ptr> InstMap;
 InstMap g_inst_map;
 void trap_handler(int sig, siginfo_t* info, void* c) {
-  // get pc
   Dyninst::Address pc = sp::SpSnippet::get_pre_signal_pc(c) - 1;
-  // sp_debug("TRAP - Executing payload code for address %lx", pc);
 
   InstMap& inst_map = g_inst_map;
   if (inst_map.find(pc) == inst_map.end()) {
-    // sp_debug("NO PC - cannot find pc %lx?!", pc);
     return;
   }
 
@@ -60,13 +57,11 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
   PatchMgrPtr mgr = g_context->mgr();
   sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
   if (!as->set_range_perm((Dyninst::Address)blob, sp_snip->size(), perm)) {
-    // sp_debug("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
     as->dump_mem_maps();
     exit(0);
   }
 
   // set pc to patch area
-  // sp_debug("GOTO BLOB - go go go");
   sp::SpSnippet::set_pc((Dyninst::Address)blob, c);
 }
 
@@ -91,7 +86,6 @@ bool JumpInstrumenter::run() {
         Dyninst::Address eip = pt->block()->last();
         char* insn = (char*)eip;
 
-        //string& orig_insn = sp_snip->orig_insn();
         Dyninst::Address insn_size = pt->block()->end() - eip;
         Dyninst::Address ret_addr = pt->block()->end();
         Dyninst::InstructionAPI::Instruction::Ptr callinsn = pt->block()->getInsn(eip);
@@ -114,7 +108,6 @@ bool JumpInstrumenter::run() {
 
           bool jump_abs = false;
           if (!sp::is_disp32(rel_addr)) jump_abs = true;
-          // sp_debug("INSTALL INDIRECT - ret_addr: %lx", ret_addr);
 
           //---------------------------------------------------------
           // Prefer using jump
@@ -122,9 +115,6 @@ bool JumpInstrumenter::run() {
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
           } else {
-            // REMOVEME{
-            // continue;
-            // }
             sp_print("FAILED to use JUMP - TRY TO USE TRAP");
 
             //---------------------------------------------------------
@@ -139,9 +129,6 @@ bool JumpInstrumenter::run() {
 
             g_inst_map[eip] = sp_snip;
             blob = sp_snip->blob(ret_addr);
-	  // REMOVEME {
-	    //	  if (!blob) return false;
-	  // }
 
             if (install_trap(pt, blob, sp_snip->size())) {
               spt->set_instrumented(true);
@@ -180,10 +167,6 @@ bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blo
   *p++ = 0xe9;
   long* lp = (long*)p;
 
-  // sp_debug("before install");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
-  // sp_debug("DUMP INSN - }");
-
   // Build the jump instruction
   Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
@@ -211,10 +194,6 @@ bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blo
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
 
-  // sp_debug("after install {");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end()-point->block()->start()).c_str());
-  // sp_debug("DUMP INSN - }");
-
   return true;
 }
 
@@ -239,7 +218,6 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
 
   char insn[64];
   if (!jump_abs) {
-    // sp_debug("JUMP REL");
 
     limit = 5; // one jump_rel insn
     char* p = insn;
@@ -247,26 +225,14 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
     long* lp = (long*)p;
     *lp = (long)snip->buf() - (long)blk->start() - 5;
   } else {
-    // sp_debug("JUMP ABS");
     limit = snip->jump_abs_size();
 
     static_cast<SpPoint*>(point)->snip()->emit_jump_abs((long)snip->buf(), insn, 0, /*abs=*/true);
   }
 
-  // sp_debug("blk_size: %d , limit: %d, at block: %lx", blk_size, limit, blk->start());
-  // /* Uncomment this line
   if (blk_size >= limit) {
-    // sp_debug("RELOC BLK - jump");
     return install_jump(blk, insn, limit, snip, ret_addr);
   }
-  //and this line to debug spring board technique*/
-
-  // REMOVEME{
-  // return false;
-  // }
-  // sp_debug("small block - {");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk_size).c_str());
-  // sp_debug("DUMP INSN - }");
 
   return install_spring(blk, snip, ret_addr);
 }
@@ -276,16 +242,8 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
                                     sp::SpSnippet::ptr snip,
                                     Dyninst::Address ret_addr) {
 
-  // sp_debug("before install");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
-  // sp_debug("DUMP INSN - }");
-
   // Build blob & change the permission of snippet
-  // sp_debug("INSTALL JUMP - ret_addr: %lx", ret_addr);
   char* blob = snip->blob(ret_addr, /*reloc=*/true);
-  // REMOVEME {
-  //if (!blob) return false;
-  // }
 
   Dyninst::PatchAPI::PatchObject* obj = blk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
@@ -304,15 +262,10 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
     sp_print("MPROTECT - Failed to change memory access permission");
   }
 
-
   // Restore the permission of memory mapping
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
-
-  // sp_debug("after install");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->end()-blk->start()).c_str());
-  // sp_debug("DUMP INSN - }");
 
   return true;
 }
@@ -353,11 +306,6 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
   //------------------------------------------------------
   // Handle spring block
   //------------------------------------------------------
-  // sp_debug("before install (spring block)");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)springblk->start(),
-  //         springblk->end()-springblk->start()).c_str());
-  // sp_debug("DUMP INSN - }");
-
   // Write two "jump" instruction to spring block
   char springblk_insn[64];
   // first jump to relocated spring block
@@ -379,19 +327,11 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
   if (!as->restore_range_perm((Dyninst::Address)addr, springblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
-  // sp_debug("after install (spring block)");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)springblk->start(), springblk->end()-springblk->start()).c_str());
-  // sp_debug("DUMP INSN - }");
-
 
   //------------------------------------------------------
   // Handle call block
   //------------------------------------------------------
   // Write a "jump" instruction to call block
-  // sp_debug("before install (call block)");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->end()- callblk->start()).c_str());
-  // sp_debug("DUMP INSN - }");
-
   addr = (char*)callblk->start();
   char callblk_insn[2];
   callblk_insn[0] = 0xeb;
@@ -406,9 +346,6 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
   if (!as->restore_range_perm((Dyninst::Address)addr, callblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
-  // sp_debug("after install (call block)");
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->end()-callblk->start()).c_str());
-  // sp_debug("DUMP INSN - }");
 
   return true;
 }
@@ -416,11 +353,6 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
 bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
   string int3;
   int3 += (char)0xcc;
-
-  // sp_debug("TRAP CALL BLOCK - blob %d bytes {", blob_size);
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), 
-  //         point->block()->end() - point->block()->start()).c_str());
-  // sp_debug("}");
 
   Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
@@ -433,19 +365,13 @@ bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob,
   SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
-    // sp_debug("MPROTECT - Failed to change memory access permission");
     return false;
   } else {
     as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)int3.c_str(), int3.size());
   }
 
-  // sp_debug("TRAP CALL BLOCK after - blob %d bytes {", blob_size);
-  // sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->end() - point->block()->start()).c_str());
-  // sp_debug("}");
-
   // Restore the permission of memory mapping
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
-    // sp_debug("MPROTECT - Failed to restore memory access permission");
     return false;
   }
 

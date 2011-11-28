@@ -26,11 +26,8 @@ SpContext::SpContext(SpPropeller::ptr p,
                      SpParser::ptr parser) {
   init_propeller_ = p;
   parser_ = parser;
-  //sp::SetupTimer(0);
-  //sp::StartTimer(0);
+
   parse();
-  //sp::StopTimer(0);
-  //sp_print("parse time: %f", sp::GetTimer(0));
 
   init_well_known_libs();
 }
@@ -44,6 +41,8 @@ SpContext* SpContext::create(SpPropeller::ptr propeller,
   assert(ret);
   ret->init_before_ = (void*)ret->parser()->get_func_addr(init_before);
   ret->init_after_ = (void*)ret->parser()->get_func_addr(init_after);
+  ret->wrapper_before_ = (void*)ret->parser()->get_func_addr("wrapper_before");
+  ret->wrapper_after_ = (void*)ret->parser()->get_func_addr("wrapper_after");
   return ret;
 }
 

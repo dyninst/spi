@@ -151,10 +151,23 @@ static size_t emit_mov_imm64_rdi(long imm, char* buf, size_t offset) {
   return (2 + sizeof(long));
 }
 
+// Move imm64 to %rsi
+static size_t emit_mov_imm64_rsi(long imm, char* buf, size_t offset) {
+  char* p = buf + offset;
+  *p = (char)0x48; p++;  // mov imm, %rsi
+  *p = (char)0xbe; p++;
+  *((long*)p) = (long)imm;
+  return (2 + sizeof(long));
+}
+
 // Pass parameter to payload function, which has only one parameter POINT
-size_t SpSnippet::emit_pass_param(long point, char* buf, size_t offset) {
+size_t SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
+
+  // movq before, %rsi
+  insnsize = emit_mov_imm64_rsi((long)payload, p, 0);
+  p += insnsize;
 
   // movq POINT, %rdi
   insnsize = emit_mov_imm64_rdi((long)point, p, 0);

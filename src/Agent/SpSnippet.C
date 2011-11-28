@@ -45,7 +45,6 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   size_t offset = 0;
   size_t insnsize = 0;
 
-  //sp_debug("ret_addr: %lx, reloc: %d, spring: %d", ret_addr, reloc, spring);
   //-------------------------------------------
   // 1. Relocate call block, if it's indirect call
   //-------------------------------------------
@@ -61,20 +60,19 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   //-------------------------------------------
   insnsize = emit_save(blob_, offset, reloc);
   offset += insnsize;
-  //sp_debug("func_: %lx", func_);
-  //  if (!func_||reloc) {
-  //  }
 
   //-------------------------------------------
   // 3. Pass parameter
   //-------------------------------------------
-  insnsize = emit_pass_param((long)point_, blob_, offset);
+  insnsize = emit_pass_param((long)point_, (long)before_, blob_, offset);
   offset += insnsize;
 
   //-------------------------------------------
   // 4. Call before payload
   //-------------------------------------------
-  insnsize = emit_call_abs((long)before_, blob_, offset, true);
+  // insnsize = emit_call_abs((long)before_, blob_, offset, true);
+  // sp_print("wrapper_before:%lx", context_->wrapper_before());
+  insnsize = emit_call_abs((long)context_->wrapper_before(), blob_, offset, true);
   offset += insnsize;
 
   //-------------------------------------------
@@ -92,16 +90,13 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
   //-------------------------------------------
   if (!ret_addr && func_) {
     // 6.1. tail call and direct call
-    //sp_debug("TAIL to %s", func_->name().c_str());
     insnsize = emit_jump_abs((long)func_->addr(), blob_, offset);
     goto EXIT;
   } else if (ret_addr && func_) {
     // 6.2. non tail call and Direct call
-    //sp_debug("DIRECT");
     insnsize = emit_call_abs((long)func_->addr(), blob_, offset, false);
   } else {
     // 6.3. indirect call
-    //sp_debug("INDIRECT");
     insnsize = emit_call_orig((long)point_->block()->last(),
                               orig_call_insn_->size(), blob_, offset);
   }
@@ -117,13 +112,14 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     //-------------------------------------------
     // 8. pass parameters
     //-------------------------------------------
-    insnsize = emit_pass_param((long)point_, blob_, offset);
+    insnsize = emit_pass_param((long)point_, (long)after_, blob_, offset);
     offset += insnsize;
 
     //-------------------------------------------
     // 9. call payload
     //-------------------------------------------
-    insnsize = emit_call_abs((long)after_, blob_, offset, true);
+    insnsize = emit_call_abs((long)context_->wrapper_before(), blob_, offset, true);
+    // insnsize = emit_call_abs((long)after_, blob_, offset, true);
     offset += insnsize;
 
     //-------------------------------------------

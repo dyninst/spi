@@ -25,6 +25,8 @@ namespace sp {
     std::vector<char*> bufs;
   };
   void* pop_argument(Dyninst::PatchAPI::Point* pt, ArgumentHandle* h, size_t size);
+  void wrapper_before(Dyninst::PatchAPI::Point* pt, PayloadFunc_t before);
+  void wrapper_after(Dyninst::PatchAPI::Point* pt, PayloadFunc_t before);
 }
 
 #endif /* SP_PAYLOAD_H_ */

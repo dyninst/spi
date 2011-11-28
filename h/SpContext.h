@@ -44,19 +44,18 @@ class SpContext {
     bool in_spring_set(Dyninst::PatchAPI::PatchBlock* b) { return (spring_set_.find(b) != spring_set_.end()); }
     void add_spring(Dyninst::PatchAPI::PatchBlock* b) { spring_set_.insert(b); }
 
-    // Point -> propagated?
-    //typedef std::map<Dyninst::PatchAPI::Point*, bool> PropMap;
-    //typedef std::set<Dyninst::PatchAPI::Point*> PropMap;
-    //PropMap& prop_map() { return prop_map_; }
-
     bool is_well_known_lib(string);
     void set_directcall_only(bool b) { directcall_only_ = b; }
     bool directcall_only() { return directcall_only_; }
+
+    PayloadFunc wrapper_before() const {return wrapper_before_;}
+    PayloadFunc wrapper_after() const {return wrapper_after_;}
 
   protected:
     SpPropeller::ptr init_propeller_;
     PayloadFunc init_before_;
     PayloadFunc init_after_;
+
     SpParser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
     std::vector<string> well_known_libs_;
@@ -66,6 +65,9 @@ class SpContext {
     struct sigaction old_act_;
     InstMap inst_map_;
     SpringSet spring_set_;
+
+    PayloadFunc wrapper_before_;
+    PayloadFunc wrapper_after_;
 
     SpContext(SpPropeller::ptr,
               SpParser::ptr);

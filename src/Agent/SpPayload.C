@@ -4,7 +4,6 @@
 #include "SpPoint.h"
 #include "SpUtils.h"
 
-//using sp::SpPayload;
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Point;
 using Dyninst::PatchAPI::PatchMgrPtr;
@@ -15,10 +14,33 @@ using Dyninst::PatchAPI::PatchEdge;
 using Dyninst::PatchAPI::PatchObject;
 
 //-----------------------------------------
+// Payload functions wrappers
+//-----------------------------------------
+static bool pre_before(Point* pt) {
+  // Detect IPC primitives
+  // TODO
+
+  return true;
+}
+
+void wrapper_before(Point* pt, sp::PayloadFunc_t before) {
+  if (!pre_before(pt)) return;
+  before(pt);
+}
+
+static bool pre_after(Point* pt) {
+  return true;
+}
+
+void wrapper_after(Point* pt, sp::PayloadFunc_t after) {
+  if (!pre_after(pt)) return;
+  after(pt);
+}
+
+//-----------------------------------------
 // Default payload functions
 //-----------------------------------------
 void default_before(Point* pt) {
-  //  sp::payload_start();
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
@@ -26,7 +48,6 @@ void default_before(Point* pt) {
   sp_print("Enter %s", callee_name.c_str());
 
   sp::propel(pt);
-  //  sp::payload_end();
 }
 
 void default_after(Point* pt) {

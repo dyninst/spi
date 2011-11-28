@@ -7,4 +7,4 @@ PID=$!
 sleep 1
 $SP_DIR/$PLATFORM/Injector $PID $SP_DIR/test/Injector/$PLATFORM/libagent.so
 
-kill $PID
+#kill $PID

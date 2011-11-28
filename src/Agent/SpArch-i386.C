@@ -89,9 +89,13 @@ static size_t emit_pop_imm32(char* buf, size_t offset) {
 }
 
 // Pass parameter to payload function, which has only one parameter POINT
-size_t SpSnippet::emit_pass_param(long point, char* buf, size_t offset) {
+size_t SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
+
+  // push payload
+  insnsize = emit_push_imm32((long)payload, p, 0);
+  p += insnsize;
 
   // push POINT
   insnsize = emit_push_imm32((long)point, p, 0);
@@ -119,7 +123,10 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool rest
   }
 
   if (restore) {
-    // pop param
+    // pop point
+    insnsize = emit_pop_imm32(p, 0);
+    p += insnsize;
+    // pop payload
     insnsize = emit_pop_imm32(p, 0);
     p += insnsize;
   }
