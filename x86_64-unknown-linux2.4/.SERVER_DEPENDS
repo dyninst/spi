@@ -1,0 +1,12 @@
+SpServer.o:  \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/SpServer/SpServer.C \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpServer.h
+SpPipe.o:  \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/SpServer/SpPipe.C \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpIPC.h
+SpTCP.o:  \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/SpServer/SpTCP.C \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpIPC.h
+SpUDP.o:  \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/SpServer/SpUDP.C \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpIPC.h

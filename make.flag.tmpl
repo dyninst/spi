@@ -56,3 +56,22 @@ AG_IFLAGS  += -I$(DYNINST_DIR)/patchAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/parseAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/instructionAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/stackwalk/h
+
+#=================================================
+# For SpServer
+#=================================================
+
+SERVER_DIR      = $(SP_DIR)/src/SpServer
+
+SERVER_FLAGS   += $(COMMON_FLAGS)
+SERVER_FLAGS   += -D_GNU_SOURCE
+
+SERVER_LDFLAGS += $(COMMON_LDFLAGS)
+SERVER_LDFLAGS += -lpcontrol
+SERVER_LDFLAGS += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
+SERVER_LDFLAGS += -lsymtabAPI
+SERVER_LDFLAGS += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
+
+SERVER_IFLAGS  += $(COMMON_IFLAGS)
+SERVER_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/h
+SERVER_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/src

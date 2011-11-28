@@ -1,0 +1,7 @@
+DRIVER_SRCS            =
+MUTATEE_SRCS           =
+AGENT_SRCS             =
+
+include ../../../make.config
+include ../../../make.flag.tmpl
+include ../make.module.tmpl

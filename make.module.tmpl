@@ -2,8 +2,9 @@
 INJECTOR   = Injector
 IJAGENT    = libijagent.so
 AGENT      = libagent.so
+SPSERVER   = SpServer
 
-all: $(INJECTOR) $(IJAGENT) $(AGENT)
+all: $(INJECTOR) $(IJAGENT) $(AGENT) $(SPSERVER)
 
 GCC        = gcc
 GXX        = g++
@@ -70,6 +71,28 @@ $(AGENT): $(AG_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@  $(AG_OBJS) $(AG_LDFLAGS)
 
+#======================================
+# SpServer
+#======================================
+SERVER_SRCS    += $(SERVER_DIR)/SpServer.C \
+                  $(SERVER_DIR)/SpPipe.C \
+                  $(SERVER_DIR)/SpTCP.C \
+                  $(SERVER_DIR)/SpUDP.C
+
+SERVER_OBJS    += $(notdir $(SERVER_SRCS:%.C=%.o))
+
+SERVER_DEP  = .SERVER_DEPENDS
+SERVER_DEPS:
+	$(GXX) -MM $(SERVER_IFLAGS) $(SERVER_FLAGS) $(SERVER_SRCS) > $(SERVER_DEP)
+include $(SERVER_DEP)
+
+$(SERVER_OBJS): %.o : $(SERVER_SRCS)
+	@echo Compiling $*.o
+	@$(GXX) -c -o $@ $(SERVER_IFLAGS) $(SERVER_FLAGS) $(SERVER_DIR)/$*.C
+
+$(SPSERVER): $(SERVER_OBJS)
+	@echo Linking $@
+	@$(GXX) -o $@ $(SERVER_OBJS) $(SERVER_LDFLAGS)
 
 #=================================================
 # clean
@@ -78,7 +101,8 @@ clean_objs:
 	$(RM) *.o
 
 clean:
-	$(RM) $(INJECTOR) $(AGENT) $(IJAGENT) *.o
+	$(RM) $(INJECTOR) $(AGENT) $(IJAGENT) $(SPSERVER) *.o
 	make IJ_DEPS
 	make AG_DEPS
+	make SERVER_DEPS
 

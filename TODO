@@ -1,3 +1,15 @@
+Injector:
+- port to windows
+
+Agent:
 - A better memory manager to allocate blob
 - Handle function calls that cannot be parsed
 - Allow user to specify what libraries to skip parsing
+- port to windows 
+
+SpServer:
+- pipe
+- tcp
+- udp
+- more ipc mechanisms
+- port to windows 

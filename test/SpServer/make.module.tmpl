@@ -1,0 +1,69 @@
+include ../../../make.config
+include ../../../make.flag.tmpl
+
+GCC        = gcc
+GXX        = g++
+RM         = rm -f
+TESTCASE_DIR = ../TestCases
+
+# Test driver
+TEST_DRIVER           = test
+DRIVER_SRCS          += $(wildcard ../*.C)
+DRIVER_OBJS           = $(notdir $(DRIVER_SRCS:%.C=%.o))
+DRIVER_LDFLAGS        = -ldl
+DRIVER_FLAGS          = -g
+
+# IPC
+IPC_SRCS           += $(wildcard ../TestCases/*.C)
+IPC_OBJS            = $(notdir $(IPC_SRCS:%.C=%.o))
+IPC_EXE             = $(notdir $(IPC_SRCS:%.C=%))
+
+IPC_FLAGS             += -g
+IPC_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
+IPC_LDFLAGS           += -lagent
+
+# Rules
+#.PHONY: all
+all: IPC DRIVER
+	@echo ""
+	@echo "====================="
+	@echo " Usage: sh run.sh "
+	@echo "====================="
+
+IPC_DEP  = .IPC_DEPENDS
+IPC_DEPS:
+	@echo "Makeing dependency test cases"
+	@$(GXX) -MM $(IPC_IFLAGS) $(IPC_FLAGS) $(IPC_SRCS) > $(IPC_DEP)
+#include $(IPC_DEP)
+
+IPC: $(IPC_EXE)
+	@echo "* All agents are done"
+$(IPC_OBJS): %.o : $(IPC_SRCS)
+	@echo "Compiling $@"
+	@$(GXX) -o $@ $(TESTCASE_DIR)/$*.C $(IPC_IFLAGS) $(IPC_FLAGS) -c
+$(IPC_EXE): % : $(IPC_OBJS)
+	@echo "Linking $@"
+	@$(GXX) -o $@ $*.o $(IPC_LDFLAGS)
+
+DRIVER_DEP  = .DRIVER_DEPENDS
+DRIVER_DEPS:
+	@echo "Makeing dependency for Test driver"
+	@$(GXX) -MM $(DRIVER_IFLAGS) $(DRIVER_FLAGS) $(DRIVER_SRCS) > $(DRIVER_DEP)
+include $(DRIVER_DEP)
+
+DRIVER: $(TEST_DRIVER)
+	@echo "* Test driver is done"
+$(DRIVER_OBJS): %.o : $(DRIVER_SRCS)
+	@echo "Compiling $@"
+	@$(GXX) -o $@ $(DRIVER_SRCS) $(DRIVER_IFLAGS) $(DRIVER_FLAGS) -c
+$(TEST_DRIVER): $(DRIVER_OBJS)
+	@echo "Linking $@"
+	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
+
+# Clean up
+clean:
+	@rm -f *.so *.o $(TEST_DRIVER) $(IPC_EXE) core*
+	@make IPC_DEPS
+	@make DRIVER_DEPS
+
+# Debug Makefile
