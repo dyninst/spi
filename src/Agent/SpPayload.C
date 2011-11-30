@@ -13,33 +13,64 @@ using Dyninst::PatchAPI::Scope;
 using Dyninst::PatchAPI::PatchBlock;
 using Dyninst::PatchAPI::PatchEdge;
 using Dyninst::PatchAPI::PatchObject;
-
+using namespace sp;
 extern sp::SpContext* g_context;
 
 //-----------------------------------------
 // Payload functions wrappers
 //-----------------------------------------
-static bool pre_before(Point* pt) {
+int g_pid = 0;
+static bool pre_before(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return false;
 
-  // IPC
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
-  if (ipc_mgr->can_propagate()) return true;
-
-  return false;
+  if (ipc_mgr->can_work()) {
+    if (f->name().compare("read") == 0 ||
+	f->name().compare("write") == 0) {
+      ArgumentHandle h;
+      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      // sp_print("fd: %d", *fd);
+      if (ipc_mgr->is_pipe(*fd)) {
+	sp_print("It's a pipe!");
+	// Let child process's payload function work
+	ipc_mgr->set_work(1, g_pid);
+      } else if (ipc_mgr->is_tcp(*fd)) {
+      } else if (ipc_mgr->is_udp(*fd)) {
+      }
+    }
+  }
+  return true;
 }
 
-void wrapper_before(Point* pt, sp::PayloadFunc_t before) {
+void wrapper_before(SpPoint* pt, sp::PayloadFunc_t before) {
   if (!pre_before(pt)) return;
   before(pt);
 }
 
-static bool pre_after(Point* pt) {
+static bool pre_after(SpPoint* pt) {
+  PatchFunction* f = sp::callee(pt);
+  if (!f) return false;
+
+  // Handle fork, thus pipe
+  if (f->name().compare("fork") == 0) {
+    long pid = sp::retval(pt);
+    if (pid == 0) {
+      sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+      ipc_mgr->set_work(0, getpid());
+      // Maintain a 32KB shared memory per machine
+      // The creation of this shared memory is by SpServer
+      // 1 byte for each process's can_work
+      // We can support ~32000 processes, which is the maximum for linux
+    } else if (pid > 0) {
+      g_pid = pid;
+    }
+  }
+
   return true;
 }
 
-void wrapper_after(Point* pt, sp::PayloadFunc_t after) {
+void wrapper_after(SpPoint* pt, sp::PayloadFunc_t after) {
   if (!pre_after(pt)) return;
   after(pt);
 }
@@ -108,4 +139,8 @@ long retval(sp::SpPoint* pt) {
   return pt->snip()->get_ret_val();
 }
 
+bool can_work() {
+  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  return ipc_mgr->can_work();
+}
 }

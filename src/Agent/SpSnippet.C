@@ -118,7 +118,8 @@ char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
     //-------------------------------------------
     // 9. call payload
     //-------------------------------------------
-    insnsize = emit_call_abs((long)context_->wrapper_before(), blob_, offset, true);
+    // sp_print("wrapper_after:%lx", context_->wrapper_after());
+    insnsize = emit_call_abs((long)context_->wrapper_after(), blob_, offset, true);
     // insnsize = emit_call_abs((long)after_, blob_, offset, true);
     offset += insnsize;
 

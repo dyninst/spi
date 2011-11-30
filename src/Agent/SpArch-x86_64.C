@@ -165,7 +165,7 @@ size_t SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t of
   char* p = buf + offset;
   size_t insnsize = 0;
 
-  // movq before, %rsi
+  // movq payload, %rsi
   insnsize = emit_mov_imm64_rsi((long)payload, p, 0);
   p += insnsize;
 

@@ -5,12 +5,19 @@ using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
 
-void test_before(Point* pt) {
-  // sp_print("%s", callee(pt)->name().c_str());
+void test_before(SpPoint* pt) {
+  if (can_work()) {
+    sp_print("Function: %s @ pid=%d", callee(pt)->name().c_str(), getpid());
+  }
   sp::propel(pt);
 }
 
-void test_after(Point* pt) {
+void test_after(SpPoint* pt) {
+  /*
+  if (can_work()) {
+    sp_print("Function: %s @ pid=%d", callee(pt)->name().c_str(), getpid());
+  }
+  */
 }
 
 AGENT_INIT
