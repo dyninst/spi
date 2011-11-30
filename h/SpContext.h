@@ -10,6 +10,7 @@
 #include "PatchMgr.h"
 #include "SpEvent.h"
 #include "SpSnippet.h"
+#include "SpIpcMgr.h"
 
 namespace sp {
 
@@ -51,6 +52,7 @@ class SpContext {
     PayloadFunc wrapper_before() const {return wrapper_before_;}
     PayloadFunc wrapper_after() const {return wrapper_after_;}
 
+    SpIpcMgr* ipc_mgr() const { return ipc_mgr_; }
   protected:
     SpPropeller::ptr init_propeller_;
     PayloadFunc init_before_;
@@ -58,7 +60,7 @@ class SpContext {
 
     SpParser::ptr parser_;
     Dyninst::PatchAPI::PatchMgrPtr mgr_;
-    std::vector<string> well_known_libs_;
+    std::vector<std::string> well_known_libs_;
     bool directcall_only_;
 
     // Things to be restored
@@ -69,8 +71,11 @@ class SpContext {
     PayloadFunc wrapper_before_;
     PayloadFunc wrapper_after_;
 
+    SpIpcMgr* ipc_mgr_;
+
     SpContext(SpPropeller::ptr,
               SpParser::ptr);
+    ~SpContext();
     void init_well_known_libs();
 };
 

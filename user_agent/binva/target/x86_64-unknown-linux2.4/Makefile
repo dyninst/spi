@@ -8,7 +8,7 @@ all: $(TRG_EXE)
 
 $(TRG_OBJS): %.o : $(TRG_SRCS)
 	@echo "Compiling $@"
-	@$(CC) -o $(TRG_DIR)/$@ ../$*.c -c
+	@$(CC) -o $(TRG_DIR)/$@ ../$*.c -c -g
 
 $(TRG_EXE): % : $(TRG_OBJS)
 	@echo "Linking $@"

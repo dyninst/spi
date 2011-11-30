@@ -1,4 +1,6 @@
 #include "SpInc.h"
+#include "Function.h"
+#include "Type.h"
 
 using namespace Dyninst;
 using namespace PatchAPI;
@@ -69,6 +71,43 @@ class PrintfChecker : public BinVaChecker {
     }
 };
 
+// Bookkeeping for stack array, for future checking on buffer overflow problem
+class StackArrayChecker : public BinVaChecker {
+  public:
+    virtual bool fini_report() {}
+    virtual bool post_check(SpPoint* pt) {}
+    virtual bool check(SpPoint* pt) {
+      PatchFunction* f = sp::callee(pt);
+      if (!f) return false;
+
+      sp_print("StackArrayChecker");
+      // getAllVariables
+      PatchObject* obj = pt->obj();
+      using namespace Dyninst::ParseAPI;
+      using namespace Dyninst::SymtabAPI;
+      SymtabCodeSource* cs = static_cast<SymtabCodeSource*>(obj->co()->cs());
+      Symtab* sym = cs->getSymtabObject();
+      std::vector<Symbol*> symbols;
+
+      std::vector<SymtabAPI::Function*> funcs;
+      sym->getAllFunctions(funcs);
+
+      for (int i = 0; i < funcs.size(); i ++) {
+	if (funcs[i]->getOffset() == f->addr()) {
+
+	  std::vector<localVar*> vars;
+	  funcs[i]->getLocalVariables(vars);
+
+	  for (int j = 0; j < vars.size(); j ++) {
+	    typeArray* t = vars[j]->getType()->getArrayType();
+	    if (!t) continue;
+	    sp_print("%s: [%lx, %lx]", vars[j]->getName().c_str(), t->getLow(), t->getHigh());
+	  }
+	}
+      }
+    }
+};
+
 class MallocFreeChecker : public BinVaChecker {
   public:
     virtual bool fini_report() {
@@ -126,13 +165,12 @@ class FileAccessChecker : public BinVaChecker {
 class BinVa {
   public:
     BinVa() {
-      /*
       checkers_.insert(new DoubleFreeChecker);
       checkers_.insert(new DangerousFuncChecker);
       checkers_.insert(new PrintfChecker);
       checkers_.insert(new MallocFreeChecker);
-      */
       checkers_.insert(new FileAccessChecker);
+      checkers_.insert(new StackArrayChecker);
     }
     ~BinVa() {
       for (std::set<BinVaChecker*>::iterator i = checkers_.begin(); i != checkers_.end(); i++) {

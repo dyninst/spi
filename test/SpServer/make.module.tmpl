@@ -8,39 +8,51 @@ TESTCASE_DIR = ../TestCases
 
 # Test driver
 TEST_DRIVER           = test
-DRIVER_SRCS          += $(wildcard ../*.C)
+DRIVER_SRCS          += $(wildcard ../TestDriver.C)
 DRIVER_OBJS           = $(notdir $(DRIVER_SRCS:%.C=%.o))
 DRIVER_LDFLAGS        = -ldl
 DRIVER_FLAGS          = -g
 
 # IPC
-IPC_SRCS           += $(wildcard ../TestCases/*.C)
-IPC_OBJS            = $(notdir $(IPC_SRCS:%.C=%.o))
-IPC_EXE             = $(notdir $(IPC_SRCS:%.C=%))
+IPC_SRCS           += $(wildcard ../TestCases/*.c)
+IPC_OBJS            = $(notdir $(IPC_SRCS:%.c=%.o))
+IPC_EXE             = $(notdir $(IPC_SRCS:%.c=%))
 
 IPC_FLAGS             += -g
 IPC_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
 IPC_LDFLAGS           += -lagent
 
+# Agent
+AGENT_SRCS           += $(wildcard ../TestAgent.C)
+AGENT_OBJS            = $(notdir $(AGENT_SRCS:%.C=%.o))
+AGENT_SO              = $(notdir $(AGENT_SRCS:%.C=%.so))
+
+AG_FLAGS             += -g
+AG_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
+AG_LDFLAGS           += -lagent
+
 # Rules
 #.PHONY: all
-all: IPC DRIVER
+all: AGENT IPC DRIVER COPY
 	@echo ""
 	@echo "====================="
 	@echo " Usage: sh run.sh "
 	@echo "====================="
 
+COPY:
+	@cp $(SP_DIR)/$(PLATFORM)/libagent.so ./
+
 IPC_DEP  = .IPC_DEPENDS
 IPC_DEPS:
 	@echo "Makeing dependency test cases"
 	@$(GXX) -MM $(IPC_IFLAGS) $(IPC_FLAGS) $(IPC_SRCS) > $(IPC_DEP)
-#include $(IPC_DEP)
+include $(IPC_DEP)
 
 IPC: $(IPC_EXE)
 	@echo "* All agents are done"
 $(IPC_OBJS): %.o : $(IPC_SRCS)
 	@echo "Compiling $@"
-	@$(GXX) -o $@ $(TESTCASE_DIR)/$*.C $(IPC_IFLAGS) $(IPC_FLAGS) -c
+	@$(GXX) -o $@ $(TESTCASE_DIR)/$*.c $(IPC_IFLAGS) $(IPC_FLAGS) -c
 $(IPC_EXE): % : $(IPC_OBJS)
 	@echo "Linking $@"
 	@$(GXX) -o $@ $*.o $(IPC_LDFLAGS)
@@ -60,10 +72,26 @@ $(TEST_DRIVER): $(DRIVER_OBJS)
 	@echo "Linking $@"
 	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
 
+AG_DEP  = .AG_DEPENDS
+AG_DEPS:
+	@echo "Makeing dependency Agents"
+	@$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP)
+include $(AG_DEP)
+
+AGENT: $(AGENT_SO)
+	@echo "* All agents are done"
+$(AGENT_OBJS): %.o : $(AGENT_SRCS)
+	@echo "Compiling $@"
+	@$(GXX) -o $@ ../$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
+$(AGENT_SO): %.so : $(AGENT_OBJS)
+	@echo "Linking $@"
+	@$(GXX) -o $@ $*.o $(AG_LDFLAGS)
+
 # Clean up
 clean:
 	@rm -f *.so *.o $(TEST_DRIVER) $(IPC_EXE) core*
 	@make IPC_DEPS
 	@make DRIVER_DEPS
+	@make AG_DEPS
 
 # Debug Makefile

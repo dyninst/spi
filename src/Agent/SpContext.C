@@ -26,6 +26,7 @@ SpContext::SpContext(SpPropeller::ptr p,
                      SpParser::ptr parser) {
   init_propeller_ = p;
   parser_ = parser;
+  ipc_mgr_ = new SpIpcMgr();
 
   parse();
 
@@ -125,3 +126,6 @@ Dyninst::PatchAPI::PatchFunction* SpContext::callee(Dyninst::PatchAPI::Point* pt
   return parser()->callee(pt, directcall_only_ == false);
 }
 
+SpContext::~SpContext() {
+  delete ipc_mgr_;
+}

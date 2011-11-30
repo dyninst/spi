@@ -3,6 +3,7 @@
 #include "SpContext.h"
 #include "SpPoint.h"
 #include "SpUtils.h"
+#include "SpIPC.h"
 
 using Dyninst::PatchAPI::PatchFunction;
 using Dyninst::PatchAPI::Point;
@@ -13,14 +14,20 @@ using Dyninst::PatchAPI::PatchBlock;
 using Dyninst::PatchAPI::PatchEdge;
 using Dyninst::PatchAPI::PatchObject;
 
+extern sp::SpContext* g_context;
+
 //-----------------------------------------
 // Payload functions wrappers
 //-----------------------------------------
 static bool pre_before(Point* pt) {
-  // Detect IPC primitives
-  // TODO
+  PatchFunction* f = sp::callee(pt);
+  if (!f) return false;
 
-  return true;
+  // IPC
+  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  if (ipc_mgr->can_propagate()) return true;
+
+  return false;
 }
 
 void wrapper_before(Point* pt, sp::PayloadFunc_t before) {
@@ -61,7 +68,6 @@ void default_after(Point* pt) {
 //-----------------------------------------
 // SpPayload
 //-----------------------------------------
-extern sp::SpContext* g_context;
 namespace sp {
 Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt_) {
   return g_context->callee(pt_);

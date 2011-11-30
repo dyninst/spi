@@ -25,6 +25,11 @@ bool TestDriver::run_testcase(std::string name) {
   // TODO
   // 1. Start server
   // 2. Run test case
+  char cmd[1024];
+  sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
+  std::cerr << cmd << "\n";
+  system(cmd);
+
   // 3. Stop server
   return true;
 }
