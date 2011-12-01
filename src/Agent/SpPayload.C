@@ -20,16 +20,36 @@ extern sp::SpContext* g_context;
 // Payload functions wrappers
 //-----------------------------------------
 int g_pid = 0;
+
 static bool pre_before(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return false;
 
+  //------------------------------------
+  // Sender-side
+  //------------------------------------
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+
+  // Detect initiation of communication
+  if (!ipc_mgr->is_sender(f->name().c_str())) return true;
+
+  // Get destination name
+  ArgumentHandle h;
+  int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+  SpChannel* c = ipc_mgr->get_channel(*fd);
+
+  // Inject
+  // ipc_mgr->inject(c);
+  if (ipc_mgr->start_tracing()) {
+    if (ipc_mgr->is_pipe(*fd)) {
+      ipc_mgr->set_start_tracing(1, c->remote_pid);
+    }
+  }
+
+/*
   if (ipc_mgr->can_work()) {
     if (f->name().compare("read") == 0 ||
 	f->name().compare("write") == 0) {
-      ArgumentHandle h;
-      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
       // sp_print("fd: %d", *fd);
       if (ipc_mgr->is_pipe(*fd)) {
 	sp_print("It's a pipe!");
@@ -40,6 +60,7 @@ static bool pre_before(SpPoint* pt) {
       }
     }
   }
+*/
   return true;
 }
 
@@ -52,6 +73,25 @@ static bool pre_after(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return false;
 
+  //------------------------------------
+  // Sender-side: detect fork for pipe
+  //------------------------------------
+  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  if (ipc_mgr->is_fork(f->name().c_str())) {
+    long pid = sp::retval(pt);
+    // Receiver
+    if (pid == 0) {
+      ipc_mgr->set_start_tracing(0, getpid());
+    }
+  }
+
+  //------------------------------------
+  // Receipt-side
+  //------------------------------------
+
+  // Detect receipt
+
+/*
   // Handle fork, thus pipe
   if (f->name().compare("fork") == 0) {
     long pid = sp::retval(pt);
@@ -66,7 +106,7 @@ static bool pre_after(SpPoint* pt) {
       g_pid = pid;
     }
   }
-
+*/
   return true;
 }
 
@@ -139,8 +179,16 @@ long retval(sp::SpPoint* pt) {
   return pt->snip()->get_ret_val();
 }
 
+
+/*
 bool can_work() {
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
   return ipc_mgr->can_work();
 }
+*/
+bool is_ipc(int fd) {
+  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  return ipc_mgr->is_ipc(fd);
+}
+
 }

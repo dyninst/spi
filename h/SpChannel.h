@@ -1,48 +1,53 @@
 #ifndef _SPCHANNEL_H_
 #define _SPCHANNEL_H_
 
+#include <unistd.h>
+#include <sys/types.h>
+
 namespace sp {
 
 typedef enum {
-  SP_UNKNOWN = 0;
-  SP_PIPE = 1;
-  SP_TCP = 2;
-  SP_UDP = 3; 
+  SP_UNKNOWN = 0,
+  SP_PIPE = 1,
+  SP_TCP = 2,
+  SP_UDP = 3 
 } ChannelType;
 
+
+// Uni-directional channel
+// Local process is the one that sends or writes to the channel
+// Remote process is the one that receives or reads from the channel
 struct SpChannel {
   SpChannel() :
-  id(0), type(SP_UNKNOWN), propagated(false), sender_pid(0), receiver_pid(0) {}
+  type(SP_UNKNOWN), start_tracing(false), local_pid(0), local_ip(0), remote_pid(0), remote_ip(0), remote_injected(false), inode(-1) {}
 
-  long id;               // System-wide id
   ChannelType type;      // Channel type
-  bool propagated;       // Already propagated?
+  bool start_tracing;    // Already start_tracing?
   pid_t local_pid;       // Sender's pid
+  unsigned local_ip;     // Sender's ip
   pid_t remote_pid;      // Receiver's pid
-  int fd;                // File descriptor
+  unsigned remote_ip;    // Receiver's ip
+  bool remote_injected;  // Agent is already injected to receiver?
+  long inode;            // System-wide inode number
 };
 
-struct SpPipeChannel : public SpChannel {
-  SpPipeChannel() : SpChannel() {}
+struct PipeChannel : public SpChannel {
+  PipeChannel() : SpChannel() {}
 };
 
-struct SpTcpChannel : public SpChannel {
-  SpTcpChannel() :
-  SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
 
-  unsigned local_ip;
+struct TcpChannel : public SpChannel {
+  TcpChannel() :
+  SpChannel(), local_port(0), remote_port(0) {}
   unsigned local_port;
-  unsigned remote_ip;
   unsigned remote_port;
 };
 
-struct SpUdpChannel : public SpChannel {
-  SpUdpChannel() :
-  SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
+struct UdpChannel : public SpChannel {
+  UdpChannel() :
+  SpChannel(), local_port(0), remote_port(0) {}
 
-  unsigned local_ip;
   unsigned local_port;
-  unsigned remote_ip;
   unsigned remote_port;
 };
 
