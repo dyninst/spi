@@ -9,12 +9,14 @@ void test_before(SpPoint* pt) {
   PatchFunction* f = callee(pt);
   if (!f) return;
 
-  if (f->name().compare("write") == 0 ||
-      f->name().compare("read") == 0) {
-    ArgumentHandle h;
-    int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
-    if (is_ipc(*fd)) {
-      sp_print("Send: %s @ pid=%d", f->name().c_str(), getpid());
+  if (start_tracing()) {
+    if (f->name().compare("write") == 0 ||
+	f->name().compare("read") == 0) {
+      ArgumentHandle h;
+      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      if (is_ipc(*fd)) {
+	sp_print("Send: %s @ pid=%d", f->name().c_str(), getpid());
+      }
     }
   }
   sp::propel(pt);

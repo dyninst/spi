@@ -13,7 +13,7 @@ namespace sp {
 
 #define TRACING_ID 1987
 #define TRACING_SIZE 32768
-static void tracing_internal(char* start_tracing) {
+static void tracing_internal(char** start_tracing) {
   int shmid;
   if ((shmid = shmget(TRACING_ID, TRACING_SIZE, IPC_CREAT | 0666)) < 0) {
     sp_perror("ERROR: cannot create shared memory with id %d", TRACING_ID);
@@ -23,10 +23,10 @@ static void tracing_internal(char* start_tracing) {
   if ((long)(shm = (char*)shmat(shmid, NULL, 0)) == (long)-1) {
     sp_perror("ERROR: cannot get shared memory");
   }
-  start_tracing = &shm[getpid()];
+  *start_tracing = &shm[getpid()];
 }
 SpIpcMgr::SpIpcMgr() {
-  tracing_internal(start_tracing_);
+  tracing_internal(&start_tracing_);
   start_tracing_[getpid()] = 1;
 }
 
@@ -35,24 +35,7 @@ SpIpcMgr::~SpIpcMgr() {
     destroy_channel(i->second);
   }
 }
-  /*
-void SpIpcMgr::set_work(char b, int pid) {
 
-#define CAN_WORK_ID 1987
-#define CAN_WORK_SIZE 32768
-  int shmid;
-  if ((shmid = shmget(CAN_WORK_ID, CAN_WORK_SIZE, IPC_CREAT | 0666)) < 0) {
-    sp_perror("ERROR: cannot create shared memory with id %d", CAN_WORK_ID);
-  }
-
-  char* shm = NULL;
-  if ((long)(shm = (char*)shmat(shmid, NULL, 0)) == (long)-1) {
-    sp_perror("ERROR: cannot get shared memory");
-  }
-  can_work_ = &shm[pid];
-  *can_work_ = b;
-}
-  */
 // Get inode from file descriptor 
 long SpIpcMgr::get_inode_from_fd(int fd) {
   struct stat s;
@@ -81,16 +64,14 @@ SpChannel* SpIpcMgr::get_channel(int fd) {
   if (is_pipe(fd)) {
     c = new PipeChannel;
     c->local_pid = getpid();
-    // c->remote_pid = get_pid_from_fd(fd);
     PidSet pid_set;
     get_pids_from_fd(fd, pid_set);
     for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
       if (*i != c->local_pid) {
-	c->local_pid = *i;
+	c->remote_pid = *i;
 	break;
       }
     }
-    sp_print("c->local_pid: %d", c->local_pid);
     c->type = SP_PIPE;
   } else if (is_tcp(fd)) {
     c = new TcpChannel;
@@ -146,7 +127,6 @@ static int pid_uses_inode(int pid, int inode) {
   sprintf(name, "/proc/%u/fd", pid);
 
   if ((dir = opendir(name)) == 0) {
-    // sp_perror("ERROR: opendir error for %s", name);
     return 0;
   }
 

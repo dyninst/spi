@@ -40,8 +40,10 @@ static bool pre_before(SpPoint* pt) {
 
   // Inject
   // ipc_mgr->inject(c);
+
   if (ipc_mgr->start_tracing()) {
     if (ipc_mgr->is_pipe(*fd)) {
+      sp_print("c->remote_pid: %d", c->remote_pid);
       ipc_mgr->set_start_tracing(1, c->remote_pid);
     }
   }
@@ -77,6 +79,7 @@ static bool pre_after(SpPoint* pt) {
   // Sender-side: detect fork for pipe
   //------------------------------------
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+
   if (ipc_mgr->is_fork(f->name().c_str())) {
     long pid = sp::retval(pt);
     // Receiver
@@ -189,6 +192,11 @@ bool can_work() {
 bool is_ipc(int fd) {
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
   return ipc_mgr->is_ipc(fd);
+}
+
+char start_tracing() {
+  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  return ipc_mgr->start_tracing();
 }
 
 }
