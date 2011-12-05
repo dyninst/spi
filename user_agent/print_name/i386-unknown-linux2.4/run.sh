@@ -2,7 +2,7 @@ source ../../../make.config
 AGENT_NAME=libmyagent.so
 export LD_LIBRARY_PATH
 AGENT=`pwd`/$AGENT_NAME
-
+BIN=./ 
 #---------------------
 # run program
 #---------------------
@@ -65,7 +65,7 @@ AGENT=`pwd`/$AGENT_NAME
 #echo 52; LD_PRELOAD="./$AGENT_NAME" $BIN/who
 #echo 53; LD_PRELOAD="./$AGENT_NAME" $BIN/cksum /tmp/tmp
 #echo 54; LD_PRELOAD="./$AGENT_NAME" $BIN/whoami
-#echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
+echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
 #echo 56; LD_PRELOAD="./$AGENT_NAME" $BIN/ls $1
 #echo 57; LD_PRELOAD="./$AGENT_NAME" $BIN/true
 #echo 58; LD_PRELOAD="./$AGENT_NAME" $BIN/false

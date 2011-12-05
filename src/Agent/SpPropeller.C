@@ -29,7 +29,9 @@ bool SpPropeller::go(PatchFunction* func,
                      PayloadFunc before,
                      PayloadFunc after,
                      Point* pt) {
-
+#ifndef SP_RELEASE
+  sp_debug("START PROPELLING - propel to callees of function %s", func->name().c_str());
+#endif
   // 1. Find points according to type
   Points pts;
   PatchMgrPtr mgr = context->mgr();
@@ -49,11 +51,22 @@ bool SpPropeller::go(PatchFunction* func,
     // It's possible that callee will be NULL, which is an indirect call.
     // In this case, we'll parse it later during runtime.
     PatchFunction* callee = context->parser()->callee(pt);
+#ifndef SP_RELEASE
+    if (callee) {
+      sp_debug("POINT - instrumenting direct call at %lx to function %s",
+	       pt->block()->last(), callee->name().c_str());
+    } else {
+      sp_debug("POINT - instrumenting indirect call at %lx", pt->block()->last());
+    }
+#endif
     SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, before, after);
     Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);
     patcher.add(PushBackCommand::create(pt, snip));
   }
   patcher.commit();
+#ifndef SP_RELEASE
+  sp_debug("FINISH PROPELLING - %d callees of function %s are instrumented", pts.size(), func->name().c_str());
+#endif
   return true;
 }
 

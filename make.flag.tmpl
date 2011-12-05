@@ -3,6 +3,9 @@
 #=================================================
 
 COMMON_FLAGS     = -fPIC
+ifdef SP_RELEASE
+  COMMON_FLAGS  += -DSP_RELEASE
+endif
 
 COMMON_IFLAGS     = -I$(SP_DIR)/h
 COMMON_IFLAGS    += -I$(DYNINST_DIR)

@@ -145,10 +145,16 @@ PatchMgrPtr SpParser::parse() {
       if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
           (sym->name().find(sp_filename(sp_filename(get_agent_name()))) == string::npos) &&
           (sym->name().find("libagent.so") == string::npos)) {
+#ifndef SP_RELEASE
+	sp_debug("SKIPED - skip parsing %s", sp_filename(sym->name().c_str()));
+#endif
         continue;
       }
     } else {
       if (is_dyninst_lib(sym->name())) {
+#ifndef SP_RELEASE
+	sp_debug("SKIPED - skip parsing %s", sp_filename(sym->name().c_str()));
+#endif
         continue;
       }
     }
@@ -161,12 +167,17 @@ PatchMgrPtr SpParser::parse() {
     co->parse();
 
     // Create PatchObjects
-    //PatchObject* patch_obj = PatchObject::create(co, load_addr);
     PatchObject* patch_obj = new sp::SpObject(co, load_addr, NULL, NULL, load_addr?load_addr:scs->loadAddress());
 
     patch_objs.push_back(patch_obj);
+#ifndef SP_RELEASE
+    sp_debug("PARSED - parsed %s", sp_filename(sym->name().c_str()));
+#endif
     if (sym->isExec()) {
       exe_obj_ = patch_obj;
+#ifndef SP_RELEASE
+      sp_debug("EXE - %s is an executable", sp_filename(sym->name().c_str()));
+#endif
     }
   } // End of symtab iteration
   assert(exe_obj_);

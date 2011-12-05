@@ -47,10 +47,13 @@ class SpContext {
 
     bool is_well_known_lib(string);
     void set_directcall_only(bool b) { directcall_only_ = b; }
-    bool directcall_only() { return directcall_only_; }
+    bool directcall_only() const { return directcall_only_; }
 
     PayloadFunc wrapper_before() const {return wrapper_before_;}
     PayloadFunc wrapper_after() const {return wrapper_after_;}
+
+    bool allow_ipc() const { return allow_ipc_; }
+    void set_allow_ipc(bool b);
 
     SpIpcMgr* ipc_mgr() const { return ipc_mgr_; }
   protected:
@@ -71,6 +74,7 @@ class SpContext {
     PayloadFunc wrapper_before_;
     PayloadFunc wrapper_after_;
 
+    bool allow_ipc_;
     SpIpcMgr* ipc_mgr_;
 
     SpContext(SpPropeller::ptr,

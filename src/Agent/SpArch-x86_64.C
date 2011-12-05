@@ -160,18 +160,22 @@ static size_t emit_mov_imm64_rsi(long imm, char* buf, size_t offset) {
   return (2 + sizeof(long));
 }
 
-// Pass parameter to payload function, which has only one parameter POINT
+// Pass parameter to payload function
+// Two parameters - POINT and Payload function
+// If payload == 0, then we are dealing with single-process only
 size_t SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
-  // movq payload, %rsi
-  insnsize = emit_mov_imm64_rsi((long)payload, p, 0);
-  p += insnsize;
-
   // movq POINT, %rdi
   insnsize = emit_mov_imm64_rdi((long)point, p, 0);
   p += insnsize;
+
+  if (payload) {
+    // movq payload, %rsi
+    insnsize = emit_mov_imm64_rsi((long)payload, p, 0);
+    p += insnsize;
+  }
 
   return (p - (buf + offset));
 }

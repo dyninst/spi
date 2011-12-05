@@ -26,13 +26,13 @@ SpAgent::ptr SpAgent::create() {
 }
 
 SpAgent::SpAgent() {
-  sp_debug("========== Agent ==========");
   init_event_ = SpEvent::ptr();
   fini_event_ = SpEvent::ptr();
   parser_ = SpParser::ptr();
 
   parse_only_ = false;
   directcall_only_ = false;
+  allow_ipc_ = false;
 }
 
 SpAgent::~SpAgent() {
@@ -64,15 +64,75 @@ void SpAgent::set_init_propeller(SpPropeller::ptr p) {
   init_propeller_ = p;
 }
 
+void SpAgent::set_parse_only(bool b) {
+  parse_only_ = b;
+}
+
+void SpAgent::set_directcall_only(bool b) {
+  directcall_only_ = b;
+}
+
+void SpAgent::set_ipc(bool b) {
+  allow_ipc_ = b;
+}
+
 /* Go! */
 void SpAgent::go() {
+
+#ifndef SP_RELEASE
+  sp_debug("========== Start Self-propelled instrumentation @ Process %d ==========", getpid());
+#endif
+
   // 1. Sanity check. If not user configuration, use default ones
-  if (!init_event_) init_event_ = SyncEvent::create();
-  if (!fini_event_) fini_event_ = SpEvent::create();
-  if (init_before_.size() == 0) init_before_ = "default_before";
-  if (init_after_.size() == 0) init_after_ = "";
-  if (!parser_) parser_ = SpParser::create();
-  if (!init_propeller_) init_propeller_ = SpPropeller::create();
+  if (!init_event_) {
+#ifndef SP_RELEASE
+    sp_debug("INIT EVENT - Use default event");
+#endif
+    init_event_ = SyncEvent::create();
+  }
+  if (!fini_event_) {
+#ifndef SP_RELEASE
+    sp_debug("FINI EVENT - Use default event");
+#endif
+    fini_event_ = SpEvent::create();
+  }
+  if (init_before_.size() == 0) {
+#ifndef SP_RELEASE
+    sp_debug("BEFORE_PAYLOAD - Use default payload before calls");
+#endif
+    init_before_ = "default_before";
+  }
+  if (init_after_.size() == 0) {
+#ifndef SP_RELEASE
+    sp_debug("AFTER_PAYLOAD - No payload after calls");
+#endif
+    init_after_ = "";
+  }
+  if (!parser_) {
+#ifndef SP_RELEASE
+    sp_debug("PARSER - Use default parser");
+#endif
+    parser_ = SpParser::create();
+  }
+  if (!init_propeller_) {
+#ifndef SP_RELEASE
+    sp_debug("PROPELLER - Use default propeller");
+#endif
+
+    init_propeller_ = SpPropeller::create();
+  }
+#ifndef SP_RELEASE
+  if (directcall_only_) {
+    sp_debug("DIRECT CALL ONLY - only instrument direct calls, ignoring indirect calls");
+  } else {
+    sp_debug("DIRECT/INDIRECT CALL - instrument both direct and indirect calls");
+  }
+  if (allow_ipc_) {
+    sp_debug("MULTI PROCESS - support multiprocess instrumentation");
+  } else {
+    sp_debug("SINGLE PROCESS - only support single-process instrumentation");
+  }
+#endif
 
   // 2. Prepare context
   context_ = SpContext::create(init_propeller_,
@@ -80,12 +140,17 @@ void SpAgent::go() {
                                init_after_,
                                parser_);
   context_->set_directcall_only(directcall_only_);
+  context_->set_allow_ipc(allow_ipc_);
 
-  if (parse_only_) return;
+  if (parse_only_) {
+#ifndef SP_RELEASE
+    sp_debug("PARSE ONLY - exit after parsing, without instrumentation");
+#endif
+
+    return;
+  }
 
   // 3. Register Events
   init_event_->register_event(context_);
   fini_event_->register_event(context_);
-
-
 }

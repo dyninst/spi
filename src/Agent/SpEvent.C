@@ -55,8 +55,6 @@ void AsyncEvent::register_event(SpContext* c) {
 void sync_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
-  //sp::Points pts;
-  //sp::CalleePoints(f, g_context, pts);
   g_context->init_propeller()->go(f, g_context,
                                   g_context->init_before(),
                                   g_context->init_after());
@@ -72,7 +70,9 @@ void SyncEvent::register_event(SpContext* c) {
   g_context = c;
 
   if (!g_context->parser()->injected()) {
-    c->parse();
+#ifndef SP_RELEASE
+    sp_debug("PRELOAD - preload agent.so, and instrument main()");
+#endif
     PatchFunction* f = c->parser()->findFunction("main");
     c->init_propeller()->go(f, c, c->init_before(), c->init_after());
   } else {

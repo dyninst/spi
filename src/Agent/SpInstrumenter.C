@@ -79,6 +79,11 @@ bool JumpInstrumenter::run() {
       // If it is not a direct call, and we don't want to instrument direct call
       if (!pt->getCallee() && g_context->directcall_only()) continue;
 
+#ifndef SP_RELEASE
+      if (spt->instrumented()) {
+	sp_debug("SKIPED - piont %lx is instrumented, skip it", pt->block()->last());
+      }
+#endif
       if (!spt->instrumented()) {
         Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
         SpSnippet::ptr sp_snip = snip->rep();
@@ -92,6 +97,9 @@ bool JumpInstrumenter::run() {
 
         // If the call is made by a jump, which may be tail call optimization
         if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
+#ifndef SP_RELEASE
+	  sp_debug("TAIL CALL - point %lx is a tail call", pt->block()->last());
+#endif
           spt->set_tailcall(true);
           ret_addr = 0;
         }
@@ -266,7 +274,9 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
-
+#ifndef SP_RELEASE
+  sp_debug("USE BLK-RELOC - piont %lx is instrumented using call block relocation", blk->last());
+#endif
   return true;
 }
 
@@ -346,11 +356,14 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
   if (!as->restore_range_perm((Dyninst::Address)addr, callblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
-
+#ifndef SP_RELEASE
+  sp_debug("USE SPRING - piont %lx is instrumented using 1-hop spring", callblk->last());
+#endif
   return true;
 }
 
 bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
+
   string int3;
   int3 += (char)0xcc;
 
@@ -374,6 +387,8 @@ bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob,
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
     return false;
   }
-
+#ifndef SP_RELEASE
+  sp_debug("USE TRAP - piont %lx is instrumented using trap", point->block()->last());
+#endif
   return true;
 }

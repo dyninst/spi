@@ -35,8 +35,9 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
     void set_init_after(string);
     void set_init_propeller(SpPropeller::ptr);
 
-    void set_parse_only(bool b) { parse_only_ = b; }
-    void set_directcall_only(bool b) { directcall_only_ = b; }
+    void set_parse_only(bool b);
+    void set_directcall_only(bool b);
+    void set_ipc(bool b);
 
     void go();
 
@@ -52,6 +53,7 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
 
     bool parse_only_;
     bool directcall_only_;
+    bool allow_ipc_;
 
     SpAgent();
 };

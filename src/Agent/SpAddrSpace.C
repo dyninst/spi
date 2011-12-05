@@ -82,12 +82,8 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
         perror("mprotect");
         return false;
       } else {
-        //sp_debug("PERM - successfully change the access permission to %lx",
-        //         PROT_READ | PROT_WRITE | PROT_EXEC);
         ret = true;
       }
-    } else {
-      // sp_debug("PERM - [%lx, %lx) NOT overlap (%lx, %lx) at %s", start, end, a, code_end, mm.path.c_str());
     }
   }
 
@@ -102,8 +98,6 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
       perror("mprotect");
       return false;
     } else {
-      //sp_debug("PERM - successfully change the access permission to %lx",
-      //         PROT_READ | PROT_WRITE | PROT_EXEC);
       ret = true;
     }
   }
@@ -126,7 +120,6 @@ bool SpAddrSpace::restore_range_perm(Dyninst::Address a, size_t length) {
         sp_print("MPROTECT - Failed to change memory access permission");
         return false;
       } else {
-        //sp_debug("PERM - successfully change the access permission to %lx", mem_maps_[start].perms);
         ret = true;
       }
     }
@@ -136,7 +129,7 @@ bool SpAddrSpace::restore_range_perm(Dyninst::Address a, size_t length) {
 
 // Parse /proc/pid/maps file to build memory mappings
 void SpAddrSpace::update_mem_maps() {
-  //sp_debug("UPDATE - Memory mappings");
+
   char maps_file[256];
   sprintf(maps_file, "/proc/%d/maps", getpid());
 
@@ -210,12 +203,16 @@ void SpAddrSpace::update_mem_maps() {
 }
 
 void SpAddrSpace::dump_mem_maps() {
+#ifndef SP_RELEASE
   sp_debug("MMAPS - %d memory mappings", mem_maps_.size());
+#endif
   for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
     MemMapping& mapping = mi->second;
+#ifndef SP_RELEASE
     sp_debug("MMAP - Range[%x ~ %x], Offset %x, Perm %x, Dev %s, Inode %d, Path %s",
              mapping.start, mapping.end, mapping.offset, mapping.perms, mapping.dev.c_str(),
              mapping.inode, mapping.path.c_str());
+#endif
   }
 }
 

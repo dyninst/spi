@@ -48,21 +48,6 @@ static bool pre_before(SpPoint* pt) {
     }
   }
 
-/*
-  if (ipc_mgr->can_work()) {
-    if (f->name().compare("read") == 0 ||
-	f->name().compare("write") == 0) {
-      // sp_print("fd: %d", *fd);
-      if (ipc_mgr->is_pipe(*fd)) {
-	sp_print("It's a pipe!");
-	// Let child process's payload function work
-	ipc_mgr->set_work(1, g_pid);
-      } else if (ipc_mgr->is_tcp(*fd)) {
-      } else if (ipc_mgr->is_udp(*fd)) {
-      }
-    }
-  }
-*/
   return true;
 }
 

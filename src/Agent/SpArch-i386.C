@@ -88,14 +88,18 @@ static size_t emit_pop_imm32(char* buf, size_t offset) {
   return (p - (buf + offset));
 }
 
-// Pass parameter to payload function, which has only one parameter POINT
+// Pass parameter to payload function
+// Two parameters - POINT and Payload function
+// If payload == 0, then we are dealing with single-process only
 size_t SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
-  // push payload
-  insnsize = emit_push_imm32((long)payload, p, 0);
-  p += insnsize;
+  if (payload) {
+    // push payload
+    insnsize = emit_push_imm32((long)payload, p, 0);
+    p += insnsize;
+  }
 
   // push POINT
   insnsize = emit_push_imm32((long)point, p, 0);
@@ -126,9 +130,12 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool rest
     // pop point
     insnsize = emit_pop_imm32(p, 0);
     p += insnsize;
-    // pop payload
-    insnsize = emit_pop_imm32(p, 0);
-    p += insnsize;
+
+    if (context_->allow_ipc()) {
+      // pop payload
+      insnsize = emit_pop_imm32(p, 0);
+      p += insnsize;
+    }
   }
 
   return (p - (buf + offset));
