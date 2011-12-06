@@ -1,46 +1,46 @@
 #ifndef _SPPOINT_H_
 #define _SPPOINT_H_
 
-#include "Point.h"
+#include "SpAgentCommon.h"
 #include "SpSnippet.h"
 
 namespace sp {
-class SpPoint : public Dyninst::PatchAPI::Point {
+class SpPoint : public ph::Point {
   public:
-    SpPoint(Dyninst::PatchAPI::Point::Type t,
-            Dyninst::PatchAPI::PatchMgrPtr m,
-            Dyninst::PatchAPI::PatchFunction *f)
-      : Dyninst::PatchAPI::Point(t,m,f), propagated_(false), instrumented_(false),
+    SpPoint(ph::Point::Type t,
+            ph::PatchMgrPtr m,
+            ph::PatchFunction *f)
+      : ph::Point(t,m,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
     }
-    SpPoint(Dyninst::PatchAPI::Point::Type t,
-            Dyninst::PatchAPI::PatchMgrPtr m,
-            Dyninst::PatchAPI::PatchFunction *f,
-            Dyninst::PatchAPI::PatchBlock *b)
-      : Dyninst::PatchAPI::Point(t,m,f,b), propagated_(false), instrumented_(false),
+    SpPoint(ph::Point::Type t,
+            ph::PatchMgrPtr m,
+            ph::PatchFunction *f,
+            ph::PatchBlock *b)
+      : ph::Point(t,m,f,b), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
     }
-    SpPoint(Dyninst::PatchAPI::Point::Type t,
-            Dyninst::PatchAPI::PatchMgrPtr m,
-            Dyninst::PatchAPI::PatchBlock *b,
-            Dyninst::PatchAPI::PatchFunction *f)
-      : Dyninst::PatchAPI::Point(t,m,b,f), propagated_(false), instrumented_(false),
+    SpPoint(ph::Point::Type t,
+            ph::PatchMgrPtr m,
+            ph::PatchBlock *b,
+            ph::PatchFunction *f)
+      : ph::Point(t,m,b,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
     }
-    SpPoint(Dyninst::PatchAPI::Point::Type t,
-            Dyninst::PatchAPI::PatchMgrPtr m,
-            Dyninst::PatchAPI::PatchBlock *b,
+    SpPoint(ph::Point::Type t,
+            ph::PatchMgrPtr m,
+            ph::PatchBlock *b,
             Dyninst::Address a,
             Dyninst::InstructionAPI::Instruction::Ptr i,
-            Dyninst::PatchAPI::PatchFunction *f)
-      : Dyninst::PatchAPI::Point(t,m,b,a,i,f), propagated_(false), instrumented_(false),
+            ph::PatchFunction *f)
+      : ph::Point(t,m,b,a,i,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
     }
-    SpPoint(Dyninst::PatchAPI::Point::Type t,
-            Dyninst::PatchAPI::PatchMgrPtr m,
-            Dyninst::PatchAPI::PatchEdge *e,
-            Dyninst::PatchAPI::PatchFunction *f)
-      : Dyninst::PatchAPI::Point(t,m,e,f), propagated_(false), instrumented_(false),
+    SpPoint(ph::Point::Type t,
+            ph::PatchMgrPtr m,
+            ph::PatchEdge *e,
+            ph::PatchFunction *f)
+      : ph::Point(t,m,e,f), propagated_(false), instrumented_(false),
       tail_call_(false), callee_(NULL) {
     }
 
@@ -54,15 +54,15 @@ class SpPoint : public Dyninst::PatchAPI::Point {
     void set_tailcall(bool b) { tail_call_ = b; }
     bool tailcall() { return tail_call_; }
 
-    Dyninst::PatchAPI::PatchFunction* callee() const { return callee_; }
-    void set_callee(Dyninst::PatchAPI::PatchFunction* f) { callee_ = f; }
+    ph::PatchFunction* callee() const { return callee_; }
+    void set_callee(ph::PatchFunction* f) { callee_ = f; }
     SpSnippet::ptr snip() const { return spsnip_;}
     void set_snip(SpSnippet::ptr s) { spsnip_ = s;}
   protected:
     bool propagated_;
     bool instrumented_;
     bool tail_call_;
-    Dyninst::PatchAPI::PatchFunction* callee_;
+    ph::PatchFunction* callee_;
     SpSnippet::ptr spsnip_;
 };
 

@@ -1,18 +1,17 @@
 #ifndef SP_PAYLOAD_H_
 #define SP_PAYLOAD_H_
 
-#include "SpCommon.h"
-#include "PatchCFG.h"
+#include "SpAgentCommon.h"
 
 namespace sp {
   class SpContext;
   class SpPoint;
 
-  typedef void (*PayloadFunc_t)(Dyninst::PatchAPI::Point* pt);
+  typedef void (*PayloadFunc_t)(ph::Point* pt);
   typedef void* PayloadFunc;
 
-  Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt_);
-  void propel(Dyninst::PatchAPI::Point* pt_);
+  ph::PatchFunction* callee(ph::Point* pt_);
+  void propel(ph::Point* pt_);
   long retval(SpPoint* pt);
 
   struct ArgumentHandle {
@@ -24,9 +23,9 @@ namespace sp {
     long num;
     std::vector<char*> bufs;
   };
-  void* pop_argument(Dyninst::PatchAPI::Point* pt, ArgumentHandle* h, size_t size);
-  void wrapper_before(Dyninst::PatchAPI::Point* pt, PayloadFunc_t before);
-  void wrapper_after(Dyninst::PatchAPI::Point* pt, PayloadFunc_t before);
+  void* pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size);
+  void wrapper_before(ph::Point* pt, PayloadFunc_t before);
+  void wrapper_after(ph::Point* pt, PayloadFunc_t before);
   char start_tracing();
   bool is_ipc(int fd); 
 }

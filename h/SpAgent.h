@@ -1,13 +1,12 @@
 #ifndef SP_AGENT_H_
 #define SP_AGENT_H_
 
-#include "PatchMgr.h"
+#include "SpAgentCommon.h"
+
 #include "SpParser.h"
 #include "SpEvent.h"
 #include "SpPayload.h"
 #include "SpPropeller.h"
-
-#define AGENT_INIT __attribute__((constructor))
 
 namespace sp {
 
@@ -48,7 +47,7 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
     SpPropeller::ptr init_propeller_;
     string init_before_;
     string init_after_;
-    Dyninst::PatchAPI::PatchMgrPtr mgr_;
+    ph::PatchMgrPtr mgr_;
     SpContext* context_;
 
     bool parse_only_;

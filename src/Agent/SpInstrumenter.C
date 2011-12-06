@@ -1,9 +1,4 @@
-#include <sys/mman.h>
-
-#include "Point.h"
-#include "PatchCFG.h"
 #include "SpInstrumenter.h"
-#include "SpCommon.h"
 #include "SpSnippet.h"
 #include "SpContext.h"
 #include "SpAddrSpace.h"
@@ -12,35 +7,41 @@
 
 using sp::SpContext;
 using sp::SpSnippet;
-using sp::JumpInstrumenter;
-
-using Dyninst::PatchAPI::PushBackCommand;
-using Dyninst::PatchAPI::InstancePtr;
-using Dyninst::PatchAPI::Point;
-using Dyninst::PatchAPI::PatchFunction;
-using Dyninst::PatchAPI::Snippet;
-using Dyninst::PatchAPI::AddrSpace;
-using Dyninst::PatchAPI::PatchMgrPtr;
-using Dyninst::PatchAPI::PatchBlock;
+using sp::SpInstrumenter;
+using ph::PushBackCommand;
+using ph::InstancePtr;
+using ph::Point;
+using ph::PatchFunction;
+using ph::Snippet;
+using ph::AddrSpace;
+using ph::PatchMgrPtr;
+using ph::PatchBlock;
+using ph::PatchObject;
 
 extern sp::SpContext* g_context;
 
 /* Jump-based instrumenter, which is to use a jump instruction to transfer
    control to the patch area. */
 
-JumpInstrumenter* JumpInstrumenter::create(Dyninst::PatchAPI::AddrSpace* as) {
-  return new JumpInstrumenter(as);
+SpInstrumenter* SpInstrumenter::create(AddrSpace* as) {
+  return new SpInstrumenter(as);
 }
 
 
-JumpInstrumenter::JumpInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
-  : Dyninst::PatchAPI::Instrumenter(as) {
+SpInstrumenter::SpInstrumenter(AddrSpace* as)
+  : Instrumenter(as) {
 }
 
+/* Call instruction's address -> Snippet inserted here. 
+   In self-propelled, we only have one snippet (or patch area) inserted per point
+*/
 typedef std::map<Dyninst::Address, sp::SpSnippet::ptr> InstMap;
 InstMap g_inst_map;
 
-void trap_handler(int sig, siginfo_t* info, void* c) {
+/* We resort to trap to transfer control to patch area, when we are not able to
+   use jump-based implementation.
+*/
+void SpInstrumenter::trap_handler(int sig, siginfo_t* info, void* c) {
   Dyninst::Address pc = sp::SpSnippet::get_pre_signal_pc(c) - 1;
 
   InstMap& inst_map = g_inst_map;
@@ -48,7 +49,7 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
     return;
   }
 
-  // get patch area's address
+  /* Get patch area's address */
   SpSnippet::ptr sp_snip = inst_map[pc];
   Point* pt = sp_snip->point();
 
@@ -61,13 +62,14 @@ void trap_handler(int sig, siginfo_t* info, void* c) {
     exit(0);
   }
 
-  // set pc to patch area
+  /* Set pc to jump to patch area */
   sp::SpSnippet::set_pc((Dyninst::Address)blob, c);
 }
 
-bool JumpInstrumenter::run() {
+/* The main routine for instrumentation. */
+bool SpInstrumenter::run() {
 
-  // Check each instrumented point, which is in a command
+  /* Check each instrumented point, which is in a command */
   for (CommandList::iterator c = user_commands_.begin(); c != user_commands_.end(); c++) {
     PushBackCommand* command = static_cast<PushBackCommand*>(*c);
 
@@ -76,7 +78,7 @@ bool JumpInstrumenter::run() {
       Point* pt = instance->point();
       sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt);
 
-      // If it is not a direct call, and we don't want to instrument direct call
+      /* If it is not a direct call, and we don't want to instrument direct call */
       if (!pt->getCallee() && g_context->directcall_only()) continue;
 
 #ifndef SP_RELEASE
@@ -95,7 +97,7 @@ bool JumpInstrumenter::run() {
         Dyninst::Address ret_addr = pt->block()->end();
         Dyninst::InstructionAPI::Instruction::Ptr callinsn = pt->block()->getInsn(eip);
 
-        // If the call is made by a jump, which may be tail call optimization
+        /* If the call is made by a jump, which may be tail call optimization */
         if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
 #ifndef SP_RELEASE
 	  sp_debug("TAIL CALL - point %lx is a tail call", pt->block()->last());
@@ -106,31 +108,29 @@ bool JumpInstrumenter::run() {
 
         char* blob = (char*)sp_snip->buf();
         long rel_addr = (long)blob - (long)eip;
-        // Save the original instruction, in case we want to restore it later
+
+        /* Save the original instruction, in case we want to restore it later.
+           TODO: should implement the undo() routine to undo everything instrumented
+        */
         sp_snip->set_orig_call_insn(callinsn);
 
-        //---------------------------------------------------------
-        // Indirect call
-        //---------------------------------------------------------
+        /* Indirect call */
         if ((insn[0] != (char)0xe8)) {
 
           bool jump_abs = false;
           if (!sp::is_disp32(rel_addr)) jump_abs = true;
 
-          //---------------------------------------------------------
-          // Prefer using jump
-          //---------------------------------------------------------
+          /* First, we try to use jump to install instrumentation. */
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
-          } else {
+          }
+          /* If jump fails, let's try trap ... */ 
+          else {
             sp_print("FAILED to use JUMP - TRY TO USE TRAP");
 
-            //---------------------------------------------------------
-            // Last resort: TRAP!
-            //---------------------------------------------------------
-            // Set trap handler for the worst case that spring jump doesn't work
+            /* Set trap handler for the worst case that spring jump doesn't work */
             struct sigaction act;
-            act.sa_sigaction = trap_handler;
+            act.sa_sigaction = SpInstrumenter::trap_handler;
             act.sa_flags = SA_SIGINFO;
             struct sigaction old_act;
             sigaction(SIGTRAP, &act, &old_act);
@@ -146,20 +146,17 @@ bool JumpInstrumenter::run() {
           }
         }
 
-        //---------------------------------------------------------
-        // Direct call
-        //---------------------------------------------------------
+        /* Direct call */
         else {
           blob = sp_snip->blob(ret_addr);
-          // Install the blob to pt
+          /* Install the blob to pt */
           if (install_direct(pt, blob, sp_snip->size())) {
             spt->set_instrumented(true);
           } else {
             sp_print("FAILED - Failed to install instrumentation at %lx for calling %s",
                      pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
           }
-        } // direct call
-
+        } // Direct call
       } // If not yet instrumented
     } // If it is a valid command
   } // For each command
@@ -168,20 +165,20 @@ bool JumpInstrumenter::run() {
   return true;
 }
 
-bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
+bool SpInstrumenter::install_direct(Point* point, char* blob, size_t blob_size) {
 
   char jump[5];
   char* p = jump;
   *p++ = 0xe9;
   long* lp = (long*)p;
 
-  // Build the jump instruction
-  Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
+  /* Build the jump instruction */
+  PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
   size_t insn_length = point->block()->end() - point->block()->last();
   *lp = (long)blob - (long)addr - insn_length;
 
-  // Replace "call" with a "jump" instruction
+  /* Replace "call" with a "jump" instruction */
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
@@ -190,14 +187,14 @@ bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blo
     sp_print("MPROTECT - Failed to change memory access permission");
   }
 
-  // Change the permission of snippet, so that it can be executed.
+  /* Change the permission of snippet, so that it can be executed. */
   if (!as->set_range_perm((Dyninst::Address)blob, blob_size, perm)) {
     sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
     as->dump_mem_maps();
     exit(0);
   }
 
-  // Restore the permission of memory mapping
+  /* Restore the permission of memory mapping */
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
@@ -205,13 +202,12 @@ bool JumpInstrumenter::install_direct(Dyninst::PatchAPI::Point* point, char* blo
   return true;
 }
 
-bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
+bool SpInstrumenter::install_indirect(Point* point,
                                         sp::SpSnippet::ptr snip, bool jump_abs,
                                         Dyninst::Address ret_addr) {
   PatchBlock* blk = point->block();
   size_t blk_size = blk->size();
   string& orig_blk = snip->orig_blk();
-
 
   char* raw_blk = (char*)blk->start();
   for (int i = 0; i < blk_size; i++) {
@@ -227,7 +223,7 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
   char insn[64];
   if (!jump_abs) {
 
-    limit = 5; // one jump_rel insn
+    limit = 5; // one relative jump insn's size
     char* p = insn;
     *p++ = 0xe9;
     long* lp = (long*)p;
@@ -245,15 +241,15 @@ bool JumpInstrumenter::install_indirect(Dyninst::PatchAPI::Point* point,
   return install_spring(blk, snip, ret_addr);
 }
 
-bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
+bool SpInstrumenter::install_jump(PatchBlock* blk,
                                     char* insn, size_t insn_size,
                                     sp::SpSnippet::ptr snip,
                                     Dyninst::Address ret_addr) {
 
-  // Build blob & change the permission of snippet
+  /* Build blob & change the permission of snippet */
   char* blob = snip->blob(ret_addr, /*reloc=*/true);
 
-  Dyninst::PatchAPI::PatchObject* obj = blk->obj();
+  PatchObject* obj = blk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
@@ -263,14 +259,15 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   }
 
   char* addr = (char*)blk->start();
-  // Write a "jump" instruction to call block
+
+  /* Write a "jump" instruction to call block */
   if (as->set_range_perm((Dyninst::Address)addr, insn_size, perm)) {
     as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)insn, insn_size);
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
 
-  // Restore the permission of memory mapping
+  /* Restore the permission of memory mapping */
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
@@ -281,7 +278,7 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
 }
 
 /* Install the patch area using a springboard */
-bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
+bool SpInstrumenter::install_spring(PatchBlock* callblk,
                                       sp::SpSnippet::ptr snip,
                                       Dyninst::Address ret_addr) {
 
@@ -296,7 +293,7 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
 
   /* Build blob & change the permission of snippet */
   char* blob = snip->blob(ret_addr, /*reloc=*/true, /*spring=*/true);
-  Dyninst::PatchAPI::PatchObject* obj = callblk->obj();
+  PatchObject* obj = callblk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
@@ -368,12 +365,12 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
 }
 
 /* Install the patch area, using trap. */
-bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
+bool SpInstrumenter::install_trap(Point* point, char* blob, size_t blob_size) {
 
   string int3;
   int3 += (char)0xcc;
 
-  Dyninst::PatchAPI::PatchObject* obj = point->block()->object();
+  PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
   size_t insn_length = point->block()->end() - point->block()->last();
   for (int i = 0; i < (insn_length-1); i++) {

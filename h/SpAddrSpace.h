@@ -1,42 +1,53 @@
 #ifndef _SPADDRSPACE_H_
 #define _SPADDRSPACE_H_
 
-#include "AddrSpace.h"
+#include "SpAgentCommon.h"
 
 namespace sp {
 
-class SpAddrSpace : public Dyninst::PatchAPI::AddrSpace {
+class SpAddrSpace : public ph::AddrSpace {
+   friend class SpInstrumenter;
   public:
-    static SpAddrSpace* create(Dyninst::PatchAPI::PatchObject*);
-    virtual Dyninst::Address malloc(Dyninst::PatchAPI::PatchObject* obj,
-                                    size_t size,
-                                    Dyninst::Address near);
-    virtual bool write(Dyninst::PatchAPI::PatchObject* obj,
-                       Dyninst::Address to, Dyninst::Address from,
-                       size_t size);
-    virtual bool free(Dyninst::PatchAPI::PatchObject* obj,
-                      Dyninst::Address orig);
 
-    bool set_range_perm(Dyninst::Address a, size_t length, int perm);
-    bool restore_range_perm(Dyninst::Address a, size_t length);
+    static SpAddrSpace* create(ph::PatchObject*);
 
-    void sp_init(Dyninst::PatchAPI::PatchObject*);
+    virtual dt::Address malloc(ph::PatchObject* obj,
+                               size_t           size,
+                               dt::Address      near);
+
+    virtual bool write(ph::PatchObject* obj,
+                       dt::Address      to,
+                       dt::Address      from,
+                       size_t           size);
+
+    virtual bool free(ph::PatchObject* obj,
+                      dt::Address      orig);
+
+    bool set_range_perm(dt::Address addr,
+                        size_t      length,
+                        int         perm);
+
+    bool restore_range_perm(dt::Address addr,
+                            size_t      length);
+
+    void sp_init(ph::PatchObject*);
   protected:
 
     typedef struct {
-      Dyninst::Address start;
-      Dyninst::Address end;
-      Dyninst::Address offset;
+      dt::Address start;
+      dt::Address end;
+      dt::Address offset;
       string dev;
       unsigned long inode;
       int perms;
       string path;
     } MemMapping;
-    typedef std::map<Dyninst::Address, MemMapping> MemMappings;
+
+    typedef std::map<dt::Address, MemMapping> MemMappings;
     MemMappings mem_maps_;
 
     void update_mem_maps();
-    public: void dump_mem_maps();
+    void dump_mem_maps();
 
     SpAddrSpace();
 };

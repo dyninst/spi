@@ -1,8 +1,9 @@
 #ifndef _SPOBJECT_H_
 #define _SPOBJECT_H_
 
-#include "PatchObject.h"
+#include "SpAgentCommon.h"
 
+/* PatchAPI stuffs. */
 namespace sp {
   class SpObject : public Dyninst::PatchAPI::PatchObject {
   public:

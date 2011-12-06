@@ -1,22 +1,21 @@
 #include "SpPropeller.h"
 #include "SpContext.h"
-#include "PatchMgr.h"
 #include "SpSnippet.h"
-#include "Instruction.h"
 #include "SpUtils.h"
 
 using sp::SpPropeller;
 using sp::SpContext;
-using Dyninst::PatchAPI::Point;
-using Dyninst::PatchAPI::PatchMgrPtr;
-using Dyninst::PatchAPI::PatchMgr;
-using Dyninst::PatchAPI::Scope;
-using Dyninst::PatchAPI::PatchFunction;
-using Dyninst::PatchAPI::Patcher;
-using Dyninst::PatchAPI::PushBackCommand;
-using Dyninst::PatchAPI::Snippet;
-using Dyninst::PatchAPI::PatchBlock;
+using ph::Point;
+using ph::PatchMgrPtr;
+using ph::PatchMgr;
+using ph::Scope;
+using ph::PatchFunction;
+using ph::Patcher;
+using ph::PushBackCommand;
+using ph::Snippet;
+using ph::PatchBlock;
 
+namespace sp {
 SpPropeller::SpPropeller() {
 }
 
@@ -24,6 +23,11 @@ SpPropeller::ptr SpPropeller::create() {
   return ptr(new SpPropeller);
 }
 
+/* Instrument all "interesting points" inside `func`.
+   "Interesting points" are provided by SpPropeller::next_points.
+   By default, next_points provides all call instructions of `func`.
+   However, users can inherit SpPropeller and implement their own next_points().
+*/
 bool SpPropeller::go(PatchFunction* func,
                      SpContext* context,
                      PayloadFunc before,
@@ -32,7 +36,7 @@ bool SpPropeller::go(PatchFunction* func,
 #ifndef SP_RELEASE
   sp_debug("START PROPELLING - propel to callees of function %s", func->name().c_str());
 #endif
-  // 1. Find points according to type
+  /* 1. Find points according to type */
   Points pts;
   PatchMgrPtr mgr = context->mgr();
   PatchFunction* cur_func = NULL;
@@ -43,13 +47,14 @@ bool SpPropeller::go(PatchFunction* func,
   }
   next_points(cur_func, mgr, pts);
 
-  // 2. Start instrumentation
-  Dyninst::PatchAPI::Patcher patcher(mgr);
+  /* 2. Start instrumentation */
+  ph::Patcher patcher(mgr);
   for (int i = 0; i < pts.size(); i++) {
     Point* pt = pts[i];
 
-    // It's possible that callee will be NULL, which is an indirect call.
-    // In this case, we'll parse it later during runtime.
+    /* It's possible that callee will be NULL, which is an indirect call.
+       In this case, we'll parse it later during runtime.
+    */ 
     PatchFunction* callee = context->parser()->callee(pt);
 #ifndef SP_RELEASE
     if (callee) {
@@ -70,8 +75,10 @@ bool SpPropeller::go(PatchFunction* func,
   return true;
 }
 
+/* Find all PreCall points */
 void SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& pts) {
   Scope scope(cur_func);
-  //  Points tmp_pts;
   mgr->findPoints(scope, Point::PreCall, back_inserter(pts));
+}
+
 }

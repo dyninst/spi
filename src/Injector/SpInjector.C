@@ -6,14 +6,7 @@
 #include "Function.h"
 #include "int_process.h"
 #include "Event.h"
-#include <signal.h>
 #include "SpCommon.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 
 using sp::SpInjector;
 using Dyninst::ProcControlAPI::Process;

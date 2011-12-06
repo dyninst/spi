@@ -1,18 +1,16 @@
-#include <signal.h>
-#include <ucontext.h>
 
 #include "SpEvent.h"
 #include "SpParser.h"
 #include "SpContext.h"
 #include "SpSnippet.h"
-#include "Visitor.h"
 #include "SpPoint.h"
 #include "SpUtils.h"
 #include "SpObject.h"
 
-using Dyninst::PatchAPI::PatchFunction;
-using Dyninst::PatchAPI::PatchBlock;
-using Dyninst::PatchAPI::Point;
+using ph::PatchFunction;
+using ph::PatchBlock;
+using ph::Point;
+using dt::Address;
 
 namespace sp {
 
@@ -25,8 +23,8 @@ SpSnippet::SpSnippet(PatchFunction* f,
   : func_(f), point_(pt), context_(c), before_(before), after_(after),
     blob_size_(0), spring_size_(0), spring_blk_(NULL) {
 
-  Dyninst::PatchAPI::PatchMgrPtr mgr = c->mgr();
-  Dyninst::PatchAPI::AddrSpace* as = mgr->as();
+  ph::PatchMgrPtr mgr = c->mgr();
+  ph::AddrSpace* as = mgr->as();
 
   /* TODO (wenbin): For now, just statically allocate a 1024-byte buffer,
      should have a smarter memory allocator.
@@ -50,7 +48,7 @@ SpSnippet::~SpSnippet() {
    8. Restore context;
    9. Jump back to ORIG_INSN_ADDR.
 */
-char* SpSnippet::blob(Dyninst::Address ret_addr, bool reloc, bool spring) {
+char* SpSnippet::blob(Address ret_addr, bool reloc, bool spring) {
   assert(context_);
   ret_addr_ = ret_addr;
 
@@ -137,14 +135,14 @@ EXIT:
 /* Relocate a block to the patch area */
 size_t SpSnippet::reloc_block(PatchBlock* blk, char* buf, size_t offset) {
   char* p = buf + offset;
-  Dyninst::Address call_addr = blk->last();
+  Address call_addr = blk->last();
 
   PatchBlock::Insns insns;
   blk->getInsns(insns);
   for (PatchBlock::Insns::iterator i = insns.begin(); i != insns.end(); i++) {
     using namespace Dyninst::InstructionAPI;
 
-    Dyninst::Address a = i->first;
+    Address a = i->first;
     Instruction::Ptr insn = i->second;
     p += reloc_insn(a, insn, call_addr, p);
   }
@@ -176,7 +174,7 @@ PatchBlock* SpSnippet::spring_blk() {
 
   /* Find a nearby block */
   PatchBlock* springblk = NULL;
-  Dyninst::PatchAPI::PatchObject* obj = callblk->obj();
+  ph::PatchObject* obj = callblk->obj();
 
   using namespace Dyninst::ParseAPI;
   CodeObject* co = obj->co();
@@ -194,7 +192,7 @@ PatchBlock* SpSnippet::spring_blk() {
         (lower <= cr->high() && cr->high() < upper)
        ) {
       /* XXX: Not any method to iterate blocks in a region? */
-      Dyninst::Address span_addr = lower;
+      Address span_addr = lower;
       do {
         set<Block*> blks;
         co->findBlocks(cr, span_addr, blks);
@@ -243,9 +241,9 @@ PatchBlock* SpSnippet::spring_blk() {
 }
 
 /* Build the spring block */
-char* SpSnippet::spring(Dyninst::Address ret_addr) {
-  Dyninst::PatchAPI::PatchMgrPtr mgr = context_->mgr();
-  Dyninst::PatchAPI::AddrSpace* as = mgr->as();
+char* SpSnippet::spring(Address ret_addr) {
+  ph::PatchMgrPtr mgr = context_->mgr();
+  ph::AddrSpace* as = mgr->as();
   spring_ = (char*)as->malloc(point_->obj(), 1024, static_cast<sp::SpObject*>(point_->obj())->load_addr());
   spring_size_ = 0;
 

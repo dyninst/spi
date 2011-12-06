@@ -1,9 +1,8 @@
 #ifndef SP_PROPEL_H_
 #define SP_PROPEL_H_
 
-#include "SpCommon.h"
+#include "SpAgentCommon.h"
 #include "SpPayload.h"
-#include "PatchCFG.h"
 
 namespace sp {
 class SpContext;
@@ -13,17 +12,17 @@ class SpPropeller {
     static ptr create();
     SpPropeller();
 
-    bool go(Dyninst::PatchAPI::PatchFunction* func,
+    bool go(ph::PatchFunction* func,
             SpContext* context,
             PayloadFunc before,
             PayloadFunc after,
-            Dyninst::PatchAPI::Point* pt = NULL);
+            ph::Point* pt = NULL);
 
   protected:
     //Points pts_;
 
-    virtual void next_points(Dyninst::PatchAPI::PatchFunction* func,
-                             Dyninst::PatchAPI::PatchMgrPtr mgr,
+    virtual void next_points(ph::PatchFunction* func,
+                             ph::PatchMgrPtr mgr,
                              Points& pts);
 };
 

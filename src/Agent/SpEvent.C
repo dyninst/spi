@@ -1,11 +1,6 @@
-#include <ucontext.h>
-
-#include "PatchCFG.h"
 #include "SpEvent.h"
 #include "SpContext.h"
-#include "signal.h"
 #include "SpParser.h"
-//#include "SpNextPoints.h"
 
 using sp::SpParser;
 using sp::SpEvent;
@@ -13,7 +8,7 @@ using sp::SyncEvent;
 using sp::AsyncEvent;
 using sp::SpContext;
 using sp::SpPropeller;
-using Dyninst::PatchAPI::PatchFunction;
+using ph::PatchFunction;
 
 /* Default Event -- dumb event, does nothing */
 SpEvent::SpEvent() {
@@ -30,8 +25,6 @@ sp::SpContext* g_context = NULL;
 void async_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
-  //sp::Points pts;
-  //sp::CalleePoints(f, g_context, pts);
   g_context->init_propeller()->go(f, g_context,
                                   g_context->init_before(),
                                   g_context->init_after());

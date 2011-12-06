@@ -1,27 +1,44 @@
 #ifndef _SPINSTRUMENTER_H_
 #define _SPINSTRUMENTER_H_
 
-#include "Instrumenter.h"
-#include "SpCommon.h"
+#include "SpAgentCommon.h"
 #include "SpSnippet.h"
 
 namespace sp {
-class JumpInstrumenter : public Dyninst::PatchAPI::Instrumenter {
+class SpInstrumenter : public ph::Instrumenter {
   public:
-    static JumpInstrumenter* create(Dyninst::PatchAPI::AddrSpace* as);
+    static SpInstrumenter* create(ph::AddrSpace* as);
     virtual bool run();
 
   protected:
-    JumpInstrumenter(Dyninst::PatchAPI::AddrSpace*);
-    bool install_direct(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size);
-    bool install_indirect(Dyninst::PatchAPI::Point* point, sp::SpSnippet::ptr snip,
-                          bool jump_abs, Dyninst::Address ret_addr);
+    SpInstrumenter(ph::AddrSpace*);
 
-    bool install_jump(Dyninst::PatchAPI::PatchBlock* blk, char* insn, size_t insn_size,
-                      sp::SpSnippet::ptr snip, Dyninst::Address ret_addr);
-    bool install_spring(Dyninst::PatchAPI::PatchBlock* callblk, sp::SpSnippet::ptr snip,
-                        Dyninst::Address ret_addr);
-    bool install_trap(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size);
+    bool install_direct(ph::Point* point,
+                        char*      blob,
+                        size_t     blob_size);
+
+    bool install_indirect(ph::Point*         point, 
+                          sp::SpSnippet::ptr snip,
+                          bool               jump_abs,
+                          dt::Address        ret_addr);
+
+    bool install_jump(ph::PatchBlock*     blk,
+                      char*               insn,
+                      size_t              insn_size,
+                      sp::SpSnippet::ptr  snip, 
+                      dt::Address         ret_addr);
+
+    bool install_spring(ph::PatchBlock*    callblk,
+                        sp::SpSnippet::ptr snip,
+                        dt::Address        ret_addr);
+
+    bool install_trap(ph::Point* point,
+                      char*      blob,
+                      size_t     blob_size);
+
+    static void trap_handler(int        sig,
+                             siginfo_t* info,
+                             void*      c);
 };
 
 }

@@ -1,11 +1,9 @@
 #include "SpUtils.h"
-#include "SpCommon.h"
 
 namespace sp {
 
-
+/* Profiling tools */
 typedef long i64;
-
 typedef struct CPerfCounterRec {
   i64 _freq;
   i64 _clocks;
@@ -147,4 +145,5 @@ void PrintTime(char *msg, int i) {
   else
     printf("%f sec\n", GetTimer(i));
 }
+
 }

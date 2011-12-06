@@ -1,37 +1,35 @@
 #ifndef SP_PARSER_H_
 #define SP_PARSER_H_
 
-#include "PatchObject.h"
-#include "PatchMgr.h"
-#include <ucontext.h>
-//#include <ext/hash_map>
+#include "SpAgentCommon.h"
 
 namespace sp {
 
 /*
    Parser is to parse the CFG structures of the mutatee process.
  */
-class SpParser : public Dyninst::PatchAPI::CFGMaker {
+class SpParser : public ph::CFGMaker {
   public:
     typedef dyn_detail::boost::shared_ptr<SpParser> ptr;
     virtual ~SpParser();
     static ptr create();
 
-    typedef std::vector<Dyninst::ParseAPI::CodeObject*> CodeObjects;
-    typedef std::vector<Dyninst::PatchAPI::PatchObject*> PatchObjects;
-    virtual Dyninst::PatchAPI::PatchMgrPtr parse();
-    Dyninst::PatchAPI::PatchObject* exe_obj();
-    Dyninst::PatchAPI::PatchFunction* findFunction(Dyninst::Address addr);
-    Dyninst::PatchAPI::PatchFunction* findFunction(string name, bool skip = true);
-    Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt,
-                                             bool parse_indirect = false);
-
+    typedef std::vector<pe::CodeObject*> CodeObjects;
+    typedef std::vector<ph::PatchObject*> PatchObjects;
+    virtual ph::PatchMgrPtr parse();
+    ph::PatchObject* exe_obj();
     char* get_agent_name();
-    Dyninst::Address get_func_addr(string name);
+
+    ph::PatchFunction* findFunction(dt::Address addr);
+    ph::PatchFunction* findFunction(string name, bool skip = true);
+    ph::PatchFunction* callee(ph::Point* pt,
+                              bool       parse_indirect = false);
+
+    dt::Address get_func_addr(string name);
     string dump_insn(void* addr, size_t size);
     bool injected() const { return injected_; }
-    Dyninst::Address get_saved_reg(Dyninst::MachRegister reg, Dyninst::Address sp, size_t offset);
-    static bool is_pc(Dyninst::MachRegister);
+    dt::Address get_saved_reg(dt::MachRegister reg, dt::Address sp, size_t offset);
+    static bool is_pc(dt::MachRegister);
     bool is_dyninst_lib(string lib);
     void set_jump_inst(bool b) { jump_ = b; }
     // only works for trap-based instrumentation
@@ -40,11 +38,11 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     size_t sp_offset() const { return sp_offset_; }
     void set_sp_offset(size_t s) { sp_offset_ = s; }
   protected:
-    typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
+    typedef std::vector<pe::CodeSource*> CodeSources;
     CodeSources code_srcs_;
     CodeObjects code_objs_;
-    Dyninst::PatchAPI::PatchObject* exe_obj_;
-    Dyninst::PatchAPI::PatchMgrPtr mgr_;
+    ph::PatchObject* exe_obj_;
+    ph::PatchMgrPtr mgr_;
     bool injected_;
     ucontext_t old_context_;
     std::vector<string> dyninst_libs_;
@@ -52,7 +50,7 @@ class SpParser : public Dyninst::PatchAPI::CFGMaker {
     size_t sp_offset_;  // offset of stack pointer for saved context
 
     typedef std::map<string,
-      Dyninst::PatchAPI::PatchFunction*> RealFuncMap;
+      ph::PatchFunction*> RealFuncMap;
     RealFuncMap real_func_map_;
 
     SpParser();

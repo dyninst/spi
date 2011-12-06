@@ -1,26 +1,21 @@
 #include "SpContext.h"
 #include "SpPropeller.h"
 #include "SpParser.h"
-#include "PatchMgr.h"
-#include "PatchCFG.h"
 #include "SpUtils.h"
 
-#include "frame.h"
-#include "walker.h"
-using Dyninst::Stackwalker::Walker;
-using Dyninst::Stackwalker::Frame;
-
-
+using sk::Walker;
+using sk::Frame;
 using sp::SpContext;
 using sp::SpPropeller;
 using sp::SpParser;
-using Dyninst::PatchAPI::PatchMgr;
-using Dyninst::PatchAPI::PatchMgrPtr;
-using Dyninst::PatchAPI::PatchFunction;
-using Dyninst::PatchAPI::PatchObject;
-using Dyninst::PatchAPI::AddrSpace;
-using Dyninst::ParseAPI::SymtabCodeSource;
-using Dyninst::SymtabAPI::Symtab;
+using ph::PatchMgr;
+using ph::PatchMgrPtr;
+using ph::PatchFunction;
+using ph::PatchObject;
+using ph::AddrSpace;
+using pe::SymtabCodeSource;
+using sb::Symtab;
+using ph::Point;
 
 SpContext::SpContext(SpPropeller::ptr p,
                      SpParser::ptr parser) {
@@ -137,7 +132,7 @@ void SpContext::restore() {
 }
 
 
-Dyninst::PatchAPI::PatchFunction* SpContext::callee(Dyninst::PatchAPI::Point* pt) {
+PatchFunction* SpContext::callee(Point* pt) {
   return parser()->callee(pt, directcall_only_ == false);
 }
 

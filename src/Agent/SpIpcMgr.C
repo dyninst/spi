@@ -1,13 +1,4 @@
 #include "SpIpcMgr.h"
-#include "SpInc.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <dirent.h>
-#include <errno.h>
 
 namespace sp {
 

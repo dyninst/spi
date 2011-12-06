@@ -1,8 +1,7 @@
 #ifndef _SPCHANNEL_H_
 #define _SPCHANNEL_H_
 
-#include <unistd.h>
-#include <sys/types.h>
+#include "SpAgentCommon.h"
 
 namespace sp {
 

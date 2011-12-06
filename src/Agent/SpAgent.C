@@ -1,16 +1,13 @@
-#include <unistd.h>
-#include <sys/resource.h>
-#include "SpCommon.h"
 #include "SpAgent.h"
 #include "SpContext.h"
 
 using sp::SpAgent;
 using sp::SpParser;
 using sp::SpContext;
-using Dyninst::PatchAPI::PatchMgr;
-using Dyninst::ParseAPI::CodeObject;
-using Dyninst::PatchAPI::AddrSpace;
-using Dyninst::PatchAPI::PatchObject;
+using ph::PatchMgr;
+using pe::CodeObject;
+using ph::AddrSpace;
+using ph::PatchObject;
 
 /* Constructor for SpAgent */
 SpAgent::ptr SpAgent::create() {

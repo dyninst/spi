@@ -1,7 +1,3 @@
-#include <signal.h>
-#include <ucontext.h>
-#include <stack>
-
 #include "SpEvent.h"
 #include "SpParser.h"
 #include "SpContext.h"
@@ -9,11 +5,17 @@
 #include "SpPoint.h"
 #include "SpUtils.h"
 
-#include "Visitor.h"
-#include "BinaryFunction.h"
-#include "Immediate.h"
-
-using Dyninst::PatchAPI::PatchFunction;
+using dt::Address;
+using ph::PatchFunction;
+using in::Visitor;
+using in::Instruction;
+using in::BinaryFunction;
+using in::Immediate;
+using in::Dereference;
+using in::RegisterAST;
+using in::Result;
+using in::Expression;
+ 
 extern sp::SpContext* g_context;
 
 namespace sp {
@@ -204,8 +206,8 @@ static size_t emit_push_imm64(long imm, char* buf, size_t offset) {
 /* Call a function w/ address `callee` */
 size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
   char* p = buf + offset;
-  Dyninst::Address retaddr = (Dyninst::Address)p+5;
-  Dyninst::Address rel_addr = (callee - retaddr);
+  Address retaddr = (Address)p+5;
+  Address rel_addr = (callee - retaddr);
 
   if (sp::is_disp32(rel_addr)) {
     /* Case 1: we are lucky to use relative call instruction. */
@@ -238,8 +240,8 @@ size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
-  Dyninst::Address retaddr = (Dyninst::Address)p+5;
-  Dyninst::Address rel_addr = (trg - retaddr);
+  Address retaddr = (Address)p+5;
+  Address rel_addr = (trg - retaddr);
 
   if (sp::is_disp32(rel_addr) && !abs) {
     /* Case 1: we are lucky to use relative jump. */
@@ -267,19 +269,19 @@ size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
    ========================================================================== */
 
 /* Used in trap handler to decide the pc value right at the call */
-Dyninst::Address SpSnippet::get_pre_signal_pc(void* context) {
+Address SpSnippet::get_pre_signal_pc(void* context) {
   ucontext_t* ctx = (ucontext_t*)context;
   return ctx->uc_mcontext.gregs[REG_RIP];
 }
 
 /* Used in trap handler to jump to snippet */
-Dyninst::Address SpSnippet::set_pc(Dyninst::Address pc, void* context) {
+Address SpSnippet::set_pc(Address pc, void* context) {
   ucontext_t* ctx = (ucontext_t*)context;
   ctx->uc_mcontext.gregs[REG_RIP] = pc;
 }
 
 /* Get the saved register, for resolving indirect call */
-Dyninst::Address SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
+Address SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 
 #define RAX (0)
 #define R9 (8)
@@ -345,7 +347,6 @@ bool SpParser::is_pc(Dyninst::MachRegister r) {
   return false;
 }
 
-using namespace Dyninst::InstructionAPI;
 class RelocVisitor : public Visitor {
   public:
     RelocVisitor(SpParser::ptr p) : Visitor(), p_(p), use_pc_(false) {}
@@ -422,7 +423,7 @@ static int* get_disp(Instruction::Ptr insn, char* insn_buf) {
 /* This visitor visits a PC-sensitive call instruction */
 class EmuVisitor : public Visitor {
 public:
-  EmuVisitor(Dyninst::Address a)
+  EmuVisitor(Address a)
     : Visitor(), imm_(0), a_(a) { }
   virtual void visit(RegisterAST* r) {
     /* value in RIP is a_ */
@@ -430,9 +431,9 @@ public:
     stack_.push(imm_);
   }
   virtual void visit(BinaryFunction* b) {
-    Dyninst::Address i1 = stack_.top();
+    Address i1 = stack_.top();
     stack_.pop();
-    Dyninst::Address i2 = stack_.top();
+    Address i2 = stack_.top();
     stack_.pop();
 
     if (b->isAdd()) {
@@ -471,14 +472,14 @@ public:
     // Should do it in runtime, not in instrumentation time
   }
 
-  Dyninst::Address imm() const {
+  Address imm() const {
     return imm_;
   }
 
 private:
-  std::stack<Dyninst::Address> stack_;
-  Dyninst::Address imm_;
-  Dyninst::Address a_;
+  std::stack<Address> stack_;
+  Address imm_;
+  Address a_;
 };
 
 /* We emulate the instruction by this sequence:
@@ -495,7 +496,7 @@ private:
     pop %r9
  */
 static size_t emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e,
-                            Dyninst::Address a, char* buf) {
+                            Address a, char* buf) {
   char* p = buf;
   char* insn_buf = (char*)insn->ptr();
 
@@ -600,7 +601,7 @@ static size_t emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e,
   return (size_t)(p - buf);
 }
 
-static size_t reloc_insn_internal(Dyninst::Address a,
+static size_t reloc_insn_internal(Address a,
                                   Instruction::Ptr insn,
                                   std::set<Expression::Ptr>& exp,
                                   bool use_pc,
@@ -633,9 +634,9 @@ static size_t reloc_insn_internal(Dyninst::Address a,
 }
 
 /* Relocate an ordinary instruction */
-size_t SpSnippet::reloc_insn(Dyninst::Address src_insn,
+size_t SpSnippet::reloc_insn(Address src_insn,
                              Instruction::Ptr insn,
-                             Dyninst::Address last,
+                             Address last,
                              char* buf) {
   /* We don't handle last instruction for now */
   if (src_insn == last) {  return 0;  }
@@ -688,7 +689,7 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 void* SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
   using namespace Dyninst::x86_64;
   if (h->num < 6) {
-    Dyninst::Address a = 0;
+    Address a = 0;
     switch(h->num) {
     case 0:
       a = get_saved_reg(rdi);

@@ -1,44 +1,38 @@
 #include "SpPayload.h"
-#include "PatchCFG.h"
 #include "SpContext.h"
 #include "SpPoint.h"
 #include "SpUtils.h"
 #include "SpIPC.h"
 
-using Dyninst::PatchAPI::PatchFunction;
-using Dyninst::PatchAPI::Point;
-using Dyninst::PatchAPI::PatchMgrPtr;
-using Dyninst::PatchAPI::PatchMgr;
-using Dyninst::PatchAPI::Scope;
-using Dyninst::PatchAPI::PatchBlock;
-using Dyninst::PatchAPI::PatchEdge;
-using Dyninst::PatchAPI::PatchObject;
+using ph::PatchFunction;
+using ph::Point;
+using ph::PatchMgrPtr;
+using ph::PatchMgr;
+using ph::Scope;
+using ph::PatchBlock;
+using ph::PatchEdge;
+using ph::PatchObject;
 using namespace sp;
 extern sp::SpContext* g_context;
 
-//-----------------------------------------
-// Payload functions wrappers
-//-----------------------------------------
-int g_pid = 0;
 
+/* Payload functions wrappers, which will be used only in multi-process mode. */
 static bool pre_before(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return false;
 
-  //------------------------------------
-  // Sender-side
-  //------------------------------------
+  /* Sender-side */
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
 
-  // Detect initiation of communication
+  /* Detect initiation of communication */
   if (!ipc_mgr->is_sender(f->name().c_str())) return true;
 
-  // Get destination name
+  /* Get destination name */
   ArgumentHandle h;
   int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
   SpChannel* c = ipc_mgr->get_channel(*fd);
 
-  // Inject
+  /* Inject this agent.so to remote process */
   // ipc_mgr->inject(c);
 
   if (ipc_mgr->start_tracing()) {
@@ -60,24 +54,20 @@ static bool pre_after(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return false;
 
-  //------------------------------------
-  // Sender-side: detect fork for pipe
-  //------------------------------------
+  /* Sender-side: detect fork for pipe */
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
 
   if (ipc_mgr->is_fork(f->name().c_str())) {
     long pid = sp::retval(pt);
-    // Receiver
+    /* Receiver */
     if (pid == 0) {
       ipc_mgr->set_start_tracing(0, getpid());
     }
   }
 
-  //------------------------------------
-  // Receipt-side
-  //------------------------------------
+  /* Receipt-side */
 
-  // Detect receipt
+  /* Detect receipt */
 
 /*
   // Handle fork, thus pipe
@@ -103,9 +93,7 @@ void wrapper_after(SpPoint* pt, sp::PayloadFunc_t after) {
   after(pt);
 }
 
-//-----------------------------------------
-// Default payload functions
-//-----------------------------------------
+/* Default payload functions */
 void default_before(Point* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
@@ -124,30 +112,33 @@ void default_after(Point* pt) {
   sp_print("Leave %s", callee_name.c_str());
 }
 
-//-----------------------------------------
-// SpPayload
-//-----------------------------------------
+/* Utilities that payload writers can use in their payload functions */
 namespace sp {
-Dyninst::PatchAPI::PatchFunction* callee(Dyninst::PatchAPI::Point* pt_) {
-  return g_context->callee(pt_);
+
+/* Get callee from a PreCall point */
+ph::PatchFunction* callee(ph::Point* pt) {
+  return g_context->callee(pt);
 }
 
-void* pop_argument(Dyninst::PatchAPI::Point* pt, ArgumentHandle* h, size_t size) {
+/* Pop up an argument of a function call */
+void* pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size) {
   return static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
 }
 
-void propel(Dyninst::PatchAPI::Point* pt_) {
-  // Skip if we have already propagated from this point
-  SpPoint* spt = static_cast<sp::SpPoint*>(pt_);
+/* Propel instrumentation to next points of the point `pt` */
+void propel(ph::Point* pt) {
+
+  /* Skip if we have already propagated from this point */
+  SpPoint* spt = static_cast<sp::SpPoint*>(pt);
   if (spt->propagated()) {
     return;
   }
 
-  PatchFunction* f = callee(pt_);
+  PatchFunction* f = callee(pt);
   if (!f) return;
 
   sp::SpPropeller::ptr p = g_context->init_propeller();
-  p->go(f, g_context, g_context->init_before(), g_context->init_after(), pt_);
+  p->go(f, g_context, g_context->init_before(), g_context->init_after(), pt);
   spt->set_propagated(true);
 }
 
@@ -167,13 +158,6 @@ long retval(sp::SpPoint* pt) {
   return pt->snip()->get_ret_val();
 }
 
-
-/*
-bool can_work() {
-  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
-  return ipc_mgr->can_work();
-}
-*/
 bool is_ipc(int fd) {
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
   return ipc_mgr->is_ipc(fd);

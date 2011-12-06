@@ -1,8 +1,8 @@
 #ifndef SP_INJECTOR_H_
 #define SP_INJECTOR_H_
 
+#include "SpCommon.h"
 #include "Process.h"
-#include <list>
 
 namespace sp {
 

@@ -1,11 +1,37 @@
 #ifndef SP_COMMON_H_
 #define SP_COMMON_H_
 
+/* C headers */
+#include <errno.h>
 #include <stdio.h>
+#include <dlfcn.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <dirent.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <ucontext.h>
+#include <sys/types.h>
+#include <sys/resource.h>
+#include <sys/ucontext.h>
+
+/* C++ headers */
+#include <set>
+#include <map>
+#include <list>
+#include <stack>
 #include <vector>
 
-
+/* Dyninst headers */
+#include "signal.h"
+#include "Symbol.h"
+#include "Symtab.h"
+#include "Function.h"
+#include "AddrLookup.h"
 #include "dyn_detail/boost/shared_ptr.hpp"
 
 /* Print facility */
@@ -51,4 +77,5 @@ typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 #define IJMSG_ID        1986
 #define IJLIB_ID        1985
 #define IJAGENT         "libijagent.so"
+
 #endif /* SP_COMMON_H_ */

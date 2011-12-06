@@ -1,5 +1,4 @@
 #include "SpInjector.h"
-#include <dlfcn.h>
 
 using sp::SpInjector;
 

@@ -1,10 +1,8 @@
 #ifndef SP_EVENT_H_
 #define SP_EVENT_H_
 
-#include <signal.h>
-#include <string>
+#include "SpAgentCommon.h"
 
-#include "SpCommon.h"
 #include "SpPropeller.h"
 
 namespace sp {

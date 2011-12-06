@@ -1,8 +1,9 @@
 #ifndef _SPPOINTMAKER_H_
 #define _SPPOINTMAKER_H_
 
-#include "SpPoint.h"
+#include "SpAgentCommon.h"
 
+/* PatchAPI stuffs. */
 namespace sp {
 class SpPointMaker : public Dyninst::PatchAPI::PointMaker {
   protected:
