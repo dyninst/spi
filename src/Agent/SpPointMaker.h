@@ -3,44 +3,47 @@
 
 #include "SpAgentCommon.h"
 
-/* PatchAPI stuffs. */
+/* PatchAPI stuffs: build customized points */
 namespace sp {
-class SpPointMaker : public Dyninst::PatchAPI::PointMaker {
+class SpPointMaker : public ph::PointMaker {
   protected:
-    virtual Dyninst::PatchAPI::Point*
-    mkFuncPoint(Dyninst::PatchAPI::Point::Type t,
-                Dyninst::PatchAPI::PatchMgrPtr m,
-                Dyninst::PatchAPI::PatchFunction *f) {
+
+    virtual ph::Point*
+    mkFuncPoint(ph::Point::Type    t,
+                ph::PatchMgrPtr    m,
+                ph::PatchFunction* f) {
       return new SpPoint(t, m, f);
     }
-    virtual Dyninst::PatchAPI::Point*
-    mkFuncSitePoint(Dyninst::PatchAPI::Point::Type t,
-                    Dyninst::PatchAPI::PatchMgrPtr m,
-                    Dyninst::PatchAPI::PatchFunction *f,
-                    Dyninst::PatchAPI::PatchBlock *b) {
+
+    virtual ph::Point*
+    mkFuncSitePoint(ph::Point::Type    t,
+                    ph::PatchMgrPtr    m,
+                    ph::PatchFunction* f,
+                    ph::PatchBlock*    b) {
       return new SpPoint(t, m, f, b);
     }
-    virtual Dyninst::PatchAPI::Point*
-    mkBlockPoint(Dyninst::PatchAPI::Point::Type t,
-                 Dyninst::PatchAPI::PatchMgrPtr m,
-                 Dyninst::PatchAPI::PatchBlock *b,
-                 Dyninst::PatchAPI::PatchFunction *f) {
+
+    virtual ph::Point*
+    mkBlockPoint(ph::Point::Type    t,
+                 ph::PatchMgrPtr    m,
+                 ph::PatchBlock*    b,
+                 ph::PatchFunction* f) {
       return new SpPoint(t, m, b, f);
     }
-    virtual Dyninst::PatchAPI::Point*
-    mkInsnPoint(Dyninst::PatchAPI::Point::Type t,
-                Dyninst::PatchAPI::PatchMgrPtr m,
-                Dyninst::PatchAPI::PatchBlock *b,
-                Dyninst::Address a,
-                Dyninst::InstructionAPI::Instruction::Ptr i,
-                Dyninst::PatchAPI::PatchFunction *f) {
+    virtual ph::Point*
+    mkInsnPoint(ph::Point::Type      t,
+                ph::PatchMgrPtr      m,
+                ph::PatchBlock*      b,
+                Dyninst::Address     a,
+                in::Instruction::Ptr i,
+                ph::PatchFunction *f) {
       return new SpPoint(t, m, b, a, i, f);
     }
-    virtual Dyninst::PatchAPI::Point*
-    mkEdgePoint(Dyninst::PatchAPI::Point::Type t,
-                Dyninst::PatchAPI::PatchMgrPtr m,
-                Dyninst::PatchAPI::PatchEdge *e,
-                Dyninst::PatchAPI::PatchFunction *f) {
+    virtual ph::Point*
+    mkEdgePoint(ph::Point::Type    t,
+                ph::PatchMgrPtr    m,
+                ph::PatchEdge*     e,
+                ph::PatchFunction* f) {
       return new SpPoint(t, m, e, f);
     }
 };

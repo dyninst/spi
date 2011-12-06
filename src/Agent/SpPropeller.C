@@ -3,23 +3,26 @@
 #include "SpSnippet.h"
 #include "SpUtils.h"
 
-using sp::SpPropeller;
 using sp::SpContext;
+using sp::SpPropeller;
+
 using ph::Point;
-using ph::PatchMgrPtr;
-using ph::PatchMgr;
 using ph::Scope;
-using ph::PatchFunction;
 using ph::Patcher;
-using ph::PushBackCommand;
 using ph::Snippet;
+using ph::PatchMgr;
 using ph::PatchBlock;
+using ph::PatchMgrPtr;
+using ph::PatchFunction;
+using ph::PushBackCommand;
 
 namespace sp {
+
 SpPropeller::SpPropeller() {
 }
 
-SpPropeller::ptr SpPropeller::create() {
+SpPropeller::ptr
+SpPropeller::create() {
   return ptr(new SpPropeller);
 }
 
@@ -28,11 +31,9 @@ SpPropeller::ptr SpPropeller::create() {
    By default, next_points provides all call instructions of `func`.
    However, users can inherit SpPropeller and implement their own next_points().
 */
-bool SpPropeller::go(PatchFunction* func,
-                     SpContext* context,
-                     PayloadFunc before,
-                     PayloadFunc after,
-                     Point* pt) {
+bool
+SpPropeller::go(PatchFunction* func, SpContext* context, PayloadFunc before,
+                PayloadFunc after, Point* pt) {
 #ifndef SP_RELEASE
   sp_debug("START PROPELLING - propel to callees of function %s", func->name().c_str());
 #endif
@@ -76,7 +77,8 @@ bool SpPropeller::go(PatchFunction* func,
 }
 
 /* Find all PreCall points */
-void SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& pts) {
+void
+SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& pts) {
   Scope scope(cur_func);
   mgr->findPoints(scope, Point::PreCall, back_inserter(pts));
 }

@@ -9,7 +9,8 @@ int callcount = 0;
 
 void print_before(SpPoint* pt) {
 
-if (pt->tailcall()) {
+
+  if (pt->tailcall()) {
     sp::propel(pt);
     return;
   }

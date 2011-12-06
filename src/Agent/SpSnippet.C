@@ -1,4 +1,3 @@
-
 #include "SpEvent.h"
 #include "SpParser.h"
 #include "SpContext.h"
@@ -7,10 +6,10 @@
 #include "SpUtils.h"
 #include "SpObject.h"
 
-using ph::PatchFunction;
-using ph::PatchBlock;
 using ph::Point;
 using dt::Address;
+using ph::PatchBlock;
+using ph::PatchFunction;
 
 namespace sp {
 
@@ -48,7 +47,8 @@ SpSnippet::~SpSnippet() {
    8. Restore context;
    9. Jump back to ORIG_INSN_ADDR.
 */
-char* SpSnippet::blob(Address ret_addr, bool reloc, bool spring) {
+char*
+SpSnippet::blob(Address ret_addr, bool reloc, bool spring) {
   assert(context_);
   ret_addr_ = ret_addr;
 
@@ -108,7 +108,7 @@ char* SpSnippet::blob(Address ret_addr, bool reloc, bool spring) {
     param_func = 0;
     called_func = (long)after_;
     if (context_->allow_ipc()) {
-      param_func = (long)before_;
+      param_func = (long)after_;
       called_func = (long)context_->wrapper_after();
     }
     blob_size_ += emit_pass_param((long)point_, param_func, blob_, blob_size_);
@@ -133,7 +133,8 @@ EXIT:
 }
 
 /* Relocate a block to the patch area */
-size_t SpSnippet::reloc_block(PatchBlock* blk, char* buf, size_t offset) {
+size_t
+SpSnippet::reloc_block(PatchBlock* blk, char* buf, size_t offset) {
   char* p = buf + offset;
   Address call_addr = blk->last();
 
@@ -162,7 +163,8 @@ size_t SpSnippet::reloc_block(PatchBlock* blk, char* buf, size_t offset) {
    We iterate through all CodeRegions, and get then narrow down the search
    space in one, two, or up to three CodeRegions. 
 */
-PatchBlock* SpSnippet::spring_blk() {
+PatchBlock*
+SpSnippet::spring_blk() {
   if (spring_blk_) return spring_blk_;
 
   size_t min_springblk_size = jump_abs_size() * 2;
@@ -241,7 +243,8 @@ PatchBlock* SpSnippet::spring_blk() {
 }
 
 /* Build the spring block */
-char* SpSnippet::spring(Address ret_addr) {
+char*
+SpSnippet::spring(Address ret_addr) {
   ph::PatchMgrPtr mgr = context_->mgr();
   ph::AddrSpace* as = mgr->as();
   spring_ = (char*)as->malloc(point_->obj(), 1024, static_cast<sp::SpObject*>(point_->obj())->load_addr());

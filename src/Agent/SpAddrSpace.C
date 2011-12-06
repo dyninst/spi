@@ -1,8 +1,8 @@
 #include "SpAddrSpace.h"
 
+using dt::Address;
 using sp::SpAddrSpace;
 using ph::PatchObject;
-using dt::Address;
 
 /* Build mapped memory area. 
    TODO (wenbin): should update mapped memory area dynamically
@@ -13,7 +13,8 @@ SpAddrSpace::SpAddrSpace() : ph::AddrSpace() {
 }
 
 /* Standard PatchAPI stuff ... */
-SpAddrSpace* SpAddrSpace::create(PatchObject* obj) {
+SpAddrSpace*
+SpAddrSpace::create(PatchObject* obj) {
   assert(obj);
   SpAddrSpace* ret = new SpAddrSpace;
   if (!ret) return ret;
@@ -22,9 +23,8 @@ SpAddrSpace* SpAddrSpace::create(PatchObject* obj) {
 }
 
 /* Memory allocator, which is maily to allocate a buffer for the patch area. */
-Address SpAddrSpace::malloc(PatchObject* obj,
-                                     size_t size,
-                                     Address near) {
+Address
+SpAddrSpace::malloc(PatchObject* obj, size_t size, Address near) {
   Address buf = 0;
   buf = (Address)::malloc(size+ getpagesize() -1);
   if (!buf) return 0;
@@ -57,13 +57,14 @@ Address SpAddrSpace::malloc(PatchObject* obj,
 }
 
 /* Copy a buffer to another buffer. */
-bool SpAddrSpace::write(PatchObject* obj, Address to,
-                        Address from, size_t size) {
+bool
+SpAddrSpace::write(PatchObject* obj, Address to, Address from, size_t size) {
   return (memcpy((void*)to, (void*)from, size) == (void*)to);
 }
 
 /* Deallocate a buffer. */
-bool SpAddrSpace::free(PatchObject* obj, Address orig) {
+bool
+SpAddrSpace::free(PatchObject* obj, Address orig) {
   /* TODO (wenbin): should implement uninstrumentation and deallocation
                     of patch area.
   */
@@ -72,7 +73,8 @@ bool SpAddrSpace::free(PatchObject* obj, Address orig) {
 }
 
 /* Set access permission to a memory area. */
-bool SpAddrSpace::set_range_perm(Address a, size_t length, int perm) {
+bool
+SpAddrSpace::set_range_perm(Address a, size_t length, int perm) {
   bool ret = false;
 
   /* Check the mapped memory area.
@@ -80,7 +82,8 @@ bool SpAddrSpace::set_range_perm(Address a, size_t length, int perm) {
      in the argument list.
      TODO (wenbin): safer to only change a minimal range of area's permission ...
   */
-  for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
+  for (MemMappings::iterator mi = mem_maps_.begin();
+       mi != mem_maps_.end(); mi++) {
     Address start = mi->first;
     MemMapping& mm = mi->second;
     Address end = mm.end;
@@ -116,9 +119,11 @@ bool SpAddrSpace::set_range_perm(Address a, size_t length, int perm) {
   return ret;
 }
 
-bool SpAddrSpace::restore_range_perm(Address a, size_t length) {
+bool
+SpAddrSpace::restore_range_perm(Address a, size_t length) {
   bool ret = false;
-  for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
+  for (MemMappings::iterator mi = mem_maps_.begin();
+       mi != mem_maps_.end(); mi++) {
     Address start = mi->first;
     MemMapping& mm = mi->second;
     Address end = mm.end;
@@ -126,7 +131,7 @@ bool SpAddrSpace::restore_range_perm(Address a, size_t length) {
     if ((a >= start && code_end < end) ||
         (a <= start && code_end >= start && code_end <= end) ||
         (a >= start && a < end && code_end >= end)) {
-      //sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
+
       if (mprotect((void*)start, end - start, mem_maps_[start].perms) < 0) {
         sp_print("MPROTECT - Failed to change memory access permission");
         return false;
@@ -138,8 +143,9 @@ bool SpAddrSpace::restore_range_perm(Address a, size_t length) {
   return ret;
 }
 
-// Parse /proc/pid/maps file to build memory mappings
-void SpAddrSpace::update_mem_maps() {
+/* Parse /proc/pid/maps file to build memory mappings */
+void
+SpAddrSpace::update_mem_maps() {
 
   char maps_file[256];
   sprintf(maps_file, "/proc/%d/maps", getpid());
@@ -213,7 +219,8 @@ void SpAddrSpace::update_mem_maps() {
   fclose(fp);
 }
 
-void SpAddrSpace::dump_mem_maps() {
+void
+SpAddrSpace::dump_mem_maps() {
 #ifndef SP_RELEASE
   sp_debug("MMAPS - %d memory mappings", mem_maps_.size());
 #endif
@@ -221,8 +228,8 @@ void SpAddrSpace::dump_mem_maps() {
     MemMapping& mapping = mi->second;
 #ifndef SP_RELEASE
     sp_debug("MMAP - Range[%x ~ %x], Offset %x, Perm %x, Dev %s, Inode %d, Path %s",
-             mapping.start, mapping.end, mapping.offset, mapping.perms, mapping.dev.c_str(),
-             mapping.inode, mapping.path.c_str());
+             mapping.start, mapping.end, mapping.offset, mapping.perms,
+             mapping.dev.c_str(), mapping.inode, mapping.path.c_str());
 #endif
   }
 }

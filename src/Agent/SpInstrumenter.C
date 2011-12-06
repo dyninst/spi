@@ -5,25 +5,35 @@
 #include "SpUtils.h"
 #include "SpPoint.h"
 
+using dt::Address;
+
+using sp::SpSnippet;
 using sp::SpContext;
 using sp::SpSnippet;
+using sp::SpAddrSpace;
 using sp::SpInstrumenter;
-using ph::PushBackCommand;
-using ph::InstancePtr;
+
+using in::Instruction;
+
 using ph::Point;
-using ph::PatchFunction;
 using ph::Snippet;
 using ph::AddrSpace;
-using ph::PatchMgrPtr;
 using ph::PatchBlock;
 using ph::PatchObject;
+using ph::PatchMgrPtr;
+using ph::InstancePtr;
+using ph::PatchFunction;
+using ph::PushBackCommand;
 
-extern sp::SpContext* g_context;
+namespace sp {
+
+extern SpContext* g_context;
 
 /* Jump-based instrumenter, which is to use a jump instruction to transfer
    control to the patch area. */
 
-SpInstrumenter* SpInstrumenter::create(AddrSpace* as) {
+SpInstrumenter*
+SpInstrumenter::create(AddrSpace* as) {
   return new SpInstrumenter(as);
 }
 
@@ -35,14 +45,15 @@ SpInstrumenter::SpInstrumenter(AddrSpace* as)
 /* Call instruction's address -> Snippet inserted here. 
    In self-propelled, we only have one snippet (or patch area) inserted per point
 */
-typedef std::map<Dyninst::Address, sp::SpSnippet::ptr> InstMap;
+typedef std::map<Address, SpSnippet::ptr> InstMap;
 InstMap g_inst_map;
 
 /* We resort to trap to transfer control to patch area, when we are not able to
    use jump-based implementation.
 */
-void SpInstrumenter::trap_handler(int sig, siginfo_t* info, void* c) {
-  Dyninst::Address pc = sp::SpSnippet::get_pre_signal_pc(c) - 1;
+void
+SpInstrumenter::trap_handler(int sig, siginfo_t* info, void* c) {
+  Address pc = SpSnippet::get_pre_signal_pc(c) - 1;
 
   InstMap& inst_map = g_inst_map;
   if (inst_map.find(pc) == inst_map.end()) {
@@ -56,18 +67,19 @@ void SpInstrumenter::trap_handler(int sig, siginfo_t* info, void* c) {
   char* blob = (char*)sp_snip->buf();
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   PatchMgrPtr mgr = g_context->mgr();
-  sp::SpAddrSpace* as = dynamic_cast<sp::SpAddrSpace*>(mgr->as());
-  if (!as->set_range_perm((Dyninst::Address)blob, sp_snip->size(), perm)) {
+  SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(mgr->as());
+  if (!as->set_range_perm((Address)blob, sp_snip->size(), perm)) {
     as->dump_mem_maps();
     exit(0);
   }
 
   /* Set pc to jump to patch area */
-  sp::SpSnippet::set_pc((Dyninst::Address)blob, c);
+  SpSnippet::set_pc((Address)blob, c);
 }
 
 /* The main routine for instrumentation. */
-bool SpInstrumenter::run() {
+bool
+SpInstrumenter::run() {
 
   /* Check each instrumented point, which is in a command */
   for (CommandList::iterator c = user_commands_.begin(); c != user_commands_.end(); c++) {
@@ -76,7 +88,7 @@ bool SpInstrumenter::run() {
     if (command) {
       InstancePtr instance = command->instance();
       Point* pt = instance->point();
-      sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt);
+      SpPoint* spt = static_cast<SpPoint*>(pt);
 
       /* If it is not a direct call, and we don't want to instrument direct call */
       if (!pt->getCallee() && g_context->directcall_only()) continue;
@@ -90,15 +102,15 @@ bool SpInstrumenter::run() {
         Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::get(instance->snippet());
         SpSnippet::ptr sp_snip = snip->rep();
         spt->set_snip(sp_snip);
-        Dyninst::Address eip = pt->block()->last();
+        Address eip = pt->block()->last();
         char* insn = (char*)eip;
 
-        Dyninst::Address insn_size = pt->block()->end() - eip;
-        Dyninst::Address ret_addr = pt->block()->end();
-        Dyninst::InstructionAPI::Instruction::Ptr callinsn = pt->block()->getInsn(eip);
+        Address insn_size = pt->block()->end() - eip;
+        Address ret_addr = pt->block()->end();
+        Instruction::Ptr callinsn = pt->block()->getInsn(eip);
 
         /* If the call is made by a jump, which may be tail call optimization */
-        if (callinsn->getCategory() == Dyninst::InstructionAPI::c_BranchInsn) {
+        if (callinsn->getCategory() == in::c_BranchInsn) {
 #ifndef SP_RELEASE
 	  sp_debug("TAIL CALL - point %lx is a tail call", pt->block()->last());
 #endif
@@ -165,7 +177,8 @@ bool SpInstrumenter::run() {
   return true;
 }
 
-bool SpInstrumenter::install_direct(Point* point, char* blob, size_t blob_size) {
+bool
+SpInstrumenter::install_direct(Point* point, char* blob, size_t blob_size) {
 
   char jump[5];
   char* p = jump;
@@ -181,30 +194,30 @@ bool SpInstrumenter::install_direct(Point* point, char* blob, size_t blob_size) 
   /* Replace "call" with a "jump" instruction */
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-  if (as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
-    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)jump, 5);
+  if (as->set_range_perm((Address)addr, insn_length, perm)) {
+    as->write(obj, (Address)addr, (Address)jump, 5);
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
 
   /* Change the permission of snippet, so that it can be executed. */
-  if (!as->set_range_perm((Dyninst::Address)blob, blob_size, perm)) {
+  if (!as->set_range_perm((Address)blob, blob_size, perm)) {
     sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
     as->dump_mem_maps();
     exit(0);
   }
 
   /* Restore the permission of memory mapping */
-  if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
+  if (!as->restore_range_perm((Address)addr, insn_length)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
 
   return true;
 }
 
-bool SpInstrumenter::install_indirect(Point* point,
-                                        sp::SpSnippet::ptr snip, bool jump_abs,
-                                        Dyninst::Address ret_addr) {
+bool
+SpInstrumenter::install_indirect(Point* point, SpSnippet::ptr snip,
+                                 bool jump_abs, Address ret_addr) {
   PatchBlock* blk = point->block();
   size_t blk_size = blk->size();
   string& orig_blk = snip->orig_blk();
@@ -241,10 +254,11 @@ bool SpInstrumenter::install_indirect(Point* point,
   return install_spring(blk, snip, ret_addr);
 }
 
-bool SpInstrumenter::install_jump(PatchBlock* blk,
-                                    char* insn, size_t insn_size,
-                                    sp::SpSnippet::ptr snip,
-                                    Dyninst::Address ret_addr) {
+bool
+SpInstrumenter::install_jump(PatchBlock* blk,
+                             char* insn, size_t insn_size,
+                             SpSnippet::ptr snip,
+                             Address ret_addr) {
 
   /* Build blob & change the permission of snippet */
   char* blob = snip->blob(ret_addr, /*reloc=*/true);
@@ -252,7 +266,7 @@ bool SpInstrumenter::install_jump(PatchBlock* blk,
   PatchObject* obj = blk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-  if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
+  if (!as->set_range_perm((Address)blob, snip->size(), perm)) {
     sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
     as->dump_mem_maps();
     exit(0);
@@ -261,14 +275,14 @@ bool SpInstrumenter::install_jump(PatchBlock* blk,
   char* addr = (char*)blk->start();
 
   /* Write a "jump" instruction to call block */
-  if (as->set_range_perm((Dyninst::Address)addr, insn_size, perm)) {
-    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)insn, insn_size);
+  if (as->set_range_perm((Address)addr, insn_size, perm)) {
+    as->write(obj, (Address)addr, (Address)insn, insn_size);
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
 
   /* Restore the permission of memory mapping */
-  if (!as->restore_range_perm((Dyninst::Address)addr, insn_size)) {
+  if (!as->restore_range_perm((Address)addr, insn_size)) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
 #ifndef SP_RELEASE
@@ -278,9 +292,10 @@ bool SpInstrumenter::install_jump(PatchBlock* blk,
 }
 
 /* Install the patch area using a springboard */
-bool SpInstrumenter::install_spring(PatchBlock* callblk,
-                                      sp::SpSnippet::ptr snip,
-                                      Dyninst::Address ret_addr) {
+bool
+SpInstrumenter::install_spring(PatchBlock* callblk,
+                               SpSnippet::ptr snip,
+                               Address ret_addr) {
 
 
   /* Find a spring block. A spring block should:
@@ -296,7 +311,7 @@ bool SpInstrumenter::install_spring(PatchBlock* callblk,
   PatchObject* obj = callblk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-  if (!as->set_range_perm((Dyninst::Address)blob, snip->size(), perm)) {
+  if (!as->set_range_perm((Address)blob, snip->size(), perm)) {
     sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
     as->dump_mem_maps();
     exit(0);
@@ -305,7 +320,7 @@ bool SpInstrumenter::install_spring(PatchBlock* callblk,
   /* Relocate spring block & change the permission of the relocated spring block */
   char* spring = snip->spring(springblk->last());
   obj = springblk->obj();
-  if (!as->set_range_perm((Dyninst::Address)spring, snip->spring_size(), perm)) {
+  if (!as->set_range_perm((Address)spring, snip->spring_size(), perm)) {
     sp_print("MPROTECT - Failed to change memory access permission for relocated spring blk at %lx", spring);
     as->dump_mem_maps();
     exit(0);
@@ -329,13 +344,13 @@ bool SpInstrumenter::install_spring(PatchBlock* callblk,
 
   /* Second jump to relocated spring block */
   char* addr = (char*)springblk->start();
-  if (as->set_range_perm((Dyninst::Address)addr, springblk->size(), perm)) {
-    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)springblk_insn, off);
+  if (as->set_range_perm((Address)addr, springblk->size(), perm)) {
+    as->write(obj, (Address)addr, (Address)springblk_insn, off);
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
   /* Restore the permission of memory mapping */
-  if (!as->restore_range_perm((Dyninst::Address)addr, springblk->size())) {
+  if (!as->restore_range_perm((Address)addr, springblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
 
@@ -349,23 +364,25 @@ bool SpInstrumenter::install_spring(PatchBlock* callblk,
   callblk_insn[0] = 0xeb;
   callblk_insn[1] = (char)(springblk->start() + call_blk_jmp_trg - ((long)addr + 2));
 
-  if (as->set_range_perm((Dyninst::Address)addr, callblk->size(), perm)) {
-    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)callblk_insn, 2);
+  if (as->set_range_perm((Address)addr, callblk->size(), perm)) {
+    as->write(obj, (Address)addr, (Address)callblk_insn, 2);
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
   /* Restore the permission of memory mapping */
-  if (!as->restore_range_perm((Dyninst::Address)addr, callblk->size())) {
+  if (!as->restore_range_perm((Address)addr, callblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
 #ifndef SP_RELEASE
-  sp_debug("USE SPRING - piont %lx is instrumented using 1-hop spring", callblk->last());
+  sp_debug("USE SPRING - piont %lx is instrumented using 1-hop spring",
+           callblk->last());
 #endif
   return true;
 }
 
 /* Install the patch area, using trap. */
-bool SpInstrumenter::install_trap(Point* point, char* blob, size_t blob_size) {
+bool
+SpInstrumenter::install_trap(Point* point, char* blob, size_t blob_size) {
 
   string int3;
   int3 += (char)0xcc;
@@ -380,18 +397,20 @@ bool SpInstrumenter::install_trap(Point* point, char* blob, size_t blob_size) {
   /* Overwrite int3 to the call site */
   SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-  if (!as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
+  if (!as->set_range_perm((Address)addr, insn_length, perm)) {
     return false;
   } else {
-    as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)int3.c_str(), int3.size());
+    as->write(obj, (Address)addr, (Address)int3.c_str(), int3.size());
   }
 
   /* Restore the permission of memory mapping */
-  if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
+  if (!as->restore_range_perm((Address)addr, insn_length)) {
     return false;
   }
 #ifndef SP_RELEASE
   sp_debug("USE TRAP - piont %lx is instrumented using trap", point->block()->last());
 #endif
   return true;
+}
+
 }

@@ -2,29 +2,34 @@
 #include "SpContext.h"
 #include "SpParser.h"
 
-using sp::SpParser;
 using sp::SpEvent;
+using sp::SpParser;
+using sp::SpContext;
 using sp::SyncEvent;
 using sp::AsyncEvent;
-using sp::SpContext;
 using sp::SpPropeller;
+
 using ph::PatchFunction;
 
+namespace sp {
 /* Default Event -- dumb event, does nothing */
 SpEvent::SpEvent() {
 }
 
-void SpEvent::register_event(SpContext* c) {
+void
+SpEvent::register_event(SpContext* c) {
 }
 
 
 /* AsyncEvent */
 typedef void (*event_handler_t)(int, siginfo_t*, void*);
 
-sp::SpContext* g_context = NULL;
-void async_event_handler(int signum, siginfo_t* info, void* context) {
-  g_context->parse();
-  PatchFunction* f = g_context->get_first_inst_func();
+SpContext* g_context = NULL;
+
+void
+async_event_handler(int signum, siginfo_t* info, void* context) {
+  sp::g_context->parse();
+  PatchFunction* f = sp::g_context->get_first_inst_func();
   g_context->init_propeller()->go(f, g_context,
                                   g_context->init_before(),
                                   g_context->init_after());
@@ -35,7 +40,8 @@ AsyncEvent::AsyncEvent(int signum, int sec)
   handler_ = (void*)async_event_handler;
 }
 
-void AsyncEvent::register_event(SpContext* c) {
+void
+AsyncEvent::register_event(SpContext* c) {
   g_context = c;
   struct sigaction act;
   act.sa_sigaction = (event_handler_t)handler_;
@@ -45,7 +51,8 @@ void AsyncEvent::register_event(SpContext* c) {
 }
 
 /* SyncEvent */
-void sync_event_handler(int signum, siginfo_t* info, void* context) {
+void
+sync_event_handler(int signum, siginfo_t* info, void* context) {
   g_context->parse();
   PatchFunction* f = g_context->get_first_inst_func();
   g_context->init_propeller()->go(f, g_context,
@@ -59,7 +66,8 @@ SyncEvent::SyncEvent(std::string func_name, int sec)
 }
 
 
-void SyncEvent::register_event(SpContext* c) {
+void
+SyncEvent::register_event(SpContext* c) {
   g_context = c;
 
   if (!g_context->parser()->injected()) {
@@ -77,3 +85,4 @@ void SyncEvent::register_event(SpContext* c) {
   }
 }
 
+}

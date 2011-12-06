@@ -4,13 +4,16 @@
 using sp::SpAgent;
 using sp::SpParser;
 using sp::SpContext;
+
 using ph::PatchMgr;
-using pe::CodeObject;
 using ph::AddrSpace;
 using ph::PatchObject;
 
+using pe::CodeObject;
+
 /* Constructor for SpAgent */
-SpAgent::ptr SpAgent::create() {
+SpAgent::ptr
+SpAgent::create() {
 
   /* Enable core dump. */
   if (getenv("SP_COREDUMP")) {
@@ -40,44 +43,54 @@ SpAgent::~SpAgent() {
 }
 
 /* Configuration */
-void SpAgent::set_parser(SpParser::ptr parser) {
+void
+SpAgent::set_parser(SpParser::ptr parser) {
   parser_ = parser;
 }
 
-void SpAgent::set_init_event(SpEvent::ptr e) {
+void
+SpAgent::set_init_event(SpEvent::ptr e) {
   init_event_ = e;
 }
 
-void SpAgent::set_fini_event(SpEvent::ptr e) {
+void
+SpAgent::set_fini_event(SpEvent::ptr e) {
   init_event_ = e;
 }
 
-void SpAgent::set_init_before(string p) {
+void
+SpAgent::set_init_before(string p) {
   init_before_ = p;
 }
 
-void SpAgent::set_init_after(string p) {
+void
+SpAgent::set_init_after(string p) {
   init_after_ = p;
 }
 
-void SpAgent::set_init_propeller(SpPropeller::ptr p) {
+void
+SpAgent::set_init_propeller(SpPropeller::ptr p) {
   init_propeller_ = p;
 }
 
-void SpAgent::set_parse_only(bool b) {
+void
+SpAgent::set_parse_only(bool b) {
   parse_only_ = b;
 }
 
-void SpAgent::set_directcall_only(bool b) {
+void
+SpAgent::set_directcall_only(bool b) {
   directcall_only_ = b;
 }
 
-void SpAgent::set_ipc(bool b) {
+void
+SpAgent::set_ipc(bool b) {
   allow_ipc_ = b;
 }
 
 /* Here We Go! Self-propelling magic happens! */
-void SpAgent::go() {
+void
+SpAgent::go() {
 
 #ifndef SP_RELEASE
   sp_debug("========== Start Self-propelled instrumentation @ Process %d ==========", getpid());

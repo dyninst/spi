@@ -3,19 +3,25 @@
 #include "SpParser.h"
 #include "SpUtils.h"
 
-using sk::Walker;
+
 using sk::Frame;
+using sk::Walker;
+
+using sb::Symtab;
+
+using sp::SpParser;
 using sp::SpContext;
 using sp::SpPropeller;
-using sp::SpParser;
+
+using ph::Point;
 using ph::PatchMgr;
+using ph::AddrSpace;
+using ph::PatchObject;
 using ph::PatchMgrPtr;
 using ph::PatchFunction;
-using ph::PatchObject;
-using ph::AddrSpace;
+
 using pe::SymtabCodeSource;
-using sb::Symtab;
-using ph::Point;
+
 
 SpContext::SpContext(SpPropeller::ptr p,
                      SpParser::ptr parser) {
@@ -30,10 +36,11 @@ SpContext::SpContext(SpPropeller::ptr p,
   init_well_known_libs();
 }
 
-SpContext* SpContext::create(SpPropeller::ptr propeller,
-                               string init_before,
-                               string init_after,
-                               SpParser::ptr parser) {
+SpContext*
+SpContext::create(SpPropeller::ptr propeller,
+                  string init_before,
+                  string init_after,
+                  SpParser::ptr parser) {
   SpContext* ret = new SpContext(propeller,
                                  parser);
   assert(ret);
@@ -45,7 +52,8 @@ SpContext* SpContext::create(SpPropeller::ptr propeller,
 }
 
 
-void SpContext::init_well_known_libs() {
+void
+SpContext::init_well_known_libs() {
   well_known_libs_.push_back("libc-");
   well_known_libs_.push_back("libm-");
   well_known_libs_.push_back("ld-");
@@ -65,7 +73,8 @@ void SpContext::init_well_known_libs() {
    1. it should be resovled by the parser.
    2. it should not be from some well known system libraries
  */
-PatchFunction* SpContext::get_first_inst_func() {
+PatchFunction*
+SpContext::get_first_inst_func() {
 
   std::vector<Frame> stackwalk;
   Walker *walker = Walker::newWalker();
@@ -108,7 +117,8 @@ PatchFunction* SpContext::get_first_inst_func() {
   return NULL;
 }
 
-void SpContext::parse() {
+void
+SpContext::parse() {
 #ifndef SP_RELEASE
   sp_debug("START PARSING - start parsing binary code");
 #endif
@@ -118,7 +128,8 @@ void SpContext::parse() {
 #endif
 }
 
-bool SpContext::is_well_known_lib(string lib) {
+bool
+SpContext::is_well_known_lib(string lib) {
   for (int i = 0; i < well_known_libs_.size(); i++) {
     if (lib.find(well_known_libs_[i]) != string::npos) return true;
   }
@@ -126,13 +137,15 @@ bool SpContext::is_well_known_lib(string lib) {
 }
 
 
-void SpContext::restore() {
+void
+SpContext::restore() {
   /* Restore trap handler */
   sigaction(SIGTRAP, &old_act_, NULL);
 }
 
 
-PatchFunction* SpContext::callee(Point* pt) {
+PatchFunction*
+SpContext::callee(Point* pt) {
   return parser()->callee(pt, directcall_only_ == false);
 }
 
@@ -140,7 +153,8 @@ SpContext::~SpContext() {
   delete ipc_mgr_;
 }
 
-void SpContext::set_allow_ipc(bool b) {
+void
+SpContext::set_allow_ipc(bool b) {
   allow_ipc_ = b;
   if (b && !ipc_mgr_) {
     ipc_mgr_ = new SpIpcMgr();

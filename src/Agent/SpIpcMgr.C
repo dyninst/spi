@@ -4,7 +4,9 @@ namespace sp {
 
 #define TRACING_ID 1987
 #define TRACING_SIZE 32768
-static void tracing_internal(char** start_tracing) {
+
+static void
+tracing_internal(char** start_tracing) {
   int shmid;
   if ((shmid = shmget(TRACING_ID, TRACING_SIZE, IPC_CREAT | 0666)) < 0) {
     sp_perror("ERROR: cannot create shared memory with id %d", TRACING_ID);
@@ -16,6 +18,7 @@ static void tracing_internal(char** start_tracing) {
   }
   *start_tracing = &shm[getpid()];
 }
+
 SpIpcMgr::SpIpcMgr() {
   tracing_internal(&start_tracing_);
   start_tracing_[getpid()] = 1;
@@ -27,8 +30,9 @@ SpIpcMgr::~SpIpcMgr() {
   }
 }
 
-// Get inode from file descriptor 
-long SpIpcMgr::get_inode_from_fd(int fd) {
+/* Get inode from file descriptor  */
+long
+SpIpcMgr::get_inode_from_fd(int fd) {
   struct stat s;
   if (fstat(fd, &s) != -1) {
     return s.st_ino;
@@ -36,8 +40,9 @@ long SpIpcMgr::get_inode_from_fd(int fd) {
   return -1;
 }
 
-// See if this file descriptor is a pipe
-bool SpIpcMgr::is_pipe(int fd) {
+/* See if this file descriptor is a pipe */
+bool
+SpIpcMgr::is_pipe(int fd) {
   struct stat s;
   if (fstat(fd, &s) == -1) return false;
   if (S_ISFIFO(s.st_mode)) {
@@ -46,12 +51,18 @@ bool SpIpcMgr::is_pipe(int fd) {
   return false;
 }
 
-SpChannel* SpIpcMgr::get_channel(int fd) {
+/* Get IPC channel from a file descriptor. 
+   Return: NULL if not a valid IPC channel; otherwise, the channel.
+*/
+SpChannel*
+SpIpcMgr::get_channel(int fd) {
   long inode = get_inode_from_fd(fd);
   if (channel_map_.find(inode) != channel_map_.end())
     return channel_map_[inode];
 
   SpChannel* c = NULL;
+
+  /* PIPE */
   if (is_pipe(fd)) {
     c = new PipeChannel;
     c->local_pid = getpid();
@@ -64,10 +75,19 @@ SpChannel* SpIpcMgr::get_channel(int fd) {
       }
     }
     c->type = SP_PIPE;
-  } else if (is_tcp(fd)) {
+#ifndef SP_RELEASE
+    sp_debug("PIPE CHANNEL - get a pipe channel with inode %d for fd %d", inode, fd);
+#endif    
+  }
+
+  /* TCP */
+  else if (is_tcp(fd)) {
     c = new TcpChannel;
     c->type = SP_TCP;
-  } else if (is_udp(fd)) {
+  }
+
+  /* UDP */
+  else if (is_udp(fd)) {
     c = new UdpChannel;
     c->type = SP_UDP;
   }
@@ -80,11 +100,13 @@ SpChannel* SpIpcMgr::get_channel(int fd) {
   return NULL;
 }
 
-void SpIpcMgr::destroy_channel(SpChannel* c) {
+void
+SpIpcMgr::destroy_channel(SpChannel* c) {
   delete c;
 }
 
-bool SpIpcMgr::is_sender(const char* f) {
+bool
+SpIpcMgr::is_sender(const char* f) {
   if (strcmp(f, "write") == 0 ||
       strcmp(f, "send") == 0)
      return true;
@@ -92,7 +114,8 @@ bool SpIpcMgr::is_sender(const char* f) {
   return false;
 }
 
-bool SpIpcMgr::is_receiver(const char* f) {
+bool
+SpIpcMgr::is_receiver(const char* f) {
   if (strcmp(f, "read") == 0 ||
       strcmp(f, "recv") == 0)
      return true;
@@ -100,16 +123,20 @@ bool SpIpcMgr::is_receiver(const char* f) {
   return false;
 }
 
-bool SpIpcMgr::is_ipc(int fd) {
+bool
+SpIpcMgr::is_ipc(int fd) {
   return (is_pipe(fd) || is_tcp(fd) || is_udp(fd));
 }
 
-bool SpIpcMgr::is_fork(const char* f) {
+bool
+SpIpcMgr::is_fork(const char* f) {
   if (strcmp(f, "fork") == 0) return true;
   return false;
 }
 
-static int pid_uses_inode(int pid, int inode) {
+static int
+pid_uses_inode(int pid, int inode) {
+
 #define MAXLEN 255
   DIR *dir;
   int temp_node;
@@ -140,7 +167,8 @@ static int pid_uses_inode(int pid, int inode) {
     return 0;
 }
 
-void SpIpcMgr::get_pids_from_fd(int fd, PidSet& pid_set) {
+void
+SpIpcMgr::get_pids_from_fd(int fd, PidSet& pid_set) {
   int pid, rv, num_found = 0;
   DIR *dir;
   char *ep;
@@ -164,11 +192,13 @@ void SpIpcMgr::get_pids_from_fd(int fd, PidSet& pid_set) {
 }
 
 
-char SpIpcMgr::start_tracing() {
+char
+SpIpcMgr::start_tracing() {
   return start_tracing_[getpid()];
 }
 
-void SpIpcMgr::set_start_tracing(char b, int pid) {
+void
+SpIpcMgr::set_start_tracing(char b, int pid) {
   start_tracing_[pid] = b;
 }
 

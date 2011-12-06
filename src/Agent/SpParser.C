@@ -7,26 +7,42 @@
 #include "SpPointMaker.h"
 #include "SpObject.h"
 
-using sp::SpParser;
-using sp::SpAddrSpace;
-using sb::AddressLookup;
 using sb::Symtab;
 using sb::Symbol;
 using sb::Region;
+
+using sp::SpParser;
+using sp::SpAddrSpace;
+using sb::AddressLookup;
+
 using pe::CodeObject;
 using pe::CodeRegion;
 using pe::SymtabCodeSource;
-using ph::PatchObject;
-using ph::PatchMgrPtr;
+
+using in::Result;
+using in::Visitor;
+using in::Immediate;
+using in::Expression;
+using in::Instruction;
+using in::Dereference;
+using in::RegisterAST;
+using in::BinaryFunction;
+using in::InstructionDecoder;
+
+using ph::Point;
 using ph::PatchMgr;
 using ph::AddrSpace;
-using ph::PatchFunction;
 using ph::PatchBlock;
 using ph::PointMaker;
-using ph::Point;
+using ph::PatchObject;
+using ph::PatchMgrPtr;
+using ph::PatchFunction;
+
 using dt::Address;
 
-extern sp::SpContext* g_context;
+namespace sp {
+
+extern SpContext* g_context;
 
 SpParser::SpParser()
   : exe_obj_(NULL), injected_(false),sp_offset_(0) {
@@ -34,15 +50,18 @@ SpParser::SpParser()
 }
 
 SpParser::~SpParser() {
-  for (CodeSources::iterator i = code_srcs_.begin(); i != code_srcs_.end(); i++) {
+  for (CodeSources::iterator i = code_srcs_.begin();
+       i != code_srcs_.end(); i++) {
     SymtabCodeSource* scs = static_cast<SymtabCodeSource*>(*i);
     delete scs;
   }
-  for (CodeObjects::iterator i = code_objs_.begin(); i != code_objs_.end(); i++)
+  for (CodeObjects::iterator i = code_objs_.begin();
+       i != code_objs_.end(); i++)
     delete *i;
 }
 
-SpParser::ptr SpParser::create() {
+SpParser::ptr
+SpParser::create() {
   return ptr(new SpParser);
 }
 
@@ -52,14 +71,16 @@ typedef struct {
 } IjLib;
 
 /* We will skip dyninst libraries for parsing. */
-bool SpParser::is_dyninst_lib(string lib) {
+bool
+SpParser::is_dyninst_lib(string lib) {
   for (int i = 0; i < dyninst_libs_.size(); i++) {
     if (lib.find(dyninst_libs_[i]) != string::npos) return true;
   }
   return false;
 }
 
-void SpParser::init_dyninst_libs() {
+void
+SpParser::init_dyninst_libs() {
   dyninst_libs_.push_back("libpatchAPI.so");
   dyninst_libs_.push_back("libparseAPI.so");
   dyninst_libs_.push_back("libstackwalk.so");
@@ -71,7 +92,8 @@ void SpParser::init_dyninst_libs() {
 }
 
 /* The main parsing routine. */
-PatchMgrPtr SpParser::parse() {
+PatchMgrPtr
+SpParser::parse() {
   if (mgr_) return mgr_;
 
   /* Get all symtabs in this process */
@@ -169,7 +191,11 @@ PatchMgrPtr SpParser::parse() {
 #endif
     }
   } // End of symtab iteration
-  assert(exe_obj_);
+  //  assert(exe_obj_);
+  /* XXX: for debugging chrome */
+  if (!exe_obj_) {
+    exe_obj_ = patch_objs[0];
+  }
 
   /* Initialize PatchAPI stuffs */
   AddrSpace* as = SpAddrSpace::create(exe_obj_);
@@ -193,7 +219,8 @@ PatchMgrPtr SpParser::parse() {
 }
 
 /* Find the function that contains addr */
-PatchFunction* SpParser::findFunction(Address addr) {
+PatchFunction*
+SpParser::findFunction(Address addr) {
 
   AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
@@ -234,7 +261,8 @@ typedef struct {
 } IjMsg;
 
 /* TODO: should add support to preloaded mode */
-char* SpParser::get_agent_name() {
+char*
+SpParser::get_agent_name() {
   int shmid;
   key_t key = 1986;
   IjMsg* msg_shm;
@@ -248,7 +276,8 @@ char* SpParser::get_agent_name() {
 }
 
 /* Get function address from function name. */
-Address SpParser::get_func_addr(string name) {
+Address
+SpParser::get_func_addr(string name) {
   AddrSpace* as = mgr_->as();
   for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
     PatchObject* obj = ci->second;
@@ -268,7 +297,8 @@ Address SpParser::get_func_addr(string name) {
    If `skip` is true, and we can't find the function, then just skip it.
    Otherwise, create the PatchFunction object.
 */
-PatchFunction* SpParser::findFunction(string name, bool skip) {
+PatchFunction*
+SpParser::findFunction(string name, bool skip) {
   if (real_func_map_.find(name) != real_func_map_.end()) {
     return real_func_map_[name];
   }
@@ -301,8 +331,9 @@ PatchFunction* SpParser::findFunction(string name, bool skip) {
 }
 
 /* Dump instructions in text. */
-string SpParser::dump_insn(void* addr, size_t size) {
-  using namespace Dyninst::InstructionAPI;
+string
+SpParser::dump_insn(void* addr, size_t size) {
+
   Address base = (Address)addr;
   SymtabCodeSource* cs = (SymtabCodeSource*)mgr_->as()->executable()->co()->cs();
   string s;
@@ -323,8 +354,6 @@ string SpParser::dump_insn(void* addr, size_t size) {
   }
   return s;
 }
-
-using namespace Dyninst::InstructionAPI;
 
 class SpVisitor : public Visitor {
 public:
@@ -400,7 +429,8 @@ private:
 };
 
 /* TODO (wenbin): is it okay to cache indirect callee? */
-PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
+PatchFunction*
+SpParser::callee(Point* pt, bool parse_indirect) {
   /* 0. Check the cache
      TODO: Should always re-parse indirect call
   */
@@ -451,4 +481,6 @@ PatchFunction* SpParser::callee(Point* pt, bool parse_indirect) {
   }
 
   return NULL;
+}
+
 }

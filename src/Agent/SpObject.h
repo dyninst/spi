@@ -5,15 +5,16 @@
 
 /* PatchAPI stuffs. */
 namespace sp {
-  class SpObject : public Dyninst::PatchAPI::PatchObject {
+  class SpObject : public ph::PatchObject {
   public:
-  SpObject(Dyninst::ParseAPI::CodeObject* o, Dyninst::Address a,
-           Dyninst::PatchAPI::CFGMaker* cm, Dyninst::PatchAPI::PatchCallback* cb,
-           Dyninst::Address la)
-    : Dyninst::PatchAPI::PatchObject(o, a, cm, cb), load_addr_(la) {}
-    Dyninst::Address load_addr() const { return load_addr_; }
+
+    SpObject(pe::CodeObject* o, dt::Address a, ph::CFGMaker* cm,
+             ph::PatchCallback* cb, dt::Address la)
+    : ph::PatchObject(o, a, cm, cb), load_addr_(la) {}
+
+    dt::Address load_addr() const { return load_addr_; }
   protected:
-    Dyninst::Address load_addr_;
+    dt::Address load_addr_;
 };
 
 }

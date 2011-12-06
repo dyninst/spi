@@ -6,26 +6,30 @@
 #include "SpUtils.h"
 
 using dt::Address;
+
 using ph::PatchFunction;
+
+using in::Result;
 using in::Visitor;
-using in::Instruction;
-using in::BinaryFunction;
 using in::Immediate;
+using in::Expression;
+using in::Instruction;
 using in::Dereference;
 using in::RegisterAST;
-using in::Result;
-using in::Expression;
+using in::BinaryFunction;
  
-extern sp::SpContext* g_context;
 
 namespace sp {
+
+extern SpContext* g_context;
 
 /* ==========================================================================
                               Code generation
    ========================================================================== */
 
 /* Save context before calling payload */
-size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
+size_t
+SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
   char* p = buf + offset;
 
   /* Saved for direct/indirect call */
@@ -65,7 +69,8 @@ size_t SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
 }
 
 /* Restore context after calling payload */
-size_t SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
+size_t
+SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
   char* p = buf + offset;
 
   /* Restored for indirect call */
@@ -104,7 +109,8 @@ size_t SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
    1. Resolve indirect call during runtime
    2. Get argument of callees in payload function
 */
-size_t SpSnippet::emit_save_sp(char* buf, size_t offset) {
+size_t
+SpSnippet::emit_save_sp(char* buf, size_t offset) {
   char* p = buf + offset;
 
   /* mov loc, %rax */
@@ -123,7 +129,8 @@ size_t SpSnippet::emit_save_sp(char* buf, size_t offset) {
 }
 
 /* For debugging, cause segment fault */
-size_t SpSnippet::emit_fault(char* buf, size_t offset) {
+size_t
+SpSnippet::emit_fault(char* buf, size_t offset) {
   char* p = buf + offset;
 
   /* mov $0, 0 */
@@ -143,7 +150,8 @@ size_t SpSnippet::emit_fault(char* buf, size_t offset) {
 }
 
 /* Move imm64 to %rdi */
-static size_t emit_mov_imm64_rdi(long imm, char* buf, size_t offset) {
+static size_t
+emit_mov_imm64_rdi(long imm, char* buf, size_t offset) {
   char* p = buf + offset;
   /* mov imm, %rdi */
   *p = (char)0x48; p++;
@@ -153,7 +161,8 @@ static size_t emit_mov_imm64_rdi(long imm, char* buf, size_t offset) {
 }
 
 /* Move imm64 to %rsi */
-static size_t emit_mov_imm64_rsi(long imm, char* buf, size_t offset) {
+static size_t
+emit_mov_imm64_rsi(long imm, char* buf, size_t offset) {
   char* p = buf + offset;
   /* mov imm, %rsi */
   *p = (char)0x48; p++;
@@ -166,7 +175,8 @@ static size_t emit_mov_imm64_rsi(long imm, char* buf, size_t offset) {
    Two parameters - POINT and Payload function
    If payload == 0, then we are dealing with single-process only
 */
-size_t SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t offset) {
+size_t
+SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t offset) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
@@ -184,7 +194,8 @@ size_t SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t of
 }
 
 /* Emulate to push an imm64 in stack */
-static size_t emit_push_imm64(long imm, char* buf, size_t offset) {
+static size_t
+emit_push_imm64(long imm, char* buf, size_t offset) {
   char* p = buf + offset;
 
   /* push imm16
@@ -204,7 +215,8 @@ static size_t emit_push_imm64(long imm, char* buf, size_t offset) {
 }
 
 /* Call a function w/ address `callee` */
-size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
+size_t
+SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
   char* p = buf + offset;
   Address retaddr = (Address)p+5;
   Address rel_addr = (callee - retaddr);
@@ -236,7 +248,8 @@ size_t SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
 }
 
 /* Jump to target address `trg`. */
-size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
+size_t
+SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
   char* p = buf + offset;
   size_t insnsize = 0;
 
@@ -269,19 +282,22 @@ size_t SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
    ========================================================================== */
 
 /* Used in trap handler to decide the pc value right at the call */
-Address SpSnippet::get_pre_signal_pc(void* context) {
+Address
+SpSnippet::get_pre_signal_pc(void* context) {
   ucontext_t* ctx = (ucontext_t*)context;
   return ctx->uc_mcontext.gregs[REG_RIP];
 }
 
 /* Used in trap handler to jump to snippet */
-Address SpSnippet::set_pc(Address pc, void* context) {
+Address
+SpSnippet::set_pc(Address pc, void* context) {
   ucontext_t* ctx = (ucontext_t*)context;
   ctx->uc_mcontext.gregs[REG_RIP] = pc;
 }
 
 /* Get the saved register, for resolving indirect call */
-Address SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
+Address
+SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 
 #define RAX (0)
 #define R9 (8)
@@ -342,7 +358,8 @@ Address SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 }
 
 /* Is this register RIP? */
-bool SpParser::is_pc(Dyninst::MachRegister r) {
+bool
+SpParser::is_pc(Dyninst::MachRegister r) {
   if (r == Dyninst::x86_64::rip) return true;
   return false;
 }
@@ -396,7 +413,8 @@ class RelocVisitor : public Visitor {
    */
 
 /* Get the displacement in an instruction */
-static int* get_disp(Instruction::Ptr insn, char* insn_buf) {
+static int*
+get_disp(Instruction::Ptr insn, char* insn_buf) {
   int* disp = NULL;
 
   int disp_offset = 0;
@@ -495,8 +513,8 @@ private:
     modified original instruction
     pop %r9
  */
-static size_t emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e,
-                            Address a, char* buf) {
+static size_t
+emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e, Address a, char* buf) {
   char* p = buf;
   char* insn_buf = (char*)insn->ptr();
 
@@ -601,11 +619,9 @@ static size_t emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e,
   return (size_t)(p - buf);
 }
 
-static size_t reloc_insn_internal(Address a,
-                                  Instruction::Ptr insn,
-                                  std::set<Expression::Ptr>& exp,
-                                  bool use_pc,
-                                  char* p) {
+static size_t
+reloc_insn_internal(Address a, Instruction::Ptr insn,
+                    std::set<Expression::Ptr>& exp, bool use_pc, char* p) {
   if (use_pc) {
     /* Deal with PC-sensitive instruction */
     char insn_buf[20];
@@ -634,10 +650,9 @@ static size_t reloc_insn_internal(Address a,
 }
 
 /* Relocate an ordinary instruction */
-size_t SpSnippet::reloc_insn(Address src_insn,
-                             Instruction::Ptr insn,
-                             Address last,
-                             char* buf) {
+size_t
+SpSnippet::reloc_insn(Address src_insn, Instruction::Ptr insn,
+                      Address last, char* buf) {
   /* We don't handle last instruction for now */
   if (src_insn == last) {  return 0;  }
 
@@ -658,7 +673,8 @@ size_t SpSnippet::reloc_insn(Address src_insn,
 }
 
 /* The upper bound for a jump instruction. */
-size_t SpSnippet::jump_abs_size() {
+size_t
+SpSnippet::jump_abs_size() {
   /* push x 4
      ret */
   return 17;
@@ -667,8 +683,9 @@ size_t SpSnippet::jump_abs_size() {
 /* Relocate the call instruction
    This is used in deadling with indirect call
 */ 
-size_t SpSnippet::emit_call_orig(long src, size_t size,
-                                 char* buf, size_t offset) {
+size_t
+SpSnippet::emit_call_orig(long src, size_t size,
+                          char* buf, size_t offset) {
   char* p = buf + offset;
   bool use_pc = false;
 
@@ -686,7 +703,8 @@ size_t SpSnippet::emit_call_orig(long src, size_t size,
 }
 
 /* Get argument of a function call */
-void* SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
+void*
+SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
   using namespace Dyninst::x86_64;
   if (h->num < 6) {
     Address a = 0;
@@ -725,7 +743,8 @@ void* SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
 }
 
 /* Get return value of a function call */
-long  SpSnippet::get_ret_val() {
+long
+SpSnippet::get_ret_val() {
   return get_saved_reg(Dyninst::x86_64::rax);
 }
 
