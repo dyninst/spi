@@ -14,6 +14,8 @@ using Dyninst::PatchAPI::PatchObject;
 
 /* Constructor for SpAgent */
 SpAgent::ptr SpAgent::create() {
+
+  /* Enable core dump. */
   if (getenv("SP_COREDUMP")) {
     struct rlimit core_limit;
     core_limit.rlim_cur = RLIM_INFINITY;
@@ -36,7 +38,8 @@ SpAgent::SpAgent() {
 }
 
 SpAgent::~SpAgent() {
-  //  delete context_;
+  /* FIXME: Very weird segfault when uncommenting this. */
+  // delete context_;
 }
 
 /* Configuration */
@@ -76,14 +79,14 @@ void SpAgent::set_ipc(bool b) {
   allow_ipc_ = b;
 }
 
-/* Go! */
+/* Here We Go! Self-propelling magic happens! */
 void SpAgent::go() {
 
 #ifndef SP_RELEASE
   sp_debug("========== Start Self-propelled instrumentation @ Process %d ==========", getpid());
 #endif
 
-  // 1. Sanity check. If not user configuration, use default ones
+  /* Sanity check. If not user-provided configuration, use default ones */
   if (!init_event_) {
 #ifndef SP_RELEASE
     sp_debug("INIT EVENT - Use default event");
@@ -134,7 +137,7 @@ void SpAgent::go() {
   }
 #endif
 
-  // 2. Prepare context
+  /* Prepare context */
   context_ = SpContext::create(init_propeller_,
                                init_before_,
                                init_after_,
@@ -150,7 +153,7 @@ void SpAgent::go() {
     return;
   }
 
-  // 3. Register Events
+  /* Register Events */
   init_event_->register_event(context_);
   fini_event_->register_event(context_);
 }

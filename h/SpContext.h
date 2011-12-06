@@ -16,10 +16,11 @@ namespace sp {
 
 class SpContext {
   public:
-  static SpContext* create(SpPropeller::ptr,
-                           string,
-                           string,
-                           SpParser::ptr);
+    static SpContext* create(SpPropeller::ptr,
+                             string,
+                             string,
+                             SpParser::ptr);
+    ~SpContext();
 
 
     PayloadFunc init_before() { return init_before_; }
@@ -79,7 +80,6 @@ class SpContext {
 
     SpContext(SpPropeller::ptr,
               SpParser::ptr);
-    ~SpContext();
     void init_well_known_libs();
 };
 

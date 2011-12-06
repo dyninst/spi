@@ -1,3 +1,4 @@
+
 #include "SpInc.h"
 #include <sys/resource.h>
 
@@ -42,7 +43,7 @@ void MyAgent() {
 
   agent->set_parser(parser);
   agent->set_init_before("print_before");
-  //agent->set_directcall_only(true);
+  // agent->set_directcall_only(true);
   agent->go();
 }
 

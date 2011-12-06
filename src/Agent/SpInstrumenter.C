@@ -25,9 +25,8 @@ using Dyninst::PatchAPI::PatchBlock;
 
 extern sp::SpContext* g_context;
 
-/************************************************
-  Jump-based instrumenter
- ************************************************/
+/* Jump-based instrumenter, which is to use a jump instruction to transfer
+   control to the patch area. */
 
 JumpInstrumenter* JumpInstrumenter::create(Dyninst::PatchAPI::AddrSpace* as) {
   return new JumpInstrumenter(as);
@@ -40,6 +39,7 @@ JumpInstrumenter::JumpInstrumenter(Dyninst::PatchAPI::AddrSpace* as)
 
 typedef std::map<Dyninst::Address, sp::SpSnippet::ptr> InstMap;
 InstMap g_inst_map;
+
 void trap_handler(int sig, siginfo_t* info, void* c) {
   Dyninst::Address pc = sp::SpSnippet::get_pre_signal_pc(c) - 1;
 
@@ -280,19 +280,21 @@ bool JumpInstrumenter::install_jump(Dyninst::PatchAPI::PatchBlock* blk,
   return true;
 }
 
+/* Install the patch area using a springboard */
 bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
                                       sp::SpSnippet::ptr snip,
                                       Dyninst::Address ret_addr) {
 
 
-  // Find a spring block. A spring block should:
-  // - big enough to hold two absolute jumps
-  // - close enough to short jump from call block
-  // if we cannot find one available spring block, just use trap or ignore this call
+  /* Find a spring block. A spring block should:
+     - big enough to hold two absolute jumps
+     - close enough to short jump from call block
+     if we cannot find one available spring block, just use trap or ignore this call
+  */
   PatchBlock* springblk = snip->spring_blk();
   if (!springblk) return false;
 
-  // Build blob & change the permission of snippet
+  /* Build blob & change the permission of snippet */
   char* blob = snip->blob(ret_addr, /*reloc=*/true, /*spring=*/true);
   Dyninst::PatchAPI::PatchObject* obj = callblk->obj();
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
@@ -303,7 +305,7 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
     exit(0);
   }
 
-  // Relocate spring block & change the permission of the relocated spring block
+  /* Relocate spring block & change the permission of the relocated spring block */
   char* spring = snip->spring(springblk->last());
   obj = springblk->obj();
   if (!as->set_range_perm((Dyninst::Address)spring, snip->spring_size(), perm)) {
@@ -313,35 +315,38 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
   }
 
 
-  //------------------------------------------------------
-  // Handle spring block
-  //------------------------------------------------------
-  // Write two "jump" instruction to spring block
+  /* ------------------------ 
+       Handle spring block
+     ------------------------ */
+
+  /* Write two "jump" instruction to spring block */
   char springblk_insn[64];
-  // first jump to relocated spring block
+
+  /* First jump to relocated spring block */
   size_t off = 0;
   size_t isize = snip->emit_jump_abs((long)spring, springblk_insn, off, /*abs=*/true);
   off += isize;
   size_t call_blk_jmp_trg = off;
   off = snip->emit_jump_abs((long)blob, springblk_insn, off, /*abs=*/true);
   off += isize;
-  // second jump to relocated spring block
 
+  /* Second jump to relocated spring block */
   char* addr = (char*)springblk->start();
   if (as->set_range_perm((Dyninst::Address)addr, springblk->size(), perm)) {
     as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)springblk_insn, off);
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
-  // Restore the permission of memory mapping
+  /* Restore the permission of memory mapping */
   if (!as->restore_range_perm((Dyninst::Address)addr, springblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
 
-  //------------------------------------------------------
-  // Handle call block
-  //------------------------------------------------------
-  // Write a "jump" instruction to call block
+  /* ------------------------
+       Handle call block
+     ------------------------ */
+
+  /* Write a "jump" instruction to call block */
   addr = (char*)callblk->start();
   char callblk_insn[2];
   callblk_insn[0] = 0xeb;
@@ -352,7 +357,7 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
   } else {
     sp_print("MPROTECT - Failed to change memory access permission");
   }
-  // Restore the permission of memory mapping
+  /* Restore the permission of memory mapping */
   if (!as->restore_range_perm((Dyninst::Address)addr, callblk->size())) {
     sp_print("MPROTECT - Failed to restore memory access permission");
   }
@@ -362,6 +367,7 @@ bool JumpInstrumenter::install_spring(Dyninst::PatchAPI::PatchBlock* callblk,
   return true;
 }
 
+/* Install the patch area, using trap. */
 bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob, size_t blob_size) {
 
   string int3;
@@ -374,7 +380,7 @@ bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob,
     int3 += (char)0x90;
   }
 
-  // Write int3 to the call site
+  /* Overwrite int3 to the call site */
   SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Dyninst::Address)addr, insn_length, perm)) {
@@ -383,7 +389,7 @@ bool JumpInstrumenter::install_trap(Dyninst::PatchAPI::Point* point, char* blob,
     as->write(obj, (Dyninst::Address)addr, (Dyninst::Address)int3.c_str(), int3.size());
   }
 
-  // Restore the permission of memory mapping
+  /* Restore the permission of memory mapping */
   if (!as->restore_range_perm((Dyninst::Address)addr, insn_length)) {
     return false;
   }

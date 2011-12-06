@@ -7,3 +7,8 @@
   - SP_DIR: absolute path of this package (the output of `pwd`), because this file is also used by Makefile, I don't put `pwd` in it.
   - PLATFORM: if it runs on x86 64-bit linux, then put "x86_64-unknown-linux2.4"; if it runs on x86 32-bit linux, then put "i386-unknown-linux2.4".
   - LD_LIBRARY_PATH: place library paths for self-propelled instrumentation, dyninst, stackwalker, libelf, libdwarf, and libxml2
+
+Environment variables related to self-propelled instrumentation:
+1. SP_COREDUMP, which enables core dump when segfault happens
+2. SP_DEBUG, which enables printing out debugging messages, but this requires to recompile the libagent.so without defining SP_RELEASE.
+

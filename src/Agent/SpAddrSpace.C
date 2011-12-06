@@ -7,14 +7,16 @@
 using sp::SpAddrSpace;
 using Dyninst::PatchAPI::PatchObject;
 
+/* Build mapped memory area. 
+   TODO (wenbin): should update mapped memory area dynamically
+*/
 SpAddrSpace::SpAddrSpace()
  : Dyninst::PatchAPI::AddrSpace() {
-
   update_mem_maps();
   //dump_mem_maps();
 }
 
-
+/* Standard PatchAPI stuff ... */
 SpAddrSpace* SpAddrSpace::create(PatchObject* obj) {
   assert(obj);
   SpAddrSpace* ret = new SpAddrSpace;
@@ -23,16 +25,17 @@ SpAddrSpace* SpAddrSpace::create(PatchObject* obj) {
   return ret;
 }
 
-
+/* Memory allocator, which is maily to allocate a buffer for the patch area. */
 Dyninst::Address SpAddrSpace::malloc(PatchObject* obj,
                                      size_t size,
                                      Dyninst::Address near) {
-  Dyninst::Address buf = (Dyninst::Address)::malloc(size+ getpagesize() -1);
+  Dyninst::Address buf = 0;
+  buf = (Dyninst::Address)::malloc(size+ getpagesize() -1);
   if (!buf) return 0;
   buf = (((Dyninst::Address)buf + getpagesize()-1) & ~(getpagesize()-1));
   return buf;
 
-  // TODO (wenbin): should have a better memory allocation subsystem
+  /* TODO (wenbin): should have a better memory allocation subsystem */
   Dyninst::Address ps = getpagesize();
   Dyninst::Address r_near = ((near + ps -1) & ~(ps - 1));
   Dyninst::Address r_size = ((size + ps -1) & ~(ps - 1));
@@ -41,7 +44,7 @@ Dyninst::Address SpAddrSpace::malloc(PatchObject* obj,
   sp_print("page size: %d, near: %lx, r_near: %lx, size: %d, r_size: %d",
            ps, near, r_near, size, r_size);
   void* m = NULL;
-  int fd = -1;//open("/dev/zero", O_RDWR);                                                                                                   
+  int fd = -1;
   while (!m | (long)m == -1) {
     buf -= r_size;
     sp_print("looking for %lx", buf);
@@ -52,22 +55,35 @@ Dyninst::Address SpAddrSpace::malloc(PatchObject* obj,
 	     fd,
 	     0);
   }
-  if (!buf) return 0;
-  sp_print("get buf: %lx", buf);
-  return buf;
+  if (!m) return 0;
+  sp_print("get buf: %lx", m);
+  return (Dyninst::Address)m;
 }
 
+/* Copy a buffer to another buffer. */
 bool SpAddrSpace::write(PatchObject* obj, Dyninst::Address to,
                         Dyninst::Address from, size_t size) {
   return (memcpy((void*)to, (void*)from, size) == (void*)to);
 }
 
+/* Deallocate a buffer. */
 bool SpAddrSpace::free(PatchObject* obj, Dyninst::Address orig) {
-  return false;
+  /* TODO (wenbin): should implement uninstrumentation and deallocation
+                    of patch area.
+  */
+  ::free((void*)orig);
+  return true;
 }
 
+/* Set access permission to a memory area. */
 bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
   bool ret = false;
+
+  /* Check the mapped memory area.
+     We change permission for the entire range that overlaps what we provide
+     in the argument list.
+     TODO (wenbin): safer to only change a minimal range of area's permission ...
+  */
   for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
     Dyninst::Address start = mi->first;
     MemMapping& mm = mi->second;
@@ -87,11 +103,10 @@ bool SpAddrSpace::set_range_perm(Dyninst::Address a, size_t length, int perm) {
     }
   }
 
-  // last try
+  /* Last resort to align the address ... */
   if (!ret) {
     Dyninst::Address aligned = a;
     size_t pz = getpagesize();
-    //while (aligned % pz != 0) aligned--;
     aligned = (Dyninst::Address)(((Dyninst::Address) aligned + pz-1) & ~(pz-1));
     if (mprotect((void*)aligned, length, perm) < 0) {
       sp_print("MPROTECT - Failed to change memory access permission");

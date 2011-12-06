@@ -29,7 +29,7 @@ SpContext::SpContext(SpPropeller::ptr p,
   ipc_mgr_ = NULL;
   allow_ipc_ = false;
 
-  // Parsing the entire code
+  /* Parsing the entire code */
   parse();
 
   init_well_known_libs();
@@ -68,7 +68,7 @@ void SpContext::init_well_known_libs() {
 /* Get the first instrumentable function.
    Here, an instrumentable function should fulfill all of the following requirements:
    1. it should be resovled by the parser.
-   2. it should not be from some well known system libraries, including
+   2. it should not be from some well known system libraries
  */
 PatchFunction* SpContext::get_first_inst_func() {
 
@@ -86,7 +86,7 @@ PatchFunction* SpContext::get_first_inst_func() {
     sp_debug("STACKWALK - %s in library %s with offset %lx",
              s.c_str(), sp_filename(l.c_str()), o);
 #endif
-    // Step 1: if the function is in a well known library
+    /* Step 1: if the function is in a well known library */
     if (is_well_known_lib(l)) {
 #ifndef SP_RELEASE
       sp_debug("SKIPPED - Function %s is in well known lib", s.c_str());
@@ -94,7 +94,7 @@ PatchFunction* SpContext::get_first_inst_func() {
       continue;
     }
 
-    // Step 2: if the function can be resolved
+    /* Step 2: if the function can be resolved */
     PatchFunction* func = parser_->findFunction(s);
     if (!func) {
 #ifndef SP_RELEASE
@@ -103,7 +103,7 @@ PatchFunction* SpContext::get_first_inst_func() {
       continue;
     }
 
-    // Step 3: return this function
+    /* Step 3: return this function */
 #ifndef SP_RELEASE
     sp_debug("FOUND - Function %s is the first instrumentable function", s.c_str());
 #endif
@@ -132,7 +132,7 @@ bool SpContext::is_well_known_lib(string lib) {
 
 
 void SpContext::restore() {
-  // Restore trap handler
+  /* Restore trap handler */
   sigaction(SIGTRAP, &old_act_, NULL);
 }
 
