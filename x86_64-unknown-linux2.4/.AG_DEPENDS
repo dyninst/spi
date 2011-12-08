@@ -686,7 +686,7 @@ SpParser.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpAgentCommon.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpPoint.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpPointMaker.h \
- /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpObject.h
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpObject.h
 SpEvent.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpEvent.C \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpEvent.h \
@@ -2282,7 +2282,7 @@ SpSnippet.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpPoint.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpUtils.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpAgentCommon.h \
- /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpObject.h
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpObject.h
 SpUtils.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpUtils.C \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpUtils.h \

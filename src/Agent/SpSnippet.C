@@ -20,7 +20,7 @@ SpSnippet::SpSnippet(PatchFunction* f,
                      PayloadFunc before,
                      PayloadFunc after)
   : func_(f), point_(pt), context_(c), before_(before), after_(after),
-    blob_size_(0), spring_size_(0), spring_blk_(NULL) {
+    blob_size_(0), spring_size_(0), spring_blk_(NULL), realloc_(false) {
 
   ph::PatchMgrPtr mgr = c->mgr();
   ph::AddrSpace* as = mgr->as();
@@ -33,7 +33,14 @@ SpSnippet::SpSnippet(PatchFunction* f,
 }
 
 SpSnippet::~SpSnippet() {
-  free(blob_);
+  if (!realloc_) free(blob_);
+}
+
+char* SpSnippet::realloc() {
+  char* buf = NULL;
+  realloc_ = true;
+
+  return buf;
 }
 
 /* The core part of code generation for the patch area. The basic logic:

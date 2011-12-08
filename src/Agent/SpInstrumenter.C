@@ -119,6 +119,9 @@ SpInstrumenter::run() {
         }
 
         char* blob = (char*)sp_snip->buf();
+	bool realloc = false;
+
+      REALLOC:
         long rel_addr = (long)blob - (long)eip;
 
         /* Save the original instruction, in case we want to restore it later.
@@ -136,8 +139,14 @@ SpInstrumenter::run() {
           if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
           }
+	  /* Reallocate the buffer */
+          else if (!realloc) {
+	    realloc = true;
+	    blob = (char*)sp_snip->realloc();
+	    if (blob) goto REALLOC;
+	  }
           /* If jump fails, let's try trap ... */ 
-          else {
+          if (realloc && !spt->instrumented()) {
             sp_print("FAILED to use JUMP - TRY TO USE TRAP");
 
             /* Set trap handler for the worst case that spring jump doesn't work */

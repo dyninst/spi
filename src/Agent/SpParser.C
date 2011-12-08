@@ -198,7 +198,7 @@ SpParser::parse() {
   }
 
   /* Initialize PatchAPI stuffs */
-  AddrSpace* as = SpAddrSpace::create(exe_obj_);
+  SpAddrSpace* as = SpAddrSpace::create(exe_obj_);
   ph::Instrumenter* inst = NULL;
   inst = sp::SpInstrumenter::create(as);
 
@@ -206,7 +206,7 @@ SpParser::parse() {
   mgr_ = PatchMgr::create(as, inst, pm);
   for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
-      as->loadObject(*i);
+      as->loadLibrary(*i);
     }
   }
 

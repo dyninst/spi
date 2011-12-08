@@ -25,6 +25,7 @@ class SpSnippet {
 
     // Return the pointer to blob, but blob is empty
     dt::Address buf() const { return (dt::Address)blob_; }
+    char* realloc(); 
 
     // Return the pointer to blob, and fill the blob
     char* blob(dt::Address ret_addr, bool reloc = false,  bool spring = false);
@@ -86,6 +87,7 @@ class SpSnippet {
 
     in::Instruction::Ptr orig_call_insn_;
     dt::Address reloc_call_addr_;
+    bool realloc_;
 
     // TODO(wenbin): 
     // Instruction::Ptr orig_call_insn_

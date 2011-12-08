@@ -4,7 +4,7 @@
 #include "SpAgentCommon.h"
 
 namespace sp {
-
+class SpObject;
 class SpAddrSpace : public ph::AddrSpace {
    friend class SpInstrumenter;
   public:
@@ -31,6 +31,10 @@ class SpAddrSpace : public ph::AddrSpace {
                             size_t      length);
 
     void sp_init(ph::PatchObject*);
+
+    char* get_near(ph::Point* pt);
+
+    void loadLibrary(ph::PatchObject*);
   protected:
 
     typedef struct {
@@ -46,10 +50,21 @@ class SpAddrSpace : public ph::AddrSpace {
     typedef std::map<dt::Address, MemMapping> MemMappings;
     MemMappings mem_maps_;
 
+    /* Preallocated buffer stuffs */
+    typedef struct {
+      dt::Address cursor;  // The addr = pre_head - pre_cursor * buf_size_
+      dt::Address head;
+    } PreAlloc;
+    typedef std::map<ph::PatchObject*, PreAlloc> ObjPreAllocMap;
+    ObjPreAllocMap obj_prealloc_map_;
+    size_t max_buf_num_;   // maximum # of all buffers before object
+    size_t buf_size_;      // each buffer's size
+
     void update_mem_maps();
     void dump_mem_maps();
 
     SpAddrSpace();
+    void pre_alloc_near(SpObject* obj);
 };
 
 }
