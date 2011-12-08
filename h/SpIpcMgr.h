@@ -6,6 +6,7 @@
 
 namespace sp {
 
+class SpPoint;
 class SpIpcMgr {
   public:
     SpIpcMgr();
@@ -32,6 +33,9 @@ class SpIpcMgr {
 
     char start_tracing();
     void set_start_tracing(char t, pid_t pid);
+    static bool pre_before(SpPoint*);
+    static bool pre_after(SpPoint*);
+
   protected:
     char* can_work_;
 
@@ -41,6 +45,8 @@ class SpIpcMgr {
     typedef std::set<pid_t> PidSet;
     PidSet child_proc_set_;
     char* start_tracing_;
+
+    void tracing_internal(char** start_tracing);
 
     long get_inode_from_fd(int fd);
     void get_pids_from_fd(int fd, PidSet& pid_set);
