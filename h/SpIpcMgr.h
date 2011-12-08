@@ -7,20 +7,19 @@
 namespace sp {
 
 class SpPoint;
+class SpIpcWorker;
+class SpPipeWorker;
+class SpUdpWorker;
+class SpTcpWorker;
+
 class SpIpcMgr {
   public:
     SpIpcMgr();
     ~SpIpcMgr();
 
-    // A payload_before function does two things:
-    // 1. work: user-defined logic
-    // 2. propagate: propagate instrumentation
-    // Here we let user determine if it is okay to work 
-    // char can_work();
-    // void set_work(char b, int pid);
-
-    // Get channel from fd
-    // If channel doesn't exist, construct one
+    /* Get channel from fd
+       If channel doesn't exist, construct one
+    */
     SpChannel* get_channel(int fd);
 
     bool is_sender(const char* f);
@@ -32,26 +31,87 @@ class SpIpcMgr {
     bool is_fork(const char* f);
 
     char start_tracing();
-    void set_start_tracing(char t, pid_t pid);
+
     static bool pre_before(SpPoint*);
     static bool pre_after(SpPoint*);
 
-  protected:
-    char* can_work_;
+    SpPipeWorker* pipe_worker() const { return pipe_worker_; }
+    SpTcpWorker* tcp_worker() const { return tcp_worker_; }
+    SpUdpWorker* udp_worker() const { return udp_worker_; }
 
-    // inode -> SpChannel
+  protected:
+
+    /* IPC workers */
+    SpPipeWorker* pipe_worker_;
+    SpTcpWorker* tcp_worker_;
+    SpUdpWorker* udp_worker_;
+
+    typedef std::set<SpIpcWorker*> WorkerSet;
+    WorkerSet worker_set_;
+};
+
+/* IPC workers */
+class SpIpcWorker {
+  public:
+    /* A payload_before function does two things:
+       1. tracing: user-defined logic
+       2. propagate: propagate instrumentation
+       Here we let user determine if it is okay to trace
+    */
+    virtual void set_start_tracing(char yes_or_no, pid_t) = 0;
+    virtual char start_tracing() = 0;
+    virtual bool inject(SpChannel*) = 0;
+
+    /* Get IPC channel from a file descriptor. 
+       Return: NULL if not a valid IPC channel; otherwise, the channel.
+    */
+    virtual SpChannel* get_channel(int fd) = 0;
+};
+
+class SpPipeWorker : public SpIpcWorker {
+  public:
+    SpPipeWorker();
+    ~SpPipeWorker();
+
+    virtual void set_start_tracing(char yes_or_no, pid_t);
+    virtual char start_tracing();
+    virtual bool inject(SpChannel*);
+    virtual SpChannel* get_channel(int fd);
+
+  protected:
+    /* inode-to-SpChannel mapping */
     typedef std::map<long, SpChannel*> ChannelMap;
     ChannelMap channel_map_;
+
+    /* Child process set */
     typedef std::set<pid_t> PidSet;
     PidSet child_proc_set_;
+
+    /* Can payload do trace? */
     char* start_tracing_;
 
     void tracing_internal(char** start_tracing);
-
+    int pid_uses_inode(int pid, int inode);
     long get_inode_from_fd(int fd);
     void get_pids_from_fd(int fd, PidSet& pid_set);
+};
 
-    void destroy_channel(SpChannel* c);
+
+class SpTcpWorker : public SpIpcWorker {
+  public:
+    virtual void set_start_tracing(char yes_or_no, pid_t);
+    virtual char start_tracing();
+    virtual bool inject(SpChannel*);
+    virtual SpChannel* get_channel(int fd);
+};
+
+
+class SpUdpWorker : public SpIpcWorker {
+  public:
+    virtual void set_start_tracing(char yes_or_no, pid_t);
+    virtual char start_tracing();
+    virtual bool inject(SpChannel*);
+    virtual SpChannel* get_channel(int fd);
 };
 
 }

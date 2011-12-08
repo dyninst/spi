@@ -9,8 +9,6 @@ void test_before(SpPoint* pt) {
   PatchFunction* f = callee(pt);
   if (!f) return;
 
-  // sp_print("[%d] %s", getpid(), f->name().c_str());
-
   if (start_tracing()) {
     if (f->name().compare("write") == 0 ||
 	f->name().compare("read") == 0) {
