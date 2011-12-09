@@ -8,24 +8,35 @@ using namespace PatchAPI;
 using namespace sp;
 
 unsigned long long callcount = 0;
+unsigned long long springcount = 0;
+unsigned long long relocblkcount = 0;
+unsigned long long relocinsncount = 0;
+unsigned long long trapcount = 0;
+
 namespace sp {
   extern void payload_start();
   extern void payload_end();
   extern void report_timer();
 }
-int indent = 0; 
 
-void print_before(Point* pt) {
-  //  PatchFunction* f = sp::callee(pt);
-  //  sp_print("PRINT_HEAD: %s", f->name().c_str());
-  /*  struct rlimit core_limit;
-  core_limit.rlim_cur = RLIM_INFINITY;
-  core_limit.rlim_max = RLIM_INFINITY;
-  if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
-    sp_perror("ERROR: failed to setup core dump ability\n");
+void print_before(SpPoint* pt) {
+  ++callcount;
+  switch (pt->install_method()) {
+  case SP_TRAP:
+    ++trapcount;
+    break;
+  case SP_RELOC_BLK:
+    ++relocblkcount;
+    break;
+  case SP_RELOC_INSN:
+    ++relocinsncount;
+    break;
+  case SP_SPRINGBOARD:
+    ++springcount;
+    break;
+  default:
+    break;
   }
-*/
-  callcount++;
   sp::propel(pt);
 }
 
@@ -50,4 +61,8 @@ void MyAgent() {
 __attribute__((destructor))
 void DumpOutput() {
   printf("# of calls: %ul\n", callcount);
+  printf("# of springboard calls: %ul\n", springcount);
+  printf("# of reloc insn calls: %ul\n", relocinsncount);
+  printf("# of reloc blk calls: %ul\n", relocblkcount);
+  printf("# of trap calls: %ul\n", trapcount);
 }

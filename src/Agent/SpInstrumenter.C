@@ -136,7 +136,7 @@ SpInstrumenter::run() {
           if (!sp::is_disp32(rel_addr)) jump_abs = true;
 
           /* First, we try to use jump to install instrumentation. */
-          if (install_indirect(pt, sp_snip, jump_abs, ret_addr)) {
+          if (install_indirect(spt, sp_snip, jump_abs, ret_addr)) {
             spt->set_instrumented(true);
           }
 	  /* Reallocate the buffer */
@@ -159,7 +159,8 @@ SpInstrumenter::run() {
             g_inst_map[eip] = sp_snip;
             blob = sp_snip->blob(ret_addr);
 
-            if (install_trap(pt, blob, sp_snip->size())) {
+            if (install_trap(spt, blob, sp_snip->size())) {
+	      spt->set_install_method(SP_TRAP);
               spt->set_instrumented(true);
             } else {
               sp_print("FAILED to use TRAP, no instrumentation for this point");
@@ -171,7 +172,8 @@ SpInstrumenter::run() {
         else {
           blob = sp_snip->blob(ret_addr);
           /* Install the blob to pt */
-          if (install_direct(pt, blob, sp_snip->size())) {
+          if (install_direct(spt, blob, sp_snip->size())) {
+            spt->set_install_method(SP_RELOC_INSN);
             spt->set_instrumented(true);
           } else {
             sp_print("FAILED - Failed to install instrumentation at %lx for calling %s",
@@ -187,7 +189,7 @@ SpInstrumenter::run() {
 }
 
 bool
-SpInstrumenter::install_direct(Point* point, char* blob, size_t blob_size) {
+SpInstrumenter::install_direct(SpPoint* point, char* blob, size_t blob_size) {
 
   char jump[5];
   char* p = jump;
@@ -225,7 +227,7 @@ SpInstrumenter::install_direct(Point* point, char* blob, size_t blob_size) {
 }
 
 bool
-SpInstrumenter::install_indirect(Point* point, SpSnippet::ptr snip,
+SpInstrumenter::install_indirect(SpPoint* point, SpSnippet::ptr snip,
                                  bool jump_abs, Address ret_addr) {
   PatchBlock* blk = point->block();
   size_t blk_size = blk->size();
@@ -257,9 +259,11 @@ SpInstrumenter::install_indirect(Point* point, SpSnippet::ptr snip,
   }
 
   if (blk_size >= limit) {
+    point->set_install_method(SP_RELOC_BLK);
     return install_jump(blk, insn, limit, snip, ret_addr);
   }
 
+  point->set_install_method(SP_SPRINGBOARD);
   return install_spring(blk, snip, ret_addr);
 }
 
@@ -386,12 +390,13 @@ SpInstrumenter::install_spring(PatchBlock* callblk,
   sp_debug("USE SPRING - piont %lx is instrumented using 1-hop spring",
            callblk->last());
 #endif
+
   return true;
 }
 
 /* Install the patch area, using trap. */
 bool
-SpInstrumenter::install_trap(Point* point, char* blob, size_t blob_size) {
+SpInstrumenter::install_trap(SpPoint* point, char* blob, size_t blob_size) {
 
   string int3;
   int3 += (char)0xcc;

@@ -5,27 +5,36 @@
 #include "SpSnippet.h"
 
 namespace sp {
+
+typedef enum {
+  SP_NONE,
+  SP_TRAP,        // Using trap
+  SP_RELOC_INSN,  // Direct jump
+  SP_RELOC_BLK,   // Indirect jump
+  SP_SPRINGBOARD  // Indirect jump, using springboard
+} InstallMethod;
+
 class SpPoint : public ph::Point {
   public:
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
             ph::PatchFunction *f)
       : ph::Point(t,m,f), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL) {
+    tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
             ph::PatchFunction *f,
             ph::PatchBlock *b)
       : ph::Point(t,m,f,b), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL) {
+      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
             ph::PatchBlock *b,
             ph::PatchFunction *f)
       : ph::Point(t,m,b,f), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL) {
+      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
@@ -34,14 +43,14 @@ class SpPoint : public ph::Point {
             Dyninst::InstructionAPI::Instruction::Ptr i,
             ph::PatchFunction *f)
       : ph::Point(t,m,b,a,i,f), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL) {
+      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
             ph::PatchEdge *e,
             ph::PatchFunction *f)
       : ph::Point(t,m,e,f), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL) {
+      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
     }
 
     virtual ~SpPoint() { }
@@ -58,10 +67,16 @@ class SpPoint : public ph::Point {
     void set_callee(ph::PatchFunction* f) { callee_ = f; }
     SpSnippet::ptr snip() const { return spsnip_;}
     void set_snip(SpSnippet::ptr s) { spsnip_ = s;}
+
+    InstallMethod install_method() const { return install_method_; }
+    void set_install_method(InstallMethod i) { install_method_ = i; }
+
   protected:
     bool propagated_;
     bool instrumented_;
     bool tail_call_;
+    InstallMethod install_method_;
+
     ph::PatchFunction* callee_;
     SpSnippet::ptr spsnip_;
 };

@@ -13,11 +13,11 @@ class SpInstrumenter : public ph::Instrumenter {
   protected:
     SpInstrumenter(ph::AddrSpace*);
 
-    bool install_direct(ph::Point* point,
+    bool install_direct(SpPoint* point,
                         char*      blob,
                         size_t     blob_size);
 
-    bool install_indirect(ph::Point*         point, 
+    bool install_indirect(SpPoint*         point, 
                           sp::SpSnippet::ptr snip,
                           bool               jump_abs,
                           dt::Address        ret_addr);
@@ -32,7 +32,7 @@ class SpInstrumenter : public ph::Instrumenter {
                         sp::SpSnippet::ptr snip,
                         dt::Address        ret_addr);
 
-    bool install_trap(ph::Point* point,
+    bool install_trap(SpPoint* point,
                       char*      blob,
                       size_t     blob_size);
 
