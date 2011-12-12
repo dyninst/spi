@@ -19,6 +19,7 @@ class SpParser : public ph::CFGMaker {
     virtual ph::PatchMgrPtr parse();
     ph::PatchObject* exe_obj();
     char* get_agent_name();
+    ph::PatchFunction* get_first_inst_func();
 
     ph::PatchFunction* findFunction(dt::Address addr);
     ph::PatchFunction* findFunction(string name, bool skip = true);
@@ -37,6 +38,7 @@ class SpParser : public ph::CFGMaker {
 
     size_t sp_offset() const { return sp_offset_; }
     void set_sp_offset(size_t s) { sp_offset_ = s; }
+
   protected:
     typedef std::vector<pe::CodeSource*> CodeSources;
     CodeSources code_srcs_;

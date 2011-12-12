@@ -105,6 +105,7 @@ typedef struct {
   char libname[512];
   char err[512];
   char loaded;
+  long pc;
 } IjMsg;
 
 typedef struct {
@@ -160,15 +161,7 @@ void SpInjector::inject(const char* lib_name) {
   /* Step 2. Load user-specified library */
   if (!is_lib_loaded(sp_filename(abs_lib_name))) {
     // setup shared memory, this is to pass arguments to call dlopen in libijagent.so
-    int shmid;
-    IjMsg *shm;
-    if ((shmid = shmget(IJMSG_ID, sizeof(IjMsg), IPC_CREAT | 0666)) < 0) {
-      sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes",
-                getpid(), sizeof(IjMsg));
-    }
-    if ((long)(shm = (IjMsg*)shmat(shmid, NULL, 0)) == (long)-1) {
-      sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
-    }
+    IjMsg *shm = (IjMsg*)get_shm(IJMSG_ID, sizeof(IjMsg));
     strcpy(shm->libname, abs_lib_name);
     shm->err[0] = '\0';
     shm->loaded = -1;
@@ -199,6 +192,7 @@ void SpInjector::invoke_ijagent() {
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(), pid_);
   }
+  update_pc();
   Dyninst::Address ij_agent_addr = find_func((char*)"ij_agent");
   if (ij_agent_addr > 0) {
     sp_debug("FOUND - Address of ij_agent function at %lx", ij_agent_addr);
@@ -231,6 +225,7 @@ void SpInjector::inject_internal(const char* lib_name) {
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(), pid_);
   }
+  update_pc();
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
   // Find do_dlopen function
@@ -372,17 +367,7 @@ bool SpInjector::get_resolved_lib_path(const std::string &filename, DepNames &pa
    Thus, we avoid time consuming parsing for dyninst libraries of huge size.
 */
 void SpInjector::identify_original_libs() {
-    const int SHLIBZ = sizeof(IjLib);
-    key_t key_lib = IJLIB_ID;
-    int shmid_lib;
-    if ((shmid_lib = shmget(key_lib, SHLIBZ, IPC_CREAT | 0666)) < 0) {
-      sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes",
-                getpid(), SHLIBZ);
-    }
-    IjLib *shm_lib;
-    if ((long)(shm_lib = (IjLib*)shmat(shmid_lib, NULL, 0)) == (long)-1) {
-      sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
-    }
+    IjLib *shm_lib = (IjLib*)get_shm(IJLIB_ID, sizeof(IjLib));
     LibraryPool& libs = proc_->libraries();
     int lib_count = 0;
     for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
@@ -402,17 +387,19 @@ void SpInjector::identify_original_libs() {
     shm_lib->offsets[libs.size()] = -1;
 }
 
-/* Here we go! */
-int main(int argc, char *argv[]) {
-  if (argc != 3) {
-    sp_print("usage: %s PID LIB_NAME", argv[0]);
-    exit(0);
+void* SpInjector::get_shm(int id, size_t size) {
+  int shmid;
+  void* shm;
+  if ((shmid = shmget(id, size, IPC_CREAT | 0666)) < 0) {
+    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes w/ id %d", getpid(), size, id);
   }
-  Dyninst::PID pid = atoi(argv[1]);
-  const char* lib_name = argv[2];
-  sp_print("Injector [pid = %5d]: INJECTING - %s ...", getpid(), lib_name);
-  sp_debug("========== Injector ==========");
-  SpInjector::ptr injector = SpInjector::create(pid);
-  injector->inject(lib_name);
-  return 0;
+  if ((long)(shm = (void*)shmat(shmid, NULL, 0)) == (long)-1) {
+    sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
+  }
+  return shm;
+}
+
+void SpInjector::update_pc() {
+  IjMsg* shm = (IjMsg*)get_shm(IJMSG_ID, sizeof(IjMsg));
+  shm->pc = get_pc();
 }

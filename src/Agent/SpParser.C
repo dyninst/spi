@@ -6,6 +6,7 @@
 #include "SpPoint.h"
 #include "SpPointMaker.h"
 #include "SpObject.h"
+#include "SpInjector.h"
 
 using sb::Symtab;
 using sb::Symbol;
@@ -114,18 +115,9 @@ SpParser::parse() {
     }
   }
 
-  int shmid;
-  key_t key = 1985;
-  IjLib* shm;
+  IjLib* shm = NULL;
   if (injected_) {
-    if ((shmid = shmget(key, sizeof(IjLib), 0666)) < 0) {
-      perror("shmget");
-      exit(1);
-    }
-    if ((char*)(shm = (IjLib*)shmat(shmid, NULL, 0)) == (char *) -1) {
-      perror("shmat");
-      exit(1);
-    }
+    shm = (IjLib*)SpInjector::get_shm(1985, sizeof(IjLib));
   }
 
   /* Build lookup map, to parse those libraries that are loaded before
@@ -258,20 +250,13 @@ typedef struct {
   char libname[512];
   char err[512];
   char loaded;
+  long pc;
 } IjMsg;
 
 /* TODO: should add support to preloaded mode */
 char*
 SpParser::get_agent_name() {
-  int shmid;
-  key_t key = 1986;
-  IjMsg* msg_shm;
-  if ((shmid = shmget(key, sizeof(IjMsg), 0666)) < 0) {
-    sp_perror("FATAL - Failed to get agent shared library name");
-  }
-  if ((char*)(msg_shm = (IjMsg*)shmat(shmid, NULL, 0)) == (char *) -1) {
-    sp_perror("FATAL - Failed to get agent library name");
-  }
+  IjMsg* msg_shm = (IjMsg*)SpInjector::get_shm(1986, sizeof(IjMsg));
   return msg_shm->libname;
 }
 
@@ -481,6 +466,11 @@ SpParser::callee(Point* pt, bool parse_indirect) {
   }
 
   return NULL;
+}
+
+ph::PatchFunction* SpParser::get_first_inst_func() {
+  IjMsg* shm = (IjMsg*)SpInjector::get_shm(1986, sizeof(IjMsg));
+  return findFunction(shm->pc);
 }
 
 }

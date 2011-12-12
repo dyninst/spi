@@ -12,10 +12,10 @@ class SpInjector {
   public:
     typedef dyn_detail::boost::shared_ptr<SpInjector> ptr;
     static ptr create(Dyninst::PID pid);
+    static void* get_shm(int id, size_t size);
     ~SpInjector();
 
     void inject(const char* lib_name);
-    void* get_shm(int id, size_t size);
 
     typedef struct {
       const char *libname;
