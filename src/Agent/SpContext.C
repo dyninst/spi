@@ -3,7 +3,6 @@
 #include "SpParser.h"
 #include "SpUtils.h"
 
-
 using sk::Frame;
 using sk::Walker;
 
@@ -67,7 +66,6 @@ SpContext::init_well_known_libs() {
     well_known_libs_.push_back(parser_->get_agent_name());
 }
 
-
 /* Get the first instrumentable function.
    Here, an instrumentable function should fulfill all of the following requirements:
    1. it should be resovled by the parser.
@@ -76,13 +74,18 @@ SpContext::init_well_known_libs() {
 PatchFunction*
 SpContext::get_first_inst_func() {
 
+  long pc, sp, bp;
+  parser_->get_frame(&pc, &sp, &bp);
+  sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
   std::vector<Frame> stackwalk;
   Walker *walker = Walker::newWalker();
-  walker->walkStack(stackwalk);
+  Frame* f = Frame::newFrame(pc, sp, bp, walker);
+  // walker->walkStack(stackwalk);
+  walker->walkStackFromFrame(stackwalk, *f);
   for (unsigned i=0; i<stackwalk.size(); i++) {
     string s;
     stackwalk[i].getName(s);
-    sp_print("%s", s.c_str());
+    // sp_print("%s", s.c_str());
     string l;
     Dyninst::Offset o;
     void* symobj;

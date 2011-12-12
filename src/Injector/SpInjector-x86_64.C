@@ -68,3 +68,15 @@ Dyninst::Address SpInjector::get_pc() {
   thr_->getRegister(Dyninst::x86_64::rip, rip);
   return rip;
 }
+
+Dyninst::Address SpInjector::get_sp() {
+  Dyninst::MachRegisterVal rsp;
+  thr_->getRegister(Dyninst::x86_64::rsp, rsp);
+  return rsp;
+}
+
+Dyninst::Address SpInjector::get_bp() {
+  Dyninst::MachRegisterVal rbp;
+  thr_->getRegister(Dyninst::x86_64::rbp, rbp);
+  return rbp;
+}

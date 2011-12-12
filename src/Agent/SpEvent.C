@@ -85,11 +85,13 @@ SyncEvent::register_event(SpContext* c) {
        3. Stackwalk until main
        4. Instrument all functions in the stack 
     */
+    /*
     ph::PatchFunction* first_func = g_context->parser()->get_first_inst_func();
     if (first_func) {
       sp_print("***** %s", first_func->name().c_str());
       
     }
+    */
     /*
     struct sigaction act;
     act.sa_sigaction = (event_handler_t)handler_;
@@ -97,9 +99,10 @@ SyncEvent::register_event(SpContext* c) {
     sigaction(signum_, &act, NULL);
     if (signum_ == SIGALRM) alarm(after_secs_);
     */
-    /*
+
     PatchFunction* f = g_context->get_first_inst_func();
     sp_print("FIRST INST -- in function %s", f->name().c_str());
+    /*
     g_context->init_propeller()->go(f, g_context,
                                   g_context->init_before(),
                                   g_context->init_after());

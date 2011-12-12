@@ -11,6 +11,8 @@ typedef struct {
   char err[512];
   char loaded;
   long pc;
+  long sp;
+  long bp;
 } IjMsg;
 #define SHMSZ sizeof(IjMsg)
 

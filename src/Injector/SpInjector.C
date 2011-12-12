@@ -106,6 +106,8 @@ typedef struct {
   char err[512];
   char loaded;
   long pc;
+  long sp;
+  long bp;
 } IjMsg;
 
 typedef struct {
@@ -192,7 +194,7 @@ void SpInjector::invoke_ijagent() {
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(), pid_);
   }
-  update_pc();
+  update_frame();
   Dyninst::Address ij_agent_addr = find_func((char*)"ij_agent");
   if (ij_agent_addr > 0) {
     sp_debug("FOUND - Address of ij_agent function at %lx", ij_agent_addr);
@@ -225,7 +227,7 @@ void SpInjector::inject_internal(const char* lib_name) {
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(), pid_);
   }
-  update_pc();
+  update_frame();
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
   // Find do_dlopen function
@@ -399,7 +401,9 @@ void* SpInjector::get_shm(int id, size_t size) {
   return shm;
 }
 
-void SpInjector::update_pc() {
+void SpInjector::update_frame() {
   IjMsg* shm = (IjMsg*)get_shm(IJMSG_ID, sizeof(IjMsg));
   shm->pc = get_pc();
+  shm->sp = get_sp();
+  shm->bp = get_bp();
 }

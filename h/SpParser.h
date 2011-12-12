@@ -19,7 +19,7 @@ class SpParser : public ph::CFGMaker {
     virtual ph::PatchMgrPtr parse();
     ph::PatchObject* exe_obj();
     char* get_agent_name();
-    ph::PatchFunction* get_first_inst_func();
+    void get_frame(long* pc, long* sp, long* bp);
 
     ph::PatchFunction* findFunction(dt::Address addr);
     ph::PatchFunction* findFunction(string name, bool skip = true);

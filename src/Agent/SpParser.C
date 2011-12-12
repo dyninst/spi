@@ -251,6 +251,8 @@ typedef struct {
   char err[512];
   char loaded;
   long pc;
+  long sp;
+  long bp;
 } IjMsg;
 
 /* TODO: should add support to preloaded mode */
@@ -468,9 +470,11 @@ SpParser::callee(Point* pt, bool parse_indirect) {
   return NULL;
 }
 
-ph::PatchFunction* SpParser::get_first_inst_func() {
+void SpParser::get_frame(long* pc, long* sp, long* bp) {
   IjMsg* shm = (IjMsg*)SpInjector::get_shm(1986, sizeof(IjMsg));
-  return findFunction(shm->pc);
+  *pc = shm->pc;
+  *sp = shm->sp;
+  *bp = shm->bp;
 }
 
 }

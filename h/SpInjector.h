@@ -37,6 +37,8 @@ class SpInjector {
     void inject_internal(const char*);
     void invoke_ijagent();
     Dyninst::Address get_pc();
+    Dyninst::Address get_sp();
+    Dyninst::Address get_bp();
 
     /* Platform-dependent methods. See Injector-i386.C and Injector-x86_64 */
     size_t get_code_tmpl_size();
@@ -46,7 +48,7 @@ class SpInjector {
     char* get_ij_tmpl(Dyninst::Address ij_addr,
                       Dyninst::Address /*code_addr*/);
     bool is_lib_loaded(const char* libname);
-    void update_pc();
+    void update_frame();
 
     // Procedures to assist self-propelled instrumentation
     void identify_original_libs();
