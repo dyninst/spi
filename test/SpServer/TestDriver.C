@@ -11,7 +11,16 @@ char can_exit = 0;
 
 TestDriver::TestDriver() {
   // Add test cases here:
-  add_testcase("pipe");
+
+  /* pipe1: preload agent.so before fork() */
+  add_testcase("pipe1");
+
+  /* pipe2: preload agent.so after fork() */
+  add_testcase("pipe2");
+
+  /* pipe3: popen */
+  add_testcase("pipe3");
+
   add_testcase("tcp");
   add_testcase("udp");
 }
@@ -26,7 +35,11 @@ bool TestDriver::run_testcase(std::string name) {
   // 1. Start server
   // 2. Run test case
   char cmd[1024];
-  sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
+  if (name.compare("pipe2") != 0) {
+    sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
+  } else {
+    sprintf(cmd, "%s", name.c_str());
+  }
   std::cerr << cmd << "\n";
   system(cmd);
 

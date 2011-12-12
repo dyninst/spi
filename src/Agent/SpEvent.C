@@ -28,11 +28,15 @@ SpContext* g_context = NULL;
 
 void
 async_event_handler(int signum, siginfo_t* info, void* context) {
+  // TODO
+  assert(0 && "TODO");
+  /*
   sp::g_context->parse();
   PatchFunction* f = sp::g_context->get_first_inst_func();
   g_context->init_propeller()->go(f, g_context,
                                   g_context->init_before(),
                                   g_context->init_after());
+  */
 }
 
 AsyncEvent::AsyncEvent(int signum, int sec)
@@ -51,18 +55,8 @@ AsyncEvent::register_event(SpContext* c) {
 }
 
 /* SyncEvent */
-void
-sync_event_handler(int signum, siginfo_t* info, void* context) {
-  g_context->parse();
-  PatchFunction* f = g_context->get_first_inst_func();
-  g_context->init_propeller()->go(f, g_context,
-                                  g_context->init_before(),
-                                  g_context->init_after());
-}
-
-SyncEvent::SyncEvent(std::string func_name, int sec)
-  : AsyncEvent(SIGALRM, sec), func_name_(func_name) {
-  handler_ = (void*)sync_event_handler;
+SyncEvent::SyncEvent(std::string func_name)
+  : SpEvent(), func_name_(func_name) {
 }
 
 
@@ -70,44 +64,31 @@ void
 SyncEvent::register_event(SpContext* c) {
   g_context = c;
 
+  /* LD_PRELOAD mode */
   if (!g_context->parser()->injected()) {
 #ifndef SP_RELEASE
     sp_debug("PRELOAD - preload agent.so, and instrument main()");
 #endif
     PatchFunction* f = c->parser()->findFunction("main");
     c->init_propeller()->go(f, c, c->init_before(), c->init_after());
-  } else {
-    sp_print("We are triggered!");
-
-    /* 
-       1. Get the last instruction we stopped
-       2. Find the function that contains it
-       3. Stackwalk until main
-       4. Instrument all functions in the stack 
-    */
-    /*
-    ph::PatchFunction* first_func = g_context->parser()->get_first_inst_func();
-    if (first_func) {
-      sp_print("***** %s", first_func->name().c_str());
-      
-    }
-    */
-    /*
-    struct sigaction act;
-    act.sa_sigaction = (event_handler_t)handler_;
-    act.sa_flags = SA_SIGINFO;
-    sigaction(signum_, &act, NULL);
-    if (signum_ == SIGALRM) alarm(after_secs_);
-    */
-
-    PatchFunction* f = g_context->get_first_inst_func();
-    sp_print("FIRST INST -- in function %s", f->name().c_str());
-    /*
-    g_context->init_propeller()->go(f, g_context,
-                                  g_context->init_before(),
-                                  g_context->init_after());
-    */
   }
+  /* Injection mode */
+  else {
+
+    /* Instrument all functions in the call stack. */
+    SpContext::CallStack call_stack;
+    g_context->get_callstack(&call_stack);
+    sp_debug("CALLSTACK - %d calls in the call stack", call_stack.size());
+    for (int i = 0; i < call_stack.size(); i++) {
+      PatchFunction* f = call_stack[i];
+      g_context->init_propeller()->go(f, g_context,
+				      g_context->init_before(),
+				      g_context->init_after());
+      if (f->name().compare("main") == 0) {
+	break;
+      }
+    } // Call stack
+  } // Injection
 }
 
 }

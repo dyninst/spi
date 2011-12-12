@@ -26,6 +26,8 @@ class SpContext {
     void restore();
 
     SpIpcMgr*        ipc_mgr() const { return ipc_mgr_; }
+    string      init_before_name() const { return init_before_name_; }
+    string      init_after_name() const { return init_after_name_; }
     PayloadFunc      init_before() const { return init_before_; }
     PayloadFunc      init_after() const { return init_after_; }
     PayloadFunc      wrapper_before() const {return wrapper_before_;}
@@ -35,7 +37,8 @@ class SpContext {
     SpPropeller::ptr init_propeller() const { return init_propeller_; }
 
     ph::PatchFunction* callee(ph::Point* pt);
-    ph::PatchFunction* get_first_inst_func();
+    typedef std::vector<ph::PatchFunction*> CallStack;
+    void get_callstack(CallStack* func_set);
 
     void set_old_act(struct sigaction old_act) { old_act_ = old_act; }
 
@@ -55,6 +58,8 @@ class SpContext {
     SpPropeller::ptr init_propeller_;
     PayloadFunc init_before_;
     PayloadFunc init_after_;
+    string init_before_name_;
+    string init_after_name_;
 
     SpParser::ptr parser_;
     ph::PatchMgrPtr mgr_;

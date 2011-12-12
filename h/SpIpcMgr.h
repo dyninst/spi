@@ -22,6 +22,7 @@ class SpIpcMgr {
     */
     SpChannel* get_channel(int fd);
 
+    int get_fd(SpPoint*);
     bool is_sender(const char* f);
     bool is_receiver(const char* f);
     bool is_pipe(int fd);
@@ -103,6 +104,7 @@ class SpTcpWorker : public SpIpcWorker {
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
     virtual SpChannel* get_channel(int fd);
+
 };
 
 
@@ -112,6 +114,7 @@ class SpUdpWorker : public SpIpcWorker {
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
     virtual SpChannel* get_channel(int fd);
+
 };
 
 }

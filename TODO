@@ -1,4 +1,5 @@
 Injector:
+- avoid parsing entire dyninst stuffs
 - port to windows
 
 Agent:

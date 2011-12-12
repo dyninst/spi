@@ -46,10 +46,18 @@ SpIpcMgr::is_pipe(int fd) {
   return false;
 }
 
+int
+SpIpcMgr::get_fd(SpPoint* pt) {
+  return 0;
+}
+
 bool
 SpIpcMgr::is_sender(const char* f) {
   if (strcmp(f, "write") == 0 ||
-      strcmp(f, "send") == 0)
+      strcmp(f, "send") == 0 ||
+      strcmp(f, "fputs") == 0 ||
+      strcmp(f, "fputc") == 0
+     )
      return true;
 
   return false;
@@ -72,6 +80,7 @@ SpIpcMgr::is_ipc(int fd) {
 bool
 SpIpcMgr::is_fork(const char* f) {
   if (strcmp(f, "fork") == 0) return true;
+  if (strcmp(f, "popen") == 0) return true;
   return false;
 }
 
@@ -153,14 +162,16 @@ SpIpcMgr::pre_before(SpPoint* pt) {
   }
 
   SpChannel* c = worker->get_channel(*fd);
-  if (!c) {
-    /* Not a valid IPC channel. */
-  } else {
+  if (c) {
     /* A valid IPC channel. */
     sp_print("PIPE to: %d", c->remote_pid);
     worker->set_start_tracing(1, c->remote_pid);
 
-    /* Inject this agent.so to remote process */
+    /* Inject this agent.so to remote process
+       Luckily, the SpInjector implementation will automatically detect whether
+       the agent.so library is already injected. If so, it will not inject the
+       the library again.
+    */
     worker->inject(c);
   }
 
@@ -236,7 +247,8 @@ bool SpPipeWorker::inject(SpChannel* c) {
   if (c->injected) return true;
   sp_print("NO INJECTED -- start injection");
   SpInjector::ptr injector = SpInjector::create(c->remote_pid);
-  injector->inject("./TestAgent.so");
+  string agent_name = g_context->parser()->get_agent_name();
+  injector->inject(agent_name.c_str());
   c->injected = true;
   return true;
 }

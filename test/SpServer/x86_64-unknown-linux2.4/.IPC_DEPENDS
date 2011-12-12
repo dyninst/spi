@@ -1,3 +1,4 @@
-pipe.o: ../TestCases/pipe.c
+pipe1.o: ../TestCases/pipe1.c
+pipe2.o: ../TestCases/pipe2.c
 tcp.o: ../TestCases/tcp.c
 udp.o: ../TestCases/udp.c

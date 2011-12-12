@@ -45,6 +45,8 @@ SpContext::create(SpPropeller::ptr propeller,
   assert(ret);
   ret->init_before_ = (void*)ret->parser()->get_func_addr(init_before);
   ret->init_after_ = (void*)ret->parser()->get_func_addr(init_after);
+  ret->init_before_name_ = init_before;
+  ret->init_after_name_ = init_after;
   ret->wrapper_before_ = (void*)ret->parser()->get_func_addr("wrapper_before");
   ret->wrapper_after_ = (void*)ret->parser()->get_func_addr("wrapper_after");
   return ret;
@@ -71,39 +73,21 @@ SpContext::init_well_known_libs() {
    1. it should be resovled by the parser.
    2. it should not be from some well known system libraries
  */
-PatchFunction*
-SpContext::get_first_inst_func() {
-
+void 
+SpContext::get_callstack(CallStack* call_stack) {
   long pc, sp, bp;
   parser_->get_frame(&pc, &sp, &bp);
   sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
   std::vector<Frame> stackwalk;
   Walker *walker = Walker::newWalker();
   Frame* f = Frame::newFrame(pc, sp, bp, walker);
-  // walker->walkStack(stackwalk);
   walker->walkStackFromFrame(stackwalk, *f);
   for (unsigned i=0; i<stackwalk.size(); i++) {
     string s;
     stackwalk[i].getName(s);
-    // sp_print("%s", s.c_str());
-    string l;
-    Dyninst::Offset o;
-    void* symobj;
-    stackwalk[i].getLibOffset(l, o, symobj);
-#ifndef SP_RELEASE
-    sp_debug("STACKWALK - %s in library %s with offset %lx",
-             s.c_str(), sp_filename(l.c_str()), o);
-#endif
-    /* Step 1: if the function is in a well known library */
-    if (is_well_known_lib(l)) {
-#ifndef SP_RELEASE
-      sp_debug("SKIPPED - Function %s is in well known lib", s.c_str());
-#endif
-      continue;
-    }
-
-    /* Step 2: if the function can be resolved */
-    PatchFunction* func = parser_->findFunction(s);
+    dt::Address ra = (dt::Address)stackwalk[i].getRA();
+    /* Step 1: if the function can be resolved */
+    PatchFunction* func = parser_->findFunction(ra);
     if (!func) {
 #ifndef SP_RELEASE
       sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());
@@ -111,14 +95,13 @@ SpContext::get_first_inst_func() {
       continue;
     }
 
-    /* Step 3: return this function */
+    /* Step 2: push this function */
 #ifndef SP_RELEASE
-    sp_debug("FOUND - Function %s is the first instrumentable function", s.c_str());
+    sp_debug("FOUND - Function %s is in the call stack", s.c_str());
 #endif
-    return func;
-  }
 
-  return NULL;
+    call_stack->push_back(func);
+  }
 }
 
 void

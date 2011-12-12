@@ -18,7 +18,7 @@ class SpParser : public ph::CFGMaker {
     typedef std::vector<ph::PatchObject*> PatchObjects;
     virtual ph::PatchMgrPtr parse();
     ph::PatchObject* exe_obj();
-    char* get_agent_name();
+    string get_agent_name();
     void get_frame(long* pc, long* sp, long* bp);
 
     ph::PatchFunction* findFunction(dt::Address addr);
@@ -54,6 +54,8 @@ class SpParser : public ph::CFGMaker {
     typedef std::map<string,
       ph::PatchFunction*> RealFuncMap;
     RealFuncMap real_func_map_;
+
+    string agent_name_;
 
     SpParser();
     void init_dyninst_libs();

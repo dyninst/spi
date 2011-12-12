@@ -146,7 +146,7 @@ SpParser::parse() {
     */
     if (injected_) {
       if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
-          (sym->name().find(sp_filename(sp_filename(get_agent_name()))) == string::npos) &&
+          (sym->name().find(sp_filename(sp_filename(get_agent_name().c_str()))) == string::npos) &&
           (sym->name().find("libagent.so") == string::npos)) {
 #ifndef SP_RELEASE
 	sp_debug("SKIPED - skip parsing %s", sp_filename(sym->name().c_str()));
@@ -256,10 +256,25 @@ typedef struct {
 } IjMsg;
 
 /* TODO: should add support to preloaded mode */
-char*
+string
 SpParser::get_agent_name() {
-  IjMsg* msg_shm = (IjMsg*)SpInjector::get_shm(1986, sizeof(IjMsg));
-  return msg_shm->libname;
+  if (agent_name_.size() > 0) return agent_name_;
+
+  /* Injection mode */
+  if (injected_) {
+    IjMsg* msg_shm = (IjMsg*)SpInjector::get_shm(1986, sizeof(IjMsg));
+    agent_name_ = msg_shm->libname;
+    return agent_name_;
+  }
+
+  /* LD_PRELOAD mode
+     XXX: Now, assume the library that contains init_before is the agent lib
+  */
+  string init_before = g_context->init_before_name();
+  PatchFunction* f = findFunction(init_before);
+  Symtab* sym = ((SymtabCodeSource*)(f->obj()->co()->cs()))->getSymtabObject();
+  agent_name_ = sym->name().c_str();
+  return agent_name_;
 }
 
 /* Get function address from function name. */
