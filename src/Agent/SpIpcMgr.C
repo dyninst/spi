@@ -1,6 +1,7 @@
 #include "SpIpcMgr.h"
 #include "SpPoint.h"
 #include "SpContext.h"
+#include "SpInjector.h"
 
 using ph::PatchFunction;
 
@@ -106,6 +107,9 @@ char SpIpcMgr::start_tracing() {
    If we inject agent after 1:
       [Sender]                      [Receiver]
    1. Detect write/send for pipe
+   2. See if it is a pipe
+   3. If so, see if we've injected
+   4. If not, inject it
 */
 bool
 SpIpcMgr::pre_before(SpPoint* pt) {
@@ -157,7 +161,7 @@ SpIpcMgr::pre_before(SpPoint* pt) {
     worker->set_start_tracing(1, c->remote_pid);
 
     /* Inject this agent.so to remote process */
-    // ipc_mgr->inject(c);
+    worker->inject(c);
   }
 
   return true;
@@ -224,8 +228,17 @@ char SpPipeWorker::start_tracing() {
   return start_tracing_[getpid()];
 }
 
-bool SpPipeWorker::inject(SpChannel*) {
-  return 0;
+/*
+   1. If so, see if we've injected
+   2. If not, inject it
+*/
+bool SpPipeWorker::inject(SpChannel* c) {
+  if (c->injected) return true;
+  sp_print("NO INJECTED -- start injection");
+  SpInjector::ptr injector = SpInjector::create(c->remote_pid);
+  injector->inject("./TestAgent.so");
+  c->injected = true;
+  return true;
 }
 
 int

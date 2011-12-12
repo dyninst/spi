@@ -27,20 +27,20 @@ AGENT_SRCS           += $(wildcard ../TestAgent.C)
 AGENT_OBJS            = $(notdir $(AGENT_SRCS:%.C=%.o))
 AGENT_SO              = $(notdir $(AGENT_SRCS:%.C=%.so))
 
-AG_FLAGS             += -g
+AG_FLAGS             += -g 
 AG_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
-AG_LDFLAGS           += -lagent
+AG_LDFLAGS           += -lagent -ldl
 
 # Rules
 #.PHONY: all
-all: AGENT IPC DRIVER COPY
+all: COPY AGENT IPC DRIVER
 	@echo ""
 	@echo "====================="
 	@echo " Usage: sh run.sh "
 	@echo "====================="
 
 COPY:
-	@cp $(SP_DIR)/$(PLATFORM)/libagent.so ./
+	@cp $(SP_DIR)/$(PLATFORM)/libagent.so $(SP_DIR)/$(PLATFORM)/libinjector.so ./
 
 IPC_DEP  = .IPC_DEPENDS
 IPC_DEPS:

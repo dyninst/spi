@@ -1,10 +1,12 @@
 
 INJECTOR   = Injector
 IJAGENT    = libijagent.so
+LIBINJECTOR= libinjector.so
 AGENT      = libagent.so
 SPSERVER   = SpServer
 
-all: $(INJECTOR) $(IJAGENT) $(AGENT) $(SPSERVER)
+all: $(LIBINJECTOR) $(INJECTOR) $(IJAGENT) $(AGENT) $(SPSERVER)
+#all: $(LIBINJECTOR) $(IJAGENT) $(AGENT) $(SPSERVER)
 
 GCC        = gcc
 GXX        = g++
@@ -13,9 +15,13 @@ RM         = rm -f
 #======================================
 # Injector
 #======================================
-IJ_SRCS    += $(IJ_DIR)/SpInjector.C \
+IJ_SRCS    += $(IJ_DIR)/SpInjector.C
 
 IJ_OBJS    += $(notdir $(IJ_SRCS:%.C=%.o))
+
+IJMAIN_SRCS    += $(IJ_DIR)/SpInjectorMain.C
+
+IJMAIN_OBJS    += $(notdir $(IJMAIN_SRCS:%.C=%.o))
 
 IJA_SRCS   += $(IJ_DIR)/IjAgent.c \
 
@@ -30,9 +36,17 @@ $(IJ_OBJS): %.o : $(IJ_SRCS)
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
 
-$(INJECTOR): $(IJ_OBJS)
+$(LIBINJECTOR): $(IJ_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJ_OBJS) $(IJ_LDFLAGS)
+
+$(IJMAIN_OBJS): %.o : $(IJMAIN_SRCS)
+	@echo Compiling $*.o
+	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
+
+$(INJECTOR): $(IJMAIN_OBJS)
+	@echo Linking $@
+	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJMAIN_LDFLAGS)
 
 $(IJA_OBJS): %.o : $(IJA_SRCS)
 	@echo Compiling $*.o

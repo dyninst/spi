@@ -82,6 +82,7 @@ SpContext::get_first_inst_func() {
   for (unsigned i=0; i<stackwalk.size(); i++) {
     string s;
     stackwalk[i].getName(s);
+    sp_print("%s", s.c_str());
     string l;
     Dyninst::Offset o;
     void* symobj;

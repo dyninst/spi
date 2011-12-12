@@ -15,6 +15,7 @@ class SpInjector {
     ~SpInjector();
 
     void inject(const char* lib_name);
+    void* get_shm(int id, size_t size);
 
     typedef struct {
       const char *libname;
@@ -45,6 +46,7 @@ class SpInjector {
     char* get_ij_tmpl(Dyninst::Address ij_addr,
                       Dyninst::Address /*code_addr*/);
     bool is_lib_loaded(const char* libname);
+    void update_pc();
 
     // Procedures to assist self-propelled instrumentation
     void identify_original_libs();

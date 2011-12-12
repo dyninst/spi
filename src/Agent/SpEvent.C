@@ -77,11 +77,29 @@ SyncEvent::register_event(SpContext* c) {
     PatchFunction* f = c->parser()->findFunction("main");
     c->init_propeller()->go(f, c, c->init_before(), c->init_after());
   } else {
+    sp_print("We are triggered!");
+
+    /* 
+       1. Get the last instruction we stopped
+       2. Find the function that contains it
+       3. Stackwalk until main
+       4. Instrument all functions in the stack 
+    */
+
+    /*
     struct sigaction act;
     act.sa_sigaction = (event_handler_t)handler_;
     act.sa_flags = SA_SIGINFO;
     sigaction(signum_, &act, NULL);
     if (signum_ == SIGALRM) alarm(after_secs_);
+    */
+    /*
+    PatchFunction* f = g_context->get_first_inst_func();
+    sp_print("FIRST INST -- in function %s", f->name().c_str());
+    g_context->init_propeller()->go(f, g_context,
+                                  g_context->init_before(),
+                                  g_context->init_after());
+    */
   }
 }
 

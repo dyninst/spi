@@ -18,10 +18,10 @@ typedef enum {
 // Remote process is the one that receives or reads from the channel
 struct SpChannel {
   SpChannel() :
-  type(SP_UNKNOWN), start_tracing(false), local_pid(0), local_ip(0), remote_pid(0), remote_ip(0), remote_injected(false), inode(-1) {}
+  type(SP_UNKNOWN), injected(false), local_pid(0), local_ip(0), remote_pid(0), remote_ip(0), remote_injected(false), inode(-1) {}
 
   ChannelType type;      // Channel type
-  bool start_tracing;    // Already start_tracing?
+  bool injected;         // Already injected?
   pid_t local_pid;       // Sender's pid
   unsigned local_ip;     // Sender's ip
   pid_t remote_pid;      // Receiver's pid
