@@ -35,7 +35,8 @@ bool TestDriver::run_testcase(std::string name) {
   // 1. Start server
   // 2. Run test case
   char cmd[1024];
-  if (name.compare("pipe2") != 0) {
+  if (name.compare("pipe2") != 0 &&
+      name.compare("pipe4") != 0) {
     sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
   } else {
     sprintf(cmd, "%s", name.c_str());

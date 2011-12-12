@@ -28,7 +28,6 @@ SpAgent::create() {
 }
 
 SpAgent::SpAgent() {
-
   init_event_ = SpEvent::ptr();
   fini_event_ = SpEvent::ptr();
   parser_ = SpParser::ptr();

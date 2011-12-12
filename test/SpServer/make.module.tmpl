@@ -40,7 +40,7 @@ all: COPY AGENT IPC DRIVER
 	@echo "====================="
 
 COPY:
-	@cp $(SP_DIR)/$(PLATFORM)/libagent.so $(SP_DIR)/$(PLATFORM)/libinjector.so ./
+	@cp $(SP_DIR)/$(PLATFORM)/libagent.so $(SP_DIR)/$(PLATFORM)/libinjector.so $(SP_DIR)/$(PLATFORM)/libijagent.so ./
 
 IPC_DEP  = .IPC_DEPENDS
 IPC_DEPS:

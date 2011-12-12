@@ -48,7 +48,29 @@ SpIpcMgr::is_pipe(int fd) {
 
 int
 SpIpcMgr::get_fd(SpPoint* pt) {
-  return 0;
+  PatchFunction* f = sp::callee(pt);
+  if (!f) return -1;
+
+  ArgumentHandle h;
+  if (f->name().compare("write") == 0 ||
+      f->name().compare("send") == 0) {
+    int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+    return *fd;
+  }
+
+  if (f->name().compare("fputs") == 0) {
+    char** str = (char**)sp::pop_argument(pt, &h, sizeof(char*));
+    FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+    return fileno(*fp);
+  }
+
+  if (f->name().compare("fputc") == 0) {
+    char* c = (char*)sp::pop_argument(pt, &h, sizeof(char));
+    FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+    return fileno(*fp);
+  }
+
+  return -1;
 }
 
 bool
@@ -80,7 +102,6 @@ SpIpcMgr::is_ipc(int fd) {
 bool
 SpIpcMgr::is_fork(const char* f) {
   if (strcmp(f, "fork") == 0) return true;
-  if (strcmp(f, "popen") == 0) return true;
   return false;
 }
 
@@ -141,28 +162,28 @@ SpIpcMgr::pre_before(SpPoint* pt) {
 
 
   /* Get destination name */
-  ArgumentHandle h;
-  int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+  int fd = ipc_mgr->get_fd(pt);
+  if (fd == -1 || fd == 0 || fd == 1 || fd == 2) return true;
 
   SpIpcWorker* worker = NULL;
 
   /* PIPE */
-  if (ipc_mgr->is_pipe(*fd)) {
+  if (ipc_mgr->is_pipe(fd)) {
     worker = ipc_mgr->pipe_worker();
   }
   /* TCP */
-  else if (ipc_mgr->is_tcp(*fd)) {
+  else if (ipc_mgr->is_tcp(fd)) {
     worker = ipc_mgr->tcp_worker();
   }
   /* UDP */
-  else if (ipc_mgr->is_udp(*fd)) {
+  else if (ipc_mgr->is_udp(fd)) {
     worker = ipc_mgr->udp_worker();
   } else {
     return true;
   }
 
-  SpChannel* c = worker->get_channel(*fd);
-  if (c) {
+  SpChannel* c = worker->get_channel(fd);
+  if (c && c->remote_pid != 0) {
     /* A valid IPC channel. */
     sp_print("PIPE to: %d", c->remote_pid);
     worker->set_start_tracing(1, c->remote_pid);
@@ -190,9 +211,11 @@ SpIpcMgr::pre_after(SpPoint* pt) {
     long pid = sp::retval(pt);
     /* Receiver */
     if (pid == 0) {
+      sp_print("FORK - child pid = %d", getpid());
       ipc_mgr->pipe_worker()->set_start_tracing(0, getpid());
     } else {
     /* Sender */
+      sp_print("FORK - parent pid = %d", getpid());
     }
   }
   /* Receipt-side */
