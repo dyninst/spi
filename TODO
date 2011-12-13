@@ -3,6 +3,7 @@ Injector:
 - port to windows
 
 Agent:
+- Should test on /bin/bash
 - A better memory manager to allocate blob
 - Handle function calls that cannot be parsed
 - Allow user to specify what libraries to skip parsing

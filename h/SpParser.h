@@ -38,7 +38,7 @@ class SpParser : public ph::CFGMaker {
 
     size_t sp_offset() const { return sp_offset_; }
     void set_sp_offset(size_t s) { sp_offset_ = s; }
-
+    string exe_name() const { return exe_name_; }
   protected:
     typedef std::vector<pe::CodeSource*> CodeSources;
     CodeSources code_srcs_;
@@ -56,6 +56,7 @@ class SpParser : public ph::CFGMaker {
     RealFuncMap real_func_map_;
 
     string agent_name_;
+    string exe_name_;
 
     SpParser();
     void init_dyninst_libs();

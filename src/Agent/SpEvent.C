@@ -64,6 +64,10 @@ void
 SyncEvent::register_event(SpContext* c) {
   g_context = c;
 
+  /* FIXME: ignore bash for now ... should fix it! */
+  string exe_name = g_context->parser()->exe_name();
+  if (exe_name.compare("bash") == 0) return;
+
   /* LD_PRELOAD mode */
   if (!g_context->parser()->injected()) {
 #ifndef SP_RELEASE

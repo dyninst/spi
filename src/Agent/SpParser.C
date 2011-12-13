@@ -178,6 +178,7 @@ SpParser::parse() {
 #endif
     if (sym->isExec()) {
       exe_obj_ = patch_obj;
+      exe_name_ = sym->name().c_str();
 #ifndef SP_RELEASE
       sp_debug("EXE - %s is an executable", sp_filename(sym->name().c_str()));
 #endif

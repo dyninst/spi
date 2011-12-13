@@ -2,6 +2,7 @@
 #include "SpPoint.h"
 #include "SpContext.h"
 #include "SpInjector.h"
+#include <sys/wait.h>
 
 using ph::PatchFunction;
 
@@ -41,8 +42,10 @@ SpIpcMgr::is_pipe(int fd) {
   struct stat s;
   if (fstat(fd, &s) == -1) return false;
   if (S_ISFIFO(s.st_mode)) {
+  sp_print("fd: %d is a pipe", fd);
     return true;
   }
+  sp_print("fd: %d is not a pipe", fd);
   return false;
 }
 
@@ -105,6 +108,12 @@ SpIpcMgr::is_fork(const char* f) {
   return false;
 }
 
+bool
+SpIpcMgr::is_popen(const char* f) {
+  if (strcmp(f, "popen") == 0) return true;
+  return false;
+}
+
 char SpIpcMgr::start_tracing() {
   for (WorkerSet::iterator wi = worker_set_.begin(); wi != worker_set_.end(); wi++) {
     if ((*wi)->start_tracing()) return 1;
@@ -112,34 +121,7 @@ char SpIpcMgr::start_tracing() {
   return 0;
 }
 
-/* Payload functions wrappers, which will be used only in multi-process mode.
-
-   === For pipe ===
-
-   ** Uninstrumented case
-      [Sender]                     [Receiver]
-   1. fork receiver
-   2. write to receiver
-   3.                              read from sender
-   4. write to receiver
-   5.                              read from sender
-
-   ** Before fork case
-   If we use preload, or we happen to inject agent before 1:
-      [Sender]                      [Receiver]
-   1. Detect fork at pre_after
-   2. Disable tracing for child
-   3. Detect write/send for pipe
-   4. Enable tracing for child
-   5.                               Start tracing
-
-   ** After fork case
-   If we inject agent after 1:
-      [Sender]                      [Receiver]
-   1. Detect write/send for pipe
-   2. See if it is a pipe
-   3. If so, see if we've injected
-   4. If not, inject it
+/* Payload functions wrappers, which will be used only in IPC mode.
 */
 bool
 SpIpcMgr::pre_before(SpPoint* pt) {
@@ -183,7 +165,7 @@ SpIpcMgr::pre_before(SpPoint* pt) {
   }
 
   SpChannel* c = worker->get_channel(fd);
-  if (c && c->remote_pid != 0) {
+  if (c && c->remote_pid != -1) {
     /* A valid IPC channel. */
     sp_print("PIPE to: %d", c->remote_pid);
     worker->set_start_tracing(1, c->remote_pid);
@@ -206,21 +188,25 @@ SpIpcMgr::pre_after(SpPoint* pt) {
 
   /* Detect fork for pipe */
   sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
-
   if (ipc_mgr->is_fork(f->name().c_str())) {
     long pid = sp::retval(pt);
     /* Receiver */
     if (pid == 0) {
-      sp_print("FORK - child pid = %d", getpid());
       ipc_mgr->pipe_worker()->set_start_tracing(0, getpid());
     } else {
     /* Sender */
-      sp_print("FORK - parent pid = %d", getpid());
     }
   }
-  /* Receipt-side */
+  /* Detect popen for pipe */
+  else if (ipc_mgr->is_popen(f->name().c_str())) {
+    FILE* fp = (FILE*)sp::retval(pt);
+    int fd = fileno(fp);
+    /* XXX: magic?? This is a very artificial way to wait for fork done */
+    sleep(2);
+    SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd);
+    ipc_mgr->pipe_worker()->set_start_tracing(0, c->remote_pid);
+  }
 
-  /* Detect receipt */
   return true;
 }
 
@@ -268,7 +254,7 @@ char SpPipeWorker::start_tracing() {
 */
 bool SpPipeWorker::inject(SpChannel* c) {
   if (c->injected) return true;
-  sp_print("NO INJECTED -- start injection");
+  sp_debug("NO INJECTED -- start injection");
   SpInjector::ptr injector = SpInjector::create(c->remote_pid);
   string agent_name = g_context->parser()->get_agent_name();
   injector->inject(agent_name.c_str());

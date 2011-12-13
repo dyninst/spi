@@ -30,6 +30,7 @@ class SpIpcMgr {
     bool is_udp(int fd) { return false;}
     bool is_ipc(int fd);
     bool is_fork(const char* f);
+    bool is_popen(const char* f);
 
     char start_tracing();
 

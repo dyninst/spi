@@ -93,7 +93,7 @@ SpAddrSpace::set_range_perm(Address a, size_t length, int perm) {
     if ((a >= start && code_end < end) ||
         (a <= start && code_end >= start && code_end <= end) ||
         (a >= start && a < end && code_end >= end)) {
-      //sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
+      sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
       if (mprotect((void*)start, end - start, perm) < 0) {
         sp_print("MPROTECT - Failed to change memory access permission");
         perror("mprotect");

@@ -6,9 +6,12 @@ using namespace PatchAPI;
 using namespace sp;
 
 void test_before(SpPoint* pt) {
+
   PatchFunction* f = callee(pt);
   if (!f) return;
+  // sp_print("func - %s", f->name().c_str());
 
+  /*
   if (start_tracing()) {
     if (f->name().compare("write") == 0 ||
 	f->name().compare("read") == 0) {
@@ -19,12 +22,23 @@ void test_before(SpPoint* pt) {
       }
     }
   }
+*/
+  std::vector<string> blacklist;
+  blacklist.push_back("free");
+  blacklist.push_back("malloc");
+  blacklist.push_back("getenv");
+  blacklist.push_back("hash");
+  blacklist.push_back("find_variable");
+
+  for (int i = 0; i< blacklist.size(); i++) {
+    if (f->name().find(blacklist[i]) != std::string::npos) return;
+  }
 
   sp::propel(pt);
 }
 
 void test_after(SpPoint* pt) {
-
+  /*
   PatchFunction* f = callee(pt);
   if (!f) return;
 
@@ -34,7 +48,7 @@ void test_after(SpPoint* pt) {
       sp_print("SendAfter: %s @ pid=%d w/ addr %lx w/ count %d", f->name().c_str(), getpid(), f->addr(), count);
     }
   }
-
+  */
 }
 
 AGENT_INIT
