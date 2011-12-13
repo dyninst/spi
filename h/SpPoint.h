@@ -20,21 +20,24 @@ class SpPoint : public ph::Point {
             ph::PatchMgrPtr m,
             ph::PatchFunction *f)
       : ph::Point(t,m,f), propagated_(false), instrumented_(false),
-    tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
+    tail_call_(false), callee_(NULL), install_method_(SP_NONE),
+    channel_(NULL) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
             ph::PatchFunction *f,
             ph::PatchBlock *b)
       : ph::Point(t,m,f,b), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
+    tail_call_(false), callee_(NULL), install_method_(SP_NONE),
+    channel_(NULL) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
             ph::PatchBlock *b,
             ph::PatchFunction *f)
       : ph::Point(t,m,b,f), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
+    tail_call_(false), callee_(NULL), install_method_(SP_NONE),
+    channel_(NULL) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
@@ -43,14 +46,16 @@ class SpPoint : public ph::Point {
             Dyninst::InstructionAPI::Instruction::Ptr i,
             ph::PatchFunction *f)
       : ph::Point(t,m,b,a,i,f), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
+    tail_call_(false), callee_(NULL), install_method_(SP_NONE),
+    channel_(NULL) {
     }
     SpPoint(ph::Point::Type t,
             ph::PatchMgrPtr m,
             ph::PatchEdge *e,
             ph::PatchFunction *f)
       : ph::Point(t,m,e,f), propagated_(false), instrumented_(false),
-      tail_call_(false), callee_(NULL), install_method_(SP_NONE) {
+    tail_call_(false), callee_(NULL), install_method_(SP_NONE),
+    channel_(NULL) {
     }
 
     virtual ~SpPoint() { }
@@ -71,6 +76,8 @@ class SpPoint : public ph::Point {
     InstallMethod install_method() const { return install_method_; }
     void set_install_method(InstallMethod i) { install_method_ = i; }
 
+    void set_channel(sp::SpChannel* c) { channel_ = c; }
+    SpChannel* channel() const { return channel_; }
   protected:
     bool propagated_;
     bool instrumented_;
@@ -79,6 +86,7 @@ class SpPoint : public ph::Point {
 
     ph::PatchFunction* callee_;
     SpSnippet::ptr spsnip_;
+    sp::SpChannel* channel_;
 };
 
 

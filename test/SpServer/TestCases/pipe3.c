@@ -17,7 +17,6 @@ int main(void) {
       perror("popen");
       exit(1);
     }
-  fprintf(stderr, "**** i'm a pipe: %d\n", fileno(pipe_fp));
   /* Processing loop */
 
   for(cntr=0; cntr<MAXSTRS; cntr++) {

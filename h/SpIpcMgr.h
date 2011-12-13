@@ -22,9 +22,9 @@ class SpIpcMgr {
     */
     SpChannel* get_channel(int fd);
 
-    int get_fd(SpPoint*);
-    bool is_sender(const char* f);
-    bool is_receiver(const char* f);
+    int get_fd_write(SpPoint*);
+    int get_fd_read(SpPoint*);
+
     bool is_pipe(int fd);
     bool is_tcp(int fd) { return false;}
     bool is_udp(int fd) { return false;}

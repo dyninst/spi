@@ -109,8 +109,16 @@ retval(sp::SpPoint* pt) {
 }
 
 bool
-is_ipc(int fd) {
+is_ipc_write(SpPoint* pt) {
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  int fd = ipc_mgr->get_fd_write(pt);
+  return ipc_mgr->is_ipc(fd);
+}
+
+bool
+is_ipc_read(SpPoint* pt) {
+  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  int fd = ipc_mgr->get_fd_read(pt);
   return ipc_mgr->is_ipc(fd);
 }
 

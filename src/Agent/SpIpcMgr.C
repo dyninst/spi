@@ -42,15 +42,13 @@ SpIpcMgr::is_pipe(int fd) {
   struct stat s;
   if (fstat(fd, &s) == -1) return false;
   if (S_ISFIFO(s.st_mode)) {
-  sp_print("fd: %d is a pipe", fd);
     return true;
   }
-  sp_print("fd: %d is not a pipe", fd);
   return false;
 }
 
 int
-SpIpcMgr::get_fd(SpPoint* pt) {
+SpIpcMgr::get_fd_write(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return -1;
 
@@ -76,25 +74,39 @@ SpIpcMgr::get_fd(SpPoint* pt) {
   return -1;
 }
 
-bool
-SpIpcMgr::is_sender(const char* f) {
-  if (strcmp(f, "write") == 0 ||
-      strcmp(f, "send") == 0 ||
-      strcmp(f, "fputs") == 0 ||
-      strcmp(f, "fputc") == 0
-     )
-     return true;
+int
+SpIpcMgr::get_fd_read(SpPoint* pt) {
+  PatchFunction* f = sp::callee(pt);
+  if (!f) return -1;
 
-  return false;
-}
+  ArgumentHandle h;
+  if (f->name().compare("read") == 0 ||
+      f->name().compare("recv") == 0) {
+    int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+    return *fd;
+  }
 
-bool
-SpIpcMgr::is_receiver(const char* f) {
-  if (strcmp(f, "read") == 0 ||
-      strcmp(f, "recv") == 0)
-     return true;
+  if (f->name().compare("fgets") == 0) {
+    char** str = (char**)sp::pop_argument(pt, &h, sizeof(char*));
+    int* size = (int*)sp::pop_argument(pt, &h, sizeof(int));
+    FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+    return fileno(*fp);
+  }
 
-  return false;
+  if (f->name().compare("fgetc") == 0) {
+    FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+    return fileno(*fp);
+  }
+
+  if (f->name().compare("fread_unlocked") == 0) {
+    void** ptr = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+    size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+    size_t* n = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+    FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+    sp_print("size: %d, n: %d", *size, *n);
+    return fileno(*fp);
+  }
+  return -1;
 }
 
 bool
@@ -128,56 +140,54 @@ SpIpcMgr::pre_before(SpPoint* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return false;
 
-  /* Sender-side */
   sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
 
+  /* ----------------------------------------
+                  Sender-side
+     ---------------------------------------*/
   /* Detect initiation of communication */
-  if (!ipc_mgr->is_sender(f->name().c_str())) {
-#ifndef SP_RELEASE
-    sp_debug("NON IPC FUNC - %s() is not a write or send", f->name().c_str());
-#endif
+  int fd = ipc_mgr->get_fd_write(pt);
+  if (fd != -1) {
+    /* Get destination name */
+    SpIpcWorker* worker = NULL;
+
+    /* PIPE */
+    if (ipc_mgr->is_pipe(fd)) {
+      worker = ipc_mgr->pipe_worker();
+    }
+    /* TCP */
+    else if (ipc_mgr->is_tcp(fd)) {
+      worker = ipc_mgr->tcp_worker();
+    }
+    /* UDP */
+    else if (ipc_mgr->is_udp(fd)) {
+      worker = ipc_mgr->udp_worker();
+    } else {
+      return true;
+    }
+
+    SpChannel* c = worker->get_channel(fd);
+    if (c && c->remote_pid != -1) {
+      /* A valid IPC channel. */
+      worker->set_start_tracing(1, c->remote_pid);
+      pt->set_channel(c);
+
+      /* Inject this agent.so to remote process
+	 Luckily, the SpInjector implementation will automatically detect whether
+	 the agent.so library is already injected. If so, it will not inject the
+	 the library again.
+      */
+      worker->inject(c);
+    }
     return true;
   }
-#ifndef SP_RELEASE
-  sp_debug("POTENTIAL IPC - %s() is a write or send", f->name().c_str());
-#endif
 
-
-  /* Get destination name */
-  int fd = ipc_mgr->get_fd(pt);
-  if (fd == -1 || fd == 0 || fd == 1 || fd == 2) return true;
-
-  SpIpcWorker* worker = NULL;
-
-  /* PIPE */
-  if (ipc_mgr->is_pipe(fd)) {
-    worker = ipc_mgr->pipe_worker();
+  /* ----------------------------------------
+                  Sender-side
+     ---------------------------------------*/
+  fd = ipc_mgr->get_fd_read(pt);
+  if (fd != -1) {
   }
-  /* TCP */
-  else if (ipc_mgr->is_tcp(fd)) {
-    worker = ipc_mgr->tcp_worker();
-  }
-  /* UDP */
-  else if (ipc_mgr->is_udp(fd)) {
-    worker = ipc_mgr->udp_worker();
-  } else {
-    return true;
-  }
-
-  SpChannel* c = worker->get_channel(fd);
-  if (c && c->remote_pid != -1) {
-    /* A valid IPC channel. */
-    sp_print("PIPE to: %d", c->remote_pid);
-    worker->set_start_tracing(1, c->remote_pid);
-
-    /* Inject this agent.so to remote process
-       Luckily, the SpInjector implementation will automatically detect whether
-       the agent.so library is already injected. If so, it will not inject the
-       the library again.
-    */
-    worker->inject(c);
-  }
-
   return true;
 }
 

@@ -27,7 +27,8 @@ namespace sp {
   void wrapper_before(ph::Point* pt, PayloadFunc_t before);
   void wrapper_after(ph::Point* pt, PayloadFunc_t before);
   char start_tracing();
-  bool is_ipc(int fd); 
+  bool is_ipc_write(SpPoint*); 
+  bool is_ipc_read(SpPoint*); 
 }
 
 #endif /* SP_PAYLOAD_H_ */
