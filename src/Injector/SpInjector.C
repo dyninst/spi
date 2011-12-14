@@ -186,6 +186,7 @@ void SpInjector::inject(const char* lib_name) {
   } else {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...", getpid(), sp_filename(lib_name));
   }
+  proc_->detach();
 }
 
 /* Invoke ijagent function in libijagent.so, which in turn invokes dlopen */

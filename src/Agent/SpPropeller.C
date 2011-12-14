@@ -46,9 +46,9 @@ SpPropeller::go(PatchFunction* func, SpContext* context, PayloadFunc before,
   } else {
     cur_func = context->parser()->findFunction(func->name());
   }
-  sp_debug("cur function %s", cur_func->name().c_str());
+
   next_points(cur_func, mgr, pts);
-  sp_debug("next pts: %d", pts.size());
+
 
   /* 2. Start instrumentation */
   ph::Patcher patcher(mgr);

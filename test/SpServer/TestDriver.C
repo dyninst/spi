@@ -46,7 +46,8 @@ bool TestDriver::run_testcase(std::string name) {
     sprintf(cmd, "%s", name.c_str());
   }
   else if (name.compare("pipe5") == 0) {
-    sprintf(cmd, "LD_PRELOAD=./TestAgent.so %sclient&", name.c_str());
+    // sprintf(cmd, "LD_PRELOAD=./TestAgent.so %sclient&", name.c_str());
+    sprintf(cmd, "%sclient&", name.c_str());
     system(cmd);
     sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
   }

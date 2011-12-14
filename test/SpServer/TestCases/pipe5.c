@@ -13,6 +13,8 @@ int main(int argc, char** argv) {
   char* line = "hello, world!";
   FILE* fp = fopen("/tmp/myFIFO", "w");
   fwrite(line, strlen(line)+1, 1, fp);
+  //fprintf(stderr, "pid: %d, fd: %d", getpid(), fileno(fp));
+  //while(1);
   fclose(fp);
   return 0;
 }

@@ -198,7 +198,7 @@ SpIpcMgr::pre_before(SpPoint* pt) {
       pt->set_channel(c);
 
       /* Inject this agent.so to remote process
-	 Luckily, the SpInjector implementation will automatically detect whether
+         Luckily, the SpInjector implementation will automatically detect whether
 	 the agent.so library is already injected. If so, it will not inject the
 	 the library again.
       */
@@ -325,21 +325,35 @@ SpPipeWorker::pid_uses_inode(int pid, int inode) {
 
   while ((de = readdir(dir)) != 0) {
     if (isdigit(de->d_name[0])) {
-    sprintf(name, "/proc/%u/fd/%s", pid, de->d_name);
-    if (readlink(name, buffer, MAXLEN) < 0) {
+      sprintf(name, "/proc/%u/fd/%s", pid, de->d_name);
+      int size = -1;
+      if ((size = readlink(name, buffer, MAXLEN)) < 0) {
 	perror("pid_uses_inode: readlink error");
 	return (-1);
-    }
-    if (sscanf(buffer, "pipe:[%u]", &temp_node) == 1 &&
-	temp_node == inode) {
+      }
+      buffer[size] = '\0';
+
+      /* Anonymous pipe */
+      if (sscanf(buffer, "pipe:[%u]", &temp_node) == 1 &&
+	  temp_node == inode) {
 	closedir(dir);
 	return 1;
-    }
+      }
+      /* Named pipe */
+      else {
+	struct stat s;
+	if (stat(buffer, &s) != -1) {
+	  if (s.st_ino == inode) {
+	    closedir(dir);
+	    return 1;
+	  }
+	}
+      }
     }
   }
   closedir(dir);
 
-    return 0;
+  return 0;
 }
 
 /* Get inode from file descriptor  */
@@ -368,7 +382,9 @@ SpPipeWorker::get_pids_from_fd(int fd, PidSet& pid_set) {
       if (ep == 0 || *ep != 0 || pid < 0) {
         sp_perror("ERROR: strtol failed on %s\n", de->d_name);
       }
-      if (pid_uses_inode(pid, get_inode_from_fd(fd))) {
+      if (pid != getpid() && 
+          pid_uses_inode(pid, get_inode_from_fd(fd))) {
+	sp_debug("GET PID FOR PIPE: pid - %d", pid);
 	pid_set.insert(pid);
       }
     }
@@ -390,6 +406,9 @@ SpChannel* SpPipeWorker::get_channel(int fd, ChannelRW rw) {
   c->local_pid = getpid();
   PidSet pid_set;
   get_pids_from_fd(fd, pid_set);
+#ifndef SP_RELEASE
+  sp_debug("FD TO PID - get a %d pids from fd %d", pid_set.size(), fd);
+#endif    
   for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
     if (*i != c->local_pid) {
       c->remote_pid = *i;

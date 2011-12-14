@@ -14,8 +14,10 @@ typedef enum {
 
 typedef enum {
   SP_READ,
-  SP_WRITE
+  SP_WRITE,
+  SP_NORW
 } ChannelRW;
+
 // Uni-directional channel
 // Local process is the one that sends or writes to the channel
 // Remote process is the one that receives or reads from the channel
@@ -35,6 +37,11 @@ struct SpChannel {
   ChannelRW rw;          // Read or Write?
 };
 
+/*
+   Assume only two parties are involved in a pipe, which is not true in real
+   world. For instance, named pipe would have multiple processes involved. 
+   Need to consider it later.
+*/
 struct PipeChannel : public SpChannel {
   PipeChannel() : SpChannel() {}
 };
