@@ -193,7 +193,7 @@ SpIpcMgr::pre_before(SpPoint* pt) {
     if (!worker) return false;
 
     SpChannel* c = worker->get_channel(fd, SP_WRITE);
-    if (c && c->remote_pid != -1) {
+    if (c) {
       worker->set_start_tracing(1, c->remote_pid);
       pt->set_channel(c);
 
@@ -202,7 +202,7 @@ SpIpcMgr::pre_before(SpPoint* pt) {
 	 the agent.so library is already injected. If so, it will not inject the
 	 the library again.
       */
-      worker->inject(c);
+      if (c->remote_pid != -1) worker->inject(c);
     }
     return true;
   }
@@ -398,17 +398,20 @@ SpChannel* SpPipeWorker::get_channel(int fd, ChannelRW rw) {
   }
   c->type = SP_PIPE;
 
-#ifndef SP_RELEASE
-  sp_debug("PIPE CHANNEL - get a pipe channel with inode %d for fd %d", inode, fd);
-#endif    
   c->inode = inode;
 
   if (rw == SP_WRITE) {
     c->rw = SP_WRITE;
     channel_map_write_[inode] = c;
+#ifndef SP_RELEASE
+    sp_debug("PIPE CHANNEL - get a WRITE pipe channel with inode %d for fd %d", inode, fd);
+#endif    
   } else {
     c->rw = SP_READ;
     channel_map_read_[inode] = c;
+#ifndef SP_RELEASE
+    sp_debug("PIPE CHANNEL - get a READ pipe channel with inode %d for fd %d", inode, fd);
+#endif    
   }
   return c;
 }

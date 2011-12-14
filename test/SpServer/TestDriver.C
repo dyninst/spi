@@ -21,6 +21,12 @@ TestDriver::TestDriver() {
   /* pipe3: popen */
   add_testcase("pipe3");
 
+  /* pipe4: popen */
+  add_testcase("pipe4");
+
+  /* pipe4: popen */
+  add_testcase("pipe5");
+
   add_testcase("tcp");
   add_testcase("udp");
 }
@@ -35,11 +41,17 @@ bool TestDriver::run_testcase(std::string name) {
   // 1. Start server
   // 2. Run test case
   char cmd[1024];
-  if (name.compare("pipe2") != 0 &&
-      name.compare("pipe4") != 0) {
-    sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
-  } else {
+  if (name.compare("pipe2") == 0 &&
+      name.compare("pipe4") == 0) {
     sprintf(cmd, "%s", name.c_str());
+  }
+  else if (name.compare("pipe5") == 0) {
+    sprintf(cmd, "LD_PRELOAD=./TestAgent.so %sclient&", name.c_str());
+    system(cmd);
+    sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
+  }
+  else {
+    sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
   }
   std::cerr << cmd << "\n";
   system(cmd);
@@ -63,7 +75,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   char* test_name = &argv[1][1];
-
+  if (driver.testcases().find(test_name) == driver.testcases().end()) {
+    driver.help();
+    return 1;
+  }
   int pid = fork();
   switch (pid) {
     // Child

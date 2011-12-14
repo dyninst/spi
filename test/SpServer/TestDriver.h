@@ -20,10 +20,11 @@ class TestDriver {
 
     void add_testcase(std::string name);
     bool run_testcase(std::string name);
-
+    typedef std::set<std::string> TestCases;
+    TestCases& testcases() { return testcases_; }
     void help();
   private:
-    typedef std::set<std::string> TestCases;
+
     TestCases testcases_;
 };
 }
