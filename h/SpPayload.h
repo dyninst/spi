@@ -7,13 +7,11 @@ namespace sp {
   class SpContext;
   class SpPoint;
 
+  /* --------------------------
+         Private things
+     ------------------------*/
   typedef void (*PayloadFunc_t)(ph::Point* pt);
   typedef void* PayloadFunc;
-
-  ph::PatchFunction* callee(ph::Point* pt_);
-  void propel(ph::Point* pt_);
-  long retval(SpPoint* pt);
-
   struct ArgumentHandle {
     ArgumentHandle();
     ~ArgumentHandle();
@@ -23,12 +21,28 @@ namespace sp {
     long num;
     std::vector<char*> bufs;
   };
-  void* pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size);
   void wrapper_before(ph::Point* pt, PayloadFunc_t before);
   void wrapper_after(ph::Point* pt, PayloadFunc_t before);
-  char start_tracing();
+
+  /* --------------------------
+         Public things
+     ------------------------*/
+
+  /* Only used in before_payload */
+  void propel(ph::Point* pt_);
+  void* pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size);
+
   bool is_ipc_write(SpPoint*); 
   bool is_ipc_read(SpPoint*); 
+  // void get_ipc_op_param(char** buf, size_t* size);
+
+  /* Only used in after_payload */
+  long retval(SpPoint* pt);
+
+  /* Used in both payloads */
+  ph::PatchFunction* callee(ph::Point* pt_);
+  char start_tracing();
+
 }
 
 #endif /* SP_PAYLOAD_H_ */

@@ -103,7 +103,6 @@ SpIpcMgr::get_fd_read(SpPoint* pt) {
     size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
     size_t* n = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
     FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
-    sp_print("size: %d, n: %d", *size, *n);
     return fileno(*fp);
   }
   return -1;
@@ -133,6 +132,23 @@ char SpIpcMgr::start_tracing() {
   return 0;
 }
 
+SpIpcWorker* SpIpcMgr::get_worker(int fd) {
+  /* PIPE */
+  if (is_pipe(fd)) {
+    return pipe_worker();
+  }
+  /* TCP */
+  else if (is_tcp(fd)) {
+    return tcp_worker();
+  }
+  /* UDP */
+  else if (is_udp(fd)) {
+    return udp_worker();
+  } else {
+    return NULL;
+  }
+}
+
 /* Payload functions wrappers, which will be used only in IPC mode.
 */
 bool
@@ -148,27 +164,11 @@ SpIpcMgr::pre_before(SpPoint* pt) {
   /* Detect initiation of communication */
   int fd = ipc_mgr->get_fd_write(pt);
   if (fd != -1) {
-    /* Get destination name */
-    SpIpcWorker* worker = NULL;
+    SpIpcWorker* worker = ipc_mgr->get_worker(fd);
+    if (!worker) return false;
 
-    /* PIPE */
-    if (ipc_mgr->is_pipe(fd)) {
-      worker = ipc_mgr->pipe_worker();
-    }
-    /* TCP */
-    else if (ipc_mgr->is_tcp(fd)) {
-      worker = ipc_mgr->tcp_worker();
-    }
-    /* UDP */
-    else if (ipc_mgr->is_udp(fd)) {
-      worker = ipc_mgr->udp_worker();
-    } else {
-      return true;
-    }
-
-    SpChannel* c = worker->get_channel(fd);
+    SpChannel* c = worker->get_channel(fd, SP_WRITE);
     if (c && c->remote_pid != -1) {
-      /* A valid IPC channel. */
       worker->set_start_tracing(1, c->remote_pid);
       pt->set_channel(c);
 
@@ -183,10 +183,17 @@ SpIpcMgr::pre_before(SpPoint* pt) {
   }
 
   /* ----------------------------------------
-                  Sender-side
+                  Receiver-side
      ---------------------------------------*/
   fd = ipc_mgr->get_fd_read(pt);
   if (fd != -1) {
+    SpIpcWorker* worker = ipc_mgr->get_worker(fd);
+    if (!worker) return false;
+
+    SpChannel* c = worker->get_channel(fd, SP_READ);
+    if (c) {
+      pt->set_channel(c);
+    }
   }
   return true;
 }
@@ -213,7 +220,7 @@ SpIpcMgr::pre_after(SpPoint* pt) {
     int fd = fileno(fp);
     /* XXX: magic?? This is a very artificial way to wait for fork done */
     sleep(2);
-    SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd);
+    SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd, SP_WRITE);
     ipc_mgr->pipe_worker()->set_start_tracing(0, c->remote_pid);
   }
 
@@ -231,7 +238,12 @@ SpPipeWorker::SpPipeWorker() {
 }
 
 SpPipeWorker::~SpPipeWorker() {
-  for (ChannelMap::iterator i = channel_map_.begin(); i != channel_map_.end(); i++) {
+  for (ChannelMap::iterator i = channel_map_write_.begin();
+       i != channel_map_write_.end(); i++) {
+    delete i->second;
+  }
+  for (ChannelMap::iterator i = channel_map_read_.begin();
+       i != channel_map_read_.end(); i++) {
     delete i->second;
   }
 }
@@ -339,10 +351,15 @@ SpPipeWorker::get_pids_from_fd(int fd, PidSet& pid_set) {
   closedir(dir);
 }
 
-SpChannel* SpPipeWorker::get_channel(int fd) {
+SpChannel* SpPipeWorker::get_channel(int fd, ChannelRW rw) {
   long inode = get_inode_from_fd(fd);
-  if (channel_map_.find(inode) != channel_map_.end())
-    return channel_map_[inode];
+  if (rw == SP_WRITE) {
+    if (channel_map_write_.find(inode) != channel_map_write_.end())
+      return channel_map_write_[inode];
+  } else {
+    if (channel_map_read_.find(inode) != channel_map_read_.end())
+      return channel_map_read_[inode];
+  }
 
   SpChannel* c = new PipeChannel;
   c->local_pid = getpid();
@@ -360,8 +377,14 @@ SpChannel* SpPipeWorker::get_channel(int fd) {
   sp_debug("PIPE CHANNEL - get a pipe channel with inode %d for fd %d", inode, fd);
 #endif    
   c->inode = inode;
-  channel_map_[inode] = c;
 
+  if (rw == SP_WRITE) {
+    c->rw = SP_WRITE;
+    channel_map_write_[inode] = c;
+  } else {
+    c->rw = SP_READ;
+    channel_map_read_[inode] = c;
+  }
   return c;
 }
 
@@ -379,7 +402,7 @@ bool SpTcpWorker::inject(SpChannel*) {
 }
 
 
-SpChannel* SpTcpWorker::get_channel(int fd) {
+SpChannel* SpTcpWorker::get_channel(int fd, ChannelRW rw) {
 
 }
 
@@ -395,7 +418,7 @@ bool SpUdpWorker::inject(SpChannel*) {
   return 0;
 }
 
-SpChannel* SpUdpWorker::get_channel(int fd) {
+SpChannel* SpUdpWorker::get_channel(int fd, ChannelRW rw) {
   return NULL;
 }
 

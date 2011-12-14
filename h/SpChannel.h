@@ -12,13 +12,17 @@ typedef enum {
   SP_UDP = 3 
 } ChannelType;
 
-
+typedef enum {
+  SP_READ,
+  SP_WRITE
+} ChannelRW;
 // Uni-directional channel
 // Local process is the one that sends or writes to the channel
 // Remote process is the one that receives or reads from the channel
 struct SpChannel {
   SpChannel() :
-  type(SP_UNKNOWN), injected(false), local_pid(-1), local_ip(0), remote_pid(-1), remote_ip(0), remote_injected(false), inode(-1) {}
+  type(SP_UNKNOWN), injected(false), local_pid(-1), local_ip(0), remote_pid(-1),
+  remote_ip(0), remote_injected(false), inode(-1), rw(SP_WRITE) {}
 
   ChannelType type;      // Channel type
   bool injected;         // Already injected?
@@ -28,6 +32,7 @@ struct SpChannel {
   unsigned remote_ip;    // Receiver's ip
   bool remote_injected;  // Agent is already injected to receiver?
   long inode;            // System-wide inode number
+  ChannelRW rw;          // Read or Write?
 };
 
 struct PipeChannel : public SpChannel {

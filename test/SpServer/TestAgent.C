@@ -14,7 +14,7 @@ void test_before(SpPoint* pt) {
     if (is_ipc_write(pt)) {
       sp_print("Write: %s @ pid=%d w/ addr %lx", f->name().c_str(), getpid(), f->addr());
     }
-    if (is_ipc_read(pt)) {
+    else if (is_ipc_read(pt)) {
       sp_print("Read: %s @ pid=%d w/ addr %lx", f->name().c_str(), getpid(), f->addr());
     }
   }
@@ -26,7 +26,14 @@ void test_after(SpPoint* pt) {
   if (!f) return;
 
   if (start_tracing()) {
-    //      long count = sp::retval(pt);
+    if (is_ipc_write(pt)) {
+      long size = sp::retval(pt);
+      sp_print("Write size: %d", size);
+    }
+    else if (is_ipc_read(pt)) {
+      long size = sp::retval(pt);
+      sp_print("Read size: %d", size);
+    }
   }
 }
 

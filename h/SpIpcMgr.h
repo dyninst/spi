@@ -20,7 +20,8 @@ class SpIpcMgr {
     /* Get channel from fd
        If channel doesn't exist, construct one
     */
-    SpChannel* get_channel(int fd);
+    SpChannel* get_channel(int fd, ChannelRW rw);
+    SpIpcWorker* get_worker(int fd);
 
     int get_fd_write(SpPoint*);
     int get_fd_read(SpPoint*);
@@ -67,7 +68,7 @@ class SpIpcWorker {
     /* Get IPC channel from a file descriptor. 
        Return: NULL if not a valid IPC channel; otherwise, the channel.
     */
-    virtual SpChannel* get_channel(int fd) = 0;
+    virtual SpChannel* get_channel(int fd, ChannelRW rw) = 0;
 };
 
 class SpPipeWorker : public SpIpcWorker {
@@ -78,12 +79,13 @@ class SpPipeWorker : public SpIpcWorker {
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
-    virtual SpChannel* get_channel(int fd);
+    virtual SpChannel* get_channel(int fd, ChannelRW rw);
 
   protected:
     /* inode-to-SpChannel mapping */
     typedef std::map<long, SpChannel*> ChannelMap;
-    ChannelMap channel_map_;
+    ChannelMap channel_map_write_;
+    ChannelMap channel_map_read_;
 
     /* Child process set */
     typedef std::set<pid_t> PidSet;
@@ -104,7 +106,7 @@ class SpTcpWorker : public SpIpcWorker {
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
-    virtual SpChannel* get_channel(int fd);
+    virtual SpChannel* get_channel(int fd, ChannelRW rw);
 
 };
 
@@ -114,7 +116,7 @@ class SpUdpWorker : public SpIpcWorker {
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
-    virtual SpChannel* get_channel(int fd);
+    virtual SpChannel* get_channel(int fd, ChannelRW rw);
 
 };
 
