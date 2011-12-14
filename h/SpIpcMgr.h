@@ -23,13 +23,17 @@ class SpIpcMgr {
     SpChannel* get_channel(int fd, ChannelRW rw);
     SpIpcWorker* get_worker(int fd);
 
-    int get_fd_write(SpPoint*);
-    int get_fd_read(SpPoint*);
+    void get_write_param(SpPoint* pt, int* fd_out, void** buf_out,
+                         char* c_out, size_t* size_out);
+
+    void get_read_param(SpPoint* pt, int* fd_out, void** buf_out,
+                        size_t* size_out);
 
     bool is_pipe(int fd);
     bool is_tcp(int fd) { return false;}
     bool is_udp(int fd) { return false;}
     bool is_ipc(int fd);
+
     bool is_fork(const char* f);
     bool is_popen(const char* f);
 

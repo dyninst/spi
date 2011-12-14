@@ -47,65 +47,89 @@ SpIpcMgr::is_pipe(int fd) {
   return false;
 }
 
-int
-SpIpcMgr::get_fd_write(SpPoint* pt) {
+void
+SpIpcMgr::get_write_param(SpPoint* pt, int* fd_out, void** buf_out,
+                          char* c_out, size_t* size_out) {
   PatchFunction* f = sp::callee(pt);
-  if (!f) return -1;
+  if (!f) return;
 
   ArgumentHandle h;
   if (f->name().compare("write") == 0 ||
       f->name().compare("send") == 0) {
     int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
-    return *fd;
+    if (fd_out) *fd_out = *fd;
+    void** buf = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = *buf;
+    size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = *size;
   }
 
   if (f->name().compare("fputs") == 0) {
     char** str = (char**)sp::pop_argument(pt, &h, sizeof(char*));
+    if (buf_out) *buf_out = (void*)*str;
     FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
-    return fileno(*fp);
+    if(fd_out) *fd_out = fileno(*fp);
   }
 
   if (f->name().compare("fputc") == 0) {
     char* c = (char*)sp::pop_argument(pt, &h, sizeof(char));
+    if (c_out) *c_out = *c;
     FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
-    return fileno(*fp);
+    if (fd_out) *fd_out = fileno(*fp);
   }
 
-  return -1;
+  if (f->name().compare("fwrite_unlocked") == 0 ||
+      f->name().compare("fwrite") == 0) {
+    void** ptr = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = (void*)*ptr;
+    size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+    size_t* n = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = (*size) * (*n);
+    FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+    if(fd_out) *fd_out = fileno(*fp);
+  }
 }
 
-int
-SpIpcMgr::get_fd_read(SpPoint* pt) {
+void SpIpcMgr::get_read_param(SpPoint* pt, int* fd_out, void** buf_out,
+                              size_t* size_out) {
   PatchFunction* f = sp::callee(pt);
-  if (!f) return -1;
+  if (!f) return;
 
   ArgumentHandle h;
   if (f->name().compare("read") == 0 ||
       f->name().compare("recv") == 0) {
     int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
-    return *fd;
+    if (fd_out) *fd_out = *fd;
+    void** buf = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = *buf;
+    size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = *size;
   }
 
   if (f->name().compare("fgets") == 0) {
     char** str = (char**)sp::pop_argument(pt, &h, sizeof(char*));
+    if (buf_out) *buf_out = (void*)*str;
     int* size = (int*)sp::pop_argument(pt, &h, sizeof(int));
+    if (size_out) *size_out = *size;
     FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
-    return fileno(*fp);
+    if(fd_out) *fd_out = fileno(*fp);
   }
 
   if (f->name().compare("fgetc") == 0) {
     FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
-    return fileno(*fp);
+    if(fd_out) *fd_out = fileno(*fp);
   }
 
-  if (f->name().compare("fread_unlocked") == 0) {
+  if (f->name().compare("fread_unlocked") == 0 ||
+      f->name().compare("fread") == 0) {
     void** ptr = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = (void*)*ptr;
     size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
     size_t* n = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = (*size) * (*n);
     FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
-    return fileno(*fp);
+    if(fd_out) *fd_out = fileno(*fp);
   }
-  return -1;
 }
 
 bool
@@ -162,7 +186,8 @@ SpIpcMgr::pre_before(SpPoint* pt) {
                   Sender-side
      ---------------------------------------*/
   /* Detect initiation of communication */
-  int fd = ipc_mgr->get_fd_write(pt);
+  int fd = -1;
+  ipc_mgr->get_write_param(pt, &fd, NULL, NULL, NULL);
   if (fd != -1) {
     SpIpcWorker* worker = ipc_mgr->get_worker(fd);
     if (!worker) return false;
@@ -185,11 +210,11 @@ SpIpcMgr::pre_before(SpPoint* pt) {
   /* ----------------------------------------
                   Receiver-side
      ---------------------------------------*/
-  fd = ipc_mgr->get_fd_read(pt);
+  fd = -1;
+  ipc_mgr->get_read_param(pt, &fd, NULL, NULL);
   if (fd != -1) {
     SpIpcWorker* worker = ipc_mgr->get_worker(fd);
     if (!worker) return false;
-
     SpChannel* c = worker->get_channel(fd, SP_READ);
     if (c) {
       pt->set_channel(c);
