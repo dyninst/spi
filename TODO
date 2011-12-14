@@ -1,17 +1,18 @@
 Injector:
-- avoid parsing entire dyninst stuffs
-- port to windows
+- [ ] avoid parsing entire dyninst stuffs
+- [ ] port to windows
 
 Agent:
-- Should test on /bin/bash
-- A better memory manager to allocate blob
-- Handle function calls that cannot be parsed
-- Allow user to specify what libraries to skip parsing
-- port to windows 
+- [ ] Should test on /bin/bash
+- [ ] Change before/after to entry/exit
+- [ ] A better memory manager to allocate blob
+- [ ] Handle function calls that cannot be parsed
+- [ ] Allow user to specify what libraries to skip parsing
+- [ ] port to windows 
 
 SpServer:
-- pipe
-- tcp
-- udp
-- more ipc mechanisms
-- port to windows 
+- [X] pipe
+- [ ] tcp
+- [ ] udp
+- [ ] more ipc mechanisms
+- [ ] port to windows 

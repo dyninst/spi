@@ -1,13 +1,10 @@
 source ../../../make.config
-export LD_LIBRARY_PATH=$SP_DIR/$PLATFORM:$LD_LIBRARY_PATH
-AGENT=$1
-MUTATEE=$2
+export LD_LIBRARY_PATH=./:$LD_LIBRARY_PATH
 
-$MUTATEE &
-../../../$PLATFORM/Injector $! ./$AGENT
-wait $!
-
-#./test $1 $2
-#./parser_mutatee &
-#echo $!
-#../../../$PLATFORM/Injector $! ./parser_agent.so
+make
+#./test -pipe1
+#./test -pipe2
+#./test -pipe3
+#./test -pipe4
+./test -pipe5
+#LD_PRELOAD=./TestAgent.so /scratch/wenbin/binaries/bin/bin/bash

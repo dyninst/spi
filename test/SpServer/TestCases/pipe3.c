@@ -11,8 +11,12 @@ int main(void) {
   char *strings[MAXSTRS] = { "echo", "bravo", "alpha",
 			     "charlie", "delta"};
 
+  char name[255];
+  // sort, cat, od, wc, cksum, tee
+  char* prog = "cat";
+  sprintf(name, "/scratch/wenbin/binaries/bin/bin/%s", prog);
   /* Create one way pipe line with call to popen() */
-  if (( pipe_fp = popen("/scratch/wenbin/binaries/bin/bin/sort", "w")) == NULL)
+  if (( pipe_fp = popen(name, "w")) == NULL)
     {
       perror("popen");
       exit(1);

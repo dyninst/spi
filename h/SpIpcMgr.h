@@ -30,8 +30,8 @@ class SpIpcMgr {
                         size_t* size_out);
 
     bool is_pipe(int fd);
-    bool is_tcp(int fd) { return false;}
-    bool is_udp(int fd) { return false;}
+    bool is_tcp(int fd);
+    bool is_udp(int fd);
     bool is_ipc(int fd);
 
     bool is_fork(const char* f);

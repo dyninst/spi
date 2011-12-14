@@ -47,6 +47,64 @@ SpIpcMgr::is_pipe(int fd) {
   return false;
 }
 
+/* See if this file descriptor is a tcp */
+bool
+SpIpcMgr::is_tcp(int fd) {
+  struct stat st;
+  int opt;
+  socklen_t opt_len = sizeof(opt);
+
+  if (fstat(fd, &st) < 0) {
+    return false;
+  }
+
+  if (!S_ISSOCK(st.st_mode)) {
+    return false;
+  }
+
+  /* Here we try to probe if the socket is of the TCP kind. Couldn't                                                                               
+     find the specific mechanism for that, so we'll simply ask for a                                                                               
+     TCP-specific option */
+  if (getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, &opt_len) < 0) {
+    return false; /* Error is ok -- not a TCP socket */
+  }
+
+  /* Doublecheck that this is a stream socket */
+  if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &opt, &opt_len) < 0) {
+    return false;
+  }
+  assert(opt == SOCK_STREAM);
+  return true;
+}
+
+/* See if this file descriptor is a udp */
+bool
+SpIpcMgr::is_udp(int fd) {
+  struct stat st;
+  int opt;
+  socklen_t opt_len = sizeof(opt);
+
+  if (fstat(fd, &st) < 0) {
+    return false;
+  }
+  if (!S_ISSOCK(st.st_mode)) {
+    return false;
+  }
+  /* Here we try to probe if the socket is of the UDP kind. Couldn't                                                                               
+     find the specific mechanism for that, so we'll simply ask for a                                                                               
+     UDP-specific option */
+  if (getsockopt(fd, IPPROTO_UDP, UDP_CORK, &opt, &opt_len) < 0) {
+    return false; /* Error is ok -- not a UDP socket */
+  }
+
+  /* Doublecheck that this is a datagram socket */
+  if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &opt, &opt_len) < 0) {
+    return false;
+  }
+  assert(opt == SOCK_DGRAM);
+  return true;
+}
+
 void
 SpIpcMgr::get_write_param(SpPoint* pt, int* fd_out, void** buf_out,
                           char* c_out, size_t* size_out) {

@@ -60,3 +60,15 @@ Dyninst::Address SpInjector::get_pc() {
   thr_->getRegister(Dyninst::x86::eip, eip);
   return eip;
 }
+
+Dyninst::Address SpInjector::get_sp() {
+  Dyninst::MachRegisterVal esp;
+  thr_->getRegister(Dyninst::x86_64::esp, esp);
+  return esp;
+}
+
+Dyninst::Address SpInjector::get_bp() {
+  Dyninst::MachRegisterVal ebp;
+  thr_->getRegister(Dyninst::x86_64::ebp, ebp);
+  return ebp;
+}

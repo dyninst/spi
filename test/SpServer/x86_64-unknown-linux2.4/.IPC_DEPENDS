@@ -1,4 +1,9 @@
 pipe1.o: ../TestCases/pipe1.c
 pipe2.o: ../TestCases/pipe2.c
-tcp.o: ../TestCases/tcp.c
+pipe3.o: ../TestCases/pipe3.c
+pipe4.o: ../TestCases/pipe4.c
+pipe5.o: ../TestCases/pipe5.c
+pipe5client.o: ../TestCases/pipe5client.c
+tcp1.o: ../TestCases/tcp1.c
+tcp1server.o: ../TestCases/tcp1server.c
 udp.o: ../TestCases/udp.c
