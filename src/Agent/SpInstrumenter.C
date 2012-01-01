@@ -403,7 +403,7 @@ SpInstrumenter::install_trap(SpPoint* point, char* blob, size_t blob_size) {
   PatchObject* obj = point->block()->object();
   char* addr = (char*)point->block()->last();
   size_t insn_length = point->block()->end() - point->block()->last();
-  for (int i = 0; i < (insn_length-1); i++) {
+  for (unsigned i = 0; i < (insn_length-1); i++) {
     int3 += (char)0x90;
   }
 

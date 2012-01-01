@@ -16,6 +16,7 @@ bool ProcInitChecker::run() {
   print_current_proc();
   print_user_info();
   print_env();
+	return true;
 }
 
 
@@ -72,7 +73,7 @@ void  ProcInitChecker::print_proc(pid_t pid) {
     }
   }
   string cmdline;
-  for (int i = 0; i < args.size(); i++) {
+  for (unsigned i = 0; i < args.size(); i++) {
     cmdline += " ";
     cmdline += args[i].c_str();
   }
@@ -114,6 +115,7 @@ bool FileOpenChecker::check(SpPoint* pt, PatchFunction* callee) {
     u_.print("* FILE OPENED: %s", *fname);
     fname_ = (char*)*fname;
   }
+	return true;
 }
 
 bool FileOpenChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
@@ -177,6 +179,7 @@ bool LibChecker::check(SpPoint* pt, PatchFunction* callee) {
     // stack backtrace
     u_.where();
   }
+	return true;
 }
 
 // Check fork
@@ -185,6 +188,7 @@ ForkChecker::ForkChecker() {
 }
 
 bool ForkChecker::check(SpPoint* pt, PatchFunction* callee) {
+	return true;
 }
 
 bool ForkChecker::post_check(SpPoint* pt, PatchFunction* callee) {
@@ -260,6 +264,7 @@ bool ChangeIdChecker::check(SpPoint* pt, PatchFunction* callee) {
     u_.print("%s", s.c_str());
     u_.where();
   }
+	return true;
 }
 
 // Exit checker
@@ -275,6 +280,7 @@ bool ExitChecker::check(SpPoint* pt, PatchFunction* callee) {
     u_.where();
     // mist.fini_run();
   }
+	return true;
 }
 
 bool ExitChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
@@ -320,6 +326,7 @@ bool MmapChecker::check(SpPoint* pt, PatchFunction* callee) {
     u_.print("  - backed file: (fd - %d, offset - %d, file size - %d)",
             *fd, *offset, fsize);
   }
+	return true;
 }
 
 bool MmapChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
@@ -332,6 +339,7 @@ bool MmapChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
     u_.where();
     return true;
   }
+	return true;
 }
 
 
@@ -347,6 +355,7 @@ bool ChmodChecker::check(SpPoint* pt, PatchFunction* callee) {
     u_.print("* CHMOD:");
     u_.where();
   }
+	return true;
 }
 
 // thread checker
@@ -372,4 +381,5 @@ bool ThreadChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
     u_.print("  - created by: (pid: %d, tid: %d)", getpid(), pthread_self());
     u_.where();
    }
+	return true;
 }

@@ -449,7 +449,7 @@ SpPipeWorker::pid_uses_inode(int pid, int inode) {
       else {
 	struct stat s;
 	if (stat(buffer, &s) != -1) {
-	  if (s.st_ino == (long)inode) {
+	  if ((long)s.st_ino == (long)inode) {
 	    closedir(dir);
 	    return 1;
 	  }

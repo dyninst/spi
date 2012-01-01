@@ -25,7 +25,9 @@ $(AGENT_NAME): $(AGENT_OBJS)
 CPLIBAGENT:
 	@echo "Copying libagent.so ..."
 	@cp -f $(SP_DIR)/$(PLATFORM)/libagent.so ./
+	@cp -f $(SP_DIR)/$(PLATFORM)/libinjector.so ./
 	@cp -f $(SP_DIR)/$(PLATFORM)/libagent.so ../target/$(PLATFORM)/
+	@cp -f $(SP_DIR)/$(PLATFORM)/libinjector.so ../target/$(PLATFORM)/
 #==============================================
 # clean up
 #==============================================

@@ -42,12 +42,12 @@
 
 /* Print facility */
 #define sp_perror(...) do {\
-  char* nodir = basename(__FILE__);                       \
+		char* nodir = basename((char*)__FILE__);							\
   fprintf(stderr, "ERROR in %s [%d]: ", nodir, __LINE__); \
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n"); \
   exit(0);\
-} while(0)
+	} while(0)
 
 #define sp_print(...) do {\
   fprintf(stdout, __VA_ARGS__); \
@@ -57,7 +57,7 @@
 
 #define sp_debug(...) do { \
   if (getenv("SP_DEBUG")) {   \
-      char* nodir = basename(__FILE__);              \
+  		char* nodir = basename((char*)__FILE__);				 \
       fprintf(stderr, "%s [%d]: ", nodir, __LINE__); \
       fprintf(stderr, __VA_ARGS__); \
       fprintf(stderr, "\n");  \
@@ -67,7 +67,7 @@
 } while(0)
 
 
-#define sp_filename(path) basename(path)
+#define sp_filename(path) basename((char*)path)
 
 namespace Dyninst {
   namespace PatchAPI {

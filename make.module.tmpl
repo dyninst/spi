@@ -46,7 +46,7 @@ $(IJMAIN_OBJS): %.o : $(IJMAIN_SRCS)
 
 $(INJECTOR): $(IJMAIN_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJMAIN_LDFLAGS)
+	$(GXX) -o $@ $(IJMAIN_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)
 
 $(IJA_OBJS): %.o : $(IJA_SRCS)
 	@echo Compiling $*.o
@@ -107,7 +107,7 @@ $(SERVER_OBJS): %.o : $(SERVER_SRCS)
 
 $(SPSERVER): $(SERVER_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@ $(SERVER_OBJS) $(SERVER_LDFLAGS)
+	@$(GXX) -o $@ $(SERVER_OBJS) $(SERVER_LDFLAGS) $(AG_LDFLAGS)
 
 #=================================================
 # clean

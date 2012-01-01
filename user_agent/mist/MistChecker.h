@@ -51,6 +51,7 @@ class ProcInitChecker : public InitChecker {
 class ProcFiniChecker : public FiniChecker {
   public:
     virtual bool run() {
+			return true;
     }
 };
 

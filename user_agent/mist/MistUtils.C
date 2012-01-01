@@ -17,7 +17,7 @@ bool CheckerUtils::check_name(PatchFunction* c, string n) {
 }
 
 bool CheckerUtils::check_name(PatchFunction* c, std::vector<string> ns, string* n) {
-  for (int i = 0; i < ns.size(); i++) {
+  for (unsigned i = 0; i < ns.size(); i++) {
     if (check_name(c, ns[i])) {
       if (n) *n = ns[i];
       return true;
@@ -28,11 +28,13 @@ bool CheckerUtils::check_name(PatchFunction* c, std::vector<string> ns, string* 
 
 string CheckerUtils::get_user_name(uid_t id) {
   struct passwd* p = getpwuid(id);
-  return p->pw_name;
+	if (p)  return p->pw_name;
+	return "";
 }
 string CheckerUtils::get_group_name(gid_t id) {
   struct group* g = getgrgid(id);
-  return g->gr_name;
+	if (g)  return g->gr_name;
+	return "";
 }
 
 void CheckerUtils::push(PatchFunction* f) {
