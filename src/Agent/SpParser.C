@@ -74,7 +74,7 @@ typedef struct {
 /* We will skip dyninst libraries for parsing. */
 bool
 SpParser::is_dyninst_lib(string lib) {
-  for (int i = 0; i < dyninst_libs_.size(); i++) {
+  for (unsigned i = 0; i < dyninst_libs_.size(); i++) {
     if (lib.find(dyninst_libs_[i]) != string::npos) return true;
   }
   return false;
@@ -129,7 +129,7 @@ SpParser::parse() {
   LibLookup lib_lookup;
   lib_lookup[0] = true;
   if (injected_) {
-    while (shm->offsets[cur] != -1) {
+    while ((int)shm->offsets[cur] != -1) {
       lib_lookup[shm->offsets[cur]] = true;
       ++cur;
     }
@@ -346,10 +346,10 @@ SpParser::dump_insn(void* addr, size_t size) {
                           cs->getArch());
   Instruction::Ptr insn = deco.decode();
   while(insn) {
-    sprintf(buf, "    %lx(%2d bytes): %-25s | ", base, insn->size(), insn->format(base).c_str());
+    sprintf(buf, "    %lx(%2lu bytes): %-25s | ", base, insn->size(), insn->format(base).c_str());
     char* raw = (char*)insn->ptr();
-    for (int i = 0; i < insn->size(); i++)
-      sprintf(buf, "%s%0.2x ", buf, 0xff&raw[i]);
+    for (unsigned i = 0; i < insn->size(); i++)
+      sprintf(buf, "%s%2x ", buf, 0xff&raw[i]);
     sprintf(buf, "%s\n", buf);
     s += buf;
     base += insn->size();
@@ -453,7 +453,7 @@ SpParser::callee(Point* pt, bool parse_indirect) {
   /* 2. Looking for indirect call */
   if (parse_indirect) {
 
-    PatchBlock* blk = pt->block();
+    // PatchBlock* blk = pt->block();
     Instruction::Ptr insn = spt->snip()->get_orig_call_insn();
     Expression::Ptr trg = insn->getControlFlowTarget();
     Address call_addr = 0;

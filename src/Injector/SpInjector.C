@@ -40,7 +40,7 @@ SpInjector::~SpInjector() {
 /* Find do_dlopen */
 Dyninst::Address SpInjector::find_func(char* func) {
   LibraryPool& libs = proc_->libraries();
-  Library::ptr lib = Library::ptr();
+  // Library::ptr lib = Library::ptr();
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
     std::string name = (*li)->getName();
     if (name.size() <= 0) continue;
@@ -82,8 +82,8 @@ Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
 
 /* check whether a library is loaded */
 bool SpInjector::is_lib_loaded(const char* libname) {
-  bool found = false;
-  int count = 0;
+  // bool found = false;
+  // int count = 0;
   char* name_only = sp_filename(libname);
   sp_debug("CHECKING - checking whether %s is loaded ...",
            name_only);
@@ -150,7 +150,7 @@ void SpInjector::inject(const char* lib_name) {
     std::string ijagent(IJAGENT);
     DepNames ijagent_paths;
     if (!get_resolved_lib_path(ijagent, ijagent_paths))
-      sp_perror("Injector [pid = %5d] - cannot find IJAGENT", getpid(), IJAGENT);
+      sp_perror("Injector [pid = %5d] - cannot find %s", getpid(), IJAGENT);
 
     // This is to optimize self-propelled instrumentation
     // if injector is going to be general purpose, please comment out this call.
@@ -207,7 +207,7 @@ void SpInjector::invoke_ijagent() {
   Dyninst::Address code_addr = proc_->mallocMemory(size);
   char* code = get_ij_tmpl(ij_agent_addr, code_addr);
   sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
-           " at %lx of %d bytes", code_addr, size);
+           " at %lx of %lu bytes", code_addr, size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
   sp_debug("POSTING - IRPC is on the way ...");
@@ -258,12 +258,12 @@ void SpInjector::inject_internal(const char* lib_name) {
   Dyninst::Address code_addr = proc_->mallocMemory(size);
   char* code = get_code_tmpl(args_addr, do_dlopen_addr, code_addr);
   sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
-           " at %lx of %d bytes", code_addr, size);
+           " at %lx of %lu bytes", code_addr, size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
 
   if (!proc_->postIRPC(irpc)) {
-    sp_perror("Injector [pid = %5d] - Failed to execute load-library code in mutatee's address space");
+    sp_perror("Injector [pid = %5d] - Failed to execute load-library code in mutatee's address space", getpid());
   }
   proc_->continueProc();
   Process::handleEvents(true);
@@ -350,7 +350,7 @@ bool SpInjector::get_resolved_lib_path(const std::string &filename, DepNames &pa
     Symtab* obj = NULL;
     bool ret = Symtab::openFile(obj, *j);
     if (ret) {
-      if (obj->getAddressWidth() == proc_->llproc()->getAddressWidth()) {
+      if ((Dyninst::Address)obj->getAddressWidth() == (Dyninst::Address)proc_->llproc()->getAddressWidth()) {
         j++;
       } else {
         j = vpaths.erase(j);
@@ -394,7 +394,7 @@ void* SpInjector::get_shm(int id, size_t size) {
   int shmid;
   void* shm;
   if ((shmid = shmget(id, size, IPC_CREAT | 0666)) < 0) {
-    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %d bytes w/ id %d", getpid(), size, id);
+    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %lu bytes w/ id %d", getpid(), size, id);
   }
   if ((long)(shm = (void*)shmat(shmid, NULL, 0)) == (long)-1) {
     sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());

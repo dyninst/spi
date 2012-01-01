@@ -100,7 +100,7 @@ ArgumentHandle::insert_buf(size_t s) {
 }
 
 ArgumentHandle::~ArgumentHandle() {
-  for (long i = 0; i < bufs.size(); i++) delete bufs[i];
+  for (unsigned i = 0; i < bufs.size(); i++) delete bufs[i];
 }
 
 long

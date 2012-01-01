@@ -52,7 +52,7 @@ SpPropeller::go(PatchFunction* func, SpContext* context, PayloadFunc before,
 
   /* 2. Start instrumentation */
   ph::Patcher patcher(mgr);
-  for (int i = 0; i < pts.size(); i++) {
+  for (unsigned i = 0; i < pts.size(); i++) {
     Point* pt = pts[i];
 
     /* It's possible that callee will be NULL, which is an indirect call.
@@ -73,7 +73,7 @@ SpPropeller::go(PatchFunction* func, SpContext* context, PayloadFunc before,
   }
   patcher.commit();
 #ifndef SP_RELEASE
-  sp_debug("FINISH PROPELLING - %d callees of function %s are instrumented", pts.size(), func->name().c_str());
+  sp_debug("FINISH PROPELLING - %lu callees of function %s are instrumented", pts.size(), func->name().c_str());
 #endif
   return true;
 }

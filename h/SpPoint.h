@@ -82,9 +82,9 @@ class SpPoint : public ph::Point {
     bool propagated_;
     bool instrumented_;
     bool tail_call_;
+    ph::PatchFunction* callee_;
     InstallMethod install_method_;
 
-    ph::PatchFunction* callee_;
     SpSnippet::ptr spsnip_;
     sp::SpChannel* channel_;
 };

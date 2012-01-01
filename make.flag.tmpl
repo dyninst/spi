@@ -2,7 +2,7 @@
 # For COMMON
 #=================================================
 
-COMMON_FLAGS     = -fPIC
+COMMON_FLAGS     = -fPIC -Werror -Wall
 ifdef SP_RELEASE
   COMMON_FLAGS  += -DSP_RELEASE
 endif

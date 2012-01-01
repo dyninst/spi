@@ -58,17 +58,20 @@ char* SpInjector::get_ij_tmpl(Dyninst::Address ij_addr,
 Dyninst::Address SpInjector::get_pc() {
   Dyninst::MachRegisterVal eip;
   thr_->getRegister(Dyninst::x86::eip, eip);
+  //  sp_print("pc: %lx", eip);
   return eip;
 }
 
 Dyninst::Address SpInjector::get_sp() {
   Dyninst::MachRegisterVal esp;
-  thr_->getRegister(Dyninst::x86_64::esp, esp);
+  thr_->getRegister(Dyninst::x86::esp, esp);
+  //  sp_print("sp: %lx", esp);
   return esp;
 }
 
 Dyninst::Address SpInjector::get_bp() {
   Dyninst::MachRegisterVal ebp;
-  thr_->getRegister(Dyninst::x86_64::ebp, ebp);
+  thr_->getRegister(Dyninst::x86::ebp, ebp);
+  //  sp_print("bp: %lx", ebp);
   return ebp;
 }

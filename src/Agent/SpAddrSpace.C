@@ -39,11 +39,11 @@ SpAddrSpace::malloc(PatchObject* obj, size_t size, Address near) {
   Address r_size = ((size + ps -1) & ~(ps - 1));
   buf = r_near;
 
-  sp_print("page size: %d, near: %lx, r_near: %lx, size: %d, r_size: %d",
-           ps, near, r_near, size, r_size);
+  // sp_print("page size: %d, near: %lx, r_near: %lx, size: %d, r_size: %d",
+  //         ps, near, r_near, size, r_size);
   void* m = NULL;
   int fd = -1;
-  while (!m | (long)m == -1) {
+  while (!m || (long)m == -1) {
     buf -= r_size;
     sp_print("looking for %lx", buf);
     m = mmap((void*)buf,
@@ -54,7 +54,7 @@ SpAddrSpace::malloc(PatchObject* obj, size_t size, Address near) {
 	     0);
   }
   if (!m) return 0;
-  sp_print("get buf: %lx", m);
+  // sp_print("get buf: %lx", m);
   return (Address)m;
 }
 
@@ -225,12 +225,12 @@ SpAddrSpace::update_mem_maps() {
 void
 SpAddrSpace::dump_mem_maps() {
 #ifndef SP_RELEASE
-  sp_debug("MMAPS - %d memory mappings", mem_maps_.size());
+  sp_debug("MMAPS - %lu memory mappings", mem_maps_.size());
 #endif
   for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
     MemMapping& mapping = mi->second;
 #ifndef SP_RELEASE
-    sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s, Inode %d, Path %s",
+    sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s, Inode %lu, Path %s",
              mapping.start, mapping.end, mapping.offset, mapping.perms,
              mapping.dev.c_str(), mapping.inode, mapping.path.c_str());
 #endif
@@ -262,11 +262,11 @@ SpAddrSpace::pre_alloc_near(sp::SpObject* obj) {
 
   update_mem_maps();
   dump_mem_maps();
-  sp_print("codeBase: %lx, r_near: %lx, r_size: %d", obj->codeBase(), r_near, r_size);
+  sp_print("codeBase: %lx, r_near: %lx, r_size: %lu", obj->codeBase(), r_near, r_size);
   //  while(1);
   void* m = NULL;
   int fd = -1;
-  while (!m | (long)m == -1) {
+  while (!m || (long)m == -1) {
     buf -= r_size;
     //    sp_print("looking for %lx", buf);
     m = mmap((void*)buf,
@@ -281,13 +281,14 @@ SpAddrSpace::pre_alloc_near(sp::SpObject* obj) {
     /* Something bad happen... Skip it for now. */
     // sp_print("WARNING: cannot prealloc buffer before %lx", obj->load_addr());
   } else {
-    sp_print("get buf: %lx", m);
+    sp_print("get buf: %lx", (Dyninst::Address)m);
   }
 }
 
 /* Get a chunk near this point. */
 char*
 SpAddrSpace::get_near(ph::Point* pt) {
+	return NULL;
 }
 
 }

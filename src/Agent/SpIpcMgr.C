@@ -122,6 +122,11 @@ SpIpcMgr::get_write_param(SpPoint* pt, int* fd_out, void** buf_out,
     if (size_out) *size_out = *size;
   }
 
+  if (f->name().compare("connect") == 0) {
+    int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+		if (fd_out) *fd_out = *fd;
+	}
+
   if (f->name().compare("fputs") == 0) {
     char** str = (char**)sp::pop_argument(pt, &h, sizeof(char*));
     if (buf_out) *buf_out = (void*)*str;
@@ -257,8 +262,8 @@ SpIpcMgr::pre_before(SpPoint* pt) {
 
       /* Inject this agent.so to remote process
          Luckily, the SpInjector implementation will automatically detect whether
-	 the agent.so library is already injected. If so, it will not inject the
-	 the library again.
+         the agent.so library is already injected. If so, it will not inject the
+         the library again.
       */
       if (c->remote_pid != -1) worker->inject(c);
     }
@@ -306,13 +311,56 @@ SpIpcMgr::pre_after(SpPoint* pt) {
     SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd, SP_WRITE);
     ipc_mgr->pipe_worker()->set_start_tracing(0, c->remote_pid);
   }
-
+	/* Detect connect for tcp */
+  else {
+	}
   return true;
 }
 
 /* =========================================================
                        IPC workers
    ========================================================= */
+
+
+SpChannel* SpIpcWorker::get_channel(int fd, ChannelRW rw) {
+	/* Look up cache. */
+  if (rw == SP_WRITE) {
+    if (channel_map_write_.find(fd) != channel_map_write_.end())
+      return channel_map_write_[fd];
+  } else {
+    if (channel_map_read_.find(fd) != channel_map_read_.end())
+      return channel_map_read_[fd];
+  }
+
+	/* Construct one channel. */
+	SpChannel* c = create_channel(fd, rw);
+
+	/* Update cache. */
+  if (rw == SP_WRITE) {
+    c->rw = SP_WRITE;
+    channel_map_write_[fd] = c;
+#ifndef SP_RELEASE
+    sp_debug("PIPE CHANNEL - get a WRITE pipe channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
+#endif    
+  } else {
+    c->rw = SP_READ;
+    channel_map_read_[fd] = c;
+#ifndef SP_RELEASE
+    sp_debug("PIPE CHANNEL - get a READ pipe channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
+#endif    
+  }
+  return c;
+}
+
+/* Get inode from file descriptor  */
+long
+SpIpcWorker::get_inode_from_fd(int fd) {
+  struct stat s;
+  if (fstat(fd, &s) != -1) {
+    return s.st_ino;
+  }
+  return -1;
+}
 
 /* PIPE worker */
 SpPipeWorker::SpPipeWorker() {
@@ -401,7 +449,7 @@ SpPipeWorker::pid_uses_inode(int pid, int inode) {
       else {
 	struct stat s;
 	if (stat(buffer, &s) != -1) {
-	  if (s.st_ino == inode) {
+	  if (s.st_ino == (long)inode) {
 	    closedir(dir);
 	    return 1;
 	  }
@@ -414,19 +462,9 @@ SpPipeWorker::pid_uses_inode(int pid, int inode) {
   return 0;
 }
 
-/* Get inode from file descriptor  */
-long
-SpPipeWorker::get_inode_from_fd(int fd) {
-  struct stat s;
-  if (fstat(fd, &s) != -1) {
-    return s.st_ino;
-  }
-  return -1;
-}
-
 void
 SpPipeWorker::get_pids_from_fd(int fd, PidSet& pid_set) {
-  int pid, rv, num_found = 0;
+  int pid;
   DIR *dir;
   char *ep;
   struct dirent *de;
@@ -450,22 +488,14 @@ SpPipeWorker::get_pids_from_fd(int fd, PidSet& pid_set) {
   closedir(dir);
 }
 
-SpChannel* SpPipeWorker::get_channel(int fd, ChannelRW rw) {
-  long inode = get_inode_from_fd(fd);
-  if (rw == SP_WRITE) {
-    if (channel_map_write_.find(inode) != channel_map_write_.end())
-      return channel_map_write_[inode];
-  } else {
-    if (channel_map_read_.find(inode) != channel_map_read_.end())
-      return channel_map_read_[inode];
-  }
 
+SpChannel* SpPipeWorker::create_channel(int fd, ChannelRW rw) {
   SpChannel* c = new PipeChannel;
   c->local_pid = getpid();
   PidSet pid_set;
   get_pids_from_fd(fd, pid_set);
 #ifndef SP_RELEASE
-  sp_debug("FD TO PID - get a %d pids from fd %d", pid_set.size(), fd);
+  sp_debug("FD TO PID - get a %lu pids from fd %d", pid_set.size(), fd);
 #endif    
   for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
     if (*i != c->local_pid) {
@@ -474,25 +504,8 @@ SpChannel* SpPipeWorker::get_channel(int fd, ChannelRW rw) {
     }
   }
   c->type = SP_PIPE;
-
-  c->inode = inode;
-
-  if (rw == SP_WRITE) {
-    c->rw = SP_WRITE;
-    channel_map_write_[inode] = c;
-#ifndef SP_RELEASE
-    sp_debug("PIPE CHANNEL - get a WRITE pipe channel with inode %d for fd %d", inode, fd);
-#endif    
-  } else {
-    c->rw = SP_READ;
-    channel_map_read_[inode] = c;
-#ifndef SP_RELEASE
-    sp_debug("PIPE CHANNEL - get a READ pipe channel with inode %d for fd %d", inode, fd);
-#endif    
-  }
-  return c;
+	return c;
 }
-
 
 /* TCP worker */
 void  SpTcpWorker::set_start_tracing(char yes_or_no, pid_t pid) {
@@ -506,10 +519,40 @@ bool SpTcpWorker::inject(SpChannel*) {
   return 0;
 }
 
+SpChannel* SpTcpWorker::create_channel(int fd, ChannelRW rw) {
+  SpChannel* c = new TcpChannel;
+  c->local_pid = getpid();
+  c->type = SP_TCP;
+  long inode = get_inode_from_fd(fd);
+  c->inode = inode;
 
-SpChannel* SpTcpWorker::get_channel(int fd, ChannelRW rw) {
+	sp_print("fd - %d", fd);
 
+	/* Get local ip and port */
+	sockaddr_in sa;
+	socklen_t namelen = sizeof(sa);
+	int err = getsockname(fd, (sockaddr*)&sa, &namelen);
+	if (err == -1) {
+		sp_print("LOCAL IP/PORT - failed to get local ip/port");
+	}
+	// sp_print("local ip - %lx", (long)sa.sin_addr);
+	sp_print("local ip - %s", inet_ntoa(sa.sin_addr));
+	sp_print("local port - %d", sa.sin_port);
+
+	/* Get remote ip and port */
+	/*
+	sockaddr_in sa2;
+	socklen_t namelen2 = sizeof(sa2);
+	err = getpeername(fd, (sockaddr*)&sa2, &namelen2);
+	if (err == -1) {
+		sp_print("REMORE IP/PORT - failed to get remote ip/port");
+	}
+	sp_print("remote ip - %lx", sa2.sin_addr);
+	sp_print("remote port - %d", sa2.sin_port);
+*/
+  return c;
 }
+
 
 /* UDP worker */
 void  SpUdpWorker::set_start_tracing(char yes_or_no, pid_t pid) {
@@ -523,7 +566,7 @@ bool SpUdpWorker::inject(SpChannel*) {
   return 0;
 }
 
-SpChannel* SpUdpWorker::get_channel(int fd, ChannelRW rw) {
+SpChannel* SpUdpWorker::create_channel(int fd, ChannelRW rw) {
   return NULL;
 }
 

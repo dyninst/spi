@@ -1,6 +1,6 @@
 source ../../../make.config
 AGENT_NAME=libmyagent.so
-export LD_LIBRARY_PATH=/scratch/wenbin/software/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=./:/scratch/wenbin/software/lib:$LD_LIBRARY_PATH
 AGENT=`pwd`/$AGENT_NAME
 
 #---------------------

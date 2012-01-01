@@ -62,7 +62,7 @@ SpInstrumenter::trap_handler(int sig, siginfo_t* info, void* c) {
 
   /* Get patch area's address */
   SpSnippet::ptr sp_snip = inst_map[pc];
-  Point* pt = sp_snip->point();
+  // Point* pt = sp_snip->point();
 
   char* blob = (char*)sp_snip->buf();
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
@@ -105,7 +105,7 @@ SpInstrumenter::run() {
         Address eip = pt->block()->last();
         char* insn = (char*)eip;
 
-        Address insn_size = pt->block()->end() - eip;
+        // Address insn_size = pt->block()->end() - eip;
         Address ret_addr = pt->block()->end();
         Instruction::Ptr callinsn = pt->block()->getInsn(eip);
 
@@ -213,7 +213,7 @@ SpInstrumenter::install_direct(SpPoint* point, char* blob, size_t blob_size) {
 
   /* Change the permission of snippet, so that it can be executed. */
   if (!as->set_range_perm((Address)blob, blob_size, perm)) {
-    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
+    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", (Dyninst::Address)blob);
     as->dump_mem_maps();
     exit(0);
   }
@@ -234,15 +234,14 @@ SpInstrumenter::install_indirect(SpPoint* point, SpSnippet::ptr snip,
   string& orig_blk = snip->orig_blk();
 
   char* raw_blk = (char*)blk->start();
-  for (int i = 0; i < blk_size; i++) {
+  for (unsigned i = 0; i < blk_size; i++) {
     orig_blk += raw_blk[i];
   }
 
   size_t limit = 0;
-  char* addr = NULL;
-
-  SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
-  int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+  // char* addr = NULL;
+  // SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
+  // int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 
   char insn[64];
   if (!jump_abs) {
@@ -280,7 +279,7 @@ SpInstrumenter::install_jump(PatchBlock* blk,
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Address)blob, snip->size(), perm)) {
-    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
+    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", (Dyninst::Address)blob);
     as->dump_mem_maps();
     exit(0);
   }
@@ -325,7 +324,7 @@ SpInstrumenter::install_spring(PatchBlock* callblk,
   SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
   int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
   if (!as->set_range_perm((Address)blob, snip->size(), perm)) {
-    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", blob);
+    sp_print("MPROTECT - Failed to change memory access permission for blob at %lx", (Dyninst::Address)blob);
     as->dump_mem_maps();
     exit(0);
   }
@@ -334,7 +333,7 @@ SpInstrumenter::install_spring(PatchBlock* callblk,
   char* spring = snip->spring(springblk->last());
   obj = springblk->obj();
   if (!as->set_range_perm((Address)spring, snip->spring_size(), perm)) {
-    sp_print("MPROTECT - Failed to change memory access permission for relocated spring blk at %lx", spring);
+    sp_print("MPROTECT - Failed to change memory access permission for relocated spring blk at %lx", (Dyninst::Address)spring);
     as->dump_mem_maps();
     exit(0);
   }

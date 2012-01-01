@@ -293,6 +293,7 @@ Address
 SpSnippet::set_pc(Address pc, void* context) {
   ucontext_t* ctx = (ucontext_t*)context;
   ctx->uc_mcontext.gregs[REG_RIP] = pc;
+	return pc;
 }
 
 /* Get the saved register, for resolving indirect call */
@@ -599,7 +600,7 @@ emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e, Address a, char* buf) {
   *p++ = new_modrm;
 
   /* Copy imm after displacement */
-  for (int i = modrm_offset+1+4; i < insn->size(); i++) {
+  for (unsigned i = modrm_offset+1+4; i < insn->size(); i++) {
     *p++ = insn_buf[i];
   }
 
@@ -629,7 +630,7 @@ reloc_insn_internal(Address a, Instruction::Ptr insn,
     int* dis_buf = get_disp(insn, insn_buf);
     long old_rip = a;
     long new_rip = (long)p;
-    long old_dis = *dis_buf;
+    // long old_dis = *dis_buf;
     long long_new_dis = (old_rip - new_rip) + *dis_buf;
 
     if (sp::is_disp32(long_new_dis)) {

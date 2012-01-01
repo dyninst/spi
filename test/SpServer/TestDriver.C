@@ -27,7 +27,9 @@ TestDriver::TestDriver() {
   /* pipe4: popen */
   add_testcase("pipe5");
 
-  add_testcase("tcp");
+  /* tcp1: base case */
+  add_testcase("tcp1");
+
   add_testcase("udp");
 }
 
@@ -51,6 +53,11 @@ bool TestDriver::run_testcase(std::string name) {
     system(cmd);
     sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
   }
+  else if (name.compare("tcp1") == 0) {
+    sprintf(cmd, "%sserver localhost&", name.c_str());
+    system(cmd);
+    sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s localhost", name.c_str());
+	}
   else {
     sprintf(cmd, "LD_PRELOAD=./TestAgent.so %s", name.c_str());
   }

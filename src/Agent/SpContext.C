@@ -117,7 +117,7 @@ SpContext::parse() {
 
 bool
 SpContext::is_well_known_lib(string lib) {
-  for (int i = 0; i < well_known_libs_.size(); i++) {
+  for (unsigned i = 0; i < well_known_libs_.size(); i++) {
     if (lib.find(well_known_libs_[i]) != string::npos) return true;
   }
   return false;

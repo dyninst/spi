@@ -131,7 +131,7 @@ SpSnippet::blob(Address ret_addr, bool reloc, bool spring) {
 EXIT:
 
 #ifndef SP_RELEASE
-  sp_debug("DUMP PATCH AREA (%d bytes) for point %lx - {", blob_size_, point_->block()->last());
+  sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx - {", blob_size_, point_->block()->last());
   sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
   sp_debug("}");
 #endif
@@ -194,11 +194,11 @@ SpSnippet::spring_blk() {
   long upper = 127 + after_jmp - jump_abs_size();
   long lower = -128 + after_jmp - jump_abs_size();
 
-  for (int i = 0; i < regions.size(); i++) {
+  for (unsigned i = 0; i < regions.size(); i++) {
     CodeRegion* cr = regions[i];
-    if ((lower <= cr->low() && cr->low() < upper) ||
-        (cr->low() <= lower && upper < cr->high()) ||
-        (lower <= cr->high() && cr->high() < upper)
+    if ((lower <= (long)cr->low() && (long)cr->low() < upper) ||
+        ((long)cr->low() <= lower && upper < (long)cr->high()) ||
+        (lower <= (long)cr->high() && (long)cr->high() < upper)
        ) {
       /* XXX: Not any method to iterate blocks in a region? */
       Address span_addr = lower;
@@ -240,7 +240,7 @@ SpSnippet::spring_blk() {
         context_->add_spring(pb);
         done = true;
         break;
-      } while (span_addr < upper);
+      } while ((long)span_addr < upper);
       if (done) break;
     }
   }
@@ -264,7 +264,7 @@ SpSnippet::spring(Address ret_addr) {
   spring_size_ += emit_jump_abs(ret_addr, spring_, spring_size_);
 
 #ifndef SP_RELEASE
-  sp_debug("DUMP RELOC SPRING INSNS (%d bytes) for point %s- {", spring_size_, point_->block()->last());
+  sp_debug("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {", spring_size_, point_->block()->last());
   sp_debug("%s", context_->parser()->dump_insn((void*)spring_, spring_size_).c_str());
   sp_debug("}");
 #endif

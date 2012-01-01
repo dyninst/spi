@@ -72,7 +72,15 @@ class SpIpcWorker {
     /* Get IPC channel from a file descriptor. 
        Return: NULL if not a valid IPC channel; otherwise, the channel.
     */
-    virtual SpChannel* get_channel(int fd, ChannelRW rw) = 0;
+    virtual SpChannel* get_channel(int fd, ChannelRW rw);
+  protected:
+    /* fd-to-SpChannel mapping */
+    typedef std::map<long, SpChannel*> ChannelMap;
+    ChannelMap channel_map_write_;
+    ChannelMap channel_map_read_;
+
+    long get_inode_from_fd(int fd);
+		virtual SpChannel* create_channel(int fd, ChannelRW rw) = 0;
 };
 
 class SpPipeWorker : public SpIpcWorker {
@@ -83,13 +91,8 @@ class SpPipeWorker : public SpIpcWorker {
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
-    virtual SpChannel* get_channel(int fd, ChannelRW rw);
 
   protected:
-    /* inode-to-SpChannel mapping */
-    typedef std::map<long, SpChannel*> ChannelMap;
-    ChannelMap channel_map_write_;
-    ChannelMap channel_map_read_;
 
     /* Child process set */
     typedef std::set<pid_t> PidSet;
@@ -100,8 +103,9 @@ class SpPipeWorker : public SpIpcWorker {
 
     void tracing_internal(char** start_tracing);
     int pid_uses_inode(int pid, int inode);
-    long get_inode_from_fd(int fd);
     void get_pids_from_fd(int fd, PidSet& pid_set);
+
+		virtual SpChannel* create_channel(int fd, ChannelRW rw);
 };
 
 
@@ -110,7 +114,10 @@ class SpTcpWorker : public SpIpcWorker {
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
-    virtual SpChannel* get_channel(int fd, ChannelRW rw);
+
+  protected:
+		virtual SpChannel* create_channel(int fd, ChannelRW rw);
+		
 
 };
 
@@ -120,8 +127,9 @@ class SpUdpWorker : public SpIpcWorker {
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
     virtual bool inject(SpChannel*);
-    virtual SpChannel* get_channel(int fd, ChannelRW rw);
 
+  protected:
+		virtual SpChannel* create_channel(int fd, ChannelRW rw);
 };
 
 }

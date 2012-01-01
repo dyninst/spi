@@ -60,9 +60,9 @@ void MyAgent() {
 
 __attribute__((destructor))
 void DumpOutput() {
-  printf("# of calls: %ul\n", callcount);
-  printf("# of springboard calls: %ul\n", springcount);
-  printf("# of reloc insn calls: %ul\n", relocinsncount);
-  printf("# of reloc blk calls: %ul\n", relocblkcount);
-  printf("# of trap calls: %ul\n", trapcount);
+  printf("# of calls: %llu\n", callcount);
+  printf("# of springboard calls: %llu\n", springcount);
+  printf("# of reloc insn calls: %llu\n", relocinsncount);
+  printf("# of reloc blk calls: %llu\n", relocblkcount);
+  printf("# of trap calls: %llu\n", trapcount);
 }
