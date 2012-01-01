@@ -46,7 +46,7 @@ $(IJMAIN_OBJS): %.o : $(IJMAIN_SRCS)
 
 $(INJECTOR): $(IJMAIN_OBJS)
 	@echo Linking $@
-	$(GXX) -o $@ $(IJMAIN_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)
+	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)
 
 $(IJA_OBJS): %.o : $(IJA_SRCS)
 	@echo Compiling $*.o

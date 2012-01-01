@@ -228,8 +228,8 @@ SpAddrSpace::dump_mem_maps() {
   sp_debug("MMAPS - %lu memory mappings", mem_maps_.size());
 #endif
   for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
-    MemMapping& mapping = mi->second;
 #ifndef SP_RELEASE
+    MemMapping& mapping = mi->second;
     sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s, Inode %lu, Path %s",
              mapping.start, mapping.end, mapping.offset, mapping.perms,
              mapping.dev.c_str(), mapping.inode, mapping.path.c_str());
