@@ -34,10 +34,13 @@ CXXFLAGS += -g -Wall -Wextra
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-#TESTS = gmock_test
-TSRC      = $(wildcard ../src/*.C)
-TESTS     = $(notdir $(TSRC:%.C=%))
-TESTS_OBJ = $(notdir $(TSRC:%.C=%.o))
+RUNALL    = runall
+
+# Edit me !!!
+TESTS = gmock_test \
+        tcp_test \
+
+TESTS_OBJ = $(notdir $(TESTS:%=%.o))
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -53,10 +56,10 @@ GMOCK_HEADERS = $(GMOCK_DIR)/include/gmock/*.h \
 
 # House-keeping build targets.
 
-all : $(TESTS)
+all : $(TESTS) $(RUNALL)
 
 clean :
-	rm -f $(TESTS) $(TESTS_OBJ) gmock.a gmock_main.a *.o
+	rm -f $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o
 
 # Builds gmock.a and gmock_main.a.  These libraries contain both
 # Google Mock and Google Test.  A test should link with either gmock.a
@@ -75,27 +78,34 @@ GMOCK_SRCS_ = $(GMOCK_DIR)/src/*.cc $(GMOCK_HEADERS)
 # Google Test compile fast and for ordinary users their source rarely
 # changes.
 gtest-all.o : $(GTEST_SRCS_)
-	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) -I$(GMOCK_DIR) $(CXXFLAGS) \
+	@echo "Building gtest"
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) -I$(GMOCK_DIR) $(CXXFLAGS) \
             -c $(GTEST_DIR)/src/gtest-all.cc
 
 gmock-all.o : $(GMOCK_SRCS_)
-	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) -I$(GMOCK_DIR) $(CXXFLAGS) \
+	@echo "Building gmock"
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) -I$(GMOCK_DIR) $(CXXFLAGS) \
             -c $(GMOCK_DIR)/src/gmock-all.cc
 
 gmock_main.o : $(GMOCK_SRCS_)
-	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) -I$(GMOCK_DIR) $(CXXFLAGS) \
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) -I$(GMOCK_DIR) $(CXXFLAGS) \
             -c $(GMOCK_DIR)/src/gmock_main.cc
 
 gmock.a : gmock-all.o gtest-all.o
-	$(AR) $(ARFLAGS) $@ $^
+	@$(AR) $(ARFLAGS) $@ $^
 
 gmock_main.a : gmock-all.o gtest-all.o gmock_main.o
-	$(AR) $(ARFLAGS) $@ $^
+	@$(AR) $(ARFLAGS) $@ $^
 
-# Builds a sample test.
+# Builds tests.
 
-$(TESTS_OBJ) : %.o : $(TSRC) $(GMOCK_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(USER_DIR)/$*.C
+%.o: $(USER_DIR)/%.C gmock_main.a
+	@echo "Compiling $*.o"
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(USER_DIR)/$*.C
+%: %.o gmock_main.a
+	@echo "Linking $*"
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a
 
-$(TESTS) : % : $(TESTS_OBJ) gmock_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a
+$(RUNALL): $(TESTS_OBJ) gmock_main.a
+	@echo "Building $@"
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $(TESTS_OBJ) gmock_main.a
