@@ -11,11 +11,11 @@ using ph::PatchObject;
 
 using pe::CodeObject;
 
-/* Constructor for SpAgent */
+// Constructor for SpAgent
 SpAgent::ptr
 SpAgent::create() {
 
-  /* Enable core dump. */
+  // Enable core dump.
   if (getenv("SP_COREDUMP")) {
     struct rlimit core_limit;
     core_limit.rlim_cur = RLIM_INFINITY;
@@ -38,11 +38,11 @@ SpAgent::SpAgent() {
 }
 
 SpAgent::~SpAgent() {
-  /* FIXME: Very weird segfault when uncommenting this. */
+  // FIXME: Very weird segfault when uncommenting this.
   // delete context_;
 }
 
-/* Configuration */
+// Configuration
 void
 SpAgent::set_parser(SpParser::ptr parser) {
   parser_ = parser;
@@ -88,7 +88,7 @@ SpAgent::set_ipc(bool b) {
   allow_ipc_ = b;
 }
 
-/* Here We Go! Self-propelling magic happens! */
+// Here We Go! Self-propelling magic happens!
 void
 SpAgent::go() {
 
@@ -96,7 +96,7 @@ SpAgent::go() {
   sp_debug("========== Start Self-propelled instrumentation @ Process %d ==========", getpid());
 #endif
 
-  /* Sanity check. If not user-provided configuration, use default ones */
+  // Sanity check. If not user-provided configuration, use default ones
   if (!init_event_) {
 #ifndef SP_RELEASE
     sp_debug("INIT EVENT - Use default event");
@@ -147,7 +147,7 @@ SpAgent::go() {
   }
 #endif
 
-  /* Prepare context */
+  // Prepare context
   context_ = SpContext::create(init_propeller_,
                                init_before_,
                                init_after_,
@@ -163,7 +163,8 @@ SpAgent::go() {
     return;
   }
 
-  /* Register Events */
+  // Register Events
   init_event_->register_event(context_);
   fini_event_->register_event(context_);
 }
+

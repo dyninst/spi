@@ -50,7 +50,7 @@ class SpAddrSpace : public ph::AddrSpace {
     typedef std::map<dt::Address, MemMapping> MemMappings;
     MemMappings mem_maps_;
 
-    /* Preallocated buffer stuffs */
+    // Preallocated buffer stuffs
     typedef struct {
       dt::Address cursor;  // The addr = pre_head - pre_cursor * buf_size_
       dt::Address head;

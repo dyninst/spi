@@ -6,17 +6,22 @@
 
 namespace sp {
 
-class SpSnippet {
-  friend class SpInstrumenter;
+// ----------------------------------------------------------------------------- 
+// Snippet to hold relocated code and the invocation of payload function.
+// -----------------------------------------------------------------------------
+
+	class SpSnippet {
+		friend class SpInstrumenter;
+
   public:
     typedef dyn_detail::boost::shared_ptr<SpSnippet> ptr;
     static ptr create(ph::PatchFunction* f,
                       ph::Point* pt,
                       SpContext* c,
-                      PayloadFunc before, PayloadFunc after) {
+                      PayloadFunc before,
+                      PayloadFunc after) {
       return ptr(new SpSnippet(f, pt, c, before, after));
     }
-
     SpSnippet(ph::PatchFunction* f,
               ph::Point* pt,
               SpContext* c,
@@ -114,7 +119,7 @@ class SpSnippet {
                       dt::Address last,
                       char* buf);
 
-};
+	};
 
 }
 

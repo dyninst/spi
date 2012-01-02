@@ -10,18 +10,19 @@
 
 namespace sp {
 
-/* Agent is to manage Agent's configuration parameters, including:
-   - The event that causes the activation of instrumentation.
-     - Default: the callees of current function
-   - The event that causes the deactivation of instrumentation.
-     - Default: the exit of this process
-   - The initial user-defined payload code to execute when activation.
-     - Default: print out the current function name
-   - The parser to parse CFG structures of current running process.
-     - Default: runtime parsing
- */
-class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
-  friend class SpContext;
+// ----------------------------------------------------------------------------- 
+// Agent is to manage Agent's configuration parameters, including:
+// - The event that causes the activation of instrumentation.
+//   - Default: the callees of current function
+// - The event that causes the deactivation of instrumentation.
+//   - Default: the exit of this process
+// - The initial user-defined payload code to execute when activation.
+//   - Default: print out the current function name
+// - The parser to parse CFG structures of current running process.
+//   - Default: runtime parsing
+// -----------------------------------------------------------------------------
+	class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
+		friend class SpContext;
   public:
     typedef dyn_detail::boost::shared_ptr<SpAgent> ptr;
     static ptr create();
@@ -55,7 +56,7 @@ class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
     bool allow_ipc_;
 
     SpAgent();
-};
+	};
 
 }
 

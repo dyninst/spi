@@ -21,7 +21,6 @@ using ph::PatchFunction;
 
 using pe::SymtabCodeSource;
 
-
 SpContext::SpContext(SpPropeller::ptr p,
                      SpParser::ptr parser) {
   init_propeller_ = p;
@@ -29,7 +28,7 @@ SpContext::SpContext(SpPropeller::ptr p,
   ipc_mgr_ = NULL;
   allow_ipc_ = false;
 
-  /* Parsing the entire code */
+  // Parsing the entire code
   parse();
 
   init_well_known_libs();
@@ -68,11 +67,10 @@ SpContext::init_well_known_libs() {
     well_known_libs_.push_back(parser_->get_agent_name());
 }
 
-/* Get the first instrumentable function.
-   Here, an instrumentable function should fulfill all of the following requirements:
-   1. it should be resovled by the parser.
-   2. it should not be from some well known system libraries
- */
+// Get the first instrumentable function.
+// Here, an instrumentable function should fulfill all of the following requirements:
+// 1. it should be resovled by the parser.
+// 2. it should not be from some well known system libraries
 void 
 SpContext::get_callstack(CallStack* call_stack) {
   long pc, sp, bp;
@@ -86,7 +84,8 @@ SpContext::get_callstack(CallStack* call_stack) {
     string s;
     stackwalk[i].getName(s);
     dt::Address ra = (dt::Address)stackwalk[i].getRA();
-    /* Step 1: if the function can be resolved */
+
+    // Step 1: if the function can be resolved
     PatchFunction* func = parser_->findFunction(ra);
     if (!func) {
 #ifndef SP_RELEASE
@@ -95,7 +94,7 @@ SpContext::get_callstack(CallStack* call_stack) {
       continue;
     }
 
-    /* Step 2: push this function */
+    // Step 2: push this function
 #ifndef SP_RELEASE
     sp_debug("FOUND - Function %s is in the call stack", s.c_str());
 #endif
@@ -126,7 +125,7 @@ SpContext::is_well_known_lib(string lib) {
 
 void
 SpContext::restore() {
-  /* Restore trap handler */
+  // Restore trap handler
   sigaction(SIGTRAP, &old_act_, NULL);
 }
 

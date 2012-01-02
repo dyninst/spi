@@ -25,14 +25,14 @@ extern SpContext* g_context;
 
 void
 wrapper_before(SpPoint* pt, sp::PayloadFunc_t before) {
-  if (!SpIpcMgr::pre_before(pt)) return;
+  if (!SpIpcMgr::before_entry(pt)) return;
   before(pt);
 }
 
 
 void
 wrapper_after(SpPoint* pt, sp::PayloadFunc_t after) {
-  if (!SpIpcMgr::pre_after(pt)) return;
+  if (!SpIpcMgr::before_exit(pt)) return;
   after(pt);
 }
 

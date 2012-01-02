@@ -3,6 +3,7 @@ Injector:
 - [ ] port to windows
 
 Agent:
+- [ ] Rename before_ to entry_ and after_ to exit_ for payload function
 - [ ] Should test on /bin/bash
 - [ ] Change before/after to entry/exit
 - [ ] A better memory manager to allocate blob

@@ -5,7 +5,7 @@
 
 namespace sp {
 
-  /* Profiling utilities */
+  // Profiling utilities
   void SetupTimer(int);
   void StartTimer(int);
   void StopTimer(int);
@@ -36,14 +36,14 @@ namespace sp {
 
   void report_timer();
 
-  /* Determine whether a long integer has a value within 32-bit range. */
+  // Determine whether a long integer has a value within 32-bit range.
   inline bool is_disp32(long d) {
     const long max_int32 = 2147483646;
     const long min_int32 = -2147483647;
     return ((d < max_int32) && (d >= min_int32));
   }
 
-  /* Determine whether a long integer has a value within 8-bit range. */
+  // Determine whether a long integer has a value within 8-bit range.
   inline bool is_disp8(long d) {
     const long max_int8 = 127;
     const long min_int8 = -128;

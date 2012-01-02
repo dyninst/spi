@@ -116,7 +116,7 @@ clean_objs:
 	$(RM) *.o
 
 clean:
-	$(RM) $(INJECTOR) $(AGENT) $(IJAGENT) $(SPSERVER) *.o
+	$(RM) $(INJECTOR) $(AGENT) $(IJAGENT) $(SPSERVER) $(LIBINJECTOR) *.o
 	make IJ_DEPS
 	make AG_DEPS
 	make SERVER_DEPS
