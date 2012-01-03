@@ -84,7 +84,7 @@ $(AG_OBJS): %.o :$(AG_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AG_DIR)/$*.C
 
-$(AGENT): $(AG_OBJS)
+$(AGENT): $(AG_OBJS)  $(LIBINJECTOR)
 	@echo Linking $@
 	@$(GXX) -o $@  $(AG_OBJS) $(AG_LDFLAGS)
 
@@ -109,7 +109,7 @@ $(SERVER_OBJS): %.o : $(SERVER_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(SERVER_IFLAGS) $(SERVER_FLAGS) $(SERVER_DIR)/$*.C
 
-$(SPSERVER): $(SERVER_OBJS)
+$(SPSERVER): $(SERVER_OBJS) $(LIBINJECTOR)
 	@echo Linking $@
 	@$(GXX) -o $@ $(SERVER_OBJS) $(SERVER_LDFLAGS) $(AG_LDFLAGS)
 
