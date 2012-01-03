@@ -1,6 +1,5 @@
 #include "test_case.h"
-#include "SpAgent.h"
-#include "SpEvent.h"
+#include "SpInc.h"
 
 #include "frame.h"
 #include "walker.h"

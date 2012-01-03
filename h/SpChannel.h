@@ -25,15 +25,13 @@ typedef enum {
 // -----------------------------------------------------------------------------
 struct SpChannel {
   SpChannel() :
-  type(SP_UNKNOWN), injected(false), local_pid(-1), local_ip(0), remote_pid(-1),
-  remote_ip(0), remote_injected(false), inode(-1), rw(SP_WRITE) {}
+  type(SP_UNKNOWN), injected(false), local_pid(-1), remote_pid(-1),
+  remote_injected(false), inode(-1), rw(SP_WRITE) {}
 
   ChannelType type;      // Channel type
   bool injected;         // Already injected?
   pid_t local_pid;       // Sender's pid
-  unsigned local_ip;     // Sender's ip
   pid_t remote_pid;      // Receiver's pid
-  unsigned remote_ip;    // Receiver's ip
   bool remote_injected;  // Agent is already injected to receiver?
   long inode;            // System-wide inode number
   ChannelRW rw;          // Read or Write?
@@ -52,17 +50,21 @@ struct PipeChannel : public SpChannel {
 
 struct TcpChannel : public SpChannel {
   TcpChannel() :
-  SpChannel(), local_port(0), remote_port(0) {}
-  unsigned local_port;
-  unsigned remote_port;
+  SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
+  in_addr_t local_ip;
+  short local_port;
+  in_addr_t remote_ip;
+  short remote_port;
 };
 
 struct UdpChannel : public SpChannel {
   UdpChannel() :
-  SpChannel(), local_port(0), remote_port(0) {}
+  SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
 
-  unsigned local_port;
-  unsigned remote_port;
+  in_addr_t local_ip;
+  short local_port;
+  in_addr_t remote_ip;
+  short remote_port;
 };
 
 }

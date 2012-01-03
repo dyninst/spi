@@ -2,7 +2,7 @@
 
 using sp::SpInjector;
 
-/* Here we go! */
+// Here we go!
 int main(int argc, char *argv[]) {
   if (argc != 3) {
     sp_print("usage: %s PID LIB_NAME", argv[0]);

@@ -10,3 +10,5 @@ make
 #./test -pipe4
 #./test -pipe5
 ./test -tcp1
+
+#LD_PRELOAD=./TestAgent.so ./tcp1 localhost

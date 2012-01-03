@@ -1,7 +1,7 @@
 GXX        = g++
 RM         = rm -f
 
-all: $(AGENT_NAME) CPLIBAGENT
+all: CPLIBAGENT $(AGENT_NAME)
 
 AGENT_DIR      = ../
 AGENT_OBJS    += $(notdir $(AGENT_SRCS:%.C=%.o))
@@ -10,8 +10,9 @@ AG_LDFLAGS    += -L$(SP_DIR)/$(PLATFORM)
 AG_LDFLAGS    += -lagent
 
 AGENT_DEP  = .AGENT_DEPENDS
-AGENT_DEPS:
-	$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AGENT_DEP)
+$(shell if test -f $(AGENT_DEP); then true; else \
+$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AGENT_DEP);\
+fi);\
 include $(AGENT_DEP)
 
 $(AGENT_OBJS): %.o : $(AGENT_SRCS)
@@ -23,14 +24,10 @@ $(AGENT_NAME): $(AGENT_OBJS)
 	@$(GXX) -o $@  $(AGENT_OBJS) $(AG_LDFLAGS)
 
 CPLIBAGENT:
-	@echo "Copying libagent.so ..."
-	@cp -f $(SP_DIR)/$(PLATFORM)/libagent.so ./
-	@cp -f $(SP_DIR)/$(PLATFORM)/libinjector.so ./
-	@cp -f $(SP_DIR)/$(PLATFORM)/libagent.so ../target/$(PLATFORM)/
-	@cp -f $(SP_DIR)/$(PLATFORM)/libinjector.so ../target/$(PLATFORM)/
+	@echo "Copying spi libraries ..."
+	@cp -f $(SP_DIR)/$(PLATFORM)/libagent.so $(SP_DIR)/$(PLATFORM)/libinjector.so ./
 #==============================================
 # clean up
 #==============================================
 clean:
-	$(RM) *.o *.so
-	make AGENT_DEPS
+	@$(RM) *.o *.so $(AGENT_DEP)

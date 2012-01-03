@@ -2,7 +2,7 @@
 
 using sp::SpInjector;
 
-/* The code snippet to invoke do_dlopen */
+// The code snippet to invoke do_dlopen
 static char do_dlopen_code[] = {
   //0 , 1
   0x90, 0x90,                                         // nop, nop

@@ -17,9 +17,10 @@
 #include <signal.h>
 
 // Self-propelled stuffs
-//#include "SpIpcMgr.h"
+#include "SpIpcMgr.h"
+#include "SpChannel.h"
 
-//using namespace sp;
+using namespace sp;
 using namespace std;
 
 // ----------------------------------------------------------------------------- 
@@ -136,7 +137,12 @@ int tcp_server() {
 // -----------------------------------------------------------------------------
 #define MAXDATASIZE 100 // max number of bytes we can get at once 
 
-string tcp_client(const char *hostname) {
+typedef enum {
+  POS_CONNECT,
+  POS_WRITE 
+} Position;
+
+string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
   int sockfd, numbytes;  
   char buf[MAXDATASIZE];
   struct addrinfo hints, *servinfo, *p;
@@ -160,12 +166,19 @@ string tcp_client(const char *hostname) {
       continue;
     }
 
-    if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-      close(sockfd);
-      perror("client: connect");
-      continue;
-    }
-
+    int ret = -1;
+    do {
+			// Testing starts
+			if (pos == POS_CONNECT) {
+				TcpChannel* channel = (TcpChannel*)tcp_worker->get_channel(sockfd,
+                                    SP_WRITE, (void*)p->ai_addr);
+				EXPECT_EQ(channel->type, SP_TCP);
+				EXPECT_EQ(channel->remote_ip,
+                  inet_lnaof(((sockaddr_in*)p->ai_addr)->sin_addr));
+				EXPECT_EQ((int)channel->remote_port, atoi(PORT));
+			}
+      ret = connect(sockfd, p->ai_addr, p->ai_addrlen);
+    } while (ret == -1);
     break;
   }
 
@@ -220,11 +233,12 @@ TEST_F(IpcMgrUdpTest, get_channel) {
 // -----------------------------------------------------------------------------
 class TcpConnectTest : public testing::Test {
   public:
-	TcpConnectTest() : pid_(-1), is_client_(false) {	}
+	TcpConnectTest() : pid_(-1), is_client_(false) {}
 
   protected:
 	pid_t pid_;
 	bool is_client_;
+	SpTcpWorker tcp_worker_;
 
 	// Fork a server, then act as a client
   virtual void SetUp() {
@@ -252,15 +266,16 @@ class TcpConnectTest : public testing::Test {
 };
 
 TEST_F(TcpConnectTest, get_channel) {
-  if (is_client_) EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
+  if (is_client_) {
+		string ret = tcp_client("localhost", &tcp_worker_, POS_CONNECT);
+		EXPECT_STREQ("Hello, world!", ret.c_str());
+	}
 }
 
 TEST_F(TcpConnectTest, inject) {
-  if (is_client_) EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
 }
 
 TEST_F(TcpConnectTest, set_start_tracing) {
-  if (is_client_) EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
 }
 
 /*

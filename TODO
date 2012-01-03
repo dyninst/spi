@@ -1,3 +1,7 @@
+General:
+- [ ] Change comments to //, instead of /* */
+- [ ] get rid of .DEPS from git
+
 Injector:
 - [ ] avoid parsing entire dyninst stuffs
 - [ ] port to windows

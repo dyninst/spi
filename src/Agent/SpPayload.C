@@ -19,7 +19,7 @@ using sp::ArgumentHandle;
 using sp::SpIpcMgr;
 
 namespace sp {
-extern SpContext* g_context;
+  extern SpContext* g_context;
 }
 
 
@@ -60,70 +60,70 @@ default_after(Point* pt) {
 /* Utilities that payload writers can use in their payload functions */
 namespace sp {
 
-/* Get callee from a PreCall point */
-PatchFunction*
-callee(ph::Point* pt) {
-  return g_context->callee(pt);
-}
-
-/* Pop up an argument of a function call */
-void*
-pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size) {
-  return static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
-}
-
-/* Propel instrumentation to next points of the point `pt` */
-void
-propel(ph::Point* pt) {
-
-  /* Skip if we have already propagated from this point */
-  SpPoint* spt = static_cast<sp::SpPoint*>(pt);
-  if (spt->propagated()) {
-    return;
+  /* Get callee from a PreCall point */
+  PatchFunction*
+  callee(ph::Point* pt) {
+    return g_context->callee(pt);
   }
 
-  PatchFunction* f = callee(pt);
-  if (!f) return;
+  /* Pop up an argument of a function call */
+  void*
+  pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size) {
+    return static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
+  }
 
-  sp::SpPropeller::ptr p = g_context->init_propeller();
-  p->go(f, g_context, g_context->init_before(), g_context->init_after(), pt);
-  spt->set_propagated(true);
-}
+  /* Propel instrumentation to next points of the point `pt` */
+  void
+  propel(ph::Point* pt) {
 
-ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}
+    /* Skip if we have already propagated from this point */
+    SpPoint* spt = static_cast<sp::SpPoint*>(pt);
+    if (spt->propagated()) {
+      return;
+    }
 
-char*
-ArgumentHandle::insert_buf(size_t s) {
-  char* b = new char[s];
-  bufs.push_back(b);
-  return b;
-}
+    PatchFunction* f = callee(pt);
+    if (!f) return;
 
-ArgumentHandle::~ArgumentHandle() {
-  for (unsigned i = 0; i < bufs.size(); i++) delete bufs[i];
-}
+    sp::SpPropeller::ptr p = g_context->init_propeller();
+    p->go(f, g_context, g_context->init_before(), g_context->init_after(), pt);
+    spt->set_propagated(true);
+  }
 
-long
-retval(sp::SpPoint* pt) {
-  return pt->snip()->get_ret_val();
-}
+  ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}
 
-bool
-is_ipc_write(SpPoint* pt) {
-  SpChannel* c = pt->channel();
-  return (c && c->rw == SP_WRITE);
-}
+  char*
+  ArgumentHandle::insert_buf(size_t s) {
+    char* b = new char[s];
+    bufs.push_back(b);
+    return b;
+  }
 
-bool
-is_ipc_read(SpPoint* pt) {
-  SpChannel* c = pt->channel();
-  return (c && c->rw == SP_READ);
-}
+  ArgumentHandle::~ArgumentHandle() {
+    for (unsigned i = 0; i < bufs.size(); i++) delete bufs[i];
+  }
 
-char
-start_tracing() {
-  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
-  return ipc_mgr->start_tracing();
-}
+  long
+  retval(sp::SpPoint* pt) {
+    return pt->snip()->get_ret_val();
+  }
+
+  bool
+  is_ipc_write(SpPoint* pt) {
+    SpChannel* c = pt->channel();
+    return (c && c->rw == SP_WRITE);
+  }
+
+  bool
+  is_ipc_read(SpPoint* pt) {
+    SpChannel* c = pt->channel();
+    return (c && c->rw == SP_READ);
+  }
+
+  char
+  start_tracing() {
+    sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+    return ipc_mgr->start_tracing();
+  }
 
 }

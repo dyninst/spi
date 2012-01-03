@@ -6,7 +6,6 @@ AGENT      = libagent.so
 SPSERVER   = SpServer
 
 all: $(LIBINJECTOR) $(INJECTOR) $(IJAGENT) $(AGENT) $(SPSERVER)
-#all: $(LIBINJECTOR) $(IJAGENT) $(AGENT) $(SPSERVER)
 
 GCC        = gcc
 GXX        = g++
@@ -27,12 +26,14 @@ IJA_SRCS   += $(IJ_DIR)/IjAgent.c \
 
 IJA_OBJS   += $(notdir $(IJA_SRCS:%.c=%.o))
 
+# Injector dependency
 IJ_DEP  = .IJ_DEPENDS
-IJ_DEPS:
-	$(GXX) -MM $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_SRCS) > $(IJ_DEP)
+$(shell if test -f $(IJ_DEP); then true; else \
+$(GXX) -MM $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_SRCS) > $(IJ_DEP); \
+fi);\
 include $(IJ_DEP)
 
-$(IJ_OBJS): %.o : $(IJ_SRCS)
+$(IJ_OBJS): %.o : $(IJ_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
 
@@ -40,15 +41,15 @@ $(LIBINJECTOR): $(IJ_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJ_OBJS) $(IJ_LDFLAGS)
 
-$(IJMAIN_OBJS): %.o : $(IJMAIN_SRCS)
+$(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
 
-$(INJECTOR): $(IJMAIN_OBJS)
+$(INJECTOR): $(IJMAIN_OBJS) $(LIBINJECTOR)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)
 
-$(IJA_OBJS): %.o : $(IJA_SRCS)
+$(IJA_OBJS): %.o : $(IJ_DIR)/%.c
 	@echo Compiling $*.o
 	@$(GCC) -c -o $@ $(IJA_IFLAGS) $(IJA_FLAGS) $(IJ_DIR)/$*.c
 
@@ -74,11 +75,12 @@ AG_SRCS    += $(AG_DIR)/SpAgent.C \
 AG_OBJS    += $(notdir $(AG_SRCS:%.C=%.o))
 
 AG_DEP  = .AG_DEPENDS
-AG_DEPS:
-	$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AG_SRCS) > $(AG_DEP)
+$(shell if test -f $(AG_DEP); then true; else \
+$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AG_SRCS) > $(AG_DEP);\
+fi);\
 include $(AG_DEP)
 
-$(AG_OBJS): %.o : $(AG_SRCS)
+$(AG_OBJS): %.o :$(AG_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AG_DIR)/$*.C
 
@@ -97,11 +99,13 @@ SERVER_SRCS    += $(SERVER_DIR)/SpServer.C \
 SERVER_OBJS    += $(notdir $(SERVER_SRCS:%.C=%.o))
 
 SERVER_DEP  = .SERVER_DEPENDS
-SERVER_DEPS:
-	$(GXX) -MM $(SERVER_IFLAGS) $(SERVER_FLAGS) $(SERVER_SRCS) > $(SERVER_DEP)
+
+$(shell if test -f $(SERVER_DEP); then true; else \
+$(GXX) -MM $(SERVER_IFLAGS) $(SERVER_FLAGS) $(SERVER_SRCS) > $(SERVER_DEP);\
+fi);\
 include $(SERVER_DEP)
 
-$(SERVER_OBJS): %.o : $(SERVER_SRCS)
+$(SERVER_OBJS): %.o : $(SERVER_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(SERVER_IFLAGS) $(SERVER_FLAGS) $(SERVER_DIR)/$*.C
 
@@ -110,14 +114,20 @@ $(SPSERVER): $(SERVER_OBJS)
 	@$(GXX) -o $@ $(SERVER_OBJS) $(SERVER_LDFLAGS) $(AG_LDFLAGS)
 
 #=================================================
+# depend
+#=================================================
+depend:
+	@echo "building dependency"
+	@make IJ_DEPS
+	@make AG_DEPS
+	@make SERVER_DEPS
+
+#=================================================
 # clean
 #=================================================
 clean_objs:
 	$(RM) *.o
 
 clean:
-	$(RM) $(INJECTOR) $(AGENT) $(IJAGENT) $(SPSERVER) $(LIBINJECTOR) *.o
-	make IJ_DEPS
-	make AG_DEPS
-	make SERVER_DEPS
-
+	@$(RM) -f $(INJECTOR) $(AGENT) $(IJAGENT) $(SPSERVER) $(LIBINJECTOR) *.o
+	@$(RM) -f $(SERVER_DEP) $(IJ_DEP) $(AG_DEP)

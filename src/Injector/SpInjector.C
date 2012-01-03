@@ -117,26 +117,26 @@ typedef struct {
 /* The main injection procedure, which has two main steps:
    Step 1: Force injectee to execute do_dlopen to load shared library libijagent.so.
    Step 2: Force injectee to execute ij_agent in libijagent.so to load the
-           user-specified shared library. In this step, we have to pass parameters
-           by IPC mechanism, where we use shared memory in current implementation.
+   user-specified shared library. In this step, we have to pass parameters
+   by IPC mechanism, where we use shared memory in current implementation.
 
    Q & A:
    1. Why don't we directly use do_dlopen to load user-specified shared library?
    Answer: Because do_dlopen is not a public function, which is unsafe to use.
-           Often times, do_dlopen causes injectee to crash, e.g., the library is
-           not found. On the other hand, dlopen is safe to use, which would not
-           causes the injectee process to crash.
+   Often times, do_dlopen causes injectee to crash, e.g., the library is
+   not found. On the other hand, dlopen is safe to use, which would not
+   causes the injectee process to crash.
    2. To follow up question 1, why don't we directly call dlopen in step 1?
    Answer: We are not allowed to do so. libc.so has sanity check on calling dlopen.
-           If we call dlopen using IRPC, dlopen would fail, although it won't crash
-           injectee process.
+   If we call dlopen using IRPC, dlopen would fail, although it won't crash
+   injectee process.
    3. Why we use IPC mechanism to pass parameters to ij_agent in libijagent.so?
    Answer: ij_agent is a function that calls dlopen. After dlopen is invoked, we
-           want to check whether the loading is successful. Even when dlopen fails,
-           we also want to know the error message. Therefore, we need to do IPC for
-           error report or checking return value. In this case, why don't we have
-           an easy and uniformed way to pass argument and check return value?
- */
+   want to check whether the loading is successful. Even when dlopen fails,
+   we also want to know the error message. Therefore, we need to do IPC for
+   error report or checking return value. In this case, why don't we have
+   an easy and uniformed way to pass argument and check return value?
+*/
 void SpInjector::inject(const char* lib_name) {
 
   // Verify the existence of lib_name
@@ -144,7 +144,7 @@ void SpInjector::inject(const char* lib_name) {
   if (!abs_lib_name)
     sp_perror("Injector [pid = %5d] - cannot locate library %s.", getpid(), lib_name);
 
-  /* Step 1. Load libijagent.so */ 
+  /* Step 1. Load libijagent.so */
   if (!is_lib_loaded(IJAGENT)) {
     // Verify the existence of libijagent.so
     std::string ijagent(IJAGENT);
@@ -370,24 +370,24 @@ bool SpInjector::get_resolved_lib_path(const std::string &filename, DepNames &pa
    Thus, we avoid time consuming parsing for dyninst libraries of huge size.
 */
 void SpInjector::identify_original_libs() {
-    IjLib *shm_lib = (IjLib*)get_shm(IJLIB_ID, sizeof(IjLib));
-    LibraryPool& libs = proc_->libraries();
-    int lib_count = 0;
-    for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
-      std::string lib_name = (*li)->getName();
-      if (lib_name.size() <= 0) continue;
-      Symtab *obj = NULL;
-      bool ret = Symtab::openFile(obj, lib_name);
-      if (!obj || !ret) {
-        sp_perror("Injector [pid = %5d] - Failed to open %s", getpid(), lib_name.c_str());
-      }
-
-      Dyninst::Address load_addr = (*li)->getLoadAddress();
-      if (!load_addr) load_addr = obj->getLoadAddress();
-      shm_lib->offsets[lib_count] = load_addr;
-      ++lib_count;
+  IjLib *shm_lib = (IjLib*)get_shm(IJLIB_ID, sizeof(IjLib));
+  LibraryPool& libs = proc_->libraries();
+  int lib_count = 0;
+  for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
+    std::string lib_name = (*li)->getName();
+    if (lib_name.size() <= 0) continue;
+    Symtab *obj = NULL;
+    bool ret = Symtab::openFile(obj, lib_name);
+    if (!obj || !ret) {
+      sp_perror("Injector [pid = %5d] - Failed to open %s", getpid(), lib_name.c_str());
     }
-    shm_lib->offsets[libs.size()] = -1;
+
+    Dyninst::Address load_addr = (*li)->getLoadAddress();
+    if (!load_addr) load_addr = obj->getLoadAddress();
+    shm_lib->offsets[lib_count] = load_addr;
+    ++lib_count;
+  }
+  shm_lib->offsets[libs.size()] = -1;
 }
 
 void* SpInjector::get_shm(int id, size_t size) {

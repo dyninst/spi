@@ -38,8 +38,9 @@ namespace sp {
 		// Output Param: buf_out -- the buffer to write, if NULL, then skip it
 		// Output Param: c_out -- the character to write, if NULL, then skip it
 		// Output Param: size_out -- the size of the buffer, if NULL, then skip it
+    // Output Param: sa -- sockaddr for connect(), if NULL, then skip it
     void get_write_param(SpPoint* pt, int* fd_out, void** buf_out,
-                         char* c_out, size_t* size_out);
+                         char* c_out, size_t* size_out, sockaddr** sa_out);
 
 		// Get parameters from "read" functions.
 		// Input Param : pt -- the call point from which we get the function
@@ -123,7 +124,7 @@ namespace sp {
     // Input Param: fd -- the file descriptor
     // Input Param: rw -- specify whether the channel is read-only or write-only
     // Return NULL if not a valid IPC channel; otherwise, the channel.
-    virtual SpChannel* get_channel(int fd, ChannelRW rw);
+    virtual SpChannel* get_channel(int fd, ChannelRW rw, void* arg = NULL);
 
   protected:
     // fd-to-SpChannel mapping
@@ -136,7 +137,7 @@ namespace sp {
 
 		// Create a channel.
     // Assumption: the channel for this fd has not yet existed
-		virtual SpChannel* create_channel(int fd, ChannelRW rw) = 0;
+		virtual SpChannel* create_channel(int fd, ChannelRW rw, void*) = 0;
 	};
 
 // ----------------------------------------------------------------------------- 
@@ -171,7 +172,7 @@ namespace sp {
 		// Get all pids that are using this fd
     void get_pids_from_fd(int fd, PidSet& pid_set);
 
-		virtual SpChannel* create_channel(int fd, ChannelRW rw);
+		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);
 	};
 
 
@@ -186,7 +187,7 @@ namespace sp {
     virtual bool inject(SpChannel*);
 
   protected:
-		virtual SpChannel* create_channel(int fd, ChannelRW rw);
+		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);
 	};
 
 // ----------------------------------------------------------------------------- 
@@ -200,7 +201,7 @@ namespace sp {
     virtual bool inject(SpChannel*);
 
   protected:
-		virtual SpChannel* create_channel(int fd, ChannelRW rw);
+		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);
 	};
 
 }

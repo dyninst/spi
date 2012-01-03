@@ -39,14 +39,14 @@ all: MUTATEE AGENT DRIVER COPYIJ
 	@echo "====================="
 
 AG_DEP  = .AG_DEPENDS
-AG_DEPS:
-	@echo "Makeing dependency Agents"
-	@$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP)
+$(shell if test -f $(AG_DEP); then true; else \
+$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP);\
+fi);\
 include $(AG_DEP)
 
 AGENT: $(AGENT_SO)
 	@echo "* All agents are done"
-$(AGENT_OBJS): %.o : $(AGENT_SRCS)
+$(AGENT_OBJS): %.o : $(TESTCASE_DIR)/%.C
 	@echo "Compiling $@"
 	@$(GXX) -o $@ $(TESTCASE_DIR)/$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
 $(AGENT_SO): %.so : $(AGENT_OBJS)
@@ -54,14 +54,14 @@ $(AGENT_SO): %.so : $(AGENT_OBJS)
 	@$(GXX) -o $@ $*.o $(AG_LDFLAGS)
 
 MUTATEE_DEP  = .MUTATEE_DEPENDS
-MUTATEE_DEPS:
-	@echo "Makeing dependency for Mutatees"
-	@$(GXX) -MM $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) $(MUTATEE_SRCS) > $(MUTATEE_DEP)
+$(shell if test -f $(MUTATEE_DEP); then true; else \
+$(GXX) -MM $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) $(MUTATEE_SRCS) > $(MUTATEE_DEP);\
+fi);\
 include $(MUTATEE_DEP)
 
 MUTATEE: $(MUTATEE_EXE)
 	@echo "* All mutatees are done"
-$(MUTATEE_OBJS): %.o : $(MUTATEE_SRCS)
+$(MUTATEE_OBJS): %.o : $(TESTCASE_DIR)/%.c
 	@echo "Compiling $@"
 	@$(GCC) -o $@ $(TESTCASE_DIR)/$*.c $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) -c
 $(MUTATEE_EXE): % : $(MUTATEE_OBJS)
@@ -69,14 +69,14 @@ $(MUTATEE_EXE): % : $(MUTATEE_OBJS)
 	@$(GCC) -o $@ $*.o $(MUTATEE_LDFLAGS)
 
 DRIVER_DEP  = .DRIVER_DEPENDS
-DRIVER_DEPS:
-	@echo "Makeing dependency for Test driver"
-	@$(GXX) -MM $(DRIVER_IFLAGS) $(DRIVER_FLAGS) $(DRIVER_SRCS) > $(DRIVER_DEP)
+$(shell if test -f $(DRIVER_DEP); then true; else \
+$(GXX) -MM $(DRIVER_IFLAGS) $(DRIVER_FLAGS) $(DRIVER_SRCS) > $(DRIVER_DEP);\
+fi);\
 include $(DRIVER_DEP)
 
 DRIVER: $(TEST_DRIVER)
 	@echo "* Test driver is done"
-$(DRIVER_OBJS): %.o : $(DRIVER_SRCS)
+$(DRIVER_OBJS): %.o : $(DRIVER_SRC)
 	@echo "Compiling $@"
 	@$(GXX) -o $@ $(DRIVER_SRCS) $(DRIVER_IFLAGS) $(DRIVER_FLAGS) -c
 $(TEST_DRIVER): $(DRIVER_OBJS)
@@ -90,10 +90,7 @@ COPYIJ:
 
 # Clean up
 clean:
-	@rm -f *.so *.o $(TEST_DRIVER) core* Injector libijagent.so $(MUTATEE_EXE)
-	@make AG_DEPS
-	@make MUTATEE_DEPS
-	@make DRIVER_DEPS
+	@rm -f *.so *.o $(TEST_DRIVER) core* Injector libijagent.so $(MUTATEE_EXE) $(MUTATEE_DEP) $(DRIVER_DEP) $(AG_DEP)
 
 # Debug Makefile
 d:

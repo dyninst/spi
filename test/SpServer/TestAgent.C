@@ -28,11 +28,11 @@ void test_after(SpPoint* pt) {
   if (start_tracing()) {
     if (is_ipc_write(pt)) {
       long size = sp::retval(pt);
-      sp_print("Write size: %d", size);
+      sp_print("Write size: %lu", size);
     }
     else if (is_ipc_read(pt)) {
       long size = sp::retval(pt);
-      sp_print("Read size: %d", size);
+      sp_print("Read size: %lu", size);
     }
   }
 }

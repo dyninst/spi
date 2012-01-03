@@ -1,6 +1,0 @@
-event_mutatee.o: ../TestCases/event_mutatee.c ../TestCases/test_case.h
-indcall_mutatee.o: ../TestCases/indcall_mutatee.c \
-  ../TestCases/test_case.h
-param_mutatee.o: ../TestCases/param_mutatee.c ../TestCases/test_case.h
-parser_mutatee.o: ../TestCases/parser_mutatee.c ../TestCases/test_case.h
-propel_mutatee.o: ../TestCases/propel_mutatee.c ../TestCases/test_case.h

@@ -43,9 +43,9 @@ COPY:
 	@cp $(SP_DIR)/$(PLATFORM)/libagent.so $(SP_DIR)/$(PLATFORM)/libinjector.so $(SP_DIR)/$(PLATFORM)/libijagent.so ./
 
 IPC_DEP  = .IPC_DEPENDS
-IPC_DEPS:
-	@echo "Makeing dependency test cases"
-	@$(GXX) -MM $(IPC_IFLAGS) $(IPC_FLAGS) $(IPC_SRCS) > $(IPC_DEP)
+$(shell if test -f $(IPC_DEP); then true; else \
+$(GXX) -MM $(IPC_IFLAGS) $(IPC_FLAGS) $(IPC_SRCS) > $(IPC_DEP);\
+fi);\
 include $(IPC_DEP)
 
 IPC: $(IPC_EXE)
@@ -58,9 +58,9 @@ $(IPC_EXE): % : $(IPC_OBJS)
 	@$(GXX) -o $@ $*.o $(IPC_LDFLAGS)
 
 DRIVER_DEP  = .DRIVER_DEPENDS
-DRIVER_DEPS:
-	@echo "Makeing dependency for Test driver"
-	@$(GXX) -MM $(DRIVER_IFLAGS) $(DRIVER_FLAGS) $(DRIVER_SRCS) > $(DRIVER_DEP)
+$(shell if test -f $(DRIVER_DEP); then true; else \
+$(GXX) -MM $(DRIVER_IFLAGS) $(DRIVER_FLAGS) $(DRIVER_SRCS) > $(DRIVER_DEP);\
+fi);\
 include $(DRIVER_DEP)
 
 DRIVER: $(TEST_DRIVER)
@@ -73,9 +73,9 @@ $(TEST_DRIVER): $(DRIVER_OBJS)
 	@$(GXX) -o $@ $(DRIVER_OBJS) $(DRIVER_LDFLAGS)
 
 AG_DEP  = .AG_DEPENDS
-AG_DEPS:
-	@echo "Makeing dependency Agents"
-	@$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP)
+$(shell if test -f $(AG_DEP); then true; else \
+$(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP);\
+fi);\
 include $(AG_DEP)
 
 AGENT: $(AGENT_SO)
@@ -89,9 +89,6 @@ $(AGENT_SO): %.so : $(AGENT_OBJS)
 
 # Clean up
 clean:
-	@rm -f *.so *.o $(TEST_DRIVER) $(IPC_EXE) core*
-	@make IPC_DEPS
-	@make DRIVER_DEPS
-	@make AG_DEPS
+	@rm -f *.so *.o $(TEST_DRIVER) $(IPC_EXE) core* $(DRIVER_DEP) $(AG_DEP) $(IPC_DEP)
 
 # Debug Makefile

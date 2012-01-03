@@ -1,7 +1,7 @@
 #include <signal.h>
 
 #include "test_case.h"
-#include "SpAgent.h"
+#include "SpInc.h"
 
 using sp::SpParser;
 using sp::SpAgent;

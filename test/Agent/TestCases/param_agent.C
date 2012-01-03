@@ -1,6 +1,5 @@
 #include "test_case.h"
-#include "SpAgent.h"
-#include "SpEvent.h"
+#include "SpInc.h"
 using sp::SpParser;
 using sp::SpAgent;
 using sp::SyncEvent;

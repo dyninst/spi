@@ -56,10 +56,10 @@ GMOCK_HEADERS = $(GMOCK_DIR)/include/gmock/*.h \
 
 # House-keeping build targets.
 
-all : $(TESTS) $(RUNALL)
+all : $(TESTS) $(RUNALL) copy
 
 clean :
-	rm -f $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o
+	rm -f $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o *.so
 
 # Builds gmock.a and gmock_main.a.  These libraries contain both
 # Google Mock and Google Test.  A test should link with either gmock.a
@@ -98,14 +98,32 @@ gmock_main.a : gmock-all.o gtest-all.o gmock_main.o
 	@$(AR) $(ARFLAGS) $@ $^
 
 # Builds tests.
+include ../../make.config 
+include ../../make.flag.tmpl
+
+SP_FLAGS   =  $(IJ_FLAGS) \
+              $(IJ_IFLAGS) \
+              $(AG_FLAGS) \
+              $(AG_IFLAGS) \
+              $(SERVER_FLAGS) \
+              $(SERVER_IFLAGS) \
+              -I$(SP_DIR)/h
+
+SP_LDFLAGS =  -L$(SP_DIR)/$(PLATFORM) \
+              -lagent \
+              -linjector \
 
 %.o: $(USER_DIR)/%.C gmock_main.a
 	@echo "Compiling $*.o"
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(USER_DIR)/$*.C
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(USER_DIR)/$*.C $(SP_FLAGS)
+
 %: %.o gmock_main.a
 	@echo "Linking $*"
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(SP_LDFLAGS)
 
 $(RUNALL): $(TESTS_OBJ) gmock_main.a
 	@echo "Building $@"
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $(TESTS_OBJ) gmock_main.a
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $(TESTS_OBJ) gmock_main.a $(SP_LDFLAGS)
+
+copy:
+	@cp -f $(SP_DIR)/$(PLATFORM)/*.so ./

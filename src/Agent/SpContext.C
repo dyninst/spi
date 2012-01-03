@@ -71,7 +71,7 @@ SpContext::init_well_known_libs() {
 // Here, an instrumentable function should fulfill all of the following requirements:
 // 1. it should be resovled by the parser.
 // 2. it should not be from some well known system libraries
-void 
+void
 SpContext::get_callstack(CallStack* call_stack) {
   long pc, sp, bp;
   parser_->get_frame(&pc, &sp, &bp);
