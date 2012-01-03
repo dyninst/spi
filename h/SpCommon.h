@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <dlfcn.h>
+#include <netdb.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>

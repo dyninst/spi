@@ -353,8 +353,15 @@ namespace sp {
   SpChannel* SpIpcWorker::get_channel(int fd, ChannelRW rw, void* arg) {
     // Look up cache.
     if (rw == SP_WRITE) {
-      if (channel_map_write_.find(fd) != channel_map_write_.end())
-        return channel_map_write_[fd];
+      if (channel_map_write_.find(fd) != channel_map_write_.end()) {
+        SpChannel* c = channel_map_write_[fd];
+				// Fill in the missed information
+				if (c && c->type == SP_TCP) {
+					// TcpChannel* tcp_channel = (TcpChannel*)c;
+					// TODO
+				}
+				return c;
+			}
     } else {
       if (channel_map_read_.find(fd) != channel_map_read_.end())
         return channel_map_read_[fd];
@@ -545,6 +552,11 @@ namespace sp {
   }
 
   bool SpTcpWorker::inject(SpChannel*) {
+    // 0. scp agent.so to /tmp/agent.so
+		// 1. SSH into remote machine to run SpServer 
+    // 2. SpServer uses local ip/port and remote ip/port to look up remote pid
+    // 3. SpServer injects /tmp/agent.so into remote process
+    
     return 0;
   }
 
@@ -552,22 +564,54 @@ namespace sp {
     TcpChannel* c = new TcpChannel;
     c->local_pid = getpid();
     c->type = SP_TCP;
-    long inode = get_inode_from_fd(fd);
-    c->inode = inode;
+    c->inode = get_inode_from_fd(fd);
 
+    sockaddr_in rem_sa;
     if (arg != NULL) {
       // Get remote ip and port
-      sockaddr_in* sa = (sockaddr_in*)arg;
-      c->remote_ip = inet_lnaof(sa->sin_addr);
-      c->remote_port = htons(sa->sin_port);
-      // sp_print("remote ip: %s (%d)", inet_ntoa(sa->sin_addr), c->remote_ip);
-      // sp_print("remote port: %d", htons(sa->sin_port));
+      rem_sa = *(sockaddr_in*)arg;
+      c->remote_ip = inet_lnaof(rem_sa.sin_addr);
+      c->remote_port = htons(rem_sa.sin_port);
+
+			// Should bind from the client side, so that we can use getsockname
+      // to get local ip/port
+			sockaddr_in tmp_sa;
+			memset(&tmp_sa, 0, sizeof(sockaddr_in));
+			tmp_sa.sin_family = AF_INET;
+			tmp_sa.sin_addr.s_addr = INADDR_ANY;
+			if (bind(fd, (sockaddr*)&tmp_sa, sizeof(sockaddr)) == -1) {
+				perror("bind");
+			}
     } // Connect
 
     else {
-      // TODO
-    } // Send
+			memset(&rem_sa, 0, sizeof(sockaddr_in));
+			socklen_t rem_len = sizeof(sockaddr_in);
+			if (getsockname(fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
+				perror("getsockname");
+			}
+			c->remote_ip = inet_lnaof(rem_sa.sin_addr);
+			c->remote_port = htons(rem_sa.sin_port);
+    } // Send / write
 
+		// Get local ip/port
+		sockaddr_in loc_sa;
+		memset(&loc_sa, 0, sizeof(sockaddr_in));
+		socklen_t loc_len = sizeof(sockaddr_in);
+		if (getsockname(fd, (sockaddr*)&loc_sa, &loc_len) == -1) {
+			perror("getsockname");
+		}
+		c->local_port = htons(loc_sa.sin_port);
+		// XXX: how to get local ip correctly??
+		// c->local_ip = inet_lnaof(loc_sa.sin_addr);
+		if (c->remote_ip == 1) c->local_ip = 1;
+
+		/*
+		sp_print("remote ip: %s (%d)", inet_ntoa(rem_sa.sin_addr), c->remote_ip);
+		sp_print("remote port: %d", htons(rem_sa.sin_port));
+		sp_print("local ip: %s (%d)", inet_ntoa(loc_sa.sin_addr), c->local_ip);
+		sp_print("local port: %d", htons(loc_sa.sin_port));
+		*/
     return c;
   }
 

@@ -188,6 +188,7 @@ namespace sp {
 
   protected:
 		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);
+		
 	};
 
 // ----------------------------------------------------------------------------- 

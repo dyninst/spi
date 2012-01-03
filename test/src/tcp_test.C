@@ -169,15 +169,32 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
     int ret = -1;
     do {
 			// Testing starts
+			TcpChannel* channel = NULL;
 			if (pos == POS_CONNECT) {
-				TcpChannel* channel = (TcpChannel*)tcp_worker->get_channel(sockfd,
+				channel = (TcpChannel*)tcp_worker->get_channel(sockfd,
                                     SP_WRITE, (void*)p->ai_addr);
-				EXPECT_EQ(channel->type, SP_TCP);
-				EXPECT_EQ(channel->remote_ip,
-                  inet_lnaof(((sockaddr_in*)p->ai_addr)->sin_addr));
-				EXPECT_EQ((int)channel->remote_port, atoi(PORT));
+				EXPECT_NE((unsigned long)channel, (unsigned long)NULL);
 			}
       ret = connect(sockfd, p->ai_addr, p->ai_addrlen);
+			if (pos == POS_CONNECT) {
+				EXPECT_EQ(channel->type, SP_TCP);
+
+				// Verify remote ip/port
+				EXPECT_EQ(channel->remote_ip,
+                  inet_lnaof(((sockaddr_in*)p->ai_addr)->sin_addr));
+				EXPECT_EQ((int)channel->remote_port,
+                  htons(((sockaddr_in*)p->ai_addr)->sin_port));
+
+				// Verify local ip/port
+				sockaddr_in loc_sa;
+				memset(&loc_sa, 0, sizeof(sockaddr_in));
+				socklen_t loc_len = sizeof(sockaddr_in);
+				if (getsockname(sockfd, (sockaddr*)&loc_sa, &loc_len) == -1) {
+					perror("getsockname");
+				}
+				EXPECT_EQ((in_addr_t)channel->local_ip, inet_lnaof(loc_sa.sin_addr));
+				EXPECT_EQ((unsigned short)channel->local_port, htons(loc_sa.sin_port));
+			}
     } while (ret == -1);
     break;
   }
@@ -258,6 +275,7 @@ class TcpConnectTest : public testing::Test {
 	// Kill the server
 	virtual void TearDown() {
 		if (is_client_) {
+			//while (1) {}
 			kill(pid_, SIGKILL);
 			int status;
 			wait(&status);
