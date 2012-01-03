@@ -16,6 +16,10 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+// Self-propelled stuffs
+//#include "SpIpcMgr.h"
+
+//using namespace sp;
 using namespace std;
 
 // ----------------------------------------------------------------------------- 
@@ -225,34 +229,38 @@ class TcpConnectTest : public testing::Test {
 	// Fork a server, then act as a client
   virtual void SetUp() {
 		pid_ = fork();
+
 		if (pid_ == 0) {
+			is_client_ = false;
 			tcp_server();
 		} // Child -- server
+
 		else if (pid_ > 0) {
 			is_client_ = true;
-			sleep(1);
-			// tcp_client("localhost");
 		} // Parent -- client
-		else {
-		} // Fatal
+
 	}
 
 	// Kill the server
 	virtual void TearDown() {
-		if (pid_ > 0) 	kill(pid_, SIGKILL);
+		if (is_client_) {
+			kill(pid_, SIGKILL);
+			int status;
+			wait(&status);
+		}
 	}
 };
 
 TEST_F(TcpConnectTest, get_channel) {
-  EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
+  if (is_client_) EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
 }
 
 TEST_F(TcpConnectTest, inject) {
-  EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
+  if (is_client_) EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
 }
 
 TEST_F(TcpConnectTest, set_start_tracing) {
-  EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
+  if (is_client_) EXPECT_STREQ("Hello, world!", tcp_client("localhost").c_str());
 }
 
 /*
