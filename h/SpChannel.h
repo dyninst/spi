@@ -33,7 +33,7 @@ struct SpChannel {
   pid_t local_pid;       // Sender's pid
   pid_t remote_pid;      // Receiver's pid
   bool remote_injected;  // Agent is already injected to receiver?
-  long inode;            // System-wide inode number
+  ino_t inode;           // System-wide inode number
   ChannelRW rw;          // Read or Write?
 };
 
@@ -52,9 +52,9 @@ struct TcpChannel : public SpChannel {
   TcpChannel() :
   SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
   in_addr_t local_ip;
-  short local_port;
+  uint16_t local_port;
   in_addr_t remote_ip;
-  short remote_port;
+  uint16_t remote_port;
 };
 
 struct UdpChannel : public SpChannel {
@@ -62,9 +62,9 @@ struct UdpChannel : public SpChannel {
   SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
 
   in_addr_t local_ip;
-  short local_port;
+  uint16_t local_port;
   in_addr_t remote_ip;
-  short remote_port;
+  uint16_t remote_port;
 };
 
 }

@@ -19,6 +19,7 @@
 // Self-propelled stuffs
 #include "SpIpcMgr.h"
 #include "SpChannel.h"
+#include "SpUtils.h"
 
 using namespace sp;
 using namespace std;
@@ -28,6 +29,13 @@ using namespace std;
 // -----------------------------------------------------------------------------
 #define PORT "3490"  // the port users will be connecting to
 #define BACKLOG 10   // how many pending connections queue will hold
+
+typedef enum {
+  POS_CONNECT,
+  POS_WRITE,
+  POS_ADDR2PID
+} Position;
+
 void sigchld_handler(int) {
   while(waitpid(-1, NULL, WNOHANG) > 0);
 }
@@ -41,7 +49,7 @@ void *get_in_addr(struct sockaddr *sa) {
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int tcp_server() {
+int tcp_server(Position pos) {
   int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
   struct addrinfo hints, *servinfo, *p;
   struct sockaddr_storage their_addr; // connector's address information
@@ -107,6 +115,25 @@ int tcp_server() {
   // printf("server: waiting for connections...\n");
 
   while(1) {  // main accept() loop
+		if (pos == POS_ADDR2PID) {
+			sockaddr_in rem_sa;
+			socklen_t rem_len = sizeof(sockaddr_in);
+			if (getsockname(sockfd, (sockaddr*)&rem_sa, &rem_len) == -1) {
+				perror("getsockname");
+			}
+			char ip[256];
+			in_addr_t rem_ip = sp::hostname_to_ip((char*)"localhost", ip, 256);
+			uint16_t rem_port = htons(rem_sa.sin_port);
+
+			sp_print("remote ip: %d, remote port: %d @ pid = %d", rem_ip, rem_port, getpid());
+			PidSet pid_set;
+			sp::addr_to_pids(rem_ip, rem_port, 0, 0, pid_set);
+			sp_print("# of pids: %lu", pid_set.size());
+			for (PidSet::iterator pi = pid_set.begin(); pi != pid_set.end(); pi++) {
+				sp_print("pid = %d", *pi);
+			}
+		}
+
     sin_size = sizeof their_addr;
     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
     if (new_fd == -1) {
@@ -137,10 +164,6 @@ int tcp_server() {
 // -----------------------------------------------------------------------------
 #define MAXDATASIZE 100 // max number of bytes we can get at once 
 
-typedef enum {
-  POS_CONNECT,
-  POS_WRITE 
-} Position;
 
 string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
   int sockfd, numbytes;  
@@ -175,7 +198,9 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
                                     SP_WRITE, (void*)p->ai_addr);
 				EXPECT_NE((unsigned long)channel, (unsigned long)NULL);
 			}
+
       ret = connect(sockfd, p->ai_addr, p->ai_addrlen);
+
 			if (pos == POS_CONNECT) {
 				EXPECT_EQ(channel->type, SP_TCP);
 
@@ -223,28 +248,6 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
   return buf;
 }
 
-/*
-// ----------------------------------------------------------------------------- 
-// IpcMgr Stuffs
-// -----------------------------------------------------------------------------
-class IpcMgrUdpTest : public testing::Test {
-};
-
-TEST_F(IpcMgrUdpTest, is_tcp) {
-}
-
-TEST_F(IpcMgrUdpTest, is_ipc) {
-}
-
-TEST_F(IpcMgrUdpTest, tcp_worker) {
-}
-
-TEST_F(IpcMgrUdpTest, get_worker) {
-}
-
-TEST_F(IpcMgrUdpTest, get_channel) {
-}
-*/
 // ----------------------------------------------------------------------------- 
 // Connect
 // -----------------------------------------------------------------------------
@@ -263,7 +266,7 @@ class TcpConnectTest : public testing::Test {
 
 		if (pid_ == 0) {
 			is_client_ = false;
-			tcp_server();
+			tcp_server(POS_ADDR2PID);
 		} // Child -- server
 
 		else if (pid_ > 0) {
@@ -275,7 +278,6 @@ class TcpConnectTest : public testing::Test {
 	// Kill the server
 	virtual void TearDown() {
 		if (is_client_) {
-			//while (1) {}
 			kill(pid_, SIGKILL);
 			int status;
 			wait(&status);
@@ -285,7 +287,9 @@ class TcpConnectTest : public testing::Test {
 
 TEST_F(TcpConnectTest, get_channel) {
   if (is_client_) {
-		string ret = tcp_client("localhost", &tcp_worker_, POS_CONNECT);
+		const char* hostname = "localhost";
+		// const char* hostname = "wasabi";
+		string ret = tcp_client(hostname, &tcp_worker_, POS_CONNECT);
 		EXPECT_STREQ("Hello, world!", ret.c_str());
 	}
 }
@@ -296,19 +300,3 @@ TEST_F(TcpConnectTest, inject) {
 TEST_F(TcpConnectTest, set_start_tracing) {
 }
 
-/*
-// ----------------------------------------------------------------------------- 
-// Write
-// -----------------------------------------------------------------------------
-class TcpWriteTest : public testing::Test {
-};
-
-TEST_F(TcpWriteTest, get_channel) {
-}
-
-TEST_F(TcpWriteTest, inject) {
-}
-
-TEST_F(TcpWriteTest, set_start_tracing) {
-}
-*/

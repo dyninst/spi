@@ -132,9 +132,6 @@ namespace sp {
     ChannelMap channel_map_write_;
     ChannelMap channel_map_read_;
 
-		// Get inode number from the file descriptor fd
-    long get_inode_from_fd(int fd);
-
 		// Create a channel.
     // Assumption: the channel for this fd has not yet existed
 		virtual SpChannel* create_channel(int fd, ChannelRW rw, void*) = 0;
@@ -156,7 +153,6 @@ namespace sp {
   protected:
 
     // Child process set
-    typedef std::set<pid_t> PidSet;
     PidSet child_proc_set_;
 
     // Can payload do trace?
@@ -165,12 +161,6 @@ namespace sp {
 
 	  // Initialize shared memory
     void tracing_internal(char** start_tracing);
-
-		// Is this process using this inode?
-    int pid_uses_inode(int pid, int inode);
-
-		// Get all pids that are using this fd
-    void get_pids_from_fd(int fd, PidSet& pid_set);
 
 		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);
 	};

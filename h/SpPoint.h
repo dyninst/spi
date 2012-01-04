@@ -6,6 +6,8 @@
 
 namespace sp {
 
+	class SpChannel;
+
 typedef enum {
   SP_NONE,
   SP_TRAP,        // Using trap

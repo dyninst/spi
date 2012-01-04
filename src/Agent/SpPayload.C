@@ -2,7 +2,6 @@
 #include "SpContext.h"
 #include "SpPoint.h"
 #include "SpUtils.h"
-#include "SpIPC.h"
 
 using ph::Point;
 using ph::Scope;
