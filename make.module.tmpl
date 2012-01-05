@@ -60,7 +60,7 @@ $(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.C
 	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
 $(INJECTOR): $(IJMAIN_OBJS) $(LIBINJECTOR) $(UTILS_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@ $(IJMAIN_OBJS) $(UTILS_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)
+	@$(GXX) -o $@ $(IJMAIN_OBJS) $(UTILS_OBJS) $(IJMAIN_LDFLAGS)
 
 #---------------- 
 # libijagent.so

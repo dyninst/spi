@@ -24,7 +24,6 @@ GTEST_DIR = ../gmock/gtest
 GMOCK_DIR = ../gmock
 
 # Where to find user code.
-USER_DIR = ../src
 
 # Flags passed to the preprocessor.
 CPPFLAGS += -I$(GTEST_DIR)/include -I$(GMOCK_DIR)/include
@@ -34,13 +33,6 @@ CXXFLAGS += -g -Wall -Wextra
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-RUNALL    = runall
-
-# Edit me !!!
-TESTS = gmock_test \
-        tcp_test \
-
-TESTS_OBJ = $(notdir $(TESTS:%=%.o))
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -54,12 +46,7 @@ GMOCK_HEADERS = $(GMOCK_DIR)/include/gmock/*.h \
                 $(GMOCK_DIR)/include/gmock/internal/*.h \
                 $(GTEST_HEADERS)
 
-# House-keeping build targets.
-
-all : $(TESTS) $(RUNALL) copy
-
-clean :
-	rm -f $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o *.so
+all : unit run_all copy agent aux
 
 # Builds gmock.a and gmock_main.a.  These libraries contain both
 # Google Mock and Google Test.  A test should link with either gmock.a
@@ -101,6 +88,11 @@ gmock_main.a : gmock-all.o gtest-all.o gmock_main.o
 include ../../make.config 
 include ../../make.flag.tmpl
 
+
+#==============================================================
+# Unit tests
+#==============================================================
+
 SP_FLAGS   =  $(IJ_FLAGS) \
               $(IJ_IFLAGS) \
               $(AG_FLAGS) \
@@ -113,17 +105,79 @@ SP_LDFLAGS =  -L$(SP_DIR)/$(PLATFORM) \
               -lagent \
               -linjector \
 
-%.o: $(USER_DIR)/%.C gmock_main.a
+TEST_DIR   = ../src/unit_test
+TEST_SRCS  = $(wildcard $(TEST_DIR)/*.C)
+TESTS_OBJ  = $(notdir $(TEST_SRCS:%.C=%.o))
+TESTS      = $(notdir $(TEST_SRCS:%.C=%))
+
+unit: $(TESTS)
+
+%.o: $(TEST_DIR)/%.C gmock_main.a
 	@echo "Compiling $*.o"
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(USER_DIR)/$*.C $(SP_FLAGS)
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(TEST_DIR)/$*.C $(SP_FLAGS)
 
 %: %.o gmock_main.a
 	@echo "Linking $*"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(SP_LDFLAGS)
 
+RUNALL    = runall
+run_all: $(RUNALL)
 $(RUNALL): $(TESTS_OBJ) gmock_main.a
 	@echo "Building $@"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $(TESTS_OBJ) gmock_main.a $(SP_LDFLAGS)
 
+#==============================================================
+# Agent
+#==============================================================
+AGENT_DIR             = ../src/agent
+AGENT_SRCS           += $(wildcard $(AGENT_DIR)/*.C)
+AGENT_OBJS            = $(notdir $(AGENT_SRCS:%.C=%.o))
+AGENT_SO              = $(notdir $(AGENT_SRCS:%.C=%.so))
+
+AG_FLAGS             += -g 
+AG_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
+AG_LDFLAGS           += -lagent -ldl
+
+AG_DEP  = .AG_DEPENDS
+$(shell if test -f $(AG_DEP); then true; else \
+$(CXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP);\
+fi);\
+include $(AG_DEP)
+
+agent: $(AGENT_SO)
+
+$(AGENT_OBJS): %.o : $(AGENT_SRCS)
+	@echo "Compiling $@"
+	@$(CXX) -o $@ $(AGENT_DIR)/$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
+$(AGENT_SO): %.so : $(AGENT_OBJS)
+	@echo "Linking $@"
+	@$(CXX) -o $@ $*.o $(AG_LDFLAGS)
+
+#==============================================================
+# Auxiliary stuffs, e.g., server for testing
+#==============================================================
+AUX_DIR             = ../src/aux
+AUX_SRCS           += $(wildcard $(AUX_DIR)/*.c)
+AUX_OBJS            = $(notdir $(AUX_SRCS:%.c=%.o))
+AUX_EXE             = $(notdir $(AUX_SRCS:%.c=%))
+
+AUX_FLAGS             += -g
+AUX_LDFLAGS           += -ldl
+
+aux: $(AUX_EXE)
+$(AUX_OBJS): %.o : $(AUX_SRCS)
+	@echo "Compiling $@"
+	@$(CXX) -o $@ $(AUX_DIR)/$*.c $(AUX_IFLAGS) $(AUX_FLAGS) -c
+$(AUX_EXE): % : $(AUX_OBJS)
+	@echo "Linking $@"
+	@$(CXX) -o $@ $*.o $(AUX_LDFLAGS)
+
+
+#==============================================================
+# Other stuffs
+#==============================================================
+clean :
+	rm -f $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o *.so ./Injector $(AUX_EXE)
+
 copy:
-	@cp -f $(SP_DIR)/$(PLATFORM)/*.so ./
+	@cp -f $(SP_DIR)/$(PLATFORM)/*.so $(SP_DIR)/$(PLATFORM)/Injector ./

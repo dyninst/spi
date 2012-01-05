@@ -30,6 +30,8 @@ using namespace std;
 #define PORT "3490"  // the port users will be connecting to
 #define BACKLOG 10   // how many pending connections queue will hold
 
+namespace {
+
 typedef enum {
   POS_CONNECT,
   POS_WRITE,
@@ -125,12 +127,12 @@ int tcp_server(Position pos) {
 			in_addr_t rem_ip = sp::hostname_to_ip((char*)"localhost", ip, 256);
 			uint16_t rem_port = htons(rem_sa.sin_port);
 
-			sp_print("remote ip: %d, remote port: %d @ pid = %d", rem_ip, rem_port, getpid());
+			// sp_print("remote ip: %d, remote port: %d @ pid = %d", rem_ip, rem_port, getpid());
 			PidSet pid_set;
-			sp::addr_to_pids(rem_ip, rem_port, 0, 0, pid_set);
-			sp_print("# of pids: %lu", pid_set.size());
+			sp::addr_to_pids(0, 0, rem_ip, rem_port, pid_set);
 			for (PidSet::iterator pi = pid_set.begin(); pi != pid_set.end(); pi++) {
-				sp_print("pid = %d", *pi);
+				EXPECT_EQ(*pi, getpid());
+				break;
 			}
 		}
 
@@ -165,7 +167,7 @@ int tcp_server(Position pos) {
 #define MAXDATASIZE 100 // max number of bytes we can get at once 
 
 
-string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
+TcpChannel* tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
   int sockfd, numbytes;  
   char buf[MAXDATASIZE];
   struct addrinfo hints, *servinfo, *p;
@@ -178,9 +180,10 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
 
   if ((rv = getaddrinfo(hostname, PORT, &hints, &servinfo)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    return "";
+    return NULL;
   }
 
+	TcpChannel* channel = NULL;
   // loop through all the results and connect to the first we can
   for(p = servinfo; p != NULL; p = p->ai_next) {
     if ((sockfd = socket(p->ai_family, p->ai_socktype,
@@ -192,7 +195,6 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
     int ret = -1;
     do {
 			// Testing starts
-			TcpChannel* channel = NULL;
 			if (pos == POS_CONNECT) {
 				channel = (TcpChannel*)tcp_worker->get_channel(sockfd,
                                     SP_WRITE, (void*)p->ai_addr);
@@ -202,11 +204,10 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
       ret = connect(sockfd, p->ai_addr, p->ai_addrlen);
 
 			if (pos == POS_CONNECT) {
-				EXPECT_EQ(channel->type, SP_TCP);
-
+	
 				// Verify remote ip/port
-				EXPECT_EQ(channel->remote_ip,
-                  inet_lnaof(((sockaddr_in*)p->ai_addr)->sin_addr));
+				EXPECT_EQ(channel->remote_ip.s_addr,
+                  ((sockaddr_in*)p->ai_addr)->sin_addr.s_addr);
 				EXPECT_EQ((int)channel->remote_port,
                   htons(((sockaddr_in*)p->ai_addr)->sin_port));
 
@@ -217,7 +218,7 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
 				if (getsockname(sockfd, (sockaddr*)&loc_sa, &loc_len) == -1) {
 					perror("getsockname");
 				}
-				EXPECT_EQ((in_addr_t)channel->local_ip, inet_lnaof(loc_sa.sin_addr));
+				EXPECT_EQ((in_addr_t)channel->local_ip.s_addr, loc_sa.sin_addr.s_addr);
 				EXPECT_EQ((unsigned short)channel->local_port, htons(loc_sa.sin_port));
 			}
     } while (ret == -1);
@@ -226,7 +227,7 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
 
   if (p == NULL) {
     fprintf(stderr, "client: failed to connect\n");
-    return "";
+    return NULL;
   }
 
   inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
@@ -241,11 +242,11 @@ string tcp_client(const char *hostname, SpTcpWorker* tcp_worker, Position pos) {
   }
 
   buf[numbytes] = '\0';
+	EXPECT_STREQ("Hello, world!", buf);
 
-  // printf("client: received '%s'\n",buf);
   close(sockfd);
 
-  return buf;
+  return channel;
 }
 
 // ----------------------------------------------------------------------------- 
@@ -289,14 +290,26 @@ TEST_F(TcpConnectTest, get_channel) {
   if (is_client_) {
 		const char* hostname = "localhost";
 		// const char* hostname = "wasabi";
-		string ret = tcp_client(hostname, &tcp_worker_, POS_CONNECT);
-		EXPECT_STREQ("Hello, world!", ret.c_str());
+		TcpChannel* channel = tcp_client(hostname, &tcp_worker_, POS_CONNECT);
+		EXPECT_EQ(channel->type, SP_TCP);
 	}
 }
 
 TEST_F(TcpConnectTest, inject) {
+	if (is_client_) {
+		const char* hostname = "localhost";
+		// const char* hostname = "wasabi";
+
+		// XXX: Should use a mock object here
+		TcpChannel* channel = tcp_client(hostname, &tcp_worker_, POS_CONNECT);
+		// XXX: should verify by checking the file copying and execution
+    // 1. intra-machine case
+    // 2. inter-machine case 
+		tcp_worker_.inject(channel);
+	}
 }
 
 TEST_F(TcpConnectTest, set_start_tracing) {
 }
 
+}

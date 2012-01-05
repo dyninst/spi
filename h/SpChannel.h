@@ -50,14 +50,15 @@ struct PipeChannel : public SpChannel {
 
 struct TcpChannel : public SpChannel {
   TcpChannel() :
-  SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
-  in_addr_t local_ip;
+  SpChannel(), local_port(0), remote_port(0) {}
+  in_addr local_ip;
   uint16_t local_port;
-  in_addr_t remote_ip;
-  uint16_t remote_port;
+  in_addr remote_ip;
+	uint16_t remote_port;
 };
 
 struct UdpChannel : public SpChannel {
+	/*
   UdpChannel() :
   SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
 
@@ -65,6 +66,7 @@ struct UdpChannel : public SpChannel {
   uint16_t local_port;
   in_addr_t remote_ip;
   uint16_t remote_port;
+	*/
 };
 
 }
