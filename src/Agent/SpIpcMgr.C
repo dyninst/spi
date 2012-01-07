@@ -432,7 +432,9 @@ namespace sp {
   }
 
   // Invoke SpInjector::inject directly
-  bool SpPipeWorker::inject(SpChannel* c) {
+	bool SpPipeWorker::inject(SpChannel* c, char* agent_path,
+														char* /* ignore injector for pipe */) {
+
 		// XXX: potential problem - two hosts may communicate w/ multiple channels.
     //      e.g., pipe and tcp at the same time. Should have an approach to 
     //      do bookkeeping correctly.
@@ -470,7 +472,8 @@ namespace sp {
     return 0;
   }
 
-  bool SpTcpWorker::inject(SpChannel* c) {
+	bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
+													 char* injector_path) {
 
 		// XXX: potential problem - two hosts may communicate w/ multiple channels.
     //      e.g., pipe and tcp at the same time. Should have an approach to 
@@ -491,10 +494,13 @@ namespace sp {
 		// sp_print("remote ip: %s (%d)", inet_ntoa(tcp_channel->remote_ip), tcp_channel->remote_ip.s_addr);
 		// sp_print("remote port: %d", tcp_channel->remote_port);
 
-		// const char* agent_path = g_context->parser()->get_agent_name().c_str();
 		// XXX: Should do it in a configure file
-		const char* agent_path = "./TestAgent";
-		const char* injector_path = "./Injector";
+		if (agent_path == NULL) {
+		  agent_path = (char*)g_context->parser()->get_agent_name().c_str();
+		}
+		if (injector_path == NULL) {
+			// TODO
+		}
 
     // 0. scp agent.so to /tmp/agent.so
 		string cp_cmd;
@@ -503,31 +509,42 @@ namespace sp {
 		cp_cmd = cp_cmd + agent_path + " " + injector_path;
 		if (local_machine) cp_cmd += " /tmp/";
 		else cp_cmd = cp_cmd + " " + inet_ntoa(tcp_channel->remote_ip) + ":/tmp/";
-		// system(cp_cmd.c_str());
-		sp_print("%s", cp_cmd.c_str());
+		system(cp_cmd.c_str());
+		// sp_print("%s", cp_cmd.c_str());
 
 		// 1. SSH into remote machine to run Injector
 		string exe_cmd;
-		if (local_machine) exe_cmd = "/tmp/Injector";
+		if (local_machine) {
+			exe_cmd = "/tmp/Injector ";
+		}
 		else {
 			exe_cmd = "ssh ";
 			exe_cmd += inet_ntoa(tcp_channel->remote_ip);
 			exe_cmd += " /tmp/";
 			exe_cmd += sp_filename(injector_path);
-			exe_cmd += inet_ntoa(tcp_channel->local_ip);
-			exe_cmd += " ";
-			exe_cmd += tcp_channel->local_port;
-			exe_cmd += inet_ntoa(tcp_channel->remote_ip);
-			exe_cmd += " ";
-			exe_cmd += tcp_channel->remote_port;
-      exe_cmd += "/tmp/";
-			exe_cmd += sp_filename(agent_path);
 		}
-		// system(exe_cmd);
-		sp_print("%s", exe_cmd.c_str());
+		char port_buf[255];
+		exe_cmd += inet_ntoa(tcp_channel->local_ip);
+		exe_cmd += " ";
+		sprintf(port_buf, "%d", tcp_channel->local_port);
+		exe_cmd += port_buf;
+		exe_cmd += " ";
+		exe_cmd += inet_ntoa(tcp_channel->remote_ip);
+		exe_cmd += " ";
+		sprintf(port_buf, "%d", tcp_channel->remote_port);
+		exe_cmd += port_buf;
+		exe_cmd += " /tmp/";
+		exe_cmd += sp_filename(agent_path);
 
-    c->injected = true;
-    return 0;
+		FILE* fp = popen(exe_cmd.c_str(), "r");
+		char line[1024];
+		fgets(line, 1024, fp);
+		fgets(line, 1024, fp);
+		if (strstr(line, "INJECTED") != NULL) {
+			c->injected = true;
+		}
+		pclose(fp);
+    return true;
   }
 
 
@@ -614,7 +631,8 @@ namespace sp {
     return 0;
   }
 
-  bool SpUdpWorker::inject(SpChannel*) {
+	bool SpUdpWorker::inject(SpChannel* c, char* agent_path,
+ 													 char* injector_path) {
     return 0;
   }
 

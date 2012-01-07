@@ -2,7 +2,7 @@
 
 AGENT_INIT
 void MyAgentInit() {
-	sp_print("Injection Successful");
+	sp_print("AGINJECTED\n");
 }
 
 AGENT_FINI

@@ -40,7 +40,7 @@ class InjectorTest : public testing::Test {
 		kill(pid_, SIGKILL);
 		int status;
 		wait(&status);
-		fclose(server_);
+		pclose(server_);
 	}
 };
 
@@ -63,7 +63,7 @@ TEST_F(InjectorTest, pid_inject) {
 
 	// Check "INJECTED" for the second line
 	ASSERT_TRUE(strstr(buf, "INJECTED") != NULL);
-	fclose(fp);
+	pclose(fp);
 }
 
 TEST_F(InjectorTest, network_inject) {
@@ -85,7 +85,7 @@ TEST_F(InjectorTest, network_inject) {
 
 	// Check "INJECTED" for the second line
 	ASSERT_TRUE(strstr(buf, "INJECTED") != NULL);
-	fclose(fp);
+	pclose(fp);
 }
 
 }

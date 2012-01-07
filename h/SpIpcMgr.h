@@ -118,7 +118,8 @@ namespace sp {
     virtual char start_tracing() = 0;
 
 		// Inject the agent shared library to the other end of a channel
-    virtual bool inject(SpChannel*) = 0;
+    virtual bool inject(SpChannel*, char* agent_path = NULL,
+                        char* injector_path = NULL) = 0;
 
     // Get IPC channel from a file descriptor.
     // Input Param: fd -- the file descriptor
@@ -148,7 +149,8 @@ namespace sp {
 
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
-    virtual bool inject(SpChannel*);
+    virtual bool inject(SpChannel*, char* agent_path = NULL,
+                        char* injector_path = NULL);
 
   protected:
 
@@ -174,7 +176,8 @@ namespace sp {
   public:
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
-    virtual bool inject(SpChannel*);
+    virtual bool inject(SpChannel*, char* agent_path = NULL,
+                        char* injector_path = NULL);
 
   protected:
 		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);
@@ -189,7 +192,8 @@ namespace sp {
   public:
     virtual void set_start_tracing(char yes_or_no, pid_t);
     virtual char start_tracing();
-    virtual bool inject(SpChannel*);
+    virtual bool inject(SpChannel*, char* agent_path = NULL,
+                        char* injector_path = NULL);
 
   protected:
 		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);

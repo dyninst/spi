@@ -6,7 +6,7 @@ General:
 - [ ] configure file
 
 Injector:
-- [ ] debug the networking mode
+- [X] debug the networking mode
 - [ ] avoid parsing entire dyninst stuffs
 - [ ] port to windows
 
@@ -18,6 +18,7 @@ Agent:
 - [ ] Handle function calls that cannot be parsed
 - [ ] Allow user to specify what libraries to skip parsing
 - [ ] port to windows 
+- [ ] uninstrument / unload agent.so
 
 SpServer:
 - [X] pipe
