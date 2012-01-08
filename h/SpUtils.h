@@ -45,6 +45,18 @@ namespace sp {
 
 		// Get ip from hostname
 		in_addr_t hostname_to_ip(char * hostname , char* ip, size_t ip_len);
+
+
+// ----------------------------------------------------------------------------- 
+// /proc utilities
+// -----------------------------------------------------------------------------
+		// Is current executable an illegal program?
+		// We use this, because we want to avoid instrumenting some programs, e.g.,
+		// unix utilities used in self-propelled core
+		bool is_illegal_exe(StringSet& illegal_exes);
+
+		// Get text content from a file. If file doesn't exist, return "".
+		std::string get_file_text(std::string filename);
 }
 
 #endif /* _SPUTILS_H_ */

@@ -5,6 +5,7 @@ General:
 - [ ] fix dependency problem for .h files
 - [ ] configure file
 - [ ] use hostname, instead of ip for addressing
+- [ ] add boost support to the build_spi.sh
 
 Injector:
 - [X] debug the networking mode

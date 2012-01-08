@@ -41,6 +41,9 @@
 #include "AddrLookup.h"
 #include "dyn_detail/boost/shared_ptr.hpp"
 
+/* Boost headers */
+// TODO: use boost
+
 /* Print facility */
 #define sp_perror(...) do {\
 		char* nodir = basename((char*)__FILE__);							\
@@ -76,8 +79,9 @@ namespace Dyninst {
   }
 }
 namespace sp {
-typedef std::vector<Dyninst::PatchAPI::Point*> Points;
-typedef std::set<pid_t> PidSet;
+	typedef std::set<std::string> StringSet;
+	typedef std::vector<Dyninst::PatchAPI::Point*> Points;
+	typedef std::set<pid_t> PidSet;
 }
 
 #define DYN_CAST(type, obj) dyn_detail::boost::dynamic_pointer_cast<type>(obj)

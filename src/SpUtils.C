@@ -1,4 +1,5 @@
 #include "SpUtils.h"
+#include <fstream>
 
 namespace sp {
 
@@ -215,4 +216,42 @@ namespace sp {
 		return 0;
 	}
 
+// ----------------------------------------------------------------------------- 
+// /proc utilities
+// -----------------------------------------------------------------------------
+
+	// Is current executable an illegal program?
+	// We use this, because we want to avoid instrumenting some programs, e.g.,
+	// unix utilities used in self-propelled core
+	bool is_illegal_exe(StringSet& illegal_exes) {
+		std::string proc_path = "";
+		proc_path += "/proc/";
+		proc_path += Dyninst::itos(getpid());
+		proc_path += "/cmdline";
+
+		std::string content = get_file_text(proc_path);
+		char* exe_name = sp_filename(content.c_str());
+		sp_debug("exe: %s", exe_name);
+
+		for (StringSet::iterator si = illegal_exes.begin();
+         si != illegal_exes.end(); si++) {
+			sp_debug("comparing: %s", (*si).c_str());
+			if ((*si).compare(exe_name) == 0) return true;
+		}
+		return false;
+	}
+
+	// Get text content from a file. If file doesn't exist, return "".
+	std::string get_file_text(std::string filename) {
+		std::ifstream infile(filename.c_str()) ;
+		if ( infile ) {
+			std::string fileData((std::istreambuf_iterator<char>(infile)) ,
+														std::istreambuf_iterator<char>()) ;
+      infile.close( ) ; ;
+      return fileData;
+		}
+		else {
+      return "";
+		}
+	}
 }

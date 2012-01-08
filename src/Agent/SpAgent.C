@@ -1,4 +1,5 @@
 #include "SpAgent.h"
+#include "SpUtils.h"
 #include "SpContext.h"
 
 using sp::SpAgent;
@@ -95,6 +96,19 @@ SpAgent::go() {
 #ifndef SP_RELEASE
   sp_debug("========== Start Self-propelled instrumentation @ Process %d ==========", getpid());
 #endif
+
+	// XXX: ignore bash/lsof/Injector for now ...
+	StringSet illegal_exes;
+	illegal_exes.insert("lsof");
+	illegal_exes.insert("bash");
+	illegal_exes.insert("Injector");
+	illegal_exes.insert("sh");
+	illegal_exes.insert("cp");
+
+	if (sp::is_illegal_exe(illegal_exes)) {
+		sp_debug("ILLEGAL EXE - avoid instrumenting");
+		return;
+	}
 
   // Sanity check. If not user-provided configuration, use default ones
   if (!init_event_) {
