@@ -315,7 +315,7 @@ namespace {
     pclose(fp);
 
     char buf[1024];
-    ASSERT_TRUE(fgets(buf, 1024, server_) != NULL);
+    // ASSERT_TRUE(fgets(buf, 1024, server_) != NULL);
     ASSERT_TRUE(fgets(buf, 1024, server_) != NULL);
 
     // This string is printed by agent.so's init section

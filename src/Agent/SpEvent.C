@@ -65,7 +65,12 @@ namespace sp {
 
     // FIXME: ignore bash for now ... should fix it!
     string exe_name = g_context->parser()->exe_name();
-    if (exe_name.compare("bash") == 0) return;
+    if (
+        exe_name.compare("bash") == 0 ||
+        exe_name.compare("lsof") == 0 ||
+        exe_name.compare("cp") == 0 ||
+        exe_name.compare("Injector") == 0
+       ) return;
 
     if (!g_context->parser()->injected()) {
 #ifndef SP_RELEASE

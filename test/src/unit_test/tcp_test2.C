@@ -68,6 +68,11 @@ namespace {
 		while (fgets(buf, 1024, client_) != NULL) {
 			sp_print(buf);
 		}
+
+		while (fgets(buf, 1024, server_) != NULL) {
+			sp_print(buf);
+		}
+
 		/*
 		EXPECT_TRUE(fgets(buf, 1024, client_) != NULL);
 		EXPECT_TRUE(fgets(buf, 1024, client_) != NULL);

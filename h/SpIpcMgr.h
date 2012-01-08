@@ -112,9 +112,15 @@ namespace sp {
     // 1. tracing: user-defined logic
     // 2. propagation: propagate instrumentation
     // Here we let user determine if it is okay to trace
-    virtual void set_start_tracing(char yes_or_no, pid_t pid) = 0;
+		// This set_* function is used by the sender-end process, to determine
+    // whether or not the process who owns this worker instance can start tracing
+    virtual void set_start_tracing(char yes_or_no, SpChannel* c) = 0;
 
-		// Query if it's okay to trace
+		// This is used by the process who owns this worker instance
+    virtual void set_start_tracing(char yes_or_no) = 0;
+
+		// Query if it's okay to trace;
+    // Used by the process who owns this Worker instance.
     virtual char start_tracing() = 0;
 
 		// Inject the agent shared library to the other end of a channel
@@ -147,7 +153,9 @@ namespace sp {
     SpPipeWorker();
     ~SpPipeWorker();
 
-    virtual void set_start_tracing(char yes_or_no, pid_t);
+    virtual void set_start_tracing(char yes_or_no, SpChannel* c);
+    virtual void set_start_tracing(char yes_or_no);
+
     virtual char start_tracing();
     virtual bool inject(SpChannel*, char* agent_path = NULL,
                         char* injector_path = NULL);
@@ -174,12 +182,17 @@ namespace sp {
 
 	class SpTcpWorker : public SpIpcWorker {
   public:
-    virtual void set_start_tracing(char yes_or_no, pid_t);
+		SpTcpWorker();
+    virtual void set_start_tracing(char yes_or_no, SpChannel* c);
+    virtual void set_start_tracing(char yes_or_no);
+
     virtual char start_tracing();
     virtual bool inject(SpChannel*, char* agent_path = NULL,
                         char* injector_path = NULL);
 
   protected:
+		char start_tracing_;
+
 		virtual SpChannel* create_channel(int fd, ChannelRW rw, void* arg);
 		
 	};
@@ -190,7 +203,9 @@ namespace sp {
 
 	class SpUdpWorker : public SpIpcWorker {
   public:
-    virtual void set_start_tracing(char yes_or_no, pid_t);
+    virtual void set_start_tracing(char yes_or_no, SpChannel* c);
+    virtual void set_start_tracing(char yes_or_no);
+
     virtual char start_tracing();
     virtual bool inject(SpChannel*, char* agent_path = NULL,
                         char* injector_path = NULL);

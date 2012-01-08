@@ -4,6 +4,7 @@ General:
 - [ ] make user agent statically linked
 - [ ] fix dependency problem for .h files
 - [ ] configure file
+- [ ] use hostname, instead of ip for addressing
 
 Injector:
 - [X] debug the networking mode
@@ -22,7 +23,7 @@ Agent:
 
 SpServer:
 - [X] pipe
-- [ ] tcp
+- [X] tcp
 - [ ] udp
 - [ ] more ipc mechanisms
 - [ ] port to windows 

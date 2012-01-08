@@ -124,6 +124,7 @@ namespace sp {
     ArgumentHandle h;
     if (f->name().compare("write") == 0 ||
         f->name().compare("send") == 0) {
+
       int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
       void** buf = (void**)sp::pop_argument(pt, &h, sizeof(void*));
@@ -211,6 +212,12 @@ namespace sp {
       FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
+
+    if (f->name().compare("accept") == 0) {
+      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      if (fd_out) *fd_out = *fd;
+    }
+
   }
 
   // See if the file descriptor is for any ipc mechanism
@@ -287,14 +294,15 @@ namespace sp {
 
       SpChannel* c = worker->get_channel(fd, SP_WRITE, sa);
       if (c) {
-        worker->set_start_tracing(1, c->remote_pid);
+        worker->set_start_tracing(1, c);
         pt->set_channel(c);
 
         // Inject this agent.so to remote process
         // Luckily, the SpInjector implementation will automatically detect whether
         // the agent.so library is already injected. If so, it will not inject the
         // the library again.
-        if (c->remote_pid != -1) worker->inject(c);
+        // if (c->remote_pid != -1) worker->inject(c);
+				worker->inject(c);
       }
       return true;
     }
@@ -326,7 +334,7 @@ namespace sp {
       long pid = sp::retval(pt);
       // Receiver
       if (pid == 0) {
-        ipc_mgr->pipe_worker()->set_start_tracing(0, getpid());
+        ipc_mgr->pipe_worker()->set_start_tracing(0);
       }
     }
     // Detect popen for pipe
@@ -336,7 +344,7 @@ namespace sp {
       // XXX: magic?? This is a very artificial way to wait for fork done
       sleep(2);
       SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd, SP_WRITE);
-      ipc_mgr->pipe_worker()->set_start_tracing(0, c->remote_pid);
+      ipc_mgr->pipe_worker()->set_start_tracing(0, c);
     }
     // Detect connect for tcp
     else {
@@ -376,13 +384,13 @@ namespace sp {
       c->rw = SP_WRITE;
       channel_map_write_[fd] = c;
 #ifndef SP_RELEASE
-      sp_debug("PIPE CHANNEL - get a WRITE pipe channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
+      sp_debug("WRITE CHANNEL - get a WRITE channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
 #endif
     } else {
       c->rw = SP_READ;
       channel_map_read_[fd] = c;
 #ifndef SP_RELEASE
-      sp_debug("PIPE CHANNEL - get a READ pipe channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
+      sp_debug("READ CHANNEL - get a READ channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
 #endif
     }
     return c;
@@ -423,9 +431,13 @@ namespace sp {
     *start_tracing = shm;
   }
 
-  void  SpPipeWorker::set_start_tracing(char yes_or_no, pid_t pid) {
-    start_tracing_[pid] = yes_or_no;
+  void  SpPipeWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
+    start_tracing_[c->remote_pid] = yes_or_no;
   }
+
+  void SpPipeWorker::set_start_tracing(char yes_or_no) {
+    start_tracing_[getpid()] = yes_or_no;
+	}
 
   char SpPipeWorker::start_tracing() {
     return start_tracing_[getpid()];
@@ -465,11 +477,20 @@ namespace sp {
     return c;
   }
 
-  void  SpTcpWorker::set_start_tracing(char yes_or_no, pid_t pid) {
+	SpTcpWorker::SpTcpWorker() : start_tracing_(1) {
+	}
+
+  void SpTcpWorker::set_start_tracing(char yes_or_no, SpChannel*) {
+		// TODO (wenbin): who will do this job? Injector??
+		start_tracing_ = yes_or_no;
   }
 
+  void SpTcpWorker::set_start_tracing(char yes_or_no) {
+		start_tracing_ = yes_or_no;
+	}
+
   char SpTcpWorker::start_tracing() {
-    return 0;
+    return start_tracing_;
   }
 
 	bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
@@ -482,35 +503,44 @@ namespace sp {
     sp_debug("NO INJECTED -- start injection");
 
 		TcpChannel *tcp_channel = static_cast<TcpChannel*>(c);
+		assert(tcp_channel);
 
 		// XXX: how to determine it is a local machiune?
     // 1. 127.0.0.1
     // 2. local ip == remote ip
     // ??
 		bool local_machine = false;
-		if (inet_netof(tcp_channel->remote_ip) == 127) {
+		if (inet_netof(tcp_channel->remote_ip) == 127 ||
+        inet_netof(tcp_channel->remote_ip) == 0) {
 			local_machine = true;
 		}
-		// sp_print("remote ip: %s (%d)", inet_ntoa(tcp_channel->remote_ip), tcp_channel->remote_ip.s_addr);
-		// sp_print("remote port: %d", tcp_channel->remote_port);
+		sp_debug("REMOTE IP: %s (%d)", inet_ntoa(tcp_channel->remote_ip), tcp_channel->remote_ip.s_addr);
+		sp_debug("REMOTE PORT: %d", tcp_channel->remote_port);
 
 		// XXX: Should do it in a configure file
 		if (agent_path == NULL) {
+			assert(g_context);
+			assert(g_context->parser());
+			assert(g_context->parser()->get_agent_name().size() > 0);
 		  agent_path = (char*)g_context->parser()->get_agent_name().c_str();
 		}
 		if (injector_path == NULL) {
-			// TODO
+			injector_path = (char*)"./Injector";
 		}
+		sp_debug("AGENT PATH - %s", agent_path);
+		sp_debug("INJECTOR PATH - %s", injector_path);
 
     // 0. scp agent.so to /tmp/agent.so
 		string cp_cmd;
-		if (local_machine) cp_cmd = "cp ";
-		else cp_cmd = "scp ";
+
+		if (local_machine) cp_cmd = "cp -f "; else cp_cmd = "scp ";
+
 		cp_cmd = cp_cmd + agent_path + " " + injector_path;
+
 		if (local_machine) cp_cmd += " /tmp/";
 		else cp_cmd = cp_cmd + " " + inet_ntoa(tcp_channel->remote_ip) + ":/tmp/";
+
 		system(cp_cmd.c_str());
-		// sp_print("%s", cp_cmd.c_str());
 
 		// 1. SSH into remote machine to run Injector
 		string exe_cmd;
@@ -522,6 +552,7 @@ namespace sp {
 			exe_cmd += inet_ntoa(tcp_channel->remote_ip);
 			exe_cmd += " /tmp/";
 			exe_cmd += sp_filename(injector_path);
+			exe_cmd += " ";
 		}
 		char port_buf[255];
 		exe_cmd += inet_ntoa(tcp_channel->local_ip);
@@ -536,6 +567,7 @@ namespace sp {
 		exe_cmd += " /tmp/";
 		exe_cmd += sp_filename(agent_path);
 
+		sp_debug("INJECT CMD - %s", exe_cmd.c_str());
 		FILE* fp = popen(exe_cmd.c_str(), "r");
 		char line[1024];
 		fgets(line, 1024, fp);
@@ -608,7 +640,7 @@ namespace sp {
 			if (hostname_to_ip(buf, loc_ip, 256) == 0) {
 				perror("hostname_to_ip");
 			}
-			sp_print(loc_ip);
+			// sp_print(loc_ip);
 			if (inet_aton(loc_ip, &c->local_ip) == 0) {
 				perror("inet_aton");
 			}
@@ -624,8 +656,11 @@ namespace sp {
 
 
   // UDP worker
-  void  SpUdpWorker::set_start_tracing(char yes_or_no, pid_t pid) {
+  void  SpUdpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
   }
+
+  void SpUdpWorker::set_start_tracing(char yes_or_no) {
+	}
 
   char SpUdpWorker::start_tracing() {
     return 0;
