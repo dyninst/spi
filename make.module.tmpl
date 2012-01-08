@@ -1,10 +1,9 @@
 
 INJECTOR   = Injector
 IJAGENT    = libijagent.so
-LIBINJECTOR= libinjector.so
 AGENT      = libagent.so
 
-all: $(LIBINJECTOR) $(INJECTOR) $(IJAGENT) $(AGENT)
+all: $(INJECTOR) $(IJAGENT) $(AGENT)
 
 GCC        = gcc
 GXX        = g++
@@ -25,7 +24,7 @@ $(UTILS_OBJS): %.o : $(UTILS_DIR)/%.C
 #======================================
 
 #---------------- 
-# Libinjector.so
+# injector objs
 #---------------- 
 IJ_SRCS    += $(IJ_DIR)/SpInjector.C
 IJ_OBJS    += $(notdir $(IJ_SRCS:%.C=%.o))
@@ -39,9 +38,6 @@ include $(IJ_DEP)
 $(IJ_OBJS): %.o : $(IJ_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
-$(LIBINJECTOR): $(IJ_OBJS)
-	@echo Linking $@
-	@$(GXX) -o $@ $(IJ_OBJS) $(IJ_LDFLAGS)
 
 #---------------- 
 # Injector Exe
@@ -58,9 +54,9 @@ include $(IJMAIN_DEP)
 $(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
-$(INJECTOR): $(IJMAIN_OBJS) $(LIBINJECTOR) $(UTILS_OBJS)
+$(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@ $(IJMAIN_OBJS) $(UTILS_OBJS) $(IJMAIN_LDFLAGS)
+	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)
 
 #---------------- 
 # libijagent.so
@@ -101,10 +97,35 @@ $(AG_OBJS): %.o :$(AG_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AG_DIR)/$*.C
 
-$(AGENT): $(AG_OBJS)  $(LIBINJECTOR) $(UTILS_OBJS)
-	@echo Linking $@
-	@$(GXX) -o $@  $(AG_OBJS) $(UTILS_OBJS) $(AG_LDFLAGS)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/common/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/instructionAPI/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/parseAPI/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/patchAPI/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/proccontrol/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/stackwalk/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/symtabAPI/$(PLATFORM)/*.o)
 
+$(AGENT): $(AG_OBJS)  $(IJ_OBJS) $(UTILS_OBJS)
+	@echo Linking $@
+	@$(GXX) -o $@  $(AG_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(AG_LDFLAGS) $(IJ_LDFLAGS) -shared
+#	ar rs $@  $(AG_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(AG_LDFLAGS) $(IJ_LDFLAGS)
+
+
+#=================================================
+# build dyninst
+#=================================================
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/common/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/instructionAPI/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/parseAPI/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/patchAPI/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/proccontrol/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/stackwalk/$(PLATFORM)/*.o)
+DYN_OBJS    += $(wildcard $(DYNINST_DIR)/symtabAPI/$(PLATFORM)/*.o)
+
+build_dyninst: $(DYN_OBJS)
+	ar rs dyninst.a $(DYN_OBJS)
+
+							 
 #=================================================
 # depend
 #=================================================
@@ -120,5 +141,5 @@ clean_objs:
 	$(RM) *.o
 
 clean:
-	@$(RM) -f $(INJECTOR) $(AGENT) $(IJAGENT) $(LIBINJECTOR) *.o
+	@$(RM) -f $(INJECTOR) $(AGENT) $(IJAGENT) *.o
 	@$(RM) -f $(IJ_DEP) $(AG_DEP) $(IJMAIN_DEP)

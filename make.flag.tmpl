@@ -25,7 +25,6 @@ IJ_DIR      = $(SP_DIR)/src/Injector
 IJ_FLAGS   += $(COMMON_FLAGS)
 IJ_FLAGS   += -D_GNU_SOURCE
 
-IJ_LDFLAGS += -shared
 IJ_LDFLAGS += $(COMMON_LDFLAGS)
 IJ_LDFLAGS += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
 IJ_LDFLAGS += -lpcontrol
@@ -40,7 +39,6 @@ IJA_FLAGS   += -fPIC
 IJA_LDFLAGS += -ldl -shared
 
 IJMAIN_LDFLAGS += -L$(SP_DIR)/$(PLATFORM)
-IJMAIN_LDFLAGS += -linjector
 
 #=================================================
 # For Agent
@@ -54,12 +52,11 @@ AG_FLAGS   += -fPIC -Dos_linux -O0
 
 AG_LDFLAGS += $(COMMON_LDFLAGS)
 AG_LDFLAGS += -L$(SP_DIR)/$(PLATFORM)
-AG_LDFLAGS += -linjector
 AG_LDFLAGS += -lpatchAPI
 AG_LDFLAGS += -L$(DYNINST_DIR)/patchAPI/$(PLATFORM)
 AG_LDFLAGS += -lstackwalk
 AG_LDFLAGS += -L$(DYNINST_DIR)/stackwalk/$(PLATFORM)
-AG_LDFLAGS +=  -shared
+#AG_LDFLAGS +=  -shared
 
 AG_IFLAGS  += $(COMMON_IFLAGS)
 AG_IFLAGS  += $(IJ_IFLAGS)

@@ -121,21 +121,29 @@ typedef struct {
    by IPC mechanism, where we use shared memory in current implementation.
 
    Q & A:
+
    1. Why don't we directly use do_dlopen to load user-specified shared library?
    Answer: Because do_dlopen is not a public function, which is unsafe to use.
    Often times, do_dlopen causes injectee to crash, e.g., the library is
    not found. On the other hand, dlopen is safe to use, which would not
    causes the injectee process to crash.
-   2. To follow up question 1, why don't we directly call dlopen in step 1?
+ 
+   2. To follow up question 1, since dlopen is safe to use, why don't we directly
+   call dlopen in step 1?
    Answer: We are not allowed to do so. libc.so has sanity check on calling dlopen.
    If we call dlopen using IRPC, dlopen would fail, although it won't crash
-   injectee process.
+   injectee process. In sum, the benefit of providing a level of indirection is,
+   we can use unsafe do_dlopen function to load a controlled library libijagent.so,
+   from libijagent.so, we use safe dlopen function to load uncontrolled
+   user-provided library.
+ 
    3. Why we use IPC mechanism to pass parameters to ij_agent in libijagent.so?
    Answer: ij_agent is a function that calls dlopen. After dlopen is invoked, we
    want to check whether the loading is successful. Even when dlopen fails,
    we also want to know the error message. Therefore, we need to do IPC for
    error report or checking return value. In this case, why don't we have
    an easy and uniformed way to pass argument and check return value?
+
 */
 void SpInjector::inject(const char* lib_name) {
 

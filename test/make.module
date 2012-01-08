@@ -88,7 +88,6 @@ gmock_main.a : gmock-all.o gtest-all.o gmock_main.o
 include ../../make.config 
 include ../../make.flag.tmpl
 
-
 #==============================================================
 # Unit tests
 #==============================================================
@@ -101,9 +100,9 @@ SP_FLAGS   =  $(IJ_FLAGS) \
               $(SERVER_IFLAGS) \
               -I$(SP_DIR)/h
 
-SP_LDFLAGS =  -L$(SP_DIR)/$(PLATFORM) \
-              -lagent \
-              -linjector \
+SP_LDFLAGS =  $(IJ_LDFLAGS) \
+              -L$(SP_DIR)/$(PLATFORM) \
+              -lagent
 
 TEST_DIR   = ../src/unit_test
 TEST_SRCS  = $(wildcard $(TEST_DIR)/*.C)
@@ -119,6 +118,7 @@ unit: $(TESTS)
 %: %.o gmock_main.a
 	@echo "Linking $*"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(SP_LDFLAGS)
+#	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a 
 
 RUNALL    = runall
 run_all: $(RUNALL)
@@ -144,6 +144,7 @@ $(CXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AG_DEP);\
 fi);\
 include $(AG_DEP)
 
+
 agent: $(AGENT_SO)
 
 $(AGENT_OBJS): %.o : $(AGENT_SRCS)
@@ -151,7 +152,7 @@ $(AGENT_OBJS): %.o : $(AGENT_SRCS)
 	@$(CXX) -o $@ $(AGENT_DIR)/$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
 $(AGENT_SO): %.so : $(AGENT_OBJS)
 	@echo "Linking $@"
-	@$(CXX) -o $@ $*.o $(AG_LDFLAGS)
+	@$(CXX) -o $@ $*.o $(AG_LDFLAGS) -shared
 
 #==============================================================
 # Auxiliary stuffs, e.g., server for testing
