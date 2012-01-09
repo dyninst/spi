@@ -26,7 +26,7 @@ typedef enum {
 struct SpChannel {
   SpChannel() :
   type(SP_UNKNOWN), injected(false), local_pid(-1), remote_pid(-1),
-  remote_injected(false), inode(-1), rw(SP_WRITE) {}
+		remote_injected(false), inode(-1), fd(-1), rw(SP_WRITE) {}
 
   ChannelType type;      // Channel type
   bool injected;         // Already injected?

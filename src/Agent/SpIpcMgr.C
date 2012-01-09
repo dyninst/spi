@@ -242,16 +242,23 @@ namespace sp {
 
       SpChannel* c = worker->get_channel(fd, SP_WRITE, sa);
       if (c) {
-				// Enable tracing for remote process
-        worker->set_start_tracing(1, c);
-        pt->set_channel(c);
-
         // Inject this agent.so to remote process
         // Luckily, the SpInjector implementation will automatically detect whether
         // the agent.so library is already injected. If so, it will not inject the
         // the library again.
         // if (c->remote_pid != -1) worker->inject(c);
 				worker->inject(c);
+
+				// XXX: How to wait until the instrumentation is done?
+				// Possible solutions:
+				// 1. ??
+				fprintf(stderr, "Wait for pid=%d\n", getpid());
+				sleep(5);
+
+				// Enable tracing for remote process
+				if (callee(pt)->name().compare("connect") != 0)
+					worker->set_start_tracing(1, c);
+        pt->set_channel(c);
       }
       return true;
     }
@@ -437,15 +444,19 @@ namespace sp {
 	}
 
   void SpTcpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
+		sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
+		assert(c);
 		// Sanity check
 		if (c && is_tcp(c->fd)) {
 			uint8_t mark_byte = (getpid() & 0xFF) | 1;
+			sp_debug("OOB MARK - sending %x via fd=%d", mark_byte, c->fd);
 			if (send(c->fd, &mark_byte, sizeof(mark_byte), MSG_OOB) < 0) {
+				perror("send");
 				sp_perror("OUT-OF-BAND - failed to send oob byte");
 			}
-			fprintf(stderr,
-							"TcpWorker remote [fd=%d] - start tracing %d, sending mark %x\n",
-							c->fd, start_tracing_, mark_byte);
+			// fprintf(stderr,
+			//				"TcpWorker remote [fd=%d] - start tracing %d, sending mark %x\n",
+			//				c->fd, start_tracing_, mark_byte);
 		}
   }
 
@@ -472,14 +483,9 @@ namespace sp {
 	// If tcpworker has more than one read-channel, and it is not allowed to
   // start tracing, then we need to wait for OOB msg
   char SpTcpWorker::start_tracing(int fd) {
-		fprintf(stderr, "TcpWorker query local [pid=%d] - start tracing %d\n", getpid(), start_tracing_);
-		/*
-		if (channel_map_write_.size() == 0 &&
-        channel_map_read_.size() > 0 &&
-				is_tcp(fd) &&
-        !start_tracing_) {
-*/
+
 		if (is_tcp(fd) && !start_tracing_) {
+			fprintf(stderr, "TcpWorker query local [pid=%d, fd=%d] - start tracing %d\n", getpid(), fd, start_tracing_);
 			g_oob_fd = fd;
 			signal(SIGURG, oob_handler);
 			fcntl(fd, F_SETOWN, getpid());
@@ -487,8 +493,8 @@ namespace sp {
 
 			sp_debug("WAIT FOR OOB - more than 1 channel, "
 							 "and not allowed to trace for pid=%d", getpid());
-			fprintf(stderr, "WAIT FOR OOB - more than 1 channel, "
-							"and not allowed to trace for pid=%d\n", getpid());
+			// fprintf(stderr, "WAIT FOR OOB - more than 1 channel, "
+			//				"and not allowed to trace for pid=%d\n", getpid());
 		}
     return start_tracing_;
   }

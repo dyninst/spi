@@ -147,10 +147,10 @@ include $(AG_DEP)
 
 agent: $(AGENT_SO)
 
-$(AGENT_OBJS): %.o : $(AGENT_SRCS)
+$(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C
 	@echo "Compiling $@"
 	@$(CXX) -o $@ $(AGENT_DIR)/$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
-$(AGENT_SO): %.so : $(AGENT_OBJS)
+$(AGENT_SO): %.so : %.o
 	@echo "Linking $@"
 	@$(CXX) -o $@ $*.o $(AG_LDFLAGS) -shared
 
@@ -166,10 +166,10 @@ AUX_FLAGS             += -g
 AUX_LDFLAGS           += -ldl
 
 aux: $(AUX_EXE)
-$(AUX_OBJS): %.o : $(AUX_SRCS)
+$(AUX_OBJS): %.o : $(AUX_DIR)/%.c
 	@echo "Compiling $@"
 	@$(CXX) -o $@ $(AUX_DIR)/$*.c $(AUX_IFLAGS) $(AUX_FLAGS) -c
-$(AUX_EXE): % : $(AUX_OBJS)
+$(AUX_EXE): % : %.o
 	@echo "Linking $@"
 	@$(CXX) -o $@ $*.o $(AUX_LDFLAGS)
 

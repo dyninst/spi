@@ -108,7 +108,9 @@ namespace sp {
 		// This is used by the process who owns this worker instance
     virtual void set_start_tracing(char yes_or_no) = 0;
 
-		// Query if it's okay to trace;
+		// Query if it's okay to trace on local end of the channel:
+    // 1. For Write-channel, it always return 1 (true)
+    // 2. For Read-channel, it should be synchronized by remote process
     // Used by the process who owns this Worker instance.
     virtual char start_tracing(int fd) = 0;
 

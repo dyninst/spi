@@ -116,6 +116,7 @@ int main(void)
 
     if (!fork()) { // this is the child process
       close(sockfd); // child doesn't need the listener
+
       if (send(new_fd, "Hello", 5, 0) == -1)
 				perror("send");
       if (send(new_fd, ", ", 2, 0) == -1)
@@ -124,6 +125,34 @@ int main(void)
 				perror("send");
       if (send(new_fd, "!", 1, 0) == -1)
 				perror("send");
+
+			/*      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+      if (send(new_fd, "!", 1, 0) == -1)
+				perror("send");
+*/
       close(new_fd);
       exit(0);
     }
