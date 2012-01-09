@@ -57,6 +57,23 @@ namespace sp {
 
 		// Get text content from a file. If file doesn't exist, return "".
 		std::string get_file_text(std::string filename);
+
+// ----------------------------------------------------------------------------- 
+// IPC stuffs
+// -----------------------------------------------------------------------------
+
+		// See if the file descriptor is for pipe
+    bool is_pipe(int fd);
+
+		// See if the file descriptor is for tcp
+    bool is_tcp(int fd);
+
+		// See if the file descriptor is for udp
+    bool is_udp(int fd);
+
+		// See if the file descriptor is for any ipc mechanism
+    bool is_ipc(int fd);
+
 }
 
 #endif /* _SPUTILS_H_ */

@@ -50,17 +50,6 @@ namespace sp {
     void get_read_param(SpPoint* pt, int* fd_out, void** buf_out,
                         size_t* size_out);
 
-		// See if the file descriptor is for pipe
-    bool is_pipe(int fd);
-
-		// See if the file descriptor is for tcp
-    bool is_tcp(int fd);
-
-		// See if the file descriptor is for udp
-    bool is_udp(int fd);
-
-		// See if the file descriptor is for any ipc mechanism
-    bool is_ipc(int fd);
 
 		// See if the function is a fork
     bool is_fork(const char* f);
@@ -72,7 +61,7 @@ namespace sp {
 		// This is used in the user-defined payload function.
 		// Return 1 if it is allowed to execute payload code (for tracing); otherwise,
 		// 0 is returned.
-    char start_tracing();
+    char start_tracing(int fd);
 
 		// Payload functions wrappers, which will be called before user-specified
 		// entry-payload function.
@@ -121,7 +110,7 @@ namespace sp {
 
 		// Query if it's okay to trace;
     // Used by the process who owns this Worker instance.
-    virtual char start_tracing() = 0;
+    virtual char start_tracing(int fd) = 0;
 
 		// Inject the agent shared library to the other end of a channel
     virtual bool inject(SpChannel*, char* agent_path = NULL,
@@ -156,7 +145,7 @@ namespace sp {
     virtual void set_start_tracing(char yes_or_no, SpChannel* c);
     virtual void set_start_tracing(char yes_or_no);
 
-    virtual char start_tracing();
+    virtual char start_tracing(int fd);
     virtual bool inject(SpChannel*, char* agent_path = NULL,
                         char* injector_path = NULL);
 
@@ -186,7 +175,7 @@ namespace sp {
     virtual void set_start_tracing(char yes_or_no, SpChannel* c);
     virtual void set_start_tracing(char yes_or_no);
 
-    virtual char start_tracing();
+    virtual char start_tracing(int fd);
     virtual bool inject(SpChannel*, char* agent_path = NULL,
                         char* injector_path = NULL);
 
@@ -206,7 +195,7 @@ namespace sp {
     virtual void set_start_tracing(char yes_or_no, SpChannel* c);
     virtual void set_start_tracing(char yes_or_no);
 
-    virtual char start_tracing();
+    virtual char start_tracing(int fd);
     virtual bool inject(SpChannel*, char* agent_path = NULL,
                         char* injector_path = NULL);
 

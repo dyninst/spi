@@ -253,4 +253,82 @@ namespace sp {
       return "";
 		}
 	}
+
+// ----------------------------------------------------------------------------- 
+// IPC stuffs
+// -----------------------------------------------------------------------------	
+
+  // See if this file descriptor is for pipe.
+  bool
+  is_pipe(int fd) {
+    struct stat s;
+    if (fstat(fd, &s) == -1) return false;
+    if (S_ISFIFO(s.st_mode)) {
+      return true;
+    }
+    return false;
+  }
+
+  // See if this file descriptor is for tcp.
+  bool
+  is_tcp(int fd) {
+    struct stat st;
+    int opt;
+    socklen_t opt_len = sizeof(opt);
+
+    if (fstat(fd, &st) < 0) {
+      return false;
+    }
+
+    if (!S_ISSOCK(st.st_mode)) {
+      return false;
+    }
+
+    // Here we try to probe if the socket is of the TCP kind. Couldn't
+    // find the specific mechanism for that, so we'll simply ask for a
+    // TCP-specific option.
+    if (getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, &opt_len) < 0) {
+      return false; // Error is ok -- not a TCP socket
+    }
+
+    // Doublecheck that this is a stream socket.
+    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &opt, &opt_len) < 0) {
+      return false;
+    }
+    assert(opt == SOCK_STREAM);
+    return true;
+  }
+
+  // See if this file descriptor is for udp
+  bool
+  is_udp(int fd) {
+    struct stat st;
+    int opt;
+    socklen_t opt_len = sizeof(opt);
+
+    if (fstat(fd, &st) < 0) {
+      return false;
+    }
+    if (!S_ISSOCK(st.st_mode)) {
+      return false;
+    }
+
+    if (getsockopt(fd, IPPROTO_UDP, UDP_CORK, &opt, &opt_len) < 0) {
+      return false; // Error is ok -- not a UDP socket
+    }
+
+    // Doublecheck that this is a datagram socket.
+    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &opt, &opt_len) < 0) {
+      return false;
+    }
+    assert(opt == SOCK_DGRAM);
+    return true;
+  }
+
+  // See if the file descriptor is for any ipc mechanism
+  bool
+  is_ipc(int fd) {
+    return (is_pipe(fd) || is_tcp(fd) || is_udp(fd));
+  }
+
 }

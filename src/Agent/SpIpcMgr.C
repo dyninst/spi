@@ -41,73 +41,6 @@ namespace sp {
   }
 
 
-  // See if this file descriptor is for pipe.
-  bool
-  SpIpcMgr::is_pipe(int fd) {
-    struct stat s;
-    if (fstat(fd, &s) == -1) return false;
-    if (S_ISFIFO(s.st_mode)) {
-      return true;
-    }
-    return false;
-  }
-
-  // See if this file descriptor is for tcp.
-  bool
-  SpIpcMgr::is_tcp(int fd) {
-    struct stat st;
-    int opt;
-    socklen_t opt_len = sizeof(opt);
-
-    if (fstat(fd, &st) < 0) {
-      return false;
-    }
-
-    if (!S_ISSOCK(st.st_mode)) {
-      return false;
-    }
-
-    // Here we try to probe if the socket is of the TCP kind. Couldn't
-    // find the specific mechanism for that, so we'll simply ask for a
-    // TCP-specific option.
-    if (getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, &opt_len) < 0) {
-      return false; // Error is ok -- not a TCP socket
-    }
-
-    // Doublecheck that this is a stream socket.
-    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &opt, &opt_len) < 0) {
-      return false;
-    }
-    assert(opt == SOCK_STREAM);
-    return true;
-  }
-
-  // See if this file descriptor is for udp
-  bool
-  SpIpcMgr::is_udp(int fd) {
-    struct stat st;
-    int opt;
-    socklen_t opt_len = sizeof(opt);
-
-    if (fstat(fd, &st) < 0) {
-      return false;
-    }
-    if (!S_ISSOCK(st.st_mode)) {
-      return false;
-    }
-
-    if (getsockopt(fd, IPPROTO_UDP, UDP_CORK, &opt, &opt_len) < 0) {
-      return false; // Error is ok -- not a UDP socket
-    }
-
-    // Doublecheck that this is a datagram socket.
-    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &opt, &opt_len) < 0) {
-      return false;
-    }
-    assert(opt == SOCK_DGRAM);
-    return true;
-  }
-
   // Get parameters from "write" functions.
   // Input Param : pt -- the call point from which we get the function
   // Output Param: fd_out -- file descriptor, if it is NULL, then skip it
@@ -236,11 +169,6 @@ namespace sp {
 
   }
 
-  // See if the file descriptor is for any ipc mechanism
-  bool
-  SpIpcMgr::is_ipc(int fd) {
-    return (is_pipe(fd) || is_tcp(fd) || is_udp(fd));
-  }
 
   // See if the function is a fork
   bool
@@ -260,10 +188,12 @@ namespace sp {
   // This is used in the user-defined payload function.
   // Return 1 if it is allowed to execute payload code (for tracing); otherwise,
   // 0 is returned.
-  char SpIpcMgr::start_tracing() {
+  char SpIpcMgr::start_tracing(int fd) {
     for (WorkerSet::iterator wi = worker_set_.begin();
          wi != worker_set_.end(); wi++) {
-      if ((*wi)->start_tracing()) return 1;
+			// sp_debug("START TRACING - %d for pid=%d", (*wi)->start_tracing(), getpid());
+			// fprintf(stderr, "START TRACING - %d for pid=%d\n", (*wi)->start_tracing(), getpid());
+      if ((*wi)->start_tracing(fd)) return 1;
     }
     return 0;
   }
@@ -307,9 +237,12 @@ namespace sp {
     if (fd != -1) {
       SpIpcWorker* worker = ipc_mgr->get_worker(fd);
       if (!worker) return false;
+			// Enable tracing for current process
+			worker->set_start_tracing(1);
 
       SpChannel* c = worker->get_channel(fd, SP_WRITE, sa);
       if (c) {
+				// Enable tracing for remote process
         worker->set_start_tracing(1, c);
         pt->set_channel(c);
 
@@ -394,6 +327,7 @@ namespace sp {
 
     // Construct one channel.
     SpChannel* c = create_channel(fd, rw, arg);
+		assert(c);
 
     // Update cache.
     if (rw == SP_WRITE) {
@@ -409,6 +343,7 @@ namespace sp {
       sp_debug("READ CHANNEL @ pid = %d - get a READ channel with inode %ld for fd %d", getpid(), get_inode_from_fd(fd), fd);
 #endif
     }
+		c->fd = fd;
     return c;
   }
 
@@ -416,8 +351,9 @@ namespace sp {
   // PIPE worker
   // Constructor
   SpPipeWorker::SpPipeWorker() {
+		// sp_debug("PIPE WORKER - created for pid=%d", getpid());
     tracing_internal(&start_tracing_);
-    start_tracing_[getpid()] = 1;
+    start_tracing_[getpid()] = 0;
   }
 
   // Destructor
@@ -449,13 +385,16 @@ namespace sp {
 
   void  SpPipeWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
     start_tracing_[c->remote_pid] = yes_or_no;
+		// fprintf(stderr, "PipeWorker remote [pid=%d] -start tracing %d\n", c->remote_pid, yes_or_no);
   }
 
   void SpPipeWorker::set_start_tracing(char yes_or_no) {
     start_tracing_[getpid()] = yes_or_no;
+		// fprintf(stderr, "PipeWorker local [pid=%d] -start tracing %d\n", getpid(), yes_or_no);
 	}
 
-  char SpPipeWorker::start_tracing() {
+  char SpPipeWorker::start_tracing(int fd) {
+		// fprintf(stderr, "PipeWorker query local [pid=%d] -start tracing %d\n", getpid(), start_tracing_[getpid()]);
     return start_tracing_[getpid()];
   }
 
@@ -493,19 +432,64 @@ namespace sp {
     return c;
   }
 
-	SpTcpWorker::SpTcpWorker() : start_tracing_(1) {
+	SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
+		// sp_debug("TCP WORKER - created for pid=%d", getpid());
 	}
 
-  void SpTcpWorker::set_start_tracing(char yes_or_no, SpChannel*) {
-		// TODO (wenbin): who will do this job? Injector??
-		start_tracing_ = yes_or_no;
+  void SpTcpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
+		// Sanity check
+		if (c && is_tcp(c->fd)) {
+			uint8_t mark_byte = (getpid() & 0xFF) | 1;
+			if (send(c->fd, &mark_byte, sizeof(mark_byte), MSG_OOB) < 0) {
+				sp_perror("OUT-OF-BAND - failed to send oob byte");
+			}
+			fprintf(stderr,
+							"TcpWorker remote [fd=%d] - start tracing %d, sending mark %x\n",
+							c->fd, start_tracing_, mark_byte);
+		}
   }
 
   void SpTcpWorker::set_start_tracing(char yes_or_no) {
 		start_tracing_ = yes_or_no;
+		// fprintf(stderr, "TcpWorker local [pid=%d] - start tracing %d\n", getpid(), start_tracing_);
 	}
 
-  char SpTcpWorker::start_tracing() {
+	// Out-of-band (OOB) handler
+  int g_oob_fd = -1;
+	char* g_start_tracing = NULL;
+	void oob_handler(int sig) {
+		uint8_t mark;
+		if (sockatmark(g_oob_fd)) {
+			if (recv(g_oob_fd, &mark, sizeof(mark), MSG_OOB) < 0 || mark == 0) {
+				perror("recv");
+				sp_perror("failed to recv MSG_OOB\n");
+			}
+			if (g_start_tracing) *g_start_tracing = 1;
+			fprintf(stderr, "got mark=%x\n", mark);
+		}
+	}
+
+	// If tcpworker has more than one read-channel, and it is not allowed to
+  // start tracing, then we need to wait for OOB msg
+  char SpTcpWorker::start_tracing(int fd) {
+		fprintf(stderr, "TcpWorker query local [pid=%d] - start tracing %d\n", getpid(), start_tracing_);
+		/*
+		if (channel_map_write_.size() == 0 &&
+        channel_map_read_.size() > 0 &&
+				is_tcp(fd) &&
+        !start_tracing_) {
+*/
+		if (is_tcp(fd) && !start_tracing_) {
+			g_oob_fd = fd;
+			signal(SIGURG, oob_handler);
+			fcntl(fd, F_SETOWN, getpid());
+			g_start_tracing = &start_tracing_;
+
+			sp_debug("WAIT FOR OOB - more than 1 channel, "
+							 "and not allowed to trace for pid=%d", getpid());
+			fprintf(stderr, "WAIT FOR OOB - more than 1 channel, "
+							"and not allowed to trace for pid=%d\n", getpid());
+		}
     return start_tracing_;
   }
 
@@ -680,7 +664,7 @@ namespace sp {
   void SpUdpWorker::set_start_tracing(char yes_or_no) {
 	}
 
-  char SpUdpWorker::start_tracing() {
+  char SpUdpWorker::start_tracing(int fd) {
     return 0;
   }
 

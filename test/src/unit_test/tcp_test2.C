@@ -37,6 +37,8 @@ namespace {
       if (server_ == NULL) {
         sp_perror("Failed to start tcp_server");
       }
+			sleep(3);
+
       PidSet server_pid_set;
       get_pids_from_fd(fileno(server_), server_pid_set);
       ASSERT_TRUE(server_pid_set.size() > 0);
@@ -48,24 +50,67 @@ namespace {
       int status;
       wait(&status);
       pclose(server_);
-			pclose(client_);
     }
+
+		void run_client() {
+			// Client
+			client_ = popen("LD_PRELOAD=./ipc_test_agent.so ./tcp_client localhost", "r");
+			setbuf(client_, NULL);
+			if (client_ == NULL) {
+				sp_perror("Failed to start tcp_client");
+			}
+
+
+			// Two possibilities:
+			// 1. Client finishes too soon, before we get pid
+      //    -- need to test pid_set.size() > 0
+			// 2. Client hasn't started to connect
+      //    -- need to wait()
+			PidSet client_pid_set;
+			get_pids_from_fd(fileno(client_), client_pid_set);
+			if (client_pid_set.size() > 0) {
+				client_pid_ = *(client_pid_set.begin());
+				int status;
+				wait(&status);
+			}
+			pclose(client_);
+		}
+
+		void run_client_no_inst() {
+			// Client
+			client_ = popen("./tcp_client localhost", "r");
+			setbuf(client_, NULL);
+			if (client_ == NULL) {
+				sp_perror("Failed to start tcp_client");
+			}
+
+			// Two possibilities:
+			// 1. Client finishes too soon, before we get pid
+      //    -- need to test pid_set.size() > 0
+			// 2. Client hasn't started to connect
+      //    -- need to wait()
+			PidSet client_pid_set;
+			get_pids_from_fd(fileno(client_), client_pid_set);
+			if (client_pid_set.size() > 0) {
+				client_pid_ = *(client_pid_set.begin());
+				int status;
+				wait(&status);
+			}
+			pclose(client_);
+		}
+
   };
 
   TEST_F(TcpConnectTest2, set_start_tracing) {
-		// Client
-		client_ = popen("LD_PRELOAD=./ipc_test_agent.so ./tcp_client localhost", "r");
-		setbuf(client_, NULL);
-		if (client_ == NULL) {
-			sp_perror("Failed to start tcp_client");
+		run_client();
+		sp_print("-- instrumented client done --");
+		// run_client();
+		// sp_print("-- instrumented client done --");
+		for (int i = 0; i < 3; i++) {
+			run_client_no_inst();
+			sp_print("-- uninstrumented client %d done --", i);
 		}
-		PidSet client_pid_set;
-		get_pids_from_fd(fileno(client_), client_pid_set);
-		ASSERT_TRUE(client_pid_set.size() > 0);
-		client_pid_ = *(client_pid_set.begin());
-		int status;
-		wait(&status);
-		
+		// run_client();
 		// char buf[1024];
 		/*
 		while (fgets(buf, 1024, client_) != NULL) {

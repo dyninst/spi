@@ -34,6 +34,7 @@ struct SpChannel {
   pid_t remote_pid;      // Receiver's pid
   bool remote_injected;  // Agent is already injected to receiver?
   ino_t inode;           // System-wide inode number
+  int fd;                // local fd that represents this channel
   ChannelRW rw;          // Read or Write?
 };
 

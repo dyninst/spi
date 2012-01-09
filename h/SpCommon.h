@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <dlfcn.h>
 #include <netdb.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -17,6 +18,7 @@
 #include <sys/time.h>
 #include <ucontext.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <linux/udp.h>
 #include <sys/types.h>

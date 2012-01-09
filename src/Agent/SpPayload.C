@@ -107,22 +107,26 @@ namespace sp {
     return pt->snip()->get_ret_val();
   }
 
+	// Implicitly call start_tracing()
   bool
   is_ipc_write(SpPoint* pt) {
     SpChannel* c = pt->channel();
-    return (c && c->rw == SP_WRITE);
+		// fprintf(stderr, "is_ipc_write - start_tracing: %d", start_tracing(c->fd));
+    return (c && c->rw == SP_WRITE && start_tracing(c->fd));
   }
 
+	// Implicitly call start_tracing()
   bool
   is_ipc_read(SpPoint* pt) {
     SpChannel* c = pt->channel();
-    return (c && c->rw == SP_READ);
+		// fprintf(stderr, "is_ipc_read - start_tracing: %d", start_tracing(c->fd));
+    return (c && c->rw == SP_READ && start_tracing(c->fd));
   }
 
   char
-  start_tracing() {
+  start_tracing(int fd) {
     sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
-    return ipc_mgr->start_tracing();
+    return ipc_mgr->start_tracing(fd);
   }
 
 }

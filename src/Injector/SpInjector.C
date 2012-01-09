@@ -152,6 +152,11 @@ void SpInjector::inject(const char* lib_name) {
   if (!abs_lib_name)
     sp_perror("Injector [pid = %5d] - cannot locate library %s.", getpid(), lib_name);
 
+  if (is_lib_loaded(sp_filename(abs_lib_name))) {
+    sp_print("Injector [pid = %5d]: Library %s is already loaded...", getpid(), sp_filename(lib_name));
+		return;
+	}
+
   /* Step 1. Load libijagent.so */
   if (!is_lib_loaded(IJAGENT)) {
     // Verify the existence of libijagent.so

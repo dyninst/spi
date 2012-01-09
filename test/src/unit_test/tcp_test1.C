@@ -37,7 +37,8 @@ namespace {
   typedef enum {
     POS_CONNECT,
     POS_WRITE,
-    POS_ADDR2PID
+    POS_ADDR2PID,
+		POS_OOB
   } Position;
 
   void sigchld_handler(int) {
@@ -120,25 +121,6 @@ namespace {
     // printf("server: waiting for connections...\n");
 
     while(1) {  // main accept() loop
-      if (pos == POS_ADDR2PID) {
-        sockaddr_in rem_sa;
-        socklen_t rem_len = sizeof(sockaddr_in);
-        if (getsockname(sockfd, (sockaddr*)&rem_sa, &rem_len) == -1) {
-          perror("getsockname");
-        }
-        char ip[256];
-        in_addr_t rem_ip = sp::hostname_to_ip((char*)"localhost", ip, 256);
-        uint16_t rem_port = htons(rem_sa.sin_port);
-
-        // sp_print("remote ip: %d, remote port: %d @ pid = %d", rem_ip, rem_port, getpid());
-        PidSet pid_set;
-        sp::addr_to_pids(0, 0, rem_ip, rem_port, pid_set);
-        for (PidSet::iterator pi = pid_set.begin(); pi != pid_set.end(); pi++) {
-          EXPECT_EQ(*pi, getpid());
-          break;
-        }
-      }
-
       sin_size = sizeof their_addr;
       new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
 
@@ -154,8 +136,18 @@ namespace {
 
       if (!fork()) { // this is the child process
         close(sockfd); // child doesn't need the listener
-        if (send(new_fd, send_string, 13, 0) == -1)
-          perror("send");
+        if (send(new_fd, "Hello", 5, 0) == -1) perror("send");
+        if (send(new_fd, ", ", 2, 0) == -1) perror("send");
+				if (pos == POS_OOB) {
+					// set out of band
+					TcpChannel channel;
+					channel.fd = new_fd;
+					SpTcpWorker worker;
+					worker.set_start_tracing(1, &channel);
+				}
+        if (send(new_fd, "world", 5, 0) == -1) perror("send");
+        if (send(new_fd, "!", 1, 0) == -1) perror("send");
+
         close(new_fd);
         exit(0);
       }
@@ -199,10 +191,10 @@ namespace {
       int ret = -1;
       do {
         // Testing starts
-        if (pos == POS_CONNECT) {
+        if (pos == POS_CONNECT || pos == POS_OOB) {
           channel = (TcpChannel*)tcp_worker->get_channel(sockfd,
                                                          SP_WRITE, (void*)p->ai_addr);
-          EXPECT_NE((unsigned long)channel, (unsigned long)NULL);
+          EXPECT_TRUE(channel != NULL);
         }
 
         ret = connect(sockfd, p->ai_addr, p->ai_addrlen);
@@ -242,13 +234,36 @@ namespace {
 
     freeaddrinfo(servinfo); // all done with this structure
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-      perror("recv");
-      exit(1);
+    if ((numbytes = recv(sockfd, buf, 5, 0)) != 0 && numbytes != -1) {
+			buf[5] = '\0';
+			EXPECT_STREQ("Hello", buf);
     }
 
-    buf[numbytes] = '\0';
-    EXPECT_STREQ("Hello, world!", buf);
+
+    if ((numbytes = recv(sockfd, buf, 2, 0)) != 0 && numbytes != -1) {
+			buf[2] = '\0';
+			EXPECT_STREQ(", ", buf);
+    }
+
+		if (pos == POS_OOB) {
+			char yes_or_no = tcp_worker->start_tracing(sockfd);
+			EXPECT_EQ(yes_or_no, 0);
+		}
+
+    if ((numbytes = recv(sockfd, buf, 5, 0)) != 0 && numbytes != -1) {
+			buf[5] = '\0';
+			EXPECT_STREQ("world", buf);
+    }
+
+    if ((numbytes = recv(sockfd, buf, 1, 0)) != 0 && numbytes != -1) {
+			buf[1] = '\0';
+			EXPECT_STREQ("!", buf);
+    }
+
+		if (pos == POS_OOB) {
+			char yes_or_no = tcp_worker->start_tracing(sockfd);
+			EXPECT_EQ(yes_or_no, 1);
+		}
 
     close(sockfd);
 
@@ -292,7 +307,7 @@ namespace {
       kill(pid_, SIGKILL);
       int status;
       wait(&status);
-      pclose(server_);
+      if (server_) pclose(server_);
     }
   };
 
@@ -321,7 +336,28 @@ namespace {
     // This string is printed by agent.so's init section
     EXPECT_STREQ(buf, "AGINJECTED\n");
   }
-#if 0
 
-#endif
+	// Out-of-band mechanism
+  TEST_F(TcpConnectTest1, oob) {
+		// Use our own server routine
+		kill(pid_, SIGKILL);
+		int status;
+		wait(&status);
+		pclose(server_);
+		server_ = NULL;
+
+		pid_ = fork();
+		if (pid_ == 0) {
+			tcp_server(POS_OOB);
+		} // Child as server
+
+		else if (pid_ > 0) {
+			const char* hostname = "localhost";
+			// const char* hostname = "wasabi";
+			TcpChannel* channel = tcp_client(hostname, &tcp_worker_, POS_OOB);
+			ASSERT_TRUE(channel);
+			EXPECT_EQ(channel->type, SP_TCP);
+		} // Parent as client
+  }
+
 }
