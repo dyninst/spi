@@ -13,10 +13,10 @@ void test_before(SpPoint* pt) {
 
   if (start_tracing()) {
     if (is_ipc_write(pt)) {
-      sp_print("Write: %s @ pid=%d w/ addr %lx", f->name().c_str(), getpid(), f->addr());
+      fprintf(stderr, "Write: %s @ pid=%d w/ addr %lx\n", f->name().c_str(), getpid(), f->addr());
     }
     else if (is_ipc_read(pt)) {
-      sp_print("Read: %s @ pid=%d w/ addr %lx", f->name().c_str(), getpid(), f->addr());
+      fprintf(stderr, "Read: %s @ pid=%d w/ addr %lx\n", f->name().c_str(), getpid(), f->addr());
     }
   }
   sp::propel(pt);
@@ -30,11 +30,11 @@ void test_after(SpPoint* pt) {
   if (start_tracing()) {
     if (is_ipc_write(pt)) {
       long size = sp::retval(pt);
-      sp_print("Write size: %lu", size);
+      fprintf(stderr, "Write size: %lu @ pid=%d\n", size, getpid());
     }
     else if (is_ipc_read(pt)) {
       long size = sp::retval(pt);
-      sp_print("Read size: %lu", size);
+      fprintf(stderr, "Read size: %lu @ pid=%d\n", size, getpid());
     }
   }
 }

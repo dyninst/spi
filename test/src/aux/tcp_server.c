@@ -100,8 +100,8 @@ int main(void)
 
   // printf("server: waiting for connections...\n");
 
-  // while(1) {  // main accept() loop
-	do {
+  while(1) {  // main accept() loop
+	//do {
     sin_size = sizeof their_addr;
     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
     if (new_fd == -1) {
@@ -122,8 +122,9 @@ int main(void)
       exit(0);
     }
     close(new_fd);  // parent doesn't need this
-	} while (0);
-  //}
+		//	} while (0);
+		printf("server done\n");
+	}
 
   return 0;
 }

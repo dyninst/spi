@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
 		PidSet pid_set;
 		sp::addr_to_pids(loc_ip, loc_port, rem_ip, rem_port, pid_set);
 		if (pid_set.size() < 1) {
+			system("netstat -ntp > /tmp/abcde");
 			sp_perror("Cannot find any process listening to port %d", rem_port);
 		}
 

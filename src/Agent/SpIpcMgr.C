@@ -131,12 +131,28 @@ namespace sp {
       if (buf_out) *buf_out = *buf;
       size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
       if (size_out) *size_out = *size;
+
+			/*
+			if (sa_out && is_tcp(*fd)) {
+				sp_debug("GET REM_SA - for fd %d at a %s ()", *fd, f->name().c_str());
+				sockaddr_in rem_sa;
+    		memset(&rem_sa, 0, sizeof(sockaddr_in));
+				socklen_t rem_len = sizeof(sockaddr_in);
+				if (getpeername(*fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
+					perror("getsockname");
+				}
+				sp_debug("REMOTE IP - %s", inet_ntoa(rem_sa.sin_addr));
+				sp_debug("REMOTE PORT - %d", htons(rem_sa.sin_port));
+			}
+			*/
     }
 
     if (f->name().compare("connect") == 0) {
       int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
       sockaddr** sa = (sockaddr**)sp::pop_argument(pt, &h, sizeof(sockaddr*));
+			// sockaddr* sa_tmp = (sockaddr*)malloc(sizeof(sockaddr));
+			// memcpy(sa_tmp, *sa, sizeof(sockaddr));
       if (sa_out) *sa_out = *sa;
     }
 
@@ -384,13 +400,13 @@ namespace sp {
       c->rw = SP_WRITE;
       channel_map_write_[fd] = c;
 #ifndef SP_RELEASE
-      sp_debug("WRITE CHANNEL - get a WRITE channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
+      sp_debug("WRITE CHANNEL @ pid = %d - get a WRITE channel with inode %ld for fd %d", getpid(), get_inode_from_fd(fd), fd);
 #endif
     } else {
       c->rw = SP_READ;
       channel_map_read_[fd] = c;
 #ifndef SP_RELEASE
-      sp_debug("READ CHANNEL - get a READ channel with inode %ld for fd %d", get_inode_from_fd(fd), fd);
+      sp_debug("READ CHANNEL @ pid = %d - get a READ channel with inode %ld for fd %d", getpid(), get_inode_from_fd(fd), fd);
 #endif
     }
     return c;
@@ -540,6 +556,8 @@ namespace sp {
 		if (local_machine) cp_cmd += " /tmp/";
 		else cp_cmd = cp_cmd + " " + inet_ntoa(tcp_channel->remote_ip) + ":/tmp/";
 
+		// XXX: what if copy fails?
+		cp_cmd += " >& /dev/null";
 		system(cp_cmd.c_str());
 
 		// 1. SSH into remote machine to run Injector
@@ -607,11 +625,11 @@ namespace sp {
 			}
     } // Connect
 
-    else {
+    else if (rw == SP_WRITE) {
 			memset(&rem_sa, 0, sizeof(sockaddr_in));
 			socklen_t rem_len = sizeof(sockaddr_in);
-			if (getsockname(fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
-				perror("getsockname");
+			if (getpeername(fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
+				sp_perror("getpeername @ pid = %d", getpid());
 			}
 			c->remote_ip = rem_sa.sin_addr;
 			c->remote_port = htons(rem_sa.sin_port);
@@ -622,7 +640,7 @@ namespace sp {
 		memset(&loc_sa, 0, sizeof(sockaddr_in));
 		socklen_t loc_len = sizeof(sockaddr_in);
 		if (getsockname(fd, (sockaddr*)&loc_sa, &loc_len) == -1) {
-			perror("getsockname");
+			sp_perror("getsockname @ pid = %d", getpid());
 		}
 		c->local_port = htons(loc_sa.sin_port);
 

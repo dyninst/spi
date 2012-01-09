@@ -28,3 +28,10 @@ SpServer:
 - [ ] udp
 - [ ] more ipc mechanisms
 - [ ] port to windows 
+
+
+Things to be in a configural file:
+- exes to bypass instrumentation
+- libraries to bypass parsing
+- functions to bypass instrumentation, as primitive
+- Injector's location

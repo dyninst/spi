@@ -63,20 +63,22 @@ namespace {
 		get_pids_from_fd(fileno(client_), client_pid_set);
 		ASSERT_TRUE(client_pid_set.size() > 0);
 		client_pid_ = *(client_pid_set.begin());
-
-		char buf[1024];
+		int status;
+		wait(&status);
+		
+		// char buf[1024];
+		/*
 		while (fgets(buf, 1024, client_) != NULL) {
 			sp_print(buf);
 		}
-
+		*/
+		/*
 		while (fgets(buf, 1024, server_) != NULL) {
 			sp_print(buf);
 		}
-
-		/*
-		EXPECT_TRUE(fgets(buf, 1024, client_) != NULL);
-		EXPECT_TRUE(fgets(buf, 1024, client_) != NULL);
-		EXPECT_STREQ(buf, "client: received \'Hello, world!\'\n");
 		*/
+		// EXPECT_TRUE(fgets(buf, 6, server_) != NULL);
+		// EXPECT_TRUE(fgets(buf, 1024, server_) != NULL);
+		// EXPECT_STREQ(buf, "client: received \'Hello, world!\'\n");
   }
 }

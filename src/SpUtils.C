@@ -186,11 +186,10 @@ namespace sp {
 				pch = strtok(NULL, " :()");
 			}
 			// sp_print(tokens[9]);
-			if (strcmp(tokens[9], "LISTEN") == 0) {
+			if (atoi(tokens[8]) == rem_port) {
 				pid_set.insert(atoi(tokens[1]));
 			}
 		}
-
 		pclose(fp);
 	}
 

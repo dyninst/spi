@@ -104,6 +104,7 @@ SpAgent::go() {
 	illegal_exes.insert("Injector");
 	illegal_exes.insert("sh");
 	illegal_exes.insert("cp");
+	illegal_exes.insert("netstat");
 
 	if (sp::is_illegal_exe(illegal_exes)) {
 		sp_debug("ILLEGAL EXE - avoid instrumenting");
