@@ -8,12 +8,12 @@
 int main(void) {
   int  cntr;
   FILE *pipe_fp;
-  char *strings[MAXSTRS] = { "echo", "bravo", "alpha",
+  const char *strings[MAXSTRS] = { "echo", "bravo", "alpha",
 			     "charlie", "delta"};
 
   char name[255];
   // sort, cat, od, wc, cksum, tee
-  char* prog = "cat";
+  const char* prog = "cat";
   sprintf(name, "/scratch/wenbin/binaries/bin/bin/%s", prog);
   /* Create one way pipe line with call to popen() */
   if (( pipe_fp = popen(name, "w")) == NULL)

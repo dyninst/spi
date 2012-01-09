@@ -10,7 +10,7 @@
 #define MAX_LINE 80
 
 int main(int argc, char** argv) {
-  char* line = "hello, world!";
+  const char* line = "hello, world!";
   FILE* fp = fopen("/tmp/myFIFO", "w");
   fwrite(line, strlen(line)+1, 1, fp);
   //fprintf(stderr, "pid: %d, fd: %d", getpid(), fileno(fp));

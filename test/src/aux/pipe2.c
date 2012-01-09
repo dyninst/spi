@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     close(pfd[0]);          /* Close unused read end */
 
     /* Manually load the agent for testing */
-    void* h = dlopen("./TestAgent.so", RTLD_NOW|RTLD_GLOBAL);
+    void* h = dlopen("./ipc_test_agent.so", RTLD_NOW|RTLD_GLOBAL);
     if (!h) {
       fprintf(stderr, "%s\n", dlerror());
       exit(1);

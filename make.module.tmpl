@@ -54,6 +54,7 @@ include $(IJMAIN_DEP)
 $(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
+
 $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)

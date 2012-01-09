@@ -9,18 +9,18 @@
 int main(void) {
   int  cntr;
   FILE *pipe_fp;
-  char *strings[MAXSTRS] = { "echo", "bravo", "alpha",
+  const char *strings[MAXSTRS] = { "echo", "bravo", "alpha",
 			     "charlie", "delta"};
 
   /* Create one way pipe line with call to popen() */
-  if (( pipe_fp = popen("/scratch/wenbin/binaries/bin/bin/sort", "w")) == NULL)
+  if (( pipe_fp = popen("/scratch/wenbin/binaries/bin/bin/cat", "w")) == NULL)
     {
       perror("popen");
       exit(1);
     }
 
     /* Manually load the agent for testing */
-    void* h = dlopen("./TestAgent.so", RTLD_NOW|RTLD_GLOBAL);
+    void* h = dlopen("./ipc_test_agent.so", RTLD_NOW|RTLD_GLOBAL);
     if (!h) {
       fprintf(stderr, "%s\n", dlerror());
       exit(1);
