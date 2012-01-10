@@ -1,0 +1,109 @@
+# 
+# Common makefile template for the dyninstAPI library.  This file is not
+# intended to be a useful Makefile in isolation; instead, it should be
+# included from within an architecture-specific Makefile.
+#
+# $Id: make.module.tmpl,v 1.4 2008/09/15 17:38:17 jaw Exp $
+#
+
+SUITE_NAME	= Dyninst
+RELEASE_MAJOR	= 7
+RELEASE_MINOR = 0
+#BUILD_MARK should be (re-)defined in core/make.config.local rather than here!
+
+
+ifndef TARGET
+ifdef STATIC_COMPS
+STATIC_LIBRARY = true
+TARGET = libparseAPI.a
+MYFLAGS += -fPIC
+else
+TARGET = libparseAPI.so
+MYFLAGS += -fPIC
+endif
+endif
+
+CFLAGS		     += $(USEFULWARNINGS) -I$(TO_CORE)/../include $(MYFLAGS)
+CXXFLAGS	     += $(USEFULWARNINGS) -I$(TO_CORE)/../include
+
+LDFLAGS += -L../../common/$(PLATFORM) -L../../symtabAPI/$(PLATFORM) -lcommon -lsymtabAPI
+
+LDFLAGS     += $(LIBDIR)
+ifndef USES_NATIVE_CC
+LD		= $(GXX)
+LDFLAGS		+= -shared $(G_PTHREAD_LD)
+CFLAGS		+= -fPIC
+CXXFLAGS	+= -fPIC $(G_PTHREAD)
+else
+ifeq (solaris,$(findstring solaris,$(PLATFORM)))
+LDFLAGS		+= -G
+endif #sparc
+endif #USES_NATIVE
+
+ifneq ($(findstring cap_instruction_api,$(CAP_DEF)),)
+    LDFLAGS += -L../../instructionAPI/$(PLATFORM) -linstructionAPI
+endif
+
+TO_INC   = ../h
+
+PUBLIC_H = \
+    CFGFactory.h\
+    CFGModifier.h \
+    CFG.h\
+    CodeObject.h\
+    CodeSource.h\
+    InstructionAdapter.h\
+    InstructionSource.h\
+    ParseCallback.h\
+    ParseContainers.h
+
+SRCS +=	../src/ParserDetails.C \
+        ../src/Parser.C \
+        ../src/CFGFactory.C \
+        ../src/Function.C \
+        ../src/Block.C \
+		../src/CodeObject.C \
+		../src/debug_parse.C \
+        ../src/SymtabCodeSource.C \
+        ../src/ParseData.C\
+        ../src/InstructionAdapter.C\
+        ../src/Parser-speculative.C\
+        ../src/ParseCallback.C \
+        ../src/IA_x86Details.C \
+        ../src/IA_powerDetails.C \
+        ../src/IA_platformDetailsFactory.C \
+        ../src/CFGModifier.C
+        
+ifneq ($(findstring cap_instruction_api,$(CAP_DEF)),)
+SRCS +=	../../dataflowAPI/src/Absloc.C \
+     	../../dataflowAPI/src/AbslocInterface.C \
+	../../dataflowAPI/src/convertOpcodes.C \
+	../../dataflowAPI/src/debug_dataflow.C \
+	../../dataflowAPI/src/ExpressionConversionVisitor.C \
+	../../dataflowAPI/src/RoseImpl.C \
+	../../dataflowAPI/src/RoseInsnFactory.C \
+	../../dataflowAPI/src/slicing.C \
+	../../dataflowAPI/src/stackanalysis.C \
+	../../dataflowAPI/src/SymbolicExpansion.C \
+	../../dataflowAPI/src/SymEval.C \
+	../../dataflowAPI/src/SymEvalPolicy.C \
+	../../dataflowAPI/src/templates.C \
+	../../dataflowAPI/src/Visitors.C \
+	../src/StackTamperVisitor.C
+
+VPATH += ../../dataflowAPI/src
+VPATH += ../../dataflowAPI/h
+
+PUBLIC_H += Absloc.h \
+	 AbslocInterface.h \
+	 slicing.h \
+	 SymEval.h \
+	 stackanalysis.h
+endif
+
+IFLAGS       += -I../$(PLATFORM) -I../src -I../../dataflowAPI/src -I../../dataflowAPI/h -I../h -I../../dynutil/h -I../../symtabAPI/h -I../../common/h -I../../instructionAPI/h
+
+
+# All that, and we finally get a target...
+all: $(TARGET) $(EXTRA_LIBS)
+

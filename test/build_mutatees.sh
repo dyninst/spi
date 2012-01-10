@@ -9,20 +9,18 @@ echo $MUTATEE_DIR
 cd ../src
 mkdir -p mutatee
 cd mutatee
-
-#--------------------------------------------
-# autoconf
-#--------------------------------------------
-if [ ! -d autoconf ]; then
-		git clone --depth=1 git://git.sv.gnu.org/autoconf.git
-fi
-
+pwd
 
 #--------------------------------------------
 # coreutils
 #--------------------------------------------
 
-# Checkout
-if [ ! -d coreutils ]; then
-		git clone git://git.sv.gnu.org/coreutils
+COREUTILS=coreutils-8.1
+if [ ! -d $COREUTILS ]; then
+  wget http://ftp.gnu.org/gnu/coreutils/$COREUTILS.tar.gz
+  tar -xf $COREUTILS.tar.gz
 fi
+
+cd $COREUTILS
+./configure --prefix=$MUTATEE_DIR
+make install -j 2
