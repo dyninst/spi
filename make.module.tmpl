@@ -1,9 +1,9 @@
 
 INJECTOR   = Injector
 IJAGENT    = libijagent.so
-AGENT      = libagent.so
+AGENT      = libagent.a
 
-all: $(INJECTOR) $(IJAGENT) $(AGENT)
+all: injector agent
 
 GCC        = gcc
 GXX        = g++
@@ -22,6 +22,8 @@ $(UTILS_OBJS): %.o : $(UTILS_DIR)/%.C
 #======================================
 # Injector
 #======================================
+
+injector: $(INJECTOR) $(IJAGENT)
 
 #---------------- 
 # injector objs
@@ -57,7 +59,7 @@ $(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.C
 
 $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(IJMAIN_LDFLAGS) $(IJ_LDFLAGS)
+	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(IJ_AR) $(IJ_LDFLAGS)
 
 #---------------- 
 # libijagent.so
@@ -94,22 +96,16 @@ $(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AG_SRCS) > $(AG_DEP);\
 fi);\
 include $(AG_DEP)
 
+agent: $(AGENT)
+
 $(AG_OBJS): %.o :$(AG_DIR)/%.C
 	@echo Compiling $*.o
 	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AG_DIR)/$*.C
 
-DYN_OBJS    += $(wildcard $(DYNINST_DIR)/common/$(PLATFORM)/*.o)
-DYN_OBJS    += $(wildcard $(DYNINST_DIR)/instructionAPI/$(PLATFORM)/*.o)
-DYN_OBJS    += $(wildcard $(DYNINST_DIR)/parseAPI/$(PLATFORM)/*.o)
-DYN_OBJS    += $(wildcard $(DYNINST_DIR)/patchAPI/$(PLATFORM)/*.o)
-DYN_OBJS    += $(wildcard $(DYNINST_DIR)/proccontrol/$(PLATFORM)/*.o)
-DYN_OBJS    += $(wildcard $(DYNINST_DIR)/stackwalk/$(PLATFORM)/*.o)
-DYN_OBJS    += $(wildcard $(DYNINST_DIR)/symtabAPI/$(PLATFORM)/*.o)
-
 $(AGENT): $(AG_OBJS)  $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@  $(AG_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(AG_LDFLAGS) $(IJ_LDFLAGS) -shared
-#	ar rs $@  $(AG_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(AG_LDFLAGS) $(IJ_LDFLAGS)
+#	@$(GXX) -o $@  $(AG_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(AG_LDFLAGS) $(IJ_LDFLAGS) -shared
+	@ar rs $@  $(AG_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 
 
 #=================================================

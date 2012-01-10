@@ -67,6 +67,28 @@ TEST_F(InjectorTest, pid_inject) {
 	pclose(fp);
 }
 
+TEST_F(InjectorTest, pid_complex_agent_inject) {
+	char pid_str[255];
+	sprintf(pid_str, "%d", pid_);
+
+	string cmd = "";
+	cmd += "./Injector ";
+	cmd += pid_str;
+	cmd += " ./comp_test_agent.so";
+
+	// Execute the injector
+	FILE* fp = popen(cmd.c_str(), "r");
+	char buf[1024];
+
+  // Skip the first line
+	ASSERT_TRUE(fgets(buf, 1024, fp) != NULL);
+	ASSERT_TRUE(fgets(buf, 1024, fp) != NULL);  
+
+	// Check "INJECTED" for the second line
+	ASSERT_TRUE(strstr(buf, "INJECTED") != NULL);
+	pclose(fp);
+}
+
 TEST_F(InjectorTest, network_inject) {
 	string cmd = "";
 	cmd += "./Injector ";

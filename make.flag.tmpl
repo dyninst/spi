@@ -13,6 +13,13 @@ COMMON_IFLAGS    += -I$(DYNINST_DIR)/common/h
 COMMON_IFLAGS    += -I$(DYNINST_DIR)/dynutil/h
 COMMON_IFLAGS    += -I$(DYNINST_DIR)/symtabAPI/h
 
+COMMON_AR         = $(DYNINST_DIR)/proccontrol/$(PLATFORM)/libpcontrol.a \
+                    $(DYNINST_DIR)/symtabAPI/$(PLATFORM)/libsymtabAPI.a \
+                    $(DYNINST_DIR)/common/$(PLATFORM)/libcommon.a \
+                    $(LIBXML) \
+                    $(LIBDWARF) \
+                    $(LIBELF)
+
 COMMON_LDFLAGS   += -lpthread
 UTILS_DIR         = $(SP_DIR)/src
 
@@ -25,20 +32,16 @@ IJ_DIR      = $(SP_DIR)/src/Injector
 IJ_FLAGS   += $(COMMON_FLAGS)
 IJ_FLAGS   += -D_GNU_SOURCE
 
-IJ_LDFLAGS += $(COMMON_LDFLAGS)
-IJ_LDFLAGS += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
-IJ_LDFLAGS += -lpcontrol
-IJ_LDFLAGS += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
-IJ_LDFLAGS += -lsymtabAPI
+IJ_LDFLAGS  = $(COMMON_LDFLAGS)
 
 IJ_IFLAGS  += $(COMMON_IFLAGS)
 IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/h
 IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/src
 
+IJ_AR       = $(COMMON_AR)
+
 IJA_FLAGS   += -fPIC
 IJA_LDFLAGS += -ldl -shared
-
-IJMAIN_LDFLAGS += -L$(SP_DIR)/$(PLATFORM)
 
 #=================================================
 # For Agent
@@ -50,13 +53,7 @@ VPATH      += $(AG_DIR)
 AG_FLAGS   += $(COMMON_FLAGS)
 AG_FLAGS   += -fPIC -Dos_linux -O0
 
-AG_LDFLAGS += $(COMMON_LDFLAGS)
-AG_LDFLAGS += -L$(SP_DIR)/$(PLATFORM)
-AG_LDFLAGS += -lpatchAPI
-AG_LDFLAGS += -L$(DYNINST_DIR)/patchAPI/$(PLATFORM)
-AG_LDFLAGS += -lstackwalk
-AG_LDFLAGS += -L$(DYNINST_DIR)/stackwalk/$(PLATFORM)
-#AG_LDFLAGS +=  -shared
+AG_LDFLAGS  = $(COMMON_LDFLAGS)
 
 AG_IFLAGS  += $(COMMON_IFLAGS)
 AG_IFLAGS  += $(IJ_IFLAGS)
@@ -65,21 +62,8 @@ AG_IFLAGS  += -I$(DYNINST_DIR)/parseAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/instructionAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/stackwalk/h
 
-#=================================================
-# For SpServer
-#=================================================
-
-SERVER_DIR      = $(SP_DIR)/src/SpServer
-
-SERVER_FLAGS   += $(COMMON_FLAGS)
-SERVER_FLAGS   += -D_GNU_SOURCE
-
-SERVER_LDFLAGS += $(COMMON_LDFLAGS)
-SERVER_LDFLAGS += -lpcontrol
-SERVER_LDFLAGS += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
-SERVER_LDFLAGS += -lsymtabAPI
-SERVER_LDFLAGS += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
-
-SERVER_IFLAGS  += $(COMMON_IFLAGS)
-SERVER_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/h
-SERVER_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/src
+AG_AR       = $(DYNINST_DIR)/patchAPI/$(PLATFORM)/libpatchAPI.a \
+              $(DYNINST_DIR)/parseAPI/$(PLATFORM)/libparseAPI.a \
+              $(DYNINST_DIR)/instructionAPI/$(PLATFORM)/libinstructionAPI.a \
+              $(DYNINST_DIR)/stackwalk/$(PLATFORM)/libstackwalk.a \
+              $(COMMON_AR) \
