@@ -112,15 +112,19 @@ namespace sp {
   is_ipc_write(SpPoint* pt) {
     SpChannel* c = pt->channel();
 		// fprintf(stderr, "is_ipc_write - start_tracing: %d", start_tracing(c->fd));
-    return (c && c->rw == SP_WRITE && start_tracing(c->fd));
+		// return (c && c->rw == SP_WRITE && start_tracing(c->fd));
+    return (c && c->rw == SP_WRITE);
   }
 
 	// Implicitly call start_tracing()
   bool
   is_ipc_read(SpPoint* pt) {
     SpChannel* c = pt->channel();
-		// fprintf(stderr, "is_ipc_read - start_tracing: %d", start_tracing(c->fd));
-    return (c && c->rw == SP_READ && start_tracing(c->fd));
+
+    if (callee(pt)->name().compare("accept") != 0)
+			return (c && c->rw == SP_READ && start_tracing(c->fd));
+
+		return (c && c->rw == SP_READ);
   }
 
   char

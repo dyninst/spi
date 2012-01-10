@@ -104,16 +104,14 @@ namespace {
   TEST_F(TcpConnectTest2, set_start_tracing) {
 		run_client();
 		sp_print("-- instrumented client done --");
-		run_client_no_inst();
 
+		//run_client_no_inst();
 		// run_client();
 		// sp_print("-- instrumented client done --");
-		/*
 		for (int i = 0; i < 3; i++) {
 			run_client_no_inst();
 			sp_print("-- uninstrumented client %d done --", i);
 		}
-		*/
 		// run_client();
 		/*
 	 char buf[1024];

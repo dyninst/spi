@@ -7,6 +7,7 @@
 #include "int_process.h"
 #include "Event.h"
 #include "SpCommon.h"
+#include "SpUtils.h"
 
 using sp::SpInjector;
 using Dyninst::ProcControlAPI::Process;
@@ -87,6 +88,20 @@ bool SpInjector::is_lib_loaded(const char* libname) {
   char* name_only = sp_filename(libname);
   sp_debug("CHECKING - checking whether %s is loaded ...",
            name_only);
+
+	std::string proc_maps = "";
+	proc_maps += "/proc/";
+	proc_maps += Dyninst::itos(pid_);
+	proc_maps += "/maps";
+	std::string content = sp::get_file_text(proc_maps);
+	// fprintf(stderr, "%s", content.c_str());
+	if (content.find(name_only) != std::string::npos) {
+		sp_debug("LOADED - %s is already loaded", name_only);
+		return true;
+	}
+  sp_debug("NO LOADED - %s is not yet loaded", name_only);
+	return false;
+
   LibraryPool& libs = proc_->libraries();
   LibraryPool::iterator li = libs.begin();
   for (li = libs.begin(); li != libs.end(); li++) {

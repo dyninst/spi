@@ -249,12 +249,6 @@ namespace sp {
         // if (c->remote_pid != -1) worker->inject(c);
 				worker->inject(c);
 
-				// XXX: How to wait until the instrumentation is done?
-				// Possible solutions:
-				// 1. ??
-				fprintf(stderr, "Wait for pid=%d\n", getpid());
-				sleep(5);
-
 				// Enable tracing for remote process
 				if (callee(pt)->name().compare("connect") != 0)
 					worker->set_start_tracing(1, c);
@@ -465,6 +459,7 @@ namespace sp {
 		// fprintf(stderr, "TcpWorker local [pid=%d] - start tracing %d\n", getpid(), start_tracing_);
 	}
 
+	/*
 	// Out-of-band (OOB) handler
   int g_oob_fd = -1;
 	char* g_start_tracing = NULL;
@@ -476,16 +471,17 @@ namespace sp {
 				sp_perror("failed to recv MSG_OOB\n");
 			}
 			if (g_start_tracing) *g_start_tracing = 1;
-			fprintf(stderr, "got mark=%x\n", mark);
+			// fprintf(stderr, "got mark=%x\n", mark);
 		}
 	}
+	*/
 
 	// If tcpworker has more than one read-channel, and it is not allowed to
   // start tracing, then we need to wait for OOB msg
   char SpTcpWorker::start_tracing(int fd) {
 
 		if (is_tcp(fd) && !start_tracing_) {
-			fprintf(stderr, "TcpWorker query local [pid=%d, fd=%d] - start tracing %d\n", getpid(), fd, start_tracing_);
+			/*
 			g_oob_fd = fd;
 			signal(SIGURG, oob_handler);
 			fcntl(fd, F_SETOWN, getpid());
@@ -493,6 +489,25 @@ namespace sp {
 
 			sp_debug("WAIT FOR OOB - more than 1 channel, "
 							 "and not allowed to trace for pid=%d", getpid());
+			oob_handler(0);
+			*/
+			fd_set rset, xset;
+			FD_ZERO(&rset);
+			FD_ZERO(&xset);
+			for (; ;) {
+				FD_SET(fd, &rset);
+				FD_SET(fd, &xset);
+				select(fd+1, &rset, NULL, &xset, NULL);
+				if (FD_ISSET(fd, &xset)) {
+					uint8_t mark = 0;
+					recv(fd, &mark, sizeof(mark), MSG_OOB);
+					if (mark != 0) start_tracing_ = 1;
+					fprintf(stderr,
+									"TcpWorker query local [pid=%d, fd=%d] - start tracing %d w/ mark=%x\n",
+                  getpid(), fd, start_tracing_, mark);
+					break;
+				}
+			}
 			// fprintf(stderr, "WAIT FOR OOB - more than 1 channel, "
 			//				"and not allowed to trace for pid=%d\n", getpid());
 		}
