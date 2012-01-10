@@ -1,13 +1,10 @@
 GXX        = g++
 RM         = rm -f
 
-all: CPLIBAGENT $(AGENT_NAME)
+all: $(AGENT_NAME)
 
 AGENT_DIR      = ../
 AGENT_OBJS    += $(notdir $(AGENT_SRCS:%.C=%.o))
-
-AG_LDFLAGS    += -L$(SP_DIR)/$(PLATFORM)
-AG_LDFLAGS    += -lagent
 
 AGENT_DEP  = .AGENT_DEPENDS
 $(shell if test -f $(AGENT_DEP); then true; else \
@@ -15,17 +12,14 @@ $(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_SRCS) > $(AGENT_DEP);\
 fi);\
 include $(AGENT_DEP)
 
-$(AGENT_OBJS): %.o : $(AGENT_SRCS)
+$(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C
 	@echo Compiling $*.C
-	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_DIR)/$*.C
+	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AGENT_DIR)/$*.C 
 
 $(AGENT_NAME): $(AGENT_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@  $(AGENT_OBJS) $(AG_LDFLAGS)
+	@$(GXX) -o $@  $(AGENT_OBJS) $(SP_DIR)/$(PLATFORM)/libagent.a  $(AG_AR) -shared
 
-CPLIBAGENT:
-	@echo "Copying spi libraries ..."
-	@cp -f $(SP_DIR)/$(PLATFORM)/libagent.so $(SP_DIR)/$(PLATFORM)/libinjector.so ./
 #==============================================
 # clean up
 #==============================================
