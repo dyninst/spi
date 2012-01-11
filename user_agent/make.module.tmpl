@@ -18,7 +18,7 @@ $(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C
 
 $(AGENT_NAME): $(AGENT_OBJS)
 	@echo Linking $@
-	@$(GXX) -o $@  $(AGENT_OBJS) $(SP_DIR)/$(PLATFORM)/libagent.a  $(AG_AR) -shared
+	@$(GXX) -o $@  $(AGENT_OBJS) $(SP_DIR)/$(PLATFORM)/libagent.a  $(AG_LDFLAGS) -shared
 
 #==============================================
 # clean up

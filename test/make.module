@@ -96,13 +96,9 @@ SP_FLAGS   =  $(IJ_FLAGS) \
               $(IJ_IFLAGS) \
               $(AG_FLAGS) \
               $(AG_IFLAGS) \
-              $(SERVER_FLAGS) \
-              $(SERVER_IFLAGS) \
               -I$(SP_DIR)/h
 
-SP_LDFLAGS =  $(IJ_LDFLAGS) \
-              -L$(SP_DIR)/$(PLATFORM) \
-              -lagent
+SP_LDFLAGS =  $(AG_LDFLAGS)
 
 TEST_DIR   = ../src/unit_test
 TEST_SRCS  = $(wildcard $(TEST_DIR)/*.C)
@@ -117,8 +113,8 @@ unit: $(TESTS)
 
 %: %.o gmock_main.a
 	@echo "Linking $*"
-#	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(SP_LDFLAGS)
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(AG_AR) $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_AR)
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(SP_LDFLAGS) $(SP_DIR)/$(PLATFORM)/libagent.a
+#	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(AG_AR) $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_AR)
 
 
 RUNALL    = runall
@@ -136,8 +132,6 @@ AGENT_OBJS            = $(notdir $(AGENT_SRCS:%.C=%.o))
 AGENT_SO              = $(notdir $(AGENT_SRCS:%.C=%.so))
 
 AG_FLAGS             += -g 
-#AG_LDFLAGS           += -L$(SP_DIR)/$(PLATFORM)
-#AG_LDFLAGS           += -lagent -ldl
 AG_LDFLAGS           += -ldl
 
 AG_DEP  = .AG_DEPENDS
@@ -153,11 +147,10 @@ $(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C
 	@echo "Compiling $@"
 	@$(CXX) -o $@ $(AGENT_DIR)/$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
 
-#LIBELF_OBJS=$(wildcard /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dep/libelf-0.8.13/lib/*.os)
 
 $(AGENT_SO): %.so : %.o
 	@echo "Linking $@"
-	@$(CXX) -o $@ $*.o $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_AR) $(AG_LDFLAGS) -shared #$(LIBELF_OBJS)
+	@$(CXX) -o $@ $*.o $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_LDFLAGS) -shared
 
 #==============================================================
 # Auxiliary stuffs, e.g., server for testing
@@ -191,8 +184,14 @@ mutatee:
 #==============================================================
 # Other stuffs
 #==============================================================
+clean-agent :
+	rm -rf *.so
+
+clean-mutatee:
+	rm -rf mutatee
+
 clean :
-	rm -rf $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o *.so ./Injector $(AUX_EXE) mutatee
+	rm -rf $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o *.so ./Injector $(AUX_EXE)
 
 copy:
 	@cp -f $(SP_DIR)/$(PLATFORM)/*.so $(SP_DIR)/$(PLATFORM)/Injector ./

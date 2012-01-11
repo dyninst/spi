@@ -246,8 +246,7 @@ namespace {
     }
 
 		if (pos == POS_OOB) {
-			char yes_or_no = tcp_worker->start_tracing(sockfd);
-			EXPECT_EQ(yes_or_no, 0);
+			tcp_worker->start_tracing(sockfd);
 		}
 
     if ((numbytes = recv(sockfd, buf, 5, 0)) != 0 && numbytes != -1) {

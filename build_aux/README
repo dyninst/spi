@@ -1,1 +1,3 @@
 Makefiles in this folder are for building statically-linked dyninst libraries and libelf.
+
+CAUTION: this is put here, just in case we need it. By default, we still use dynamically-linked dyninst.
