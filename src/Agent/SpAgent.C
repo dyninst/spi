@@ -103,6 +103,8 @@ SpAgent::go() {
 	illegal_exes.insert("bash");
 	illegal_exes.insert("Injector");
 	illegal_exes.insert("sh");
+	illegal_exes.insert("ssh");
+	illegal_exes.insert("scp");
 	illegal_exes.insert("cp");
 	illegal_exes.insert("netstat");
 

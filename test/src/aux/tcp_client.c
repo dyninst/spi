@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   while ((numbytes = recv(sockfd, buf, 1, 0)) != 0 && numbytes != -1) {
 		printf("%c",buf[0]);
   }
-
+	// system("/usr/sbin/lsof -i TCP");
   close(sockfd);
   return 0;
 }

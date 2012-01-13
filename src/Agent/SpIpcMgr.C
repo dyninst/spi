@@ -574,8 +574,9 @@ namespace sp {
 		sp_debug("CP CMD - %s", cp_cmd.c_str());
  
 		// XXX: what if copy fails?
-		cp_cmd += " >& /dev/null";
-		system(cp_cmd.c_str());
+		// cp_cmd += " >& /dev/null";
+		FILE* fcp=popen(cp_cmd.c_str(), "r");
+		pclose(fcp);
 
 		// 1. SSH into remote machine to run Injector
 		string exe_cmd;
@@ -585,7 +586,7 @@ namespace sp {
 		else {
 			exe_cmd = "ssh ";
 			exe_cmd += inet_ntoa(tcp_channel->remote_ip);
-			exe_cmd += " cd /tmp;/tmp/";
+			exe_cmd += " \"cd /tmp && /tmp/";
 			exe_cmd += sp_filename(injector_path);
 			exe_cmd += " ";
 		}
@@ -601,11 +602,16 @@ namespace sp {
 		exe_cmd += port_buf;
 		exe_cmd += " /tmp/";
 		exe_cmd += sp_filename(agent_path);
+		if (!local_machine) exe_cmd += "\"";
 
 		sp_debug("INJECT CMD - %s", exe_cmd.c_str());
-		system(exe_cmd.c_str());
-		c->injected = true;
-		/*
+		fprintf(stderr, "INJECT CMD - %s\n", exe_cmd.c_str());
+		// system(exe_cmd.c_str());
+		// return true;
+		// system("ssh feta /sbin/ifconfig");
+		// system("ssh feta cd /tmp;/tmp/Injector 128.105.166.35 3490 128.105.167.125 56360 /tmp/ipc_test_agent.so");
+		// c->injected = true;
+
 		FILE* fp = popen(exe_cmd.c_str(), "r");
 		char line[1024];
 		fgets(line, 1024, fp);
@@ -614,7 +620,6 @@ namespace sp {
 			c->injected = true;
 		}
 		pclose(fp);
-		*/
     return true;
   }
 
@@ -697,12 +702,12 @@ namespace sp {
 				perror("inet_aton");
 			}
 		} // Inter-machine Communication
-
+		/*
 		sp_print("remote ip: %s (%d)", inet_ntoa(rem_sa.sin_addr), c->remote_ip.s_addr);
 		sp_print("remote port: %d (%X)", htons(rem_sa.sin_port), htons(rem_sa.sin_port));
 		sp_print("local ip: %s (%d)", inet_ntoa(c->local_ip), c->local_ip.s_addr);
 		sp_print("local port: %d (%X)", htons(loc_sa.sin_port), htons(loc_sa.sin_port));
-
+		*/
     return c;
   }
 

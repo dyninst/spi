@@ -174,20 +174,23 @@ namespace sp {
 										PidSet& pid_set) {
 		char cmd[1024];
 		sprintf(cmd, "/usr/sbin/lsof -i UDP:%d -i TCP:%d", rem_port, rem_port);
-		//system(cmd);
+		// system(cmd);
+
 		FILE* fp = popen(cmd, "r");
 		char line[1024];
 		fgets(line, 1024, fp); // skip the header line
+		// fprintf(stderr, "after pipe\n");
 
 		while (fgets(line, 1024, fp) != NULL) {
-			char* pch = strtok(line, " :()");
-			// fprintf(stderr, "%s", line);
+			// fprintf(stderr, "%s\n", line);
+
+			char* pch = strtok(line, " :()->");
 			std::vector<char*> tokens;
 			while (pch != NULL) {
 				tokens.push_back(pch);
-				pch = strtok(NULL, " :()");
+				pch = strtok(NULL, " :()->");
 			}
-
+			// fprintf(stderr, "%s == %d\n", tokens[8], rem_port);
 			if (atoi(tokens[8]) == rem_port) {
 				pid_set.insert(atoi(tokens[1]));
 			}
