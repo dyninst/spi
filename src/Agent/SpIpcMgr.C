@@ -401,7 +401,8 @@ namespace sp {
 
   // Invoke SpInjector::inject directly
 	bool SpPipeWorker::inject(SpChannel* c, char* agent_path,
-														char* /* ignore injector for pipe */) {
+														char* /* ignore injector for pipe */,
+														char* /* ignore ijagent for pipe */) {
 
 		// XXX: potential problem - two hosts may communicate w/ multiple channels.
     //      e.g., pipe and tcp at the same time. Should have an approach to 
@@ -514,8 +515,12 @@ namespace sp {
     return start_tracing_;
   }
 
+	// This interface is subject to change, which implies local and remote
+	// machines are binary compatible. However, it is not true. We may define a
+	// bunch of environment variables.
 	bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
-													 char* injector_path) {
+													 char* injector_path,
+													 char* ijagent_path) {
 
 		// XXX: potential problem - two hosts may communicate w/ multiple channels.
     //      e.g., pipe and tcp at the same time. Should have an approach to 
@@ -548,19 +553,26 @@ namespace sp {
 		if (injector_path == NULL) {
 			injector_path = (char*)"./Injector";
 		}
+		if (ijagent_path == NULL) {
+			ijagent_path = (char*)"./libijagent.so";
+		}
+
 		sp_debug("AGENT PATH - %s", agent_path);
 		sp_debug("INJECTOR PATH - %s", injector_path);
+		sp_debug("IJAGENT PATH - %s", ijagent_path);
 
-    // 0. scp agent.so to /tmp/agent.so
+    // 0. scp agent.so Injector libijagent.so to /tmp/
 		string cp_cmd;
 
 		if (local_machine) cp_cmd = "cp -f "; else cp_cmd = "scp ";
 
-		cp_cmd = cp_cmd + agent_path + " " + injector_path;
+		cp_cmd = cp_cmd + agent_path + " " + injector_path + " " + ijagent_path;
 
 		if (local_machine) cp_cmd += " /tmp/";
 		else cp_cmd = cp_cmd + " " + inet_ntoa(tcp_channel->remote_ip) + ":/tmp/";
 
+		sp_debug("CP CMD - %s", cp_cmd.c_str());
+ 
 		// XXX: what if copy fails?
 		cp_cmd += " >& /dev/null";
 		system(cp_cmd.c_str());
@@ -573,7 +585,7 @@ namespace sp {
 		else {
 			exe_cmd = "ssh ";
 			exe_cmd += inet_ntoa(tcp_channel->remote_ip);
-			exe_cmd += " /tmp/";
+			exe_cmd += " cd /tmp;/tmp/";
 			exe_cmd += sp_filename(injector_path);
 			exe_cmd += " ";
 		}
@@ -591,6 +603,9 @@ namespace sp {
 		exe_cmd += sp_filename(agent_path);
 
 		sp_debug("INJECT CMD - %s", exe_cmd.c_str());
+		system(exe_cmd.c_str());
+		c->injected = true;
+		/*
 		FILE* fp = popen(exe_cmd.c_str(), "r");
 		char line[1024];
 		fgets(line, 1024, fp);
@@ -599,6 +614,7 @@ namespace sp {
 			c->injected = true;
 		}
 		pclose(fp);
+		*/
     return true;
   }
 
@@ -612,8 +628,9 @@ namespace sp {
 	
 		char loc_ip[256];
 	
-    sockaddr_in rem_sa;
+    struct sockaddr_in rem_sa;
     if (arg != NULL) {
+			sp_debug("we are here!!!!!! CONNECT");
       // Get remote ip and port
       rem_sa = *(sockaddr_in*)arg;
       c->remote_ip = rem_sa.sin_addr;
@@ -631,13 +648,25 @@ namespace sp {
     } // Connect
 
     else if (rw == SP_WRITE) {
-			memset(&rem_sa, 0, sizeof(sockaddr_in));
-			socklen_t rem_len = sizeof(sockaddr_in);
-			if (getpeername(fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
+			// memset(&rem_sa, 0, sizeof(sockaddr_in));
+			socklen_t rem_len = sizeof(rem_sa);
+			if (getpeername(fd, (struct sockaddr*)&rem_sa, &rem_len) == -1) {
 				sp_perror("getpeername @ pid = %d", getpid());
 			}
-			c->remote_ip = rem_sa.sin_addr;
-			c->remote_port = htons(rem_sa.sin_port);
+			if (rem_sa.sin_family == AF_INET) {
+				c->remote_ip = rem_sa.sin_addr;
+				c->remote_port = htons(rem_sa.sin_port);
+				sp_debug("IPv4");
+			} else {
+				sockaddr_in6* rem_sa6 = (sockaddr_in6*)&rem_sa;
+				// c->remote_ip = rem_sa6->sin6_addr;
+				char ip[256];
+				inet_ntop(AF_INET6, rem_sa6, ip, sizeof(sockaddr_in6));
+				sp_print("remote ip: %s (%d)", ip, c->remote_ip.s_addr);
+				c->remote_port = htons(rem_sa6->sin6_port);
+				sp_debug("IPv6");
+			}
+			sp_debug("we are here!!!!!! SEND: %d", rem_sa.sin_addr.s_addr);
     } // Send / write
 
 		// Get local ip/port
@@ -668,12 +697,12 @@ namespace sp {
 				perror("inet_aton");
 			}
 		} // Inter-machine Communication
-		/*
+
 		sp_print("remote ip: %s (%d)", inet_ntoa(rem_sa.sin_addr), c->remote_ip.s_addr);
 		sp_print("remote port: %d (%X)", htons(rem_sa.sin_port), htons(rem_sa.sin_port));
 		sp_print("local ip: %s (%d)", inet_ntoa(c->local_ip), c->local_ip.s_addr);
 		sp_print("local port: %d (%X)", htons(loc_sa.sin_port), htons(loc_sa.sin_port));
-*/
+
     return c;
   }
 
@@ -690,7 +719,8 @@ namespace sp {
   }
 
 	bool SpUdpWorker::inject(SpChannel* c, char* agent_path,
- 													 char* injector_path) {
+ 													 char* injector_path,
+													 char* ijagent_path) {
     return 0;
   }
 

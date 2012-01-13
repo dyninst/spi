@@ -111,7 +111,7 @@ unit: $(TESTS)
 	@echo "Compiling $*.o"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(TEST_DIR)/$*.C $(SP_FLAGS)
 
-%: %.o gmock_main.a
+%: %.o gmock_main.a $(SP_DIR)/$(PLATFORM)/libagent.a
 	@echo "Linking $*"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(SP_LDFLAGS) $(SP_DIR)/$(PLATFORM)/libagent.a
 #	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(AG_AR) $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_AR)
@@ -148,7 +148,7 @@ $(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C
 	@$(CXX) -o $@ $(AGENT_DIR)/$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
 
 
-$(AGENT_SO): %.so : %.o
+$(AGENT_SO): %.so : %.o $(SP_DIR)/$(PLATFORM)/libagent.a
 	@echo "Linking $@"
 	@$(CXX) -o $@ $*.o $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_LDFLAGS) -shared
 

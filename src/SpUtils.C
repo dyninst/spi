@@ -174,23 +174,26 @@ namespace sp {
 										PidSet& pid_set) {
 		char cmd[1024];
 		sprintf(cmd, "/usr/sbin/lsof -i UDP:%d -i TCP:%d", rem_port, rem_port);
+		//system(cmd);
 		FILE* fp = popen(cmd, "r");
 		char line[1024];
 		fgets(line, 1024, fp); // skip the header line
 
 		while (fgets(line, 1024, fp) != NULL) {
 			char* pch = strtok(line, " :()");
+			// fprintf(stderr, "%s", line);
 			std::vector<char*> tokens;
 			while (pch != NULL) {
 				tokens.push_back(pch);
 				pch = strtok(NULL, " :()");
 			}
-			// sp_print(tokens[9]);
+
 			if (atoi(tokens[8]) == rem_port) {
 				pid_set.insert(atoi(tokens[1]));
 			}
 		}
 		pclose(fp);
+
 	}
 
 	in_addr_t hostname_to_ip(char * hostname , char* ip, size_t ip_len) {

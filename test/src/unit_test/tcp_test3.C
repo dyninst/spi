@@ -277,67 +277,76 @@ namespace {
   // - Server: tcp_server
   // - Client: this executable (tcp_test)
   // -----------------------------------------------------------------------------
-  class TcpConnectTest1 : public testing::Test {
+  class TcpConnectTest3 : public testing::Test {
   public:
-    TcpConnectTest1() : pid_(-1), server_(NULL) {}
+    TcpConnectTest3() {}
 
   protected:
-    pid_t pid_;
-    SpTcpWorker tcp_worker_;
-    FILE* server_;
+    pid_t server_pid_;
 
-    // Fork a server, then act as a client
+    // Start a server on remote machine, then fork a client on local machine
     virtual void SetUp() {
-
-      server_ = popen("./tcp_server", "r");
-      setbuf(server_, NULL);
-      if (server_ == NULL) {
-        sp_perror("Failed to start tcp_server");
-      }
-
-      PidSet pid_set;
-      get_pids_from_fd(fileno(server_), pid_set);
-      ASSERT_TRUE(pid_set.size() > 0);
-      pid_ = *(pid_set.begin());
+			server_pid_ = fork();
+			if (server_pid_ == 0) {
+				system("ssh wasabi sh /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/test/x86_64-unknown-linux2.4/tcp_server.sh");
+			}
     }
 
     // Kill the server
     virtual void TearDown() {
-      kill(pid_, SIGKILL);
-      int status;
-      wait(&status);
-      if (server_) pclose(server_);
+			if (server_pid_ > 0) {
+				system("ssh wasabi killall tcp_server");
+				kill(server_pid_, SIGKILL);
+			}
     }
   };
 
-  TEST_F(TcpConnectTest1, get_channel) {
+	/*
+  TEST_F(TcpConnectTest3, get_channel) {
 		const char* hostname = "localhost";
 		// const char* hostname = "wasabi";
 		TcpChannel* channel = tcp_client(hostname, &tcp_worker_, POS_CONNECT);
 		EXPECT_EQ(channel->type, SP_TCP);
   }
+*/
 
-  TEST_F(TcpConnectTest1, inject) {
-    TcpChannel c;
-    c.remote_ip.s_addr = inet_addr("127.0.0.1");
-    c.remote_port = 3490;
-    bool ret = tcp_worker_.inject(&c, (char*)"./inject_test_agent.so", (char*)"./Injector", (char*)"./libijagent.so");
-    EXPECT_TRUE(ret);
+  TEST_F(TcpConnectTest3, inst_server_not_inst_client) {
+		if (server_pid_ > 0) {
+			sleep(10);
+			// Inject to server
+			TcpChannel c;
+			c.remote_ip.s_addr = inet_addr("128.105.166.35");
+			c.remote_port = 3490;
 
-    // Trigger server to output things
-    FILE* fp = popen("./tcp_client localhost", "r");
-    pclose(fp);
+			// SpTcpWorker tcp_worker;
+			// bool ret = tcp_worker.inject(&c, (char*)"./ipc_test_agent.so", (char*)"./Injector", (char*)"./libijagent.so");
+			// EXPECT_TRUE(ret);
+			// char cmd[1024];
+			// sprintf(cmd, "./Injector %d ./ipc_test_agent.so", server_pid_);
+			// system(cmd);
 
-    char buf[1024];
-    // ASSERT_TRUE(fgets(buf, 1024, server_) != NULL);
-    ASSERT_TRUE(fgets(buf, 1024, server_) != NULL);
+			// Trigger server to output things
+      FILE* fp = popen("./tcp_client wasabi", "r");
+			char buf[1024];
+			while (fgets(buf, 1024, fp) != NULL) {
+				fprintf(stderr, "From client: %s\n", buf);
+			}
+			pclose(fp);
 
-    // This string is printed by agent.so's init section
-    EXPECT_STREQ(buf, "AGINJECTED\n");
+		}
   }
 
+	/*
+  TEST_F(TcpConnectTest3, not_inst_server_not_inst_client) {
+		if (server_pid_ > 0) {
+			sleep(2);
+			system("./tcp_client wasabi");
+		}
+  }
+*/
+	/*
 	// Out-of-band mechanism
-  TEST_F(TcpConnectTest1, oob) {
+  TEST_F(TcpConnectTest3, oob) {
 		// Use our own server routine
 		kill(pid_, SIGKILL);
 		int status;
@@ -358,5 +367,5 @@ namespace {
 			EXPECT_EQ(channel->type, SP_TCP);
 		} // Parent as client
   }
-
+*/
 }

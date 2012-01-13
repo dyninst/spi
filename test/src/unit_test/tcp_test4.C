@@ -13,12 +13,12 @@ using namespace std;
 namespace {
 
   // -----------------------------------------------------------------------------
-  // To test right before connect (localhost to localhost)
+  // To test right before connect (localhost to remote)
   //   - TcpWorker::set_start_tracing
   //
   // Setting:
-  // - Server: tcp_server
-  // - Client: this executable (tcp_test)
+  // - Server: tcp_server on localhost
+  // - Client: tcp_test on remote machine
   // -----------------------------------------------------------------------------
   class TcpConnectTest2 : public testing::Test {
   public:
@@ -31,6 +31,11 @@ namespace {
 		FILE* client_;
 
     virtual void SetUp() {
+			server_pid_ = fork();
+			if (server_pid_ == 0) {
+				system("./tcp_server");
+			}
+			/*
 			// Server
       server_ = popen("./tcp_server", "r");
       setbuf(server_, NULL);
@@ -43,16 +48,25 @@ namespace {
       get_pids_from_fd(fileno(server_), server_pid_set);
       ASSERT_TRUE(server_pid_set.size() > 0);
       server_pid_ = *(server_pid_set.begin());
+			*/
     }
 
     virtual void TearDown() {
       kill(server_pid_, SIGKILL);
       int status;
       wait(&status);
-      pclose(server_);
+      // pclose(server_);
     }
 
 		void run_client() {
+			string test_path = "/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/test/x86_64-unknown-linux2.4/";
+			string cmd = "ssh wasabi sh ";
+			cmd += test_path;
+			cmd += "tcp_client.sh";
+			sp_print("Running client from wasabi: %s", cmd.c_str());
+			system(cmd.c_str());
+
+			/*
 			// Client
 			client_ = popen("LD_PRELOAD=./ipc_test_agent.so ./tcp_client localhost", "r");
 			setbuf(client_, NULL);
@@ -74,9 +88,11 @@ namespace {
 				wait(&status);
 			}
 			pclose(client_);
+			*/
 		}
 
 		void run_client_no_inst() {
+#if 0
 			// Client
 			client_ = popen("./tcp_client localhost", "r");
 			setbuf(client_, NULL);
@@ -97,38 +113,12 @@ namespace {
 				wait(&status);
 			}
 			pclose(client_);
+#endif
 		}
 
   };
 
   TEST_F(TcpConnectTest2, set_start_tracing) {
 		run_client();
-		sp_print("-- instrumented client done --");
-
-		//run_client_no_inst();
-		run_client();
-		// sp_print("-- instrumented client done --");
-		/*
-		for (int i = 0; i < 3; i++) {
-			run_client_no_inst();
-			sp_print("-- uninstrumented client %d done --", i);
-		}
-		*/
-		// run_client();
-		/*
-	 char buf[1024];
-
-		while (fgets(buf, 1024, client_) != NULL) {
-			sp_print(buf);
-		}
-	 */
-	 /*
-		while (fgets(buf, 1024, server_) != NULL) {
-			sp_print(buf);
-		}
-*/
-		// EXPECT_TRUE(fgets(buf, 6, server_) != NULL);
-		// EXPECT_TRUE(fgets(buf, 1024, server_) != NULL);
-		// EXPECT_STREQ(buf, "client: received \'Hello, world!\'\n");
   }
 }

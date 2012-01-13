@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
 		sp_print("Injector [pid = %5d]: INJECTING - %s to pid=%d...", getpid(), lib_name, pid);
 		sp_debug("========== Injector ==========");
 		SpInjector::ptr injector = SpInjector::create(pid);
+		system("/usr/sbin/lsof -i TCP > /tmp/lsofdump");
 		injector->inject(lib_name);
 	}
 
@@ -37,9 +38,13 @@ int main(int argc, char *argv[]) {
 
 		PidSet pid_set;
 		sp::addr_to_pids(loc_ip, loc_port, rem_ip, rem_port, pid_set);
-		if (pid_set.size() < 1) {
-			system("netstat -ntp > /tmp/abcde");
-			sp_perror("Cannot find any process listening to port %d", rem_port);
+		int try_count = 5;
+		while (pid_set.size() < 1 && try_count > 0) {
+			fprintf(stderr, "Cannot find any process listening to port %d at %s, %d tries remain\n",
+							 rem_port, argv[3], try_count);
+			sp::addr_to_pids(loc_ip, loc_port, rem_ip, rem_port, pid_set);
+			sleep(1);
+			try_count --;
 		}
 
 		// Policy: We inject to every process who listens to rem_port
