@@ -51,11 +51,9 @@ struct PipeChannel : public SpChannel {
 
 struct TcpChannel : public SpChannel {
   TcpChannel() :
-  SpChannel(), local_port(0), remote_port(0) {}
-  in_addr local_ip;
-  uint16_t local_port;
-  in_addr remote_ip;
-	uint16_t remote_port;
+  SpChannel() {}
+	sockaddr_storage local;
+	sockaddr_storage remote;
 };
 
 struct UdpChannel : public SpChannel {

@@ -29,20 +29,15 @@ int main(int argc, char *argv[]) {
   else {
 		// XXX: currently, we only look at the port number
 		//      so we don't do error checking for the time being
-		in_addr_t loc_ip = inet_addr(argv[1]);
-		uint16_t loc_port = atoi(argv[2]);
-		in_addr_t rem_ip = inet_addr(argv[3]);
-		uint16_t rem_port = atoi(argv[4]);
-
 		const char* lib_name = argv[5];
 
 		PidSet pid_set;
-		sp::addr_to_pids(loc_ip, loc_port, rem_ip, rem_port, pid_set);
+		sp::addr_to_pids(argv[1], argv[2], argv[3], argv[4], pid_set);
 		int try_count = 5;
 		while (pid_set.size() < 1 && try_count > 0) {
-			fprintf(stderr, "Cannot find any process listening to port %d at %s, %d tries remain\n",
-							 rem_port, argv[3], try_count);
-			sp::addr_to_pids(loc_ip, loc_port, rem_ip, rem_port, pid_set);
+			fprintf(stderr, "Cannot find any process listening to port %s at %s, %d tries remain\n",
+							 argv[4], argv[3], try_count);
+			sp::addr_to_pids(argv[1], argv[2], argv[3], argv[4], pid_set);
 			sleep(1);
 			try_count --;
 		}
@@ -50,7 +45,7 @@ int main(int argc, char *argv[]) {
 		// Policy: We inject to every process who listens to rem_port
 		for (PidSet::iterator pi = pid_set.begin(); pi != pid_set.end(); pi++) {
 			Dyninst::PID pid = *pi;
-			sp_print("Injector [pid = %d]: INJECTING - %s to port=%d / pid=%d ...", getpid(), lib_name, rem_port, pid);
+			sp_print("Injector [pid = %d]: INJECTING - %s to port=%s / pid=%d ...", getpid(), lib_name, argv[4], pid);
 			sp_debug("========== Injector ==========");
 			SpInjector::ptr injector = SpInjector::create(pid);
 			injector->inject(lib_name);

@@ -39,8 +39,8 @@ namespace sp {
     void get_pids_from_fd(int fd, PidSet& pid_set);
 
     // Get pids that are associated with the local/remote address pair
-    void addr_to_pids(in_addr_t loc_ip, uint16_t loc_port,
-		                  in_addr_t rem_ip, uint16_t rem_port,
+    void addr_to_pids(char* loc_ip, char* loc_port,
+		                  char* rem_ip, char* rem_port,
                       PidSet& pid_set);
 
 		// Get ip from hostname
@@ -74,6 +74,13 @@ namespace sp {
 		// See if the file descriptor is for any ipc mechanism
     bool is_ipc(int fd);
 
+// ----------------------------------------------------------------------------- 
+// Socket programming things
+// -----------------------------------------------------------------------------
+	bool get_address(sockaddr_storage* sa, char* host, size_t host_len,
+									 char* service, size_t service_len);
+	bool get_local_address(int fd, sockaddr_storage* out);
+	bool get_remote_address(int fd, sockaddr_storage* out);
 }
 
 #endif /* _SPUTILS_H_ */

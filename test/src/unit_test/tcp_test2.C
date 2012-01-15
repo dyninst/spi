@@ -103,32 +103,7 @@ namespace {
 
   TEST_F(TcpConnectTest2, set_start_tracing) {
 		run_client();
-		sp_print("-- instrumented client done --");
-
 		//run_client_no_inst();
-		run_client();
-		// sp_print("-- instrumented client done --");
-		/*
-		for (int i = 0; i < 3; i++) {
-			run_client_no_inst();
-			sp_print("-- uninstrumented client %d done --", i);
-		}
-		*/
 		// run_client();
-		/*
-	 char buf[1024];
-
-		while (fgets(buf, 1024, client_) != NULL) {
-			sp_print(buf);
-		}
-	 */
-	 /*
-		while (fgets(buf, 1024, server_) != NULL) {
-			sp_print(buf);
-		}
-*/
-		// EXPECT_TRUE(fgets(buf, 6, server_) != NULL);
-		// EXPECT_TRUE(fgets(buf, 1024, server_) != NULL);
-		// EXPECT_STREQ(buf, "client: received \'Hello, world!\'\n");
   }
 }

@@ -33,7 +33,7 @@ namespace {
     virtual void SetUp() {
 			server_pid_ = fork();
 			if (server_pid_ == 0) {
-				system("./tcp_server");
+				system("./tcp_server6");
 			}
 			/*
 			// Server

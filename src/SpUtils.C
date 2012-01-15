@@ -169,11 +169,11 @@ namespace sp {
   }
 
 	// Get pids that are associated with the local/remote address pair
-	void addr_to_pids(in_addr_t loc_ip, uint16_t loc_port,
-										in_addr_t rem_ip, uint16_t rem_port,
+	void addr_to_pids(char* loc_ip, char* loc_port,
+										char* rem_ip, char* rem_port,
 										PidSet& pid_set) {
 		char cmd[1024];
-		sprintf(cmd, "/usr/sbin/lsof -i UDP:%d -i TCP:%d", rem_port, rem_port);
+		sprintf(cmd, "/usr/sbin/lsof -i UDP:%s -i TCP:%s", rem_port, rem_port);
 		// system(cmd);
 
 		FILE* fp = popen(cmd, "r");
@@ -190,8 +190,8 @@ namespace sp {
 				tokens.push_back(pch);
 				pch = strtok(NULL, " :()->");
 			}
-			// fprintf(stderr, "%s == %d\n", tokens[8], rem_port);
-			if (atoi(tokens[8]) == rem_port) {
+			// fprintf(stderr, "%s == %s\n", tokens[8], rem_port);
+			if (atoi(tokens[8]) == atoi(rem_port)) {
 				pid_set.insert(atoi(tokens[1]));
 			}
 		}
@@ -337,4 +337,50 @@ namespace sp {
     return (is_pipe(fd) || is_tcp(fd) || is_udp(fd));
   }
 
+// ----------------------------------------------------------------------------- 
+// Socket programming things
+// -----------------------------------------------------------------------------
+	bool get_local_address(int fd, sockaddr_storage* out) {
+		assert(out);
+		socklen_t sock_len = sizeof(sockaddr_storage);
+		if (getsockname(fd, (sockaddr*)out, &sock_len) == -1) {
+			sp_perror("getsockname @ pid = %d", getpid());
+		}
+		return true;
+	}
+
+	bool get_remote_address(int fd, sockaddr_storage* out) {
+		assert(out);
+		socklen_t sock_len = sizeof(sockaddr_storage);
+		if (getpeername(fd, (sockaddr*)out, &sock_len) == -1) {
+			sp_perror("getpeername @ pid = %d", getpid());
+		}
+		return true;
+	}
+
+	bool get_address(sockaddr_storage* sa, char* host, size_t host_len,
+									 char* service, size_t service_len) {
+		assert(host);
+		assert(service);
+
+		socklen_t sock_len = 0;
+		if (sa->ss_family == AF_INET) {
+			sock_len = sizeof(sockaddr_in);
+		} else if (sa->ss_family == AF_INET6) {
+			sock_len = sizeof(sockaddr_in6);
+		} else if (sa->ss_family == AF_UNSPEC) {
+			// sp_perror("AF_UNSPEC");
+			sa->ss_family = AF_INET;
+			sock_len = sizeof(sockaddr_in);
+		}
+
+		int err = 0;
+		if ((err = getnameinfo((const sockaddr*)sa, sock_len, host, host_len,
+						 service, service_len, NI_NUMERICSERV|NI_NUMERICHOST)) != 0) {
+			fprintf(stderr, "%s\n", gai_strerror(err));
+			perror("getnameinfo");
+			return false;
+		}
+		return true;
+	}
 }

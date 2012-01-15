@@ -28,54 +28,24 @@ TEST_F(UtilsTest, is_illegal_exe) {
 }
 
 TEST_F(UtilsTest, addr_to_pid_without_injector) {
-	pid_t pid = fork();
-	if (pid == 0) {
-		system("./tcp_server");
-	} else if (pid > 0) {
-		sleep(10);
-		PidSet pid_set;
-		// system("./tcp_client localhost");
+	FILE* fp = popen("./tcp_server", "r");
+
+	PidSet pid_set;
+	pid_t p = -1;
+	int retry = 4;
+	do {
 		addr_to_pids(0, 0, 0, 3490, pid_set);
 		for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
-			sp_print("pid = %d", *i);
+			// sp_print("pid = %d", *i);
+			p = *i;
 		}
-		// system("/usr/sbin/lsof -i TCP");
-		// addr_to_pids(0, 0, 0, 3490, pid_set);
-		kill(pid, SIGKILL);
-	}
+		--retry;
+		if (pid_set.size() <= 0) sleep(1);
+	} while (pid_set.size() <=0 && retry > 0);
+	EXPECT_TRUE(p > 0);
+	system("killall tcp_server");
+	pclose(fp);
+	// sp_print("PID = %d", p);
 }
 
-
-TEST_F(UtilsTest, addr_to_pid_with_injector_system) {
-	pid_t pid = fork();
-	if (pid == 0) {
-		system("./tcp_server");
-	} else if (pid > 0) {
-		sleep(10);
-		string cmd = "ssh feta cd /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/test/x86_64-unknown-linux2.4;./Injector 0.0.0.0 0 0.0.0.0 3490 ./ipc_test_agent.so";
-		system(cmd.c_str());
-		kill(pid, SIGKILL);
-		int status;
-		wait(&status);
-	}
-}
 */
-TEST_F(UtilsTest, addr_to_pid_with_injector_pipe) {
-	pid_t pid = fork();
-	if (pid == 0) {
-		system("./tcp_server");
-	} else if (pid > 0) {
-		sleep(10);
-		string cmd = "ssh feta cd /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/test/x86_64-unknown-linux2.4;./Injector 0.0.0.0 0 0.0.0.0 3490 ./ipc_test_agent.so";
-		FILE* fp = popen(cmd.c_str(), "r");
-		char line[1024];
-		while (fgets(line, 1024, fp) != NULL) {
-			fprintf(stderr, line);
-		}
-		pclose(fp);
-		system("killall tcp_server");
-		kill(pid, SIGKILL);
-		int status;
-		wait(&status);
-	}
-}

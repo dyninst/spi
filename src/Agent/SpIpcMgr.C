@@ -521,7 +521,6 @@ namespace sp {
 	bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
 													 char* injector_path,
 													 char* ijagent_path) {
-
 		// XXX: potential problem - two hosts may communicate w/ multiple channels.
     //      e.g., pipe and tcp at the same time. Should have an approach to 
     //      do bookkeeping correctly.
@@ -531,17 +530,28 @@ namespace sp {
 		TcpChannel *tcp_channel = static_cast<TcpChannel*>(c);
 		assert(tcp_channel);
 
+		char local_ip[256];
+		char local_port[64];
+		char remote_ip[256];
+		char remote_port[64];
+
+		if (!get_address(&tcp_channel->local, local_ip, 256, local_port, 64)) {
+			sp_perror("failed to get local address in tcp_worker::inject()");
+		}
+		if (!get_address(&tcp_channel->remote, remote_ip, 256, remote_port, 64)) {
+			sp_perror("failed to get remote address in tcp_worker::inject()");
+		}
+
 		// XXX: how to determine it is a local machiune?
     // 1. 127.0.0.1
     // 2. local ip == remote ip
     // ??
 		bool local_machine = false;
-		if (inet_netof(tcp_channel->remote_ip) == 127 ||
-        inet_netof(tcp_channel->remote_ip) == 0) {
+		if (strstr(remote_ip, "127.0.0.1")) {
+			sp_debug("LOCAL MACHINE TCP");
 			local_machine = true;
 		}
-		sp_debug("REMOTE IP: %s (%d)", inet_ntoa(tcp_channel->remote_ip), tcp_channel->remote_ip.s_addr);
-		sp_debug("REMOTE PORT: %d", tcp_channel->remote_port);
+		sp_debug("REMOTE IP: %s, REMOTE PORT: %s", remote_ip, remote_port);
 
 		// XXX: Should do it in a configure file
 		if (agent_path == NULL) {
@@ -569,14 +579,15 @@ namespace sp {
 		cp_cmd = cp_cmd + agent_path + " " + injector_path + " " + ijagent_path;
 
 		if (local_machine) cp_cmd += " /tmp/";
-		else cp_cmd = cp_cmd + " " + inet_ntoa(tcp_channel->remote_ip) + ":/tmp/";
+		else cp_cmd = cp_cmd + " " + remote_ip + ":/tmp/";
 
 		sp_debug("CP CMD - %s", cp_cmd.c_str());
  
 		// XXX: what if copy fails?
 		// cp_cmd += " >& /dev/null";
-		FILE* fcp=popen(cp_cmd.c_str(), "r");
-		pclose(fcp);
+		// FILE* fcp=popen(cp_cmd.c_str(), "r");
+		// pclose(fcp);
+		system(cp_cmd.c_str());
 
 		// 1. SSH into remote machine to run Injector
 		string exe_cmd;
@@ -585,27 +596,23 @@ namespace sp {
 		}
 		else {
 			exe_cmd = "ssh ";
-			exe_cmd += inet_ntoa(tcp_channel->remote_ip);
+			exe_cmd += remote_ip;
 			exe_cmd += " \"cd /tmp && /tmp/";
 			exe_cmd += sp_filename(injector_path);
 			exe_cmd += " ";
 		}
-		char port_buf[255];
-		exe_cmd += inet_ntoa(tcp_channel->local_ip);
+		exe_cmd += local_ip;
 		exe_cmd += " ";
-		sprintf(port_buf, "%d", tcp_channel->local_port);
-		exe_cmd += port_buf;
+		exe_cmd += local_port;
 		exe_cmd += " ";
-		exe_cmd += inet_ntoa(tcp_channel->remote_ip);
+		exe_cmd += remote_ip;
 		exe_cmd += " ";
-		sprintf(port_buf, "%d", tcp_channel->remote_port);
-		exe_cmd += port_buf;
+		exe_cmd += remote_port;
 		exe_cmd += " /tmp/";
 		exe_cmd += sp_filename(agent_path);
 		if (!local_machine) exe_cmd += "\"";
 
 		sp_debug("INJECT CMD - %s", exe_cmd.c_str());
-		fprintf(stderr, "INJECT CMD - %s\n", exe_cmd.c_str());
 		// system(exe_cmd.c_str());
 		// return true;
 		// system("ssh feta /sbin/ifconfig");
@@ -620,6 +627,7 @@ namespace sp {
 			c->injected = true;
 		}
 		pclose(fp);
+
     return true;
   }
 
@@ -630,84 +638,55 @@ namespace sp {
     c->local_pid = getpid();
     c->type = SP_TCP;
     c->inode = get_inode_from_fd(fd);
-	
-		char loc_ip[256];
-	
-    struct sockaddr_in rem_sa;
-    if (arg != NULL) {
-			sp_debug("we are here!!!!!! CONNECT");
-      // Get remote ip and port
-      rem_sa = *(sockaddr_in*)arg;
-      c->remote_ip = rem_sa.sin_addr;
-      c->remote_port = htons(rem_sa.sin_port);
 
-			// Should bind from the client side, so that we can use getsockname
-      // to get local ip/port
-			sockaddr_in tmp_sa;
-			memset(&tmp_sa, 0, sizeof(sockaddr_in));
-			tmp_sa.sin_family = AF_INET;
-			tmp_sa.sin_addr.s_addr = INADDR_ANY;
-			if (bind(fd, (sockaddr*)&tmp_sa, sizeof(sockaddr)) == -1) {
-				perror("bind");
-			}
-    } // Connect
+		// connect, we can get remote ip/port from arg
+		if (arg != NULL) {
 
-    else if (rw == SP_WRITE) {
-			// memset(&rem_sa, 0, sizeof(sockaddr_in));
-			socklen_t rem_len = sizeof(rem_sa);
-			if (getpeername(fd, (struct sockaddr*)&rem_sa, &rem_len) == -1) {
-				sp_perror("getpeername @ pid = %d", getpid());
-			}
-			if (rem_sa.sin_family == AF_INET) {
-				c->remote_ip = rem_sa.sin_addr;
-				c->remote_port = htons(rem_sa.sin_port);
-				sp_debug("IPv4");
+			// Get local ip / port
+			char host[256];
+			char service[64];
+			c->remote = *((sockaddr_storage*)arg);
+			if (get_address(&c->remote, host, 256, service, 64)) {
+				sp_debug("connect remote host: %s, service: %s\n", host, service);
 			} else {
-				sockaddr_in6* rem_sa6 = (sockaddr_in6*)&rem_sa;
-				// c->remote_ip = rem_sa6->sin6_addr;
-				char ip[256];
-				inet_ntop(AF_INET6, rem_sa6, ip, sizeof(sockaddr_in6));
-				sp_print("remote ip: %s (%d)", ip, c->remote_ip.s_addr);
-				c->remote_port = htons(rem_sa6->sin6_port);
-				sp_debug("IPv6");
+				sp_perror("failed to get connect remote address");
 			}
-			sp_debug("we are here!!!!!! SEND: %d", rem_sa.sin_addr.s_addr);
-    } // Send / write
 
-		// Get local ip/port
-		sockaddr_in loc_sa;
-		memset(&loc_sa, 0, sizeof(sockaddr_in));
-		socklen_t loc_len = sizeof(sockaddr_in);
-		if (getsockname(fd, (sockaddr*)&loc_sa, &loc_len) == -1) {
-			sp_perror("getsockname @ pid = %d", getpid());
+			// Get local ip / port (skip it for now)
+			if (get_local_address(fd, &c->local)) {
+				if (get_address(&c->local, host, 256, service, 64)) {
+					sp_debug("connect local host: %s, service: %s\n", host, service);
+				} else {
+					sp_perror("failed to get local address for write/send");
+				}
+			} else {
+			}
 		}
-		c->local_port = htons(loc_sa.sin_port);
 
-		// XXX: how to get local ip correctly??
+		// send/write
+		else if (rw == SP_WRITE) {
+			// Get remote ip / port
+			if (get_remote_address(fd, &c->remote)) {
+				char host[256];
+				char service[64];
+				if (get_address(&c->remote, host, 256, service, 64)) {
+					sp_debug("write/send remote host: %s, service: %s\n", host, service);
+				} else {
+					sp_perror("failed to get remote address for write/send");
+				}
+			} // remote address
 
-		if (inet_netof(c->remote_ip) == 127) {
-			c->local_ip = c->remote_ip;
-		} // Intra-machine Communication
-
-		else {
-			char buf[256];
-			if (gethostname(buf, 256) == -1) {
-				perror("gethostname");
-			}
-			if (hostname_to_ip(buf, loc_ip, 256) == 0) {
-				perror("hostname_to_ip");
-			}
-			// sp_print(loc_ip);
-			if (inet_aton(loc_ip, &c->local_ip) == 0) {
-				perror("inet_aton");
-			}
-		} // Inter-machine Communication
-		/*
-		sp_print("remote ip: %s (%d)", inet_ntoa(rem_sa.sin_addr), c->remote_ip.s_addr);
-		sp_print("remote port: %d (%X)", htons(rem_sa.sin_port), htons(rem_sa.sin_port));
-		sp_print("local ip: %s (%d)", inet_ntoa(c->local_ip), c->local_ip.s_addr);
-		sp_print("local port: %d (%X)", htons(loc_sa.sin_port), htons(loc_sa.sin_port));
-		*/
+			// Get local ip / port
+			if (get_local_address(fd, &c->local)) {
+				char host[256];
+				char service[64];
+				if (get_address(&c->local, host, 256, service, 64)) {
+					sp_debug("write/send local host: %s, service: %s\n", host, service);
+				} else {
+					sp_perror("failed to get local address for write/send");
+				}
+			} // remote address
+		}
     return c;
   }
 
