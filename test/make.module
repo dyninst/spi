@@ -105,13 +105,13 @@ TEST_SRCS  = $(wildcard $(TEST_DIR)/*.C)
 TESTS_OBJ  = $(notdir $(TEST_SRCS:%.C=%.o))
 TESTS      = $(notdir $(TEST_SRCS:%.C=%))
 
-unit: $(TESTS)
+unit: $(TESTS) 
 
-%.o: $(TEST_DIR)/%.C gmock_main.a
+%.o: $(TEST_DIR)/%.C gmock_main.a $(SP_DIR)/$(PLATFORM)/libagent.a
 	@echo "Compiling $*.o"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $(TEST_DIR)/$*.C $(SP_FLAGS)
 
-%: %.o gmock_main.a $(SP_DIR)/$(PLATFORM)/libagent.a
+%: %.o gmock_main.a 
 	@echo "Linking $*"
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(SP_LDFLAGS) $(SP_DIR)/$(PLATFORM)/libagent.a
 #	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread -o $@ $*.o gmock_main.a $(AG_AR) $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_AR)
@@ -141,14 +141,14 @@ fi);\
 include $(AG_DEP)
 
 
-agent: $(AGENT_SO)
+agent: $(AGENT_SO) 
 
-$(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C
+$(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C $(SP_DIR)/$(PLATFORM)/libagent.a
 	@echo "Compiling $@"
 	@$(CXX) -o $@ $(AGENT_DIR)/$*.C $(AG_IFLAGS) $(AG_FLAGS) -c
 
 
-$(AGENT_SO): %.so : %.o $(SP_DIR)/$(PLATFORM)/libagent.a
+$(AGENT_SO): %.so : %.o
 	@echo "Linking $@"
 	@$(CXX) -o $@ $*.o $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_LDFLAGS) -shared
 
@@ -195,3 +195,4 @@ clean :
 
 copy:
 	@cp -f $(SP_DIR)/$(PLATFORM)/*.so $(SP_DIR)/$(PLATFORM)/Injector ./
+	@cp -f $(AGENT_SO) $(SP_DIR)/$(PLATFORM)

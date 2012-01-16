@@ -3,7 +3,7 @@ INJECTOR   = Injector
 IJAGENT    = libijagent.so
 AGENT      = libagent.a
 
-all: injector agent
+all: injector agent msg
 
 GCC        = gcc
 GXX        = g++
@@ -132,7 +132,7 @@ depend:
 	@make AG_DEPS
 
 #=================================================
-# clean
+# Others
 #=================================================
 clean_objs:
 	$(RM) *.o
@@ -140,3 +140,11 @@ clean_objs:
 clean:
 	@$(RM) -f $(INJECTOR) $(AGENT) $(IJAGENT) *.o
 	@$(RM) -f $(IJ_DEP) $(AG_DEP) $(IJMAIN_DEP)
+
+msg:
+	@echo "================================================================================="
+	@echo " Please set the environment variable SP_DIR to -- "
+	@echo " $(SP_DIR) "
+	@echo "   * In csh : setenv SP_DIR $(SP_DIR)"
+	@echo "   * In bash: export SP_DIR=$(SP_DIR)"
+	@echo "================================================================================="

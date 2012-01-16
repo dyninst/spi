@@ -32,7 +32,7 @@ namespace {
 
     virtual void SetUp() {
 			// Server
-      server_ = popen("./tcp_server", "r");
+      server_ = popen("./tcp_server4", "r");
       setbuf(server_, NULL);
       if (server_ == NULL) {
         sp_perror("Failed to start tcp_server");

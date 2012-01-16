@@ -503,9 +503,9 @@ namespace sp {
 					uint8_t mark = 0;
 					recv(fd, &mark, sizeof(mark), MSG_OOB);
 					if (mark != 0) start_tracing_ = 1;
-					fprintf(stderr,
-									"TcpWorker query local [pid=%d, fd=%d] - start tracing %d w/ mark=%x\n",
-                  getpid(), fd, start_tracing_, mark);
+					//fprintf(stderr,
+					//				"TcpWorker query local [pid=%d, fd=%d] - start tracing %d w/ mark=%x\n",
+          //        getpid(), fd, start_tracing_, mark);
 					break;
 				}
 			}
@@ -554,51 +554,51 @@ namespace sp {
 		sp_debug("REMOTE IP: %s, REMOTE PORT: %s", remote_ip, remote_port);
 
 		// XXX: Should do it in a configure file
+		string default_agent_path;
+		string default_injector_path;
+		string default_ijagent_path;
+
 		if (agent_path == NULL) {
 			assert(g_context);
 			assert(g_context->parser());
 			assert(g_context->parser()->get_agent_name().size() > 0);
-		  agent_path = (char*)g_context->parser()->get_agent_name().c_str();
+			default_agent_path += getenv("SP_DIR");
+			default_agent_path += "/";
+			default_agent_path += getenv("PLATFORM");
+			default_agent_path += "/";
+			default_agent_path += sp_filename((char*)g_context->parser()->get_agent_name().c_str());
+		  agent_path = (char*)default_agent_path.c_str();
 		}
 		if (injector_path == NULL) {
-			injector_path = (char*)"./Injector";
+			default_injector_path += getenv("SP_DIR");
+			default_injector_path += "/";
+			default_injector_path += getenv("PLATFORM");
+			default_injector_path += "/Injector";
+			injector_path = (char*)default_injector_path.c_str();
 		}
 		if (ijagent_path == NULL) {
-			ijagent_path = (char*)"./libijagent.so";
+			default_ijagent_path += getenv("SP_DIR");
+			default_ijagent_path += "/";
+			default_ijagent_path += getenv("PLATFORM");
+			default_ijagent_path += "/libijagent.so";
+			ijagent_path = (char*)default_ijagent_path.c_str();
 		}
 
 		sp_debug("AGENT PATH - %s", agent_path);
 		sp_debug("INJECTOR PATH - %s", injector_path);
 		sp_debug("IJAGENT PATH - %s", ijagent_path);
 
-    // 0. scp agent.so Injector libijagent.so to /tmp/
-		string cp_cmd;
-
-		if (local_machine) cp_cmd = "cp -f "; else cp_cmd = "scp ";
-
-		cp_cmd = cp_cmd + agent_path + " " + injector_path + " " + ijagent_path;
-
-		if (local_machine) cp_cmd += " /tmp/";
-		else cp_cmd = cp_cmd + " " + remote_ip + ":/tmp/";
-
-		sp_debug("CP CMD - %s", cp_cmd.c_str());
- 
-		// XXX: what if copy fails?
-		// cp_cmd += " >& /dev/null";
-		// FILE* fcp=popen(cp_cmd.c_str(), "r");
-		// pclose(fcp);
-		system(cp_cmd.c_str());
-
-		// 1. SSH into remote machine to run Injector
+		// SSH into remote machine to run Injector
 		string exe_cmd;
 		if (local_machine) {
-			exe_cmd = "/tmp/Injector ";
+			exe_cmd = injector_path;
+			exe_cmd += " ";
 		}
 		else {
 			exe_cmd = "ssh ";
 			exe_cmd += remote_ip;
-			exe_cmd += " \"cd /tmp && /tmp/";
-			exe_cmd += sp_filename(injector_path);
+			exe_cmd += " ";
+			exe_cmd += injector_path;
 			exe_cmd += " ";
 		}
 		exe_cmd += local_ip;
@@ -608,9 +608,8 @@ namespace sp {
 		exe_cmd += remote_ip;
 		exe_cmd += " ";
 		exe_cmd += remote_port;
-		exe_cmd += " /tmp/";
-		exe_cmd += sp_filename(agent_path);
-		if (!local_machine) exe_cmd += "\"";
+		exe_cmd += " ";
+		exe_cmd += agent_path;
 
 		sp_debug("INJECT CMD - %s", exe_cmd.c_str());
 		// system(exe_cmd.c_str());

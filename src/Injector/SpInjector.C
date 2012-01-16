@@ -363,6 +363,10 @@ bool SpInjector::get_resolved_lib_path(const std::string &filename, DepNames &pa
   libPaths.push_back("/usr/lib64");
   libPaths.push_back("/lib");
   libPaths.push_back("/lib64");
+	std::string sp_path = getenv("SP_DIR");
+	sp_path += "/";
+	sp_path += getenv("PLATFORM");
+	libPaths.push_back(sp_path);
   for (unsigned int i = 0; i < libPaths.size(); i++) {
     std::string str = libPaths[i] + "/" + filename;
     if (stat(str.c_str(), &dummy) == 0) {

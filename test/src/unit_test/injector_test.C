@@ -24,7 +24,7 @@ class InjectorTest : public testing::Test {
 
   virtual void SetUp() {
 		// Start a tcp_server via popen
-		server_ = popen("./tcp_server", "r");
+		server_ = popen("./tcp_server6", "r");
 		if (server_ == NULL) {
 			sp_perror("Failed to start tcp_server");
 		}

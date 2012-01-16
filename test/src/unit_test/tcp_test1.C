@@ -172,7 +172,7 @@ namespace {
 	// Client
 	// -----------------------------------------------------------------------------
 
-	int tcp_client(const char *hostname, TestCmd cmd = GET_CHANNEL) {
+	std::string tcp_client(const char *hostname, TestCmd cmd = GET_CHANNEL) {
 		int sockfd, numbytes;  
 		char buf[MAXDATASIZE];
 		struct addrinfo hints, *servinfo, *p;
@@ -185,7 +185,7 @@ namespace {
 
 		if ((rv = getaddrinfo(hostname, PORT, &hints, &servinfo)) != 0) {
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-			return 1;
+			return "";
 		}
 
 		TcpChannel* channel;
@@ -213,13 +213,18 @@ namespace {
 
 		if (cmd == INJECT) {
 			SpTcpWorker tcp_worker;
-			bool ret = tcp_worker.inject(channel, (char*)"./inject_test_agent.so", (char*)"./Injector", (char*)"./libijagent.so");
+			std::string agent_path = getenv("SP_DIR");
+			agent_path += "/";
+			agent_path += getenv("PLATFORM");
+			agent_path += "/";
+			agent_path += "inject_test_agent.so";
+			bool ret = tcp_worker.inject(channel, (char*)agent_path.c_str());
 			EXPECT_TRUE(ret);
 		}
 
 		if (p == NULL) {
 			fprintf(stderr, "client: failed to connect\n");
-			return 2;
+			return "";
 		}
 
 		inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
@@ -227,16 +232,17 @@ namespace {
 
 		freeaddrinfo(servinfo); // all done with this structure
 
+		std::string out;
 		while ((numbytes = recv(sockfd, buf, 1, 0)) != 0 && numbytes != -1) {
 			if (cmd == OOB) {
-				if (tcp_worker.start_tracing(sockfd)) printf("%c", buf[0]);
+				if (tcp_worker.start_tracing(sockfd)) out += buf[0];
 			} 
 			else {
-				printf("%c",buf[0]);
+				out += buf[0];
 			}
 		}
 		close(sockfd);
-		return 0;
+		return out;
 	}
 
   // -----------------------------------------------------------------------------
@@ -254,7 +260,7 @@ namespace {
     virtual void TearDown() {
     }
   };
-	/*
+
   TEST_F(TcpTest1, get_channel_ipv6) {
 		pid_t pid = fork();
 		if (pid == 0) {
@@ -286,7 +292,8 @@ namespace {
 		FILE* fp = popen("./tcp_server6", "r");
 		const char* hostname = "localhost";
 		tcp_client(hostname, INJECT);
-		system("./tcp_client localhost");
+		// system("./tcp_client localhost");
+		tcp_client(hostname);
 		char buf[256];
 		EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
 		EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
@@ -311,7 +318,6 @@ namespace {
 		int status;
 		wait(&status);
   }
-	*/
 
   TEST_F(TcpTest1, inject_remote) {
 		pid_t pid = fork();
