@@ -65,7 +65,7 @@ BIN=./
 #echo 52; LD_PRELOAD="./$AGENT_NAME" $BIN/who
 #echo 53; LD_PRELOAD="./$AGENT_NAME" $BIN/cksum /tmp/tmp
 #echo 54; LD_PRELOAD="./$AGENT_NAME" $BIN/whoami
-echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
+#echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
 #echo 56; LD_PRELOAD="./$AGENT_NAME" $BIN/ls $1
 #echo 57; LD_PRELOAD="./$AGENT_NAME" $BIN/true
 #echo 58; LD_PRELOAD="./$AGENT_NAME" $BIN/false
@@ -98,3 +98,5 @@ echo 55; LD_PRELOAD="./$AGENT_NAME" $BIN/ls
 
 #LD_PRELOAD="./$AGENT_NAME" /scratch/chromium/src/out/Release/chrome "$@"
 #gdb /scratch/chromium/src/out/Release/chrome ./core*
+make clean; make
+LD_PRELOAD="$AGENT_NAME" /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/test/x86_64-unknown-linux2.4/mutatee/bin/curl localhost:3900/index.html

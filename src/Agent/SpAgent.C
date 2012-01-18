@@ -105,6 +105,7 @@ SpAgent::go() {
 	illegal_exes.insert("sh");
 	illegal_exes.insert("ssh");
 	illegal_exes.insert("xauth");
+	illegal_exes.insert("tcsh");
 	illegal_exes.insert("scp");
 	illegal_exes.insert("cp");
 	illegal_exes.insert("netstat");

@@ -20,6 +20,7 @@ namespace {
 		}
 	};
 
+	/*
   TEST_F(ComponentTest, indirect_call) {
 		FILE* fp = popen("LD_PRELOAD=./comp_test_agent.so ./indcall", "r");
 		char buf[1024];
@@ -46,5 +47,9 @@ namespace {
 
 		pclose(fp);
 	}
+*/
 
+  TEST_F(ComponentTest, lib_call) {
+		system("LD_PRELOAD=./comp_test_agent.so ./libcall");
+	}
 }

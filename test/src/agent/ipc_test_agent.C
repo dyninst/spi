@@ -10,9 +10,7 @@ void test_before(SpPoint* pt) {
   PatchFunction* f = callee(pt);
   if (!f) return;
 
-	// fprintf(stderr, "before func: %s @ pid=%d\n", f->name().c_str(), getpid());
-	// fprintf(stderr, "start tracing? %d\n", start_tracing());
-
+	//sp_print("before func: %s @ pid=%d", f->name().c_str(), getpid());
 	if (is_ipc_write(pt)) {
 		fprintf(stderr, "Write: %s @ pid=%d w/ addr %lx\n", f->name().c_str(), getpid(), f->addr());
 	}
@@ -26,7 +24,7 @@ void test_before(SpPoint* pt) {
 void test_after(SpPoint* pt) {
   PatchFunction* f = callee(pt);
   if (!f) return;
-	// sp_print("after func: %s @ pid=%d", f->name().c_str(), getpid());
+	//sp_print("after func: %s @ pid=%d", f->name().c_str(), getpid());
 
 	if (is_ipc_write(pt)) {
 		long size = sp::retval(pt);

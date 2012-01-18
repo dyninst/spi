@@ -26,16 +26,19 @@ namespace {
 			cmd_ += " ";
 			// cmd_ += "comp_test_agent.so ";
 			cmd_ += prog;
-			
+ 
+			system(cmd_.c_str());
+			/*			
 			// fprintf(stderr, "%s\n", cmd_.c_str());
 			FILE* fp = popen(cmd_.c_str(), "r");
 			char buf[1024];
 			while (fgets(buf, 1024, fp) != NULL) {
-				// fprintf(stderr, buf);
+				fprintf(stderr, buf);
 				memcpy(last_, buf, 1024);
 			}
 
 			pclose(fp);
+			*/
 		}
 
     virtual void SetUp() {
@@ -43,7 +46,7 @@ namespace {
     virtual void TearDown() {
 		}
 	};
-
+	/*
   TEST_F(IntegrationTest, ls) {
 		run("comp_test_agent.so", "mutatee/bin/ls");
 		// The last function is exit()
@@ -71,7 +74,7 @@ namespace {
 		EXPECT_STREQ(last_, "exit\n");
 
 	}
-
+*/
   TEST_F(IntegrationTest, gcc) {
 		string gcc_path = "LD_LIBRARY_PATH=/scratch/wenbin/software/lib:$LD_LIBRARY_PATH /scratch/wenbin/software/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1";
 		string arg_path = "/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/count/x86_64-unknown-linux2.4/200.i";

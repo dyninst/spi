@@ -120,6 +120,13 @@ namespace sp {
 
         REALLOC:
           long rel_addr = (long)blob - (long)eip;
+          bool jump_abs = false;
+          if (!sp::is_disp32(rel_addr)) {
+#ifndef SP_RELEASE
+            sp_debug("REL JUMP TOO BIG - can use relative jump");
+#endif
+						jump_abs = true;
+					}
 
           // Save the original instruction, in case we want to restore it later.
           // TODO: should implement the undo() routine to undo everything
@@ -127,10 +134,7 @@ namespace sp {
           sp_snip->set_orig_call_insn(callinsn);
 
           // Indirect call
-          if ((insn[0] != (char)0xe8)) {
-
-            bool jump_abs = false;
-            if (!sp::is_disp32(rel_addr)) jump_abs = true;
+          if ((insn[0] != (char)0xe8) || jump_abs) {
 
             // First, we try to use jump to install instrumentation.
             if (install_indirect(spt, sp_snip, jump_abs, ret_addr)) {
@@ -190,15 +194,22 @@ namespace sp {
   SpInstrumenter::install_direct(SpPoint* point, char* blob, size_t blob_size) {
 
     char jump[5];
+		memset(jump, 0, 5);
     char* p = jump;
     *p++ = 0xe9;
-    long* lp = (long*)p;
+    int* lp = (int*)p;
+
+    sp_debug("BEFORE INSTALL (%lu bytes) for point %lx for %s- {", point->block()->size(), point->block()->last(), point->callee()->name().c_str());
+    sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->size()).c_str());
+    sp_debug("}");
 
     // Build the jump instruction
     PatchObject* obj = point->block()->object();
     char* addr = (char*)point->block()->last();
     size_t insn_length = point->block()->end() - point->block()->last();
-    *lp = (long)blob - (long)addr - insn_length;
+    *lp = (int)((long)blob - (long)addr - insn_length);
+		sp_debug("REL CAL - blob at %lx, last insn at %lx, insn length %ld", (unsigned long)blob, point->block()->end(), insn_length);
+		sp_debug("JUMP REL - jump to relative address %x", *lp);
 
     // Replace "call" with a "jump" instruction
     SpAddrSpace* as = static_cast<SpAddrSpace*>(as_);
@@ -220,6 +231,10 @@ namespace sp {
     if (!as->restore_range_perm((Address)addr, insn_length)) {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
+
+    sp_debug("AFTER INSTALL (%lu bytes) for point %lx for %s- {", point->block()->size(), point->block()->last(), point->callee()->name().c_str());
+    sp_debug("%s", g_context->parser()->dump_insn((void*)point->block()->start(), point->block()->size()).c_str());
+    sp_debug("}");
 
     return true;
   }
@@ -256,11 +271,13 @@ namespace sp {
     }
 
     if (blk_size >= limit) {
+			sp_debug("RELOC BLK - block size %lu bytes >= abs jump size %lu bytes", blk_size, limit);
       point->set_install_method(SP_RELOC_BLK);
       return install_jump(blk, insn, limit, snip, ret_addr);
     }
 
     point->set_install_method(SP_SPRINGBOARD);
+		sp_debug("SPRING BLK - block size %lu bytes < abs jump size %lu bytes", blk_size, limit);
     return install_spring(blk, snip, ret_addr);
   }
 
@@ -269,6 +286,10 @@ namespace sp {
                                char* insn, size_t insn_size,
                                SpSnippet::ptr snip,
                                Address ret_addr) {
+
+    sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {", blk->size(), blk->last());
+    sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->size()).c_str());
+    sp_debug("}");
 
     // Build blob & change the permission of snippet
     char* blob = snip->blob(ret_addr, /*reloc=*/true);
@@ -298,6 +319,11 @@ namespace sp {
 #ifndef SP_RELEASE
     sp_debug("USE BLK-RELOC - piont %lx is instrumented using call block relocation", blk->last());
 #endif
+
+    sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {", blk->size(), blk->last());
+    sp_debug("%s", g_context->parser()->dump_insn((void*)blk->start(), blk->size()).c_str());
+    sp_debug("}");
+
     return true;
   }
 
@@ -307,6 +333,9 @@ namespace sp {
                                  SpSnippet::ptr snip,
                                  Address ret_addr) {
 
+    sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {", callblk->size(), callblk->last());
+    sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->size()).c_str());
+    sp_debug("}");
 
     // Find a spring block. A spring block should:
     // - big enough to hold two absolute jumps
@@ -326,6 +355,10 @@ namespace sp {
       as->dump_mem_maps();
       exit(0);
     }
+
+    sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {", callblk->size(), callblk->last());
+    sp_debug("%s", g_context->parser()->dump_insn((void*)callblk->start(), callblk->size()).c_str());
+    sp_debug("}");
 
     // Relocate spring block & change the permission of the relocated spring block
     char* spring = snip->spring(springblk->last());

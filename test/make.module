@@ -153,6 +153,26 @@ $(AGENT_SO): %.so : %.o
 	@$(CXX) -o $@ $*.o $(SP_DIR)/$(PLATFORM)/libagent.a $(AG_LDFLAGS) -shared
 
 #==============================================================
+# Auxiliary shared libraries
+#==============================================================
+AUX_LIB_DIR             = ../src/aux/lib
+AUX_LIB_SRCS           += $(wildcard $(AUX_LIB_DIR)/*.c)
+AUX_LIB_OBJS            = $(notdir $(AUX_LIB_SRCS:%.c=%.o))
+AUX_LIB_SO             = $(notdir $(AUX_LIB_SRCS:%.c=%.so))
+
+AUX_LIB_FLAGS             += -g -fPIC
+AUX_LIB_LDFLAGS           += -shared
+
+aux_lib: $(AUX_LIB_SO)
+$(AUX_LIB_OBJS): %.o : $(AUX_LIB_DIR)/%.c
+	@echo "Compiling $@"
+	@gcc -o $@ $(AUX_LIB_DIR)/$*.c $(AUX_LIB_IFLAGS) $(AUX_LIB_FLAGS) -c
+$(AUX_LIB_SO): %.so : %.o
+	@echo "Linking $@"
+	@gcc -o $@ $*.o $(AUX_LIB_LDFLAGS)
+
+
+#==============================================================
 # Auxiliary stuffs, e.g., server for testing
 #==============================================================
 AUX_DIR             = ../src/aux
@@ -161,15 +181,15 @@ AUX_OBJS            = $(notdir $(AUX_SRCS:%.c=%.o))
 AUX_EXE             = $(notdir $(AUX_SRCS:%.c=%))
 
 AUX_FLAGS             += -g
-AUX_LDFLAGS           += -ldl
+AUX_LDFLAGS           += -ldl -L./ -ltest1
 
-aux: $(AUX_EXE)
+aux: $(AUX_EXE) aux_lib
 $(AUX_OBJS): %.o : $(AUX_DIR)/%.c
 	@echo "Compiling $@"
-	@$(CXX) -o $@ $(AUX_DIR)/$*.c $(AUX_IFLAGS) $(AUX_FLAGS) -c
+	@gcc -o $@ $(AUX_DIR)/$*.c $(AUX_IFLAGS) $(AUX_FLAGS) -c
 $(AUX_EXE): % : %.o
 	@echo "Linking $@"
-	@$(CXX) -o $@ $*.o $(AUX_LDFLAGS)
+	@gcc -o $@ $*.o $(AUX_LDFLAGS)
 
 #==============================================================
 # Real world mutatee
@@ -186,6 +206,9 @@ mutatee:
 #==============================================================
 clean-agent :
 	rm -rf *.so
+
+clean-aux:
+				rm -rf $(AUX_EXE) $(AUX_LIB_SO)
 
 clean-mutatee:
 	rm -rf mutatee

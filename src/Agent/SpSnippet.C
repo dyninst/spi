@@ -130,7 +130,7 @@ namespace sp {
   EXIT:
 
 #ifndef SP_RELEASE
-    sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx - {", blob_size_, point_->block()->last());
+    sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {", blob_size_, point_->block()->last(), func_->name().c_str());
     sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
     sp_debug("}");
 #endif

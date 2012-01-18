@@ -2,6 +2,7 @@
 #include "SpContext.h"
 #include "SpSnippet.h"
 #include "SpUtils.h"
+#include "SpPoint.h"
 
 using sp::SpContext;
 using sp::SpPropeller;
@@ -41,6 +42,10 @@ namespace sp {
     PatchMgrPtr mgr = context->mgr();
     PatchFunction* cur_func = NULL;
     if (pt) {
+			sp_debug("POINT VALID - %s", func->name().c_str());
+      SpPoint* spt = static_cast<SpPoint*>(pt);
+      PatchFunction* tmp_func = spt->callee();//context->parser()->findFunction(func->name());//func;
+			sp_debug("spt->callee() - %lx, func - %lx", (Dyninst::Address)tmp_func, (Dyninst::Address)func);
       cur_func = func;
     } else {
       cur_func = context->parser()->findFunction(func->name());
@@ -59,8 +64,8 @@ namespace sp {
       PatchFunction* callee = context->parser()->callee(pt);
 #ifndef SP_RELEASE
       if (callee) {
-        sp_debug("POINT - instrumenting direct call at %lx to function %s",
-                 pt->block()->last(), callee->name().c_str());
+        sp_debug("POINT - instrumenting direct call at %lx to function %s (%lx)",
+                 pt->block()->last(), callee->name().c_str(), (Dyninst::Address)callee);
       } else {
         sp_debug("POINT - instrumenting indirect call at %lx", pt->block()->last());
       }
