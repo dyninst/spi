@@ -208,7 +208,7 @@ namespace sp {
     char* addr = (char*)point->block()->last();
     size_t insn_length = point->block()->end() - point->block()->last();
     *lp = (int)((long)blob - (long)addr - insn_length);
-		sp_debug("REL CAL - blob at %lx, last insn at %lx, insn length %ld", (unsigned long)blob, point->block()->end(), insn_length);
+		sp_debug("REL CAL - blob at %lx, last insn at %lx, insn length %lu", (unsigned long)blob, point->block()->end(), (unsigned long)insn_length);
 		sp_debug("JUMP REL - jump to relative address %x", *lp);
 
     // Replace "call" with a "jump" instruction
@@ -271,13 +271,13 @@ namespace sp {
     }
 
     if (blk_size >= limit) {
-			sp_debug("RELOC BLK - block size %lu bytes >= abs jump size %lu bytes", blk_size, limit);
+			sp_debug("RELOC BLK - block size %lu bytes >= abs jump size %lu bytes", (unsigned long)blk_size, (unsigned long)limit);
       point->set_install_method(SP_RELOC_BLK);
       return install_jump(blk, insn, limit, snip, ret_addr);
     }
 
     point->set_install_method(SP_SPRINGBOARD);
-		sp_debug("SPRING BLK - block size %lu bytes < abs jump size %lu bytes", blk_size, limit);
+		sp_debug("SPRING BLK - block size %lu bytes < abs jump size %lu bytes", (unsigned long)blk_size, (unsigned long)limit);
     return install_spring(blk, snip, ret_addr);
   }
 

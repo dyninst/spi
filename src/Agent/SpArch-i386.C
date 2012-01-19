@@ -253,6 +253,7 @@ Address
 SpSnippet::set_pc(Address pc, void* context) {
   ucontext_t* ctx = (ucontext_t*)context;
   ctx->uc_mcontext.gregs[REG_EIP] = pc;
+	return pc;
 }
 
 /* Get the saved register, for resolving indirect call */

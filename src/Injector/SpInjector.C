@@ -235,7 +235,7 @@ void SpInjector::invoke_ijagent() {
   Dyninst::Address code_addr = proc_->mallocMemory(size);
   char* code = get_ij_tmpl(ij_agent_addr, code_addr);
   sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
-           " at %lx of %lu bytes", code_addr, size);
+           " at %lx of %lu bytes", code_addr, (unsigned long)size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
   sp_debug("POSTING - IRPC is on the way ...");
@@ -286,7 +286,7 @@ void SpInjector::inject_internal(const char* lib_name) {
   Dyninst::Address code_addr = proc_->mallocMemory(size);
   char* code = get_code_tmpl(args_addr, do_dlopen_addr, code_addr);
   sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
-           " at %lx of %lu bytes", code_addr, size);
+           " at %lx of %lu bytes", code_addr, (unsigned long)size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
 
@@ -426,7 +426,7 @@ void* SpInjector::get_shm(int id, size_t size) {
   int shmid;
   void* shm;
   if ((shmid = shmget(id, size, IPC_CREAT | 0666)) < 0) {
-    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %lu bytes w/ id %d", getpid(), size, id);
+    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %lu bytes w/ id %d", getpid(), (unsigned long)size, id);
   }
   if ((long)(shm = (void*)shmat(shmid, NULL, 0)) == (long)-1) {
     sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());

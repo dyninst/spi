@@ -183,11 +183,12 @@ AUX_EXE             = $(notdir $(AUX_SRCS:%.c=%))
 AUX_FLAGS             += -g
 AUX_LDFLAGS           += -ldl -L./ -ltest1
 
-aux: $(AUX_EXE) aux_lib
+aux: $(AUX_EXE)
+
 $(AUX_OBJS): %.o : $(AUX_DIR)/%.c
 	@echo "Compiling $@"
 	@gcc -o $@ $(AUX_DIR)/$*.c $(AUX_IFLAGS) $(AUX_FLAGS) -c
-$(AUX_EXE): % : %.o
+$(AUX_EXE): % : %.o  $(AUX_LIB_SO)
 	@echo "Linking $@"
 	@gcc -o $@ $*.o $(AUX_LDFLAGS)
 
@@ -216,6 +217,7 @@ clean-mutatee:
 clean :
 	rm -rf $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o *.so ./Injector $(AUX_EXE)
 
-copy:
-	@cp -f $(SP_DIR)/$(PLATFORM)/*.so $(SP_DIR)/$(PLATFORM)/Injector ./
+copy: agent
+	@echo "Copying agent to $(SP_DIR)/$(PLATFORM)"
+#	@cp -f $(SP_DIR)/$(PLATFORM)/*.so $(SP_DIR)/$(PLATFORM)/Injector ./
 	@cp -f $(AGENT_SO) $(SP_DIR)/$(PLATFORM)

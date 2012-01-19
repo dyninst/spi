@@ -352,7 +352,7 @@ namespace sp {
                             cs->getArch());
     Instruction::Ptr insn = deco.decode();
     while(insn) {
-      sprintf(buf, "    %lx(%2lu bytes): %-25s | ", base, insn->size(), insn->format(base).c_str());
+      sprintf(buf, "    %lx(%2lu bytes): %-25s | ", base, (unsigned long)insn->size(), insn->format(base).c_str());
       char* raw = (char*)insn->ptr();
       for (unsigned i = 0; i < insn->size(); i++)
         sprintf(buf, "%s%2x ", buf, 0xff&raw[i]);
@@ -450,6 +450,7 @@ namespace sp {
     PatchFunction* f = pt->getCallee();
     if (f) {
 			// fprintf(stderr, "same instance for %s \n", f->name().c_str());
+			/*
 			PatchFunction* tmp_f = g_context->parser()->findFunction(f->name());
 			if (tmp_f) {
 				//sp_debug("Valid PatchFunction instance for %s is %lx (real: %lx), no %lx (real: %lx)", f->name().c_str(),
@@ -464,7 +465,7 @@ namespace sp {
 			} else {
 				// sp_debug("Cannot find real instance for %s, use the plt one", f->name().c_str());
 				fprintf(stderr, "Cannot find real instance for %s, use the plt one\n", f->name().c_str());
-			}
+				}*/
 			assert(f);
       spt->set_callee(f);
       return f;

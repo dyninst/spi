@@ -76,7 +76,7 @@ namespace sp {
     }
     patcher.commit();
 #ifndef SP_RELEASE
-    sp_debug("FINISH PROPELLING - %lu callees of function %s are instrumented", pts.size(), func->name().c_str());
+    sp_debug("FINISH PROPELLING - %lu callees of function %s are instrumented", (unsigned long)pts.size(), func->name().c_str());
 #endif
     return true;
   }

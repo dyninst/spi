@@ -632,8 +632,8 @@ extern SpContext* g_context;
 			sp_debug("RELOC INSN - insn addr %lx, old_rip %lx, new_rip %lx, displacement %x",
 							 a, old_rip,new_rip, *dis_buf);
 			sp_debug("RELOC INSN - new displacement %lx", long_new_dis);
-			long ax = *(long*)(*dis_buf + old_rip);
-			sp_debug("RELOC INSN - absolute addr %lx, content %s", *dis_buf + old_rip, (char*)(ax));
+			// long ax = *(long*)(*dis_buf + old_rip);
+			// sp_debug("RELOC INSN - absolute addr %lx, content %s", *dis_buf + old_rip, (char*)(ax));
 
       if (sp::is_disp32(long_new_dis)) {
         // Easy case: just modify the displacement

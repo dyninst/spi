@@ -422,7 +422,7 @@ namespace sp {
     PidSet pid_set;
     get_pids_from_fd(fd, pid_set);
 #ifndef SP_RELEASE
-    sp_debug("FD TO PID - get a %lu pids from fd %d", pid_set.size(), fd);
+    sp_debug("FD TO PID - get a %lu pids from fd %d", (unsigned long)pid_set.size(), fd);
 #endif
     for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
       if (*i != c->local_pid) {

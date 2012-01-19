@@ -130,7 +130,7 @@ namespace sp {
   EXIT:
 
 #ifndef SP_RELEASE
-    sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {", blob_size_, point_->block()->last(), func_->name().c_str());
+    sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {", (unsigned long)blob_size_, point_->block()->last(), func_->name().c_str());
     sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
     sp_debug("}");
 #endif
@@ -260,7 +260,7 @@ namespace sp {
     spring_size_ += emit_jump_abs(ret_addr, spring_, spring_size_);
 
 #ifndef SP_RELEASE
-    sp_debug("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {", spring_size_, point_->block()->last());
+    sp_debug("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {", (unsigned long)spring_size_, point_->block()->last());
     sp_debug("%s", context_->parser()->dump_insn((void*)spring_, spring_size_).c_str());
     sp_debug("}");
 #endif

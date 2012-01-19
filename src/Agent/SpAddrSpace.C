@@ -1,6 +1,6 @@
 #include "SpAddrSpace.h"
 #include "SpObject.h"
-
+ 
 using dt::Address;
 using sp::SpAddrSpace;
 using ph::PatchObject;
@@ -223,7 +223,7 @@ namespace sp {
   void
   SpAddrSpace::dump_mem_maps() {
 #ifndef SP_RELEASE
-    sp_debug("MMAPS - %lu memory mappings", mem_maps_.size());
+    sp_debug("MMAPS - %lu memory mappings", (unsigned long)mem_maps_.size());
 #endif
     for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
 #ifndef SP_RELEASE

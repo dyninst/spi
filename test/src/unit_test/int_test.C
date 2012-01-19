@@ -76,7 +76,8 @@ namespace {
 	}
 */
   TEST_F(IntegrationTest, gcc) {
-		string gcc_path = "LD_LIBRARY_PATH=/scratch/wenbin/software/lib:$LD_LIBRARY_PATH /scratch/wenbin/software/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1";
+		// string gcc_path = "LD_LIBRARY_PATH=/scratch/wenbin/software/lib:$LD_LIBRARY_PATH /scratch/wenbin/software/libexec/gcc/x86_64-unknown-linux-gnu/4.5.2/cc1";
+		string gcc_path = "/afs/cs.wisc.edu/s/gcc-4.6.1/@sys/libexec/gcc/i686-pc-linux-gnu/4.6.1/cc1";
 		string arg_path = "/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/count/x86_64-unknown-linux2.4/200.i";
 		string cmd = gcc_path + " " + arg_path;
 		run("count_test_agent.so", cmd.c_str());

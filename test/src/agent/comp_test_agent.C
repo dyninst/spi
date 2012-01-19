@@ -9,7 +9,8 @@ void test_before(SpPoint* pt) {
 
   PatchFunction* f = callee(pt);
   if (!f) return;
-	sp_print("%s", f->name().c_str());
+
+	sp_print("func: %s", f->name().c_str());
   sp::propel(pt);
 }
 

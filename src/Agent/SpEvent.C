@@ -77,7 +77,7 @@ namespace sp {
       // Instrument all functions in the call stack.
       SpContext::CallStack call_stack;
       g_context->get_callstack(&call_stack);
-      sp_debug("CALLSTACK - %lu calls in the call stack", call_stack.size());
+      sp_debug("CALLSTACK - %lu calls in the call stack", (unsigned long)call_stack.size());
       for (unsigned i = 0; i < call_stack.size(); i++) {
         PatchFunction* f = call_stack[i];
         g_context->init_propeller()->go(f, g_context,
