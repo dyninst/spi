@@ -78,12 +78,14 @@
 namespace Dyninst {
   namespace PatchAPI {
     class Point;
+    class PatchFunction;
   }
 }
 namespace sp {
 	typedef std::set<std::string> StringSet;
 	typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 	typedef std::set<pid_t> PidSet;
+	typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;
 }
 
 #define DYN_CAST(type, obj) dyn_detail::boost::dynamic_pointer_cast<type>(obj)

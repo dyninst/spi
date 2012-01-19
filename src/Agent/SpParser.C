@@ -308,6 +308,7 @@ namespace sp {
     }
 
     AddrSpace* as = mgr_->as();
+		FuncSet func_set;
     for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
 
       PatchObject* obj = ci->second;
@@ -320,7 +321,25 @@ namespace sp {
 				sp_debug("SKIP - %s", name.c_str());
         continue;
       }
-
+			/*
+			std::vector<Symbol*> symbols;
+			if (sym->findSymbol(symbols, name)) {
+				for (std::vector<Symbol*>::iterator si = symbols.begin(); si != symbols.end(); si++) {
+					sb::Symbol::SymbolLinkage l = (*si)->getLinkage();
+					string linkage_name;
+					if (l == sb::Symbol::SL_UNKNOWN) {
+						linkage_name = "SL_UNKNOWN";
+					} else if (l == sb::Symbol::SL_GLOBAL) {
+						linkage_name = "SL_GLOBAL";
+					} else if (l == sb::Symbol::SL_LOCAL) {
+						linkage_name = "SL_LOCAL";
+					} else if (l == sb::Symbol::SL_WEAK) {
+						linkage_name = "SL_WEAK";
+					}
+					fprintf(stderr, "function %s linkage type is %s\n", name.c_str(), linkage_name.c_str());
+				}
+			}
+			*/
       for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
         if ((*fit)->name().compare(name) == 0) {
           Region* region = sym->findEnclosingRegion((*fit)->addr());
@@ -329,12 +348,24 @@ namespace sp {
             continue;
           }
           PatchFunction* found = obj->getFunc(*fit);
-          real_func_map_[name] = found;
-					sp_debug("FOUND - %s at %lx", name.c_str(), (*fit)->addr());
-          return found;
+					if (real_func_map_.find(name) == real_func_map_.end())
+						real_func_map_[name] = found;
+					func_set.insert(found);
+					// sp_debug("FOUND - %s at %lx", name.c_str(), (*fit)->addr());
+          // return found;
+					// fprintf(stderr, "func %s is in region %s of obj %s\n", name.c_str(), region->getRegionName().c_str(), sym->name().c_str());
         }
-      }
-    }
+      } // For each function
+    } // For each object
+
+		if (func_set.size() == 1) {
+			return *func_set.begin();
+		}
+		else if (func_set.size() > 1) {
+			fprintf(stderr, "multiple function instances for %s\n", name.c_str());
+			return NULL;
+		}
+
 		sp_debug("NO FOUND - %s", name.c_str());
     return NULL;
   }
@@ -450,7 +481,7 @@ namespace sp {
     PatchFunction* f = pt->getCallee();
     if (f) {
 			// fprintf(stderr, "same instance for %s \n", f->name().c_str());
-			/*
+
 			PatchFunction* tmp_f = g_context->parser()->findFunction(f->name());
 			if (tmp_f) {
 				//sp_debug("Valid PatchFunction instance for %s is %lx (real: %lx), no %lx (real: %lx)", f->name().c_str(),
@@ -460,12 +491,13 @@ namespace sp {
  				f->name().c_str(), (Dyninst::Address)tmp_f, tmp_f->addr(), (Dyninst::Address)f, f->addr());
 					f = tmp_f; 
 				} else {
-					fprintf(stderr, "same instance for %s \n", f->name().c_str());
+					// fprintf(stderr, "same instance for %s \n", f->name().c_str());
 				}
 			} else {
 				// sp_debug("Cannot find real instance for %s, use the plt one", f->name().c_str());
-				fprintf(stderr, "Cannot find real instance for %s, use the plt one\n", f->name().c_str());
-				}*/
+				// fprintf(stderr, "Cannot find real instance for %s, use the plt one\n", f->name().c_str());
+			}
+
 			assert(f);
       spt->set_callee(f);
       return f;

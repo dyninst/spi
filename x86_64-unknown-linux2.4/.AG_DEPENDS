@@ -1145,7 +1145,8 @@ SpPropeller.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpIpcMgr.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpChannel.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpSnippet.h \
- /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpUtils.h
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpUtils.h \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpPoint.h
 SpPayload.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpPayload.C \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpPayload.h \
