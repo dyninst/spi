@@ -611,7 +611,7 @@ extern SpContext* g_context;
 			// lea
 
 			sp_debug("lea: %x", insn_buf[1]);
-			if (insn_buf[1] & 0x8d) {
+			if ((char)insn_buf[1] == (char)0x8d) {
 				int* dis = get_disp(insn, insn_buf);
 				sp_debug("in lea: dis - %x, orig l: %lx, new l: %lx", *dis, *l, *dis + a + insn->size());
 				*l =*dis + a + insn->size();
