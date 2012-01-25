@@ -212,33 +212,56 @@ extern SpContext* g_context;
   }
 
   // Call a function w/ address `callee`
+	// Assumption: for 5-byte relative call instruction only
   size_t
   SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
     char* p = buf + offset;
+
+		// Case 1: we are lucky to use relative call instruction.
     Address retaddr = (Address)p+5;
     Address rel_addr = (callee - retaddr);
-
     if (sp::is_disp32(rel_addr)) {
-      // Case 1: we are lucky to use relative call instruction.
 
       // call callee
       *p++ = 0xe8;
       int* rel_p = (int*)p;
       *rel_p = rel_addr;
       p += 4;
-    } else {
-      // Case 2: we have to use indirect call, because the function is too far away.
+    }
 
-      // movq call_addr, %rax
-      *p++ = 0x48;
-      *p++ = 0xb8;
+		// Case 2: we have to use indirect call, because the function is too far away.
+		else {
+			/*
+			// 16-byte: push imm64 for return address 
+			// 16-byte: push imm64 for callee address
+			// 1-byte: ret instruction
+			Address retaddr = (Address)p+16+16+1;
+			p += emit_push_imm64(retaddr, p, 0);
+			p += SpSnippet::emit_jump_abs(callee, p, 0, true);
+			*/
+			// XXX: this is not safe ...
+
+			// Use %r15, because r15 is callee-saved
+
+			// push r15
+      *p++ = 0x41;
+      *p++ = 0x57;
+			
+      // movq call_addr, %r15
+      *p++ = 0x49;
+      *p++ = 0xbf;
       long* call_addr = (long*)p;
       *call_addr = callee;
       p += sizeof(long);
 
-      // call %rax
+      // call %r15
+      *p++ = 0x41;
       *p++ = 0xff;
-      *p++ = 0xd0;
+      *p++ = 0xd7;
+
+			// pop r15
+      *p++ = 0x41;
+      *p++ = 0x5f;
     }
 
     return (p - (buf + offset));
@@ -366,6 +389,7 @@ extern SpContext* g_context;
   public:
     RelocVisitor(SpParser::ptr p) : Visitor(), p_(p), use_pc_(false) {}
     virtual void visit(RegisterAST* r) {
+			sp_debug("USE REG");
       if (p_->is_pc(r->getID())) {
         use_pc_ = true;
       }
@@ -418,18 +442,22 @@ extern SpContext* g_context;
     int disp_offset = 0;
     // Any REX?
     if ((insn_buf[disp_offset] & 0xf0) == 0x40) {
+			// sp_debug("%x", insn_buf[disp_offset]);
       ++disp_offset;
     }
 
     // Any ESCAPE?
     if (insn_buf[disp_offset] == 0x0f) {
+			// sp_debug("%x", insn_buf[disp_offset]);
       ++disp_offset;
     }
 
     // OPCODE
+		// sp_debug("%x", insn_buf[disp_offset]);
     ++disp_offset;
 
     // ModRM
+		// sp_debug("%x", insn_buf[disp_offset]);
     ++disp_offset;
 
     disp = (int*)&insn_buf[disp_offset];
@@ -513,8 +541,14 @@ extern SpContext* g_context;
   */
   static size_t
   emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e, Address a, char* buf) {
+
     char* p = buf;
     char* insn_buf = (char*)insn->ptr();
+
+		// TEMP {
+		// sp_debug("displace: %x", *dis);
+		// TEMP }
+		//sp_debug("imm: %lx", *dis + a + insn->size());
 
     // Step 1: see if %r8 is used, so get register first
 
@@ -567,10 +601,43 @@ extern SpContext* g_context;
     }
     long* l = (long*)p;
 
+		/*
     // Get IMM64
-    EmuVisitor visitor(a+insn->size());
-    e->apply(&visitor);
-    *l = visitor.imm();
+		if (0) {
+		*/
+			EmuVisitor visitor(a+insn->size());
+			e->apply(&visitor);
+			*l = visitor.imm();
+			// lea
+
+			sp_debug("lea: %x", insn_buf[1]);
+			if (insn_buf[1] & 0x8d) {
+				int* dis = get_disp(insn, insn_buf);
+				sp_debug("in lea: dis - %x, orig l: %lx, new l: %lx", *dis, *l, *dis + a + insn->size());
+				*l =*dis + a + insn->size();
+			}
+			/*
+		} else {
+			*l = *dis + a + insn->size();
+		}
+			*/
+			sp_debug("from visitor: %lx", *l);
+
+		/*
+		sp_debug("old rip: %lx, disp: %x, new imm: %lx", a+insn->size(), *dis, *l);
+		// TEMP {
+		char* p1 = buf;
+		*p1++ = 0x48;
+		*p1++ = 0xb8;
+		long* p11 = (long*)p1;
+		*p11 = *l;
+		p1 += sizeof(long);
+		return (size_t)(p1 - buf);
+		// TEMP }
+		// char* s = (char*)l;
+		// sp_debug(s, 1988);
+		*/
+
     p += sizeof(l);
 
     // Set rex
@@ -587,14 +654,31 @@ extern SpContext* g_context;
     }
 
     // Copy opcode
-    *p++ = insn_buf[modrm_offset-1];
+		if (1) {
+			*p++ = insn_buf[modrm_offset-1];
+		}
+		/*
+		// TEMP {
+		else {
+			--p;
+			*p++ = 0x4c;
+			*p++ = 0x89;
+			*p++ = 0xc0;
+		}
+		// TEMP }
+		*/
     char new_modrm = modrm;
     if (reg != 0x08) {
       new_modrm &= 0xf8; // (R8), the last 3-bit should be 000
     } else {
       new_modrm &= 0xf9; // (R9), the last 3-bit should be 001
     }
-    *p++ = new_modrm;
+
+		// TEMP {
+		if (1) {
+		// TEMP }
+			*p++ = new_modrm;
+		}
 
     // Copy imm after displacement
     for (unsigned i = modrm_offset+1+4; i < insn->size(); i++) {
@@ -660,19 +744,43 @@ extern SpContext* g_context;
     if (src_insn == last) {  return 0;  }
 
     // See if this instruction is a pc-sensitive instruction
-    set<Expression::Ptr> opSet;
-    if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
-    else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
+    set<RegisterAST::Ptr> opSet;
+    set<Expression::Ptr> pcExp;
 
-    bool use_pc = false;
-    for (set<Expression::Ptr>::iterator i = opSet.begin(); i != opSet.end(); i++) {
+		bool read_use_pc = false;
+		insn->getReadSet(opSet);
+    for (set<RegisterAST::Ptr>::iterator i = opSet.begin(); i != opSet.end(); i++) {
       RelocVisitor visitor(context_->parser());
       (*i)->apply(&visitor);
-      use_pc = visitor.use_pc();
+      read_use_pc = visitor.use_pc();
+			if (read_use_pc) {
+				pcExp.insert(*i);
+				break;
+			}
     }
 
+		bool write_use_pc = false;
+		insn->getWriteSet(opSet);
+    for (set<RegisterAST::Ptr>::iterator i = opSet.begin(); i != opSet.end(); i++) {
+      RelocVisitor visitor(context_->parser());
+      (*i)->apply(&visitor);
+      write_use_pc = visitor.use_pc();
+			if (write_use_pc) {
+				pcExp.insert(*i);
+				break;
+			}
+    }
+
+		bool use_pc = (read_use_pc || write_use_pc);
+		if (use_pc) {
+		  assert(pcExp.size() == 1);
+			sp_debug("USE PC - at %lx", src_insn);
+		} else {
+			sp_debug("NOT USE PC - at %lx", src_insn);
+		}
+
     // Here we go!
-    return reloc_insn_internal(src_insn, insn, opSet, use_pc, buf);
+    return reloc_insn_internal(src_insn, insn, pcExp, use_pc, buf);
   }
 
   // The upper bound for a jump instruction.

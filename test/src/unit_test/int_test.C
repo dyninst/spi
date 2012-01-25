@@ -60,7 +60,7 @@ namespace {
 		EXPECT_STREQ(last_, "exit\n");
 
 	}
-
+	*/
   TEST_F(IntegrationTest, od) {
 		run("comp_test_agent.so", "mutatee/bin/od indcall.o");
 		// The last function is exit()
@@ -74,8 +74,9 @@ namespace {
 		EXPECT_STREQ(last_, "exit\n");
 
 	}
-*/
 
+
+	/*
   TEST_F(IntegrationTest, gcc) {
 		string gcc_path;
 		if (getenv("PLATFORM")) {
@@ -91,5 +92,5 @@ namespace {
 		string cmd = gcc_path + " " + arg_path;
 		run("count_test_agent.so", cmd.c_str());
 	}
-
+	*/
 }

@@ -4,7 +4,7 @@ General:
 - [X] make user agent statically linked
 - [ ] fix dependency problem for .h files
 - [ ] configure file
-- [ ] use environment variable to setup the Injector/ijagent.so/Agent
+- [X] use environment variable to setup the Injector/ijagent.so/Agent
 
 Injector:
 - [X] debug the networking mode
@@ -12,6 +12,7 @@ Injector:
 - [ ] port to windows
 
 Agent:
+- [ ] test reloc_insn on x86-64
 - [ ] Rename before_ to entry_ and after_ to exit_ for payload function
 - [ ] Should test on /bin/bash
 - [ ] Change before/after to entry/exit
