@@ -22,7 +22,7 @@ class SpParser : public ph::CFGMaker {
     void get_frame(long* pc, long* sp, long* bp);
 
     ph::PatchFunction* findFunction(dt::Address addr);
-    ph::PatchFunction* findFunction(string name, bool skip = true);
+    ph::PatchFunction* findFunction(string name);
     ph::PatchFunction* callee(ph::Point* pt,
                               bool       parse_indirect = false);
 

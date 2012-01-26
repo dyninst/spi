@@ -87,7 +87,7 @@ namespace sp {
         Point* pt = instance->point();
         SpPoint* spt = static_cast<SpPoint*>(pt);
 
-        // If it is not a direct call, and we don't want to instrument direct call
+        // If it is not a direct call, and we don't want to instrument indirect call
         if (!pt->getCallee() && g_context->directcall_only()) continue;
 
 #ifndef SP_RELEASE
@@ -100,8 +100,9 @@ namespace sp {
           SpSnippet::ptr sp_snip = snip->rep();
           spt->set_snip(sp_snip);
           Address eip = pt->block()->last();
-          char* insn = (char*)eip;
-
+					// TEMP
+					//         char* insn = (char*)eip;
+					// TEMP END
           // Address insn_size = pt->block()->end() - eip;
           Address ret_addr = pt->block()->end();
           Instruction::Ptr callinsn = pt->block()->getInsn(eip);
@@ -116,23 +117,47 @@ namespace sp {
           }
 
           char* blob = (char*)sp_snip->buf();
-          bool realloc = false;
-
-        REALLOC:
+					// TEMP
+					//          bool realloc = false;
+					// TEMP END
+					// TEMP
+					/*
+		 REALLOC:
           long rel_addr = (long)blob - (long)eip;
           bool jump_abs = false;
           if (!sp::is_disp32(rel_addr)) {
 #ifndef SP_RELEASE
-            sp_debug("REL JUMP TOO BIG - can use relative jump");
+            sp_debug("REL JUMP TOO BIG - cannot use relative jump");
 #endif
 						jump_abs = true;
 					}
+*/
+					// TEMP END
 
           // Save the original instruction, in case we want to restore it later.
           // TODO: should implement the undo() routine to undo everything
           // instrumented
           sp_snip->set_orig_call_insn(callinsn);
 
+					//TEMP
+              // Set trap handler for the worst case that spring jump doesn't work
+              struct sigaction act;
+              act.sa_sigaction = SpInstrumenter::trap_handler;
+              act.sa_flags = SA_SIGINFO;
+              struct sigaction old_act;
+              sigaction(SIGTRAP, &act, &old_act);
+
+              g_inst_map[eip] = sp_snip;
+              blob = sp_snip->blob(ret_addr);
+
+              if (install_trap(spt, blob, sp_snip->size())) {
+                spt->set_install_method(SP_TRAP);
+                spt->set_instrumented(true);
+              } else {
+                sp_print("FAILED to use TRAP, no instrumentation for this point");
+              }
+							// END TEMP
+#if 0
           // Indirect call
           if ((insn[0] != (char)0xe8) || jump_abs) {
 
@@ -182,6 +207,7 @@ namespace sp {
                        pt->block()->last(), g_context->parser()->callee(pt)->name().c_str());
             }
           } // Direct call
+#endif
         } // If not yet instrumented
       } // If it is a valid command
     } // For each command

@@ -9,7 +9,7 @@ void test_before(SpPoint* pt) {
 
 	PatchFunction* f = callee(pt);
   if (!f) return;
-	// sp_print("func: %s", f->name().c_str());
+	sp_print("%s", f->name().c_str());
   sp::propel(pt);
 }
 
@@ -17,7 +17,7 @@ AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
   agent->set_init_before("test_before");
-	//  agent->set_directcall_only(true);
+	// agent->set_directcall_only(true);
   agent->go();
 }
 

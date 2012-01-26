@@ -220,6 +220,10 @@ namespace sp {
       PatchObject* obj = ci->second;
       SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
       Symtab* sym = cs->getSymtabObject();
+			if (sym->isStripped()) {
+				fprintf(stderr, "in findFunc(addr), %s is stripped\n", sym->name().c_str());
+				continue;
+			}
       Address lower_bound = obj->codeBase();
       if (!lower_bound) lower_bound = sym->getLoadOffset();
       Address upper_bound = lower_bound + cs->length();
@@ -238,6 +242,7 @@ namespace sp {
 
           if (funcs.size() > 0) {
             PatchFunction* pfunc = obj->getFunc(*funcs.begin());
+						fprintf(stderr, "func %s is in %s", pfunc->name().c_str(), sym->name().c_str());
             return pfunc;
           }
         }
@@ -301,7 +306,7 @@ namespace sp {
      Otherwise, create the PatchFunction object.
   */
   PatchFunction*
-  SpParser::findFunction(string name, bool skip) {
+  SpParser::findFunction(string name) {
 		sp_debug("FIND FUNC - looking for %s", name.c_str());
     if (real_func_map_.find(name) != real_func_map_.end()) {
       return real_func_map_[name];
@@ -317,7 +322,11 @@ namespace sp {
       SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
       Symtab* sym = cs->getSymtabObject();
 			sp_debug("IN OBJECT - %s", sym->name().c_str());
-      if (skip && g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
+			if (sym->isStripped()) {
+				// fprintf(stderr, "%s is stripped, skip it\n", sp_filename(sym->name().c_str()));
+				continue;
+			}
+      if (g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
 				sp_debug("SKIP - %s", name.c_str());
         continue;
       }
@@ -336,7 +345,7 @@ namespace sp {
 					} else if (l == sb::Symbol::SL_WEAK) {
 						linkage_name = "SL_WEAK";
 					}
-					fprintf(stderr, "function %s linkage type is %s\n", name.c_str(), linkage_name.c_str());
+					// fprintf(stderr, "function %s linkage type is %s\n", name.c_str(), linkage_name.c_str());
 				}
 			}
 			*/
@@ -351,6 +360,7 @@ namespace sp {
 					if (real_func_map_.find(name) == real_func_map_.end())
 						real_func_map_[name] = found;
 					func_set.insert(found);
+					fprintf(stderr, "(name) func %s is in %s\n", found->name().c_str(), sym->name().c_str());
 					// sp_debug("FOUND - %s at %lx", name.c_str(), (*fit)->addr());
           // return found;
 					// fprintf(stderr, "func %s is in region %s of obj %s\n", name.c_str(), region->getRegionName().c_str(), sym->name().c_str());
@@ -362,7 +372,7 @@ namespace sp {
 			return *func_set.begin();
 		}
 		else if (func_set.size() > 1) {
-			fprintf(stderr, "multiple function instances for %s\n", name.c_str());
+			// fprintf(stderr, "multiple function instances for %s\n", name.c_str());
 			return NULL;
 		}
 
@@ -487,8 +497,8 @@ namespace sp {
 				//sp_debug("Valid PatchFunction instance for %s is %lx (real: %lx), no %lx (real: %lx)", f->name().c_str(),
 				//				 (Dyninst::Address)tmp_f, tmp_f->addr(), (Dyninst::Address)f, f->addr());
         if (tmp_f != f) {
-					fprintf(stderr, "Valid PatchFunction instance for %s is %lx (real: %lx), no %lx (real: %lx)\n",
- 				f->name().c_str(), (Dyninst::Address)tmp_f, tmp_f->addr(), (Dyninst::Address)f, f->addr());
+					// fprintf(stderr, "Valid PatchFunction instance for %s is %lx (real: %lx), no %lx (real: %lx)\n",
+					// f->name().c_str(), (Dyninst::Address)tmp_f, tmp_f->addr(), (Dyninst::Address)f, f->addr());
 					f = tmp_f; 
 				} else {
 					// fprintf(stderr, "same instance for %s \n", f->name().c_str());
