@@ -12,6 +12,10 @@ using ph::PatchObject;
 
 using pe::CodeObject;
 
+namespace sp {
+	SpContext* g_context = NULL;
+}
+
 // Constructor for SpAgent
 SpAgent::ptr
 SpAgent::create() {
@@ -173,6 +177,7 @@ SpAgent::go() {
                                parser_);
   context_->set_directcall_only(directcall_only_);
   context_->set_allow_ipc(allow_ipc_);
+	g_context = context_;
 
   if (parse_only_) {
 #ifndef SP_RELEASE

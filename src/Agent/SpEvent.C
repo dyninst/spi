@@ -25,7 +25,7 @@ namespace sp {
   // AsyncEvent
   typedef void (*event_handler_t)(int, siginfo_t*, void*);
 
-  SpContext* g_context = NULL;
+  extern SpContext* g_context;
 
   void
   async_event_handler(int signum, siginfo_t* info, void* context) {
@@ -46,7 +46,6 @@ namespace sp {
 
   void
   AsyncEvent::register_event(SpContext* c) {
-    g_context = c;
     struct sigaction act;
     act.sa_sigaction = (event_handler_t)handler_;
     act.sa_flags = SA_SIGINFO;
@@ -62,8 +61,6 @@ namespace sp {
 
   void
   SyncEvent::register_event(SpContext* c) {
-    g_context = c;
-
     if (!g_context->parser()->injected()) {
 #ifndef SP_RELEASE
       sp_debug("PRELOAD - preload agent.so, and instrument main()");

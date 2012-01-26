@@ -1,12 +1,12 @@
-#include "SpInstrumenter.h"
-#include "SpParser.h"
-#include "SpContext.h"
-#include "SpAddrSpace.h"
 #include "SpUtils.h"
 #include "SpPoint.h"
-#include "SpPointMaker.h"
+#include "SpParser.h"
 #include "SpObject.h"
+#include "SpContext.h"
 #include "SpInjector.h"
+#include "SpAddrSpace.h"
+#include "SpPointMaker.h"
+#include "SpInstrumenter.h"
 
 using sb::Symtab;
 using sb::Symbol;
@@ -19,6 +19,7 @@ using sb::AddressLookup;
 using pe::CodeObject;
 using pe::CodeRegion;
 using pe::SymtabCodeSource;
+using pe::SymtabCodeRegion;
 
 using in::Result;
 using in::Visitor;
@@ -41,15 +42,22 @@ using ph::PatchFunction;
 
 using dt::Address;
 
+// Magic number to identify agent library
+// ( make the name long enough ... )
+int self_propelled_instrumentation_agent_library = 19861985;
+
 namespace sp {
 
   extern SpContext* g_context;
 
   SpParser::SpParser()
-    : exe_obj_(NULL), injected_(false),sp_offset_(0) {
+    : exe_obj_(NULL), injected_(false), sp_offset_(0) {
+
+		init_well_known_libs();
     init_dyninst_libs();
   }
 
+	// Clean up memory buffers for ParseAPI stuffs
   SpParser::~SpParser() {
     for (CodeSources::iterator i = code_srcs_.begin();
          i != code_srcs_.end(); i++) {
@@ -57,21 +65,46 @@ namespace sp {
       delete scs;
     }
     for (CodeObjects::iterator i = code_objs_.begin();
-         i != code_objs_.end(); i++)
+         i != code_objs_.end(); i++) {
       delete *i;
+		}
+
+		// Destory shared memory we use
+		shmctl(IJMSG_ID, IPC_RMID, NULL);
   }
 
+	// Agent-writer can create their own Parser. So use shared point to make
+	// memory management easy
   SpParser::ptr
   SpParser::create() {
     return ptr(new SpParser);
   }
 
-  /* Default implementation is runtime parsing. */
-  typedef struct {
-    Address offsets[100];
-  } IjLib;
+	// We skip "well known libraries" to parse
+	void
+	SpParser::init_well_known_libs() {
+		well_known_libs_.push_back("libc-");
+		well_known_libs_.push_back("libm-");
+		well_known_libs_.push_back("ld-");
+		well_known_libs_.push_back("libdl-");
+		well_known_libs_.push_back("libstdc++");
+		well_known_libs_.push_back("libgcc");
+		well_known_libs_.push_back("libpthread-");
 
-  /* We will skip dyninst libraries for parsing. */
+		// XXX: could rely on magic number in agent library
+		if (injected())
+			well_known_libs_.push_back(get_agent_name());
+	}
+
+	bool
+	SpParser::is_well_known_lib(string lib) {
+		for (unsigned i = 0; i < well_known_libs_.size(); i++) {
+			if (lib.find(well_known_libs_[i]) != string::npos) return true;
+		}
+		return false;
+	}
+
+  // We will skip dyninst libraries for parsing.
   bool
   SpParser::is_dyninst_lib(string lib) {
     for (unsigned i = 0; i < dyninst_libs_.size(); i++) {
@@ -90,48 +123,31 @@ namespace sp {
     dyninst_libs_.push_back("libelf.so");
     dyninst_libs_.push_back("libdwarf.so");
     dyninst_libs_.push_back("libcommon.so");
+    dyninst_libs_.push_back("libpcontrol.so");
   }
 
-  /* The main parsing routine. */
+  // The main parsing routine.
   PatchMgrPtr
   SpParser::parse() {
+
+		// Avoid duplicate parsing. If a shared library is loaded during runtime, we
+		// have to use PatchAPI's loadLibrary method to add this shared library
     if (mgr_) return mgr_;
 
-    /* Get all symtabs in this process */
+    // Get all symtabs in this process
     AddressLookup* al = AddressLookup::createAddressLookup(getpid());
     al->refresh();
     std::vector<Symtab*> tabs;
     al->getAllSymtabs(tabs);
 
-    /* Determine whether the agent is injected or preloaded.
-       - true: injected by other process (because libijagent.so is loaded ...)
-       - false: preloaded
-    */
+    // Determine whether the agent is injected or preloaded.
+    //   - true: injected by other process (because libijagent.so is loaded ...)
+    //   - false: preloaded
     for (std::vector<Symtab*>::iterator i = tabs.begin(); i != tabs.end(); i++) {
       Symtab* sym = *i;
       if (sym->name().find("libijagent.so") != string::npos) {
         injected_ = true;
         break;
-      }
-    }
-
-    IjLib* shm = NULL;
-    if (injected_) {
-      shm = (IjLib*)SpInjector::get_shm(1985, sizeof(IjLib));
-    }
-
-    /* Build lookup map, to parse those libraries that are loaded before
-       injecting this agent.
-       This happens only when the agent is injected, rather than preloaded.
-    */
-    int cur = 0;
-    typedef std::map<Address, bool> LibLookup;
-    LibLookup lib_lookup;
-    lib_lookup[0] = true;
-    if (injected_) {
-      while ((int)shm->offsets[cur] != -1) {
-        lib_lookup[shm->offsets[cur]] = true;
-        ++cur;
       }
     }
 
@@ -141,41 +157,43 @@ namespace sp {
       Address load_addr = 0;
       al->getLoadAddress(sym, load_addr);
 
-      /* Parsing binary objects is very time consuming
-         We avoid parsing the libraries that are not loaded before injecting agent.
-      */
-      if (injected_) {
-        if ((lib_lookup.find(load_addr) == lib_lookup.end())     &&
-            (sym->name().find(sp_filename(sp_filename(get_agent_name().c_str()))) == string::npos) &&
-            (sym->name().find("libagent.so") == string::npos)) {
+      // Parsing binary objects is very time consuming. We avoid parsing the
+      // libraries that are either well known (e.g., libc, or dyninst).
+			string libname_no_path = sp_filename(sym->name().c_str());
+			if (is_dyninst_lib(libname_no_path) ||
+					is_well_known_lib(libname_no_path)) {
 #ifndef SP_RELEASE
-          sp_debug("SKIPED - skip parsing %s", sp_filename(sym->name().c_str()));
+				sp_debug("SKIPED - skip parsing %s", sp_filename(sym->name().c_str()));
 #endif
-          continue;
-        }
-      } else {
-        if (is_dyninst_lib(sym->name())) {
-#ifndef SP_RELEASE
-          sp_debug("SKIPED - skip parsing %s", sp_filename(sym->name().c_str()));
-#endif
-          continue;
-        }
-      }
+				continue;
+			}
 
-      /* Parse binary objects using ParseAPI::CodeObject::parse() */
+      // Parse binary objects using ParseAPI::CodeObject::parse().
+			// XXX: Should parse stripped binary also.
       SymtabCodeSource* scs = new SymtabCodeSource(sym);
       code_srcs_.push_back(scs);
       CodeObject* co = new CodeObject(scs);
       code_objs_.push_back(co);
       co->parse();
 
-      /* Create PatchObjects */
-      PatchObject* patch_obj = new sp::SpObject(co, load_addr, NULL, NULL, load_addr?load_addr:scs->loadAddress());
+			vector<CodeRegion *>::const_iterator rit = scs->regions().begin();
+			for( ; rit != scs->regions().end(); ++rit) {
+				SymtabCodeRegion * scr = static_cast<SymtabCodeRegion*>(*rit);
+				if(scr->symRegion()->isText()) {
+					co->parseGaps(scr);
+				}
+			}
 
+      // Create PatchObjects
+			Address real_load_addr = load_addr?load_addr:scs->loadAddress();
+      PatchObject* patch_obj = new sp::SpObject(co, load_addr,
+																								NULL, NULL,
+																								real_load_addr);
       patch_objs.push_back(patch_obj);
 #ifndef SP_RELEASE
       sp_debug("PARSED - parsed %s", sp_filename(sym->name().c_str()));
 #endif
+
       if (sym->isExec()) {
         exe_obj_ = patch_obj;
         exe_name_ = sym->name().c_str();
@@ -184,34 +202,31 @@ namespace sp {
 #endif
       }
     } // End of symtab iteration
-    //  assert(exe_obj_);
-    /* XXX: for debugging chrome */
+
+    // XXX: for debugging chrome
+		/*
     if (!exe_obj_) {
       exe_obj_ = patch_objs[0];
     }
+		*/
 
-    /* Initialize PatchAPI stuffs */
+    // Initialize PatchAPI stuffs
     SpAddrSpace* as = SpAddrSpace::create(exe_obj_);
+
     ph::Instrumenter* inst = NULL;
     inst = sp::SpInstrumenter::create(as);
 
     sp::SpPointMaker* pm = new SpPointMaker;
     mgr_ = PatchMgr::create(as, inst, pm);
-    for (SpParser::PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
-      if (*i != exe_obj_) {
-        as->loadLibrary(*i);
-      }
+
+    for (PatchObjects::iterator i = patch_objs.begin(); i != patch_objs.end(); i++) {
+      if (*i != exe_obj_) as->loadLibrary(*i);
     }
 
-    /* Destroy shared memory */
-    if (injected_) {
-      shmctl(IJLIB_ID, IPC_RMID, NULL);
-      shmctl(IJMSG_ID, IPC_RMID, NULL);
-    }
     return mgr_;
   }
 
-  /* Find the function that contains addr */
+  // Find the function that contains addr
   PatchFunction*
   SpParser::findFunction(Address addr) {
 
@@ -242,7 +257,6 @@ namespace sp {
 
           if (funcs.size() > 0) {
             PatchFunction* pfunc = obj->getFunc(*funcs.begin());
-						fprintf(stderr, "func %s is in %s", pfunc->name().c_str(), sym->name().c_str());
             return pfunc;
           }
         }
@@ -261,29 +275,35 @@ namespace sp {
     long bp;
   } IjMsg;
 
-  /* TODO: should add support to preloaded mode */
+  // Get user-provided agent library's name.
+	// We rely on looking for the magic variable -
+	// " int self_propelled_instrumentation_agent_library = 19861985; "
+
   string
   SpParser::get_agent_name() {
     if (agent_name_.size() > 0) return agent_name_;
 
-    /* Injection mode */
-    if (injected_) {
-      IjMsg* msg_shm = (IjMsg*)SpInjector::get_shm(1986, sizeof(IjMsg));
-      agent_name_ = msg_shm->libname;
-      return agent_name_;
-    }
-
-    /* LD_PRELOAD mode
-       XXX: Now, assume the library that contains init_before is the agent lib
-    */
-    string init_before = g_context->init_before_name();
-    PatchFunction* f = findFunction(init_before);
-    Symtab* sym = ((SymtabCodeSource*)(f->obj()->co()->cs()))->getSymtabObject();
-    agent_name_ = sym->name().c_str();
+    AddrSpace* as = mgr_->as();
+    for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
+      PatchObject* obj = ci->second;
+      SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+      Symtab* sym = cs->getSymtabObject();
+			if (!sym) {
+				sp_perror("Failed to get Symtab object");
+			}
+			Symbols syms;
+			string magic_var = "self_propelled_instrumentation_agent_library";
+			if (sym->findSymbol(syms, magic_var)) {
+				if (syms.size() > 0) {
+					agent_name_ = sym->name();
+					break;
+				}
+			}
+		}
     return agent_name_;
   }
 
-  /* Get function address from function name. */
+  // Get function address from function name.
   Address
   SpParser::get_func_addr(string name) {
     AddrSpace* as = mgr_->as();
@@ -301,13 +321,12 @@ namespace sp {
     return 0;
   }
 
-  /* Find function by name.
-     If `skip` is true, and we can't find the function, then just skip it.
-     Otherwise, create the PatchFunction object.
-  */
+  // Find function by name.
+  //   If `skip` is true, and we can't find the function, then just skip it.
+  //   Otherwise, create the PatchFunction object.
   PatchFunction*
   SpParser::findFunction(string name) {
-		sp_debug("FIND FUNC - looking for %s", name.c_str());
+		sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
     if (real_func_map_.find(name) != real_func_map_.end()) {
       return real_func_map_[name];
     }
@@ -315,41 +334,26 @@ namespace sp {
     AddrSpace* as = mgr_->as();
 		FuncSet func_set;
     for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
-
+			sp_debug("START ITER");
       PatchObject* obj = ci->second;
       CodeObject* co = obj->co();
-      CodeObject::funclist& all = co->funcs();
-      SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+      SymtabCodeSource* cs = (SymtabCodeSource*)co->cs();
       Symtab* sym = cs->getSymtabObject();
+			if (!sym) {
+				sp_perror("Failed to get Symtab object");
+			}
 			sp_debug("IN OBJECT - %s", sym->name().c_str());
 			if (sym->isStripped()) {
-				// fprintf(stderr, "%s is stripped, skip it\n", sp_filename(sym->name().c_str()));
-				continue;
+				sp_debug("STRIPPED - %s is stripped", sp_filename(sym->name().c_str()));
 			}
-      if (g_context->is_well_known_lib(sp_filename(sym->name().c_str()))) {
-				sp_debug("SKIP - %s", name.c_str());
+      if (is_well_known_lib(sp_filename(sym->name().c_str()))) {
+				sp_debug("SKIP - well known lib %s", sp_filename(sym->name().c_str()));
         continue;
       }
-			/*
-			std::vector<Symbol*> symbols;
-			if (sym->findSymbol(symbols, name)) {
-				for (std::vector<Symbol*>::iterator si = symbols.begin(); si != symbols.end(); si++) {
-					sb::Symbol::SymbolLinkage l = (*si)->getLinkage();
-					string linkage_name;
-					if (l == sb::Symbol::SL_UNKNOWN) {
-						linkage_name = "SL_UNKNOWN";
-					} else if (l == sb::Symbol::SL_GLOBAL) {
-						linkage_name = "SL_GLOBAL";
-					} else if (l == sb::Symbol::SL_LOCAL) {
-						linkage_name = "SL_LOCAL";
-					} else if (l == sb::Symbol::SL_WEAK) {
-						linkage_name = "SL_WEAK";
-					}
-					// fprintf(stderr, "function %s linkage type is %s\n", name.c_str(), linkage_name.c_str());
-				}
-			}
-			*/
+
+      CodeObject::funclist& all = co->funcs();
       for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
+				sp_debug("func: %s", (*fit)->name().c_str());
         if ((*fit)->name().compare(name) == 0) {
           Region* region = sym->findEnclosingRegion((*fit)->addr());
           if (region && region->getRegionName().compare(".plt") == 0) {
@@ -360,27 +364,21 @@ namespace sp {
 					if (real_func_map_.find(name) == real_func_map_.end())
 						real_func_map_[name] = found;
 					func_set.insert(found);
-					fprintf(stderr, "(name) func %s is in %s\n", found->name().c_str(), sym->name().c_str());
-					// sp_debug("FOUND - %s at %lx", name.c_str(), (*fit)->addr());
-          // return found;
-					// fprintf(stderr, "func %s is in region %s of obj %s\n", name.c_str(), region->getRegionName().c_str(), sym->name().c_str());
         }
       } // For each function
+			// XXXX
+			break;
     } // For each object
 
 		if (func_set.size() == 1) {
 			return *func_set.begin();
-		}
-		else if (func_set.size() > 1) {
-			// fprintf(stderr, "multiple function instances for %s\n", name.c_str());
-			return NULL;
 		}
 
 		sp_debug("NO FOUND - %s", name.c_str());
     return NULL;
   }
 
-  /* Dump instructions in text. */
+  // Dump instructions in text.
   string
   SpParser::dump_insn(void* addr, size_t size) {
 
@@ -410,7 +408,7 @@ namespace sp {
     SpVisitor(sp::SpPoint* pt)
       : Visitor(), call_addr_(0), pt_(pt), use_pc_(false) { }
     virtual void visit(RegisterAST* r) {
-      if (SpParser::is_pc(r->getID())) {
+      if (is_pc(r->getID())) {
         use_pc_ = true;
         call_addr_ = pt_->block()->end();
       } else {
@@ -478,20 +476,17 @@ namespace sp {
     bool use_pc_;
   };
 
-  /* TODO (wenbin): is it okay to cache indirect callee? */
+  // TODO (wenbin): is it okay to cache indirect callee?
   PatchFunction*
   SpParser::callee(Point* pt, bool parse_indirect) {
-    /* 0. Check the cache
-       TODO: Should always re-parse indirect call
-    */
+    // 0. Check the cache
+    // TODO: Should always re-parse indirect call
     sp::SpPoint* spt = static_cast<sp::SpPoint*>(pt);
     if (spt->callee()) return spt->callee();
 
-    /* 1. Looking for direct call */
+    // 1. Looking for direct call
     PatchFunction* f = pt->getCallee();
     if (f) {
-			// fprintf(stderr, "same instance for %s \n", f->name().c_str());
-
 			PatchFunction* tmp_f = g_context->parser()->findFunction(f->name());
 			if (tmp_f) {
 				//sp_debug("Valid PatchFunction instance for %s is %lx (real: %lx), no %lx (real: %lx)", f->name().c_str(),
@@ -516,7 +511,7 @@ namespace sp {
       return spt->callee();
     }
 
-    /* 2. Looking for indirect call */
+    // 2. Looking for indirect call
     if (parse_indirect) {
 
       // PatchBlock* blk = pt->block();
@@ -559,4 +554,8 @@ namespace sp {
     *bp = shm->bp;
   }
 
+	SpObject* SpParser::get_object(PatchFunction* func) {
+		if (!func) return NULL;
+		return static_cast<SpObject*>(func->obj());
+	}
 }

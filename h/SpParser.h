@@ -5,49 +5,65 @@
 
 namespace sp {
 
-/*
-   Parser is to parse the CFG structures of the mutatee process.
- */
+class SpObject;
+
+//   Parser is to parse the CFG structures of the mutatee process.
 class SpParser : public ph::CFGMaker {
   public:
     typedef dyn_detail::boost::shared_ptr<SpParser> ptr;
+
     virtual ~SpParser();
     static ptr create();
 
-    typedef std::vector<pe::CodeObject*> CodeObjects;
-    typedef std::vector<ph::PatchObject*> PatchObjects;
+		// The main parsing procedure
     virtual ph::PatchMgrPtr parse();
+
+		// Get the PatchObject that represents the executable
     ph::PatchObject* exe_obj();
+
+		// Get the agent library's name
     string get_agent_name();
+
+		// Get register values to form a stack frame
     void get_frame(long* pc, long* sp, long* bp);
 
+		// Find function by absolute address
     ph::PatchFunction* findFunction(dt::Address addr);
+
+		// Find function by its name
     ph::PatchFunction* findFunction(string name);
+
+		// Get callee from a call point
     ph::PatchFunction* callee(ph::Point* pt,
                               bool       parse_indirect = false);
 
+		// Get function absolute address from function name
     dt::Address get_func_addr(string name);
-    string dump_insn(void* addr, size_t size);
-    bool injected() const { return injected_; }
-    dt::Address get_saved_reg(dt::MachRegister reg, dt::Address sp, size_t offset);
-    static bool is_pc(dt::MachRegister);
-    bool is_dyninst_lib(string lib);
-    void set_jump_inst(bool b) { jump_ = b; }
-    // only works for trap-based instrumentation
-    void set_old_context(ucontext_t* c) { old_context_ = *c; }
 
-    size_t sp_offset() const { return sp_offset_; }
-    void set_sp_offset(size_t s) { sp_offset_ = s; }
-    string exe_name() const { return exe_name_; }
+		// Dump instructions from a buffer
+    string dump_insn(void* addr, size_t size);
+
+		// Check if this agent library is injected (true) or is preloaded (false)
+    bool injected() const { return injected_; }
+
+		// Check if the library is a dyninst library (lib name is w/o path)
+    bool is_dyninst_lib(string lib);
+
+		// Check if the library is a well known library (lib name is w/o path)
+    bool is_well_known_lib(string lib);
+
+		// Get SpObject from a PatchFunction, this is actually a static_cast
+		SpObject* get_object(ph::PatchFunction* func);
+
   protected:
-    typedef std::vector<pe::CodeSource*> CodeSources;
     CodeSources code_srcs_;
     CodeObjects code_objs_;
     ph::PatchObject* exe_obj_;
     ph::PatchMgrPtr mgr_;
     bool injected_;
     ucontext_t old_context_;
-    std::vector<string> dyninst_libs_;
+    std::vector<std::string> dyninst_libs_;
+    std::vector<std::string> well_known_libs_;
     bool jump_;
     size_t sp_offset_;  // offset of stack pointer for saved context
 
@@ -59,6 +75,7 @@ class SpParser : public ph::CFGMaker {
     string exe_name_;
 
     SpParser();
+		void init_well_known_libs();
     void init_dyninst_libs();
 };
 

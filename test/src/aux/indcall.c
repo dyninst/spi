@@ -6,7 +6,7 @@
 typedef void (*foo_t)();
 
 void foo() {
-  printf("indirect call from foo\n");
+	sleep(1);
 }
 
 void bar() {

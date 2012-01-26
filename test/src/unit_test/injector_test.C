@@ -16,11 +16,17 @@ namespace {
 // -----------------------------------------------------------------------------
 class InjectorTest : public testing::Test {
   public:
-  InjectorTest(): pid_(0), server_(NULL) {}
+  InjectorTest(): pid_(0), server_(NULL) {
+		injector_path_ = getenv("SP_DIR");
+		injector_path_ += "/";
+		injector_path_ += getenv("PLATFORM");
+		injector_path_ += "/Injector ";
+	}
 
   protected:
 	pid_t pid_;
 	FILE* server_;
+	string injector_path_;
 
   virtual void SetUp() {
 		// Start a tcp_server via popen
@@ -49,8 +55,8 @@ TEST_F(InjectorTest, pid_inject) {
 	char pid_str[255];
 	sprintf(pid_str, "%d", pid_);
 
-	string cmd = "";
-	cmd += "./Injector ";
+	string cmd = injector_path_;
+	cmd += " ";
 	cmd += pid_str;
 	cmd += " ./inject_test_agent.so";
 
@@ -71,8 +77,8 @@ TEST_F(InjectorTest, pid_complex_agent_inject) {
 	char pid_str[255];
 	sprintf(pid_str, "%d", pid_);
 
-	string cmd = "";
-	cmd += "./Injector ";
+	string cmd = injector_path_;
+	cmd += " ";
 	cmd += pid_str;
 	cmd += " ./comp_test_agent.so";
 
@@ -90,8 +96,8 @@ TEST_F(InjectorTest, pid_complex_agent_inject) {
 }
 
 TEST_F(InjectorTest, network_inject) {
-	string cmd = "";
-	cmd += "./Injector ";
+	string cmd = injector_path_;
+	cmd += " ";
 	cmd += "127.0.0.1 ";
 	cmd += "80 ";          // Fake port number
 	cmd += "127.0.0.1 ";
@@ -115,8 +121,8 @@ TEST_F(InjectorTest, dup_inject) {
 	char pid_str[255];
 	sprintf(pid_str, "%d", pid_);
 
-	string cmd = "";
-	cmd += "./Injector ";
+	string cmd = injector_path_;
+	cmd += " ";
 	cmd += pid_str;
 	cmd += " ./inject_test_agent.so";
 

@@ -29,6 +29,8 @@ namespace sp {
     virtual ~SpAgent();
 
     void set_parser(SpParser::ptr);
+		SpParser::ptr parser() const { return parser_; }
+
     void set_init_event(SpEvent::ptr);
     void set_fini_event(SpEvent::ptr);
     void set_init_before(string);

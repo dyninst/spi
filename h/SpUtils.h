@@ -3,6 +3,9 @@
 
 #include "SpCommon.h"
 
+// Shorten namespace
+namespace dt = Dyninst;
+
 namespace sp {
 
 // ----------------------------------------------------------------------------- 
@@ -17,15 +20,20 @@ namespace sp {
   void PrintTime(char *, int);
 
 // ----------------------------------------------------------------------------- 
-// Determine the size of a long integer
+// Code Generation stuffs
 // -----------------------------------------------------------------------------
 
   // Determine whether a long integer has a value within 32-bit range.
   bool is_disp32(long d);
+
   // Determine whether a long integer has a value within 8-bit range.
   bool is_disp8(long d);
 
-// ----------------------------------------------------------------------------- 
+	// Determine whether a register is a pc register (rip for x86-64, and eip for
+  // i386)
+  bool is_pc(dt::MachRegister);
+
+// -----------------------------------------------------------------------------
 // Get pid from various things
 // -----------------------------------------------------------------------------
 

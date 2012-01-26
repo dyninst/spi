@@ -292,7 +292,7 @@ SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 
 /* Is this register EIP? */
 bool
-SpParser::is_pc(Dyninst::MachRegister r) {
+is_pc(Dyninst::MachRegister r) {
   if (r == Dyninst::x86::eip) return true;
   return false;
 }

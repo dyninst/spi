@@ -76,16 +76,31 @@
 #define sp_filename(path) basename((char*)path)
 
 namespace Dyninst {
+	namespace SymtabAPI {
+		class Symbol;
+	}
+
+	namespace ParseAPI {
+		class CodeObject;
+		class CodeSource;
+	}
+
   namespace PatchAPI {
     class Point;
+		class PatchObject;
     class PatchFunction;
   }
 }
 namespace sp {
-	typedef std::set<std::string> StringSet;
-	typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 	typedef std::set<pid_t> PidSet;
+	typedef std::set<std::string> StringSet;
+
+	typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 	typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;
+  typedef std::vector<Dyninst::ParseAPI::CodeObject*> CodeObjects;
+	typedef std::vector<Dyninst::SymtabAPI::Symbol*> Symbols;
+  typedef std::vector<Dyninst::PatchAPI::PatchObject*> PatchObjects;
+  typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
 }
 
 #define DYN_CAST(type, obj) dyn_detail::boost::dynamic_pointer_cast<type>(obj)

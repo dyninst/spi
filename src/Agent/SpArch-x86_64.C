@@ -380,7 +380,7 @@ extern SpContext* g_context;
 
   // Is this register RIP?
   bool
-  SpParser::is_pc(Dyninst::MachRegister r) {
+  is_pc(Dyninst::MachRegister r) {
     if (r == Dyninst::x86_64::rip) return true;
     return false;
   }
@@ -390,7 +390,7 @@ extern SpContext* g_context;
     RelocVisitor(SpParser::ptr p) : Visitor(), p_(p), use_pc_(false) {}
     virtual void visit(RegisterAST* r) {
 			sp_debug("USE REG");
-      if (p_->is_pc(r->getID())) {
+      if (is_pc(r->getID())) {
         use_pc_ = true;
       }
     }

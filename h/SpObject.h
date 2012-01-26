@@ -3,8 +3,9 @@
 
 #include "SpAgentCommon.h"
 
-/* PatchAPI stuffs. */
+// PatchAPI stuffs.
 namespace sp {
+
   class SpObject : public ph::PatchObject {
   public:
 
@@ -13,8 +14,12 @@ namespace sp {
     : ph::PatchObject(o, a, cm, cb), load_addr_(la) {}
 
     dt::Address load_addr() const { return load_addr_; }
+
+		// Get this object's name
+		std::string name();
   protected:
     dt::Address load_addr_;
+		std::string name_;
 };
 
 }

@@ -1,10 +1,7 @@
 #ifndef SP_CONTEXT_H_
 #define SP_CONTEXT_H_
 
-//#include <ext/hash_map>
-
 #include "SpAgentCommon.h"
-
 #include "SpPayload.h"
 #include "SpPropeller.h"
 #include "SpParser.h"
@@ -42,7 +39,6 @@ class SpContext {
 
     void set_old_act(struct sigaction old_act) { old_act_ = old_act; }
 
-    bool is_well_known_lib(string);
 
     typedef std::set<ph::PatchBlock*> SpringSet;
     bool in_spring_set(ph::PatchBlock* b) { return (spring_set_.find(b) != spring_set_.end()); }
@@ -63,7 +59,6 @@ class SpContext {
 
     SpParser::ptr parser_;
     ph::PatchMgrPtr mgr_;
-    std::vector<std::string> well_known_libs_;
     bool directcall_only_;
 
     // Things to be restored
@@ -76,8 +71,7 @@ class SpContext {
     bool allow_ipc_;
     SpIpcMgr* ipc_mgr_;
 
-    SpContext(SpPropeller::ptr,
-              SpParser::ptr);
+    SpContext(SpPropeller::ptr, SpParser::ptr);
     void init_well_known_libs();
 };
 

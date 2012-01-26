@@ -15,7 +15,7 @@ protected:
 	virtual void TearDown() {
 	}
 };
-/*
+
 TEST_F(UtilsTest, get_file_text) {
 	string content = get_file_text("/proc/self/cmdline");
 	EXPECT_STREQ(content.c_str(), "./utils_test");
@@ -28,24 +28,21 @@ TEST_F(UtilsTest, is_illegal_exe) {
 }
 
 TEST_F(UtilsTest, addr_to_pid_without_injector) {
-	FILE* fp = popen("./tcp_server", "r");
+	FILE* fp = popen("./tcp_server6", "r");
 
 	PidSet pid_set;
 	pid_t p = -1;
 	int retry = 4;
 	do {
-		addr_to_pids(0, 0, 0, 3490, pid_set);
+		addr_to_pids((char*)"0.0.0.0", (char*)"0", (char*)"0.0.0.0", (char*)"3490", pid_set);
 		for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
-			// sp_print("pid = %d", *i);
 			p = *i;
 		}
 		--retry;
 		if (pid_set.size() <= 0) sleep(1);
 	} while (pid_set.size() <=0 && retry > 0);
 	EXPECT_TRUE(p > 0);
-	system("killall tcp_server");
+	system("killall tcp_server6");
 	pclose(fp);
-	// sp_print("PID = %d", p);
 }
 
-*/

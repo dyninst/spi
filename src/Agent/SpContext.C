@@ -21,8 +21,7 @@ using ph::PatchFunction;
 
 using pe::SymtabCodeSource;
 
-SpContext::SpContext(SpPropeller::ptr p,
-                     SpParser::ptr parser) {
+SpContext::SpContext(SpPropeller::ptr p, SpParser::ptr parser) {
   init_propeller_ = p;
   parser_ = parser;
   ipc_mgr_ = NULL;
@@ -30,8 +29,6 @@ SpContext::SpContext(SpPropeller::ptr p,
 
   // Parsing the entire code
   parse();
-
-  init_well_known_libs();
 }
 
 SpContext*
@@ -49,22 +46,6 @@ SpContext::create(SpPropeller::ptr propeller,
   ret->wrapper_before_ = (void*)ret->parser()->get_func_addr("wrapper_before");
   ret->wrapper_after_ = (void*)ret->parser()->get_func_addr("wrapper_after");
   return ret;
-}
-
-
-void
-SpContext::init_well_known_libs() {
-  well_known_libs_.push_back("libc-");
-  well_known_libs_.push_back("libm-");
-  well_known_libs_.push_back("ld-");
-  well_known_libs_.push_back("libdl-");
-  well_known_libs_.push_back("libstdc++");
-  well_known_libs_.push_back("libgcc");
-  well_known_libs_.push_back("libagent.so");
-  well_known_libs_.push_back("libpthread-");
-
-  if (parser_->injected())
-    well_known_libs_.push_back(parser_->get_agent_name());
 }
 
 // Get the first instrumentable function.
@@ -112,14 +93,6 @@ SpContext::parse() {
 #ifndef SP_RELEASE
   sp_debug("FINISH PARSING - finish parsing binary code");
 #endif
-}
-
-bool
-SpContext::is_well_known_lib(string lib) {
-  for (unsigned i = 0; i < well_known_libs_.size(); i++) {
-    if (lib.find(well_known_libs_[i]) != string::npos) return true;
-  }
-  return false;
 }
 
 

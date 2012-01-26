@@ -7,6 +7,7 @@
 #include "SpPoint.h"
 #include "SpUtils.h"
 #include "SpParser.h"
+#include "SpObject.h"
 #include "SpSnippet.h"
 #include "SpPayload.h"
 #include "SpContext.h"

@@ -3,7 +3,7 @@
 
 #include "SpCommon.h"
 
-/* Dyninst headers for Agent */
+// Dyninst headers for Agent
 #include "frame.h"
 #include "Point.h"
 #include "walker.h"
@@ -18,12 +18,13 @@
 #include "Instrumenter.h"
 #include "BinaryFunction.h"
 
-/* Shorten namespace */
+// Shorten namespace
 namespace dt = Dyninst;
 namespace pe = Dyninst::ParseAPI;
 namespace ph = Dyninst::PatchAPI;
 namespace sb = Dyninst::SymtabAPI;
 namespace in = Dyninst::InstructionAPI;
 namespace sk = Dyninst::Stackwalker;
+
 
 #endif /* _SPAGENTCOMMON_H_ */
