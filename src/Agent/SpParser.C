@@ -490,7 +490,7 @@ namespace sp {
     // 2. Looking for indirect call
     if (parse_indirect) {
 
-      Instruction::Ptr insn = spt->snip()->get_orig_call_insn();
+      Instruction::Ptr insn = spt->orig_call_insn();
       Expression::Ptr trg = insn->getControlFlowTarget();
       Address call_addr = 0;
       if (trg) {

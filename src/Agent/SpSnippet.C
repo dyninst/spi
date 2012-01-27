@@ -16,7 +16,7 @@ namespace sp {
   // Constructor
   // Allocate a buffer to hold generated patch area for a call site.
   SpSnippet::SpSnippet(PatchFunction* f,
-                       Point* pt,
+                       SpPoint* pt,
                        SpContext* c,
                        PayloadFunc entry,
                        PayloadFunc exit)
@@ -103,7 +103,8 @@ namespace sp {
     } else {
       // 5.3. indirect call
       blob_size_ += emit_call_orig((long)point_->block()->last(),
-                                   orig_call_insn_->size(), blob_, blob_size_);
+                                   point_->orig_call_insn()->size(),
+																	 blob_, blob_size_);
     }
 
     if (context_->allow_ipc() || exit_) {

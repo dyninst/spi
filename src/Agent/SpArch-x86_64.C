@@ -800,7 +800,7 @@ extern SpContext* g_context;
     bool use_pc = false;
 
     // Check whether the call instruction uses RIP
-    Instruction::Ptr insn = get_orig_call_insn();
+    Instruction::Ptr insn = point_->orig_call_insn();
     RelocVisitor visitor(context_->parser());
     Expression::Ptr trg = insn->getControlFlowTarget();
     set<Expression::Ptr> opSet;

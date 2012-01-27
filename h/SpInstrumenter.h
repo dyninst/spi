@@ -9,9 +9,25 @@ namespace sp {
 
 	class InstWorker {
 	public:
+		// Instrument a point
 		virtual bool run(SpPoint* pt) = 0;
+
+		// Uninstrument a point
 		virtual bool undo(SpPoint* pt) = 0;
+
+		// Save code that will be modified for a point
+		virtual bool save(SpPoint* pt) = 0;
+
+		// How to install instrumentation?
+		// - SP_NONE,
+    // - SP_TRAP,      
+    // - SP_RELOC_INSN,
+    // - SP_RELOC_BLK, 
+    // - SP_SPRINGBOARD
 		virtual InstallMethod install_method() const = 0;
+	protected:
+		// Install the instrumentation
+		virtual bool install(SpPoint* pt) = 0;
 	};
 
 
@@ -65,7 +81,16 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt);
 		virtual bool undo(SpPoint* pt);
+		virtual bool save(SpPoint* pt);
 		virtual InstallMethod install_method() const { return SP_TRAP; }
+	private:
+		typedef std::map<dt::Address, SpSnippet::ptr> InstMap;
+		static InstMap inst_map_;
+
+		// For trap handler
+		static void trap_handler(int sig, siginfo_t* info, void* c);
+
+		virtual bool install(SpPoint* pt);
 	};
 
 	class RelocCallInsnWorker : public InstWorker {
@@ -74,8 +99,10 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt);
 		virtual bool undo(SpPoint* pt);
+		virtual bool save(SpPoint* pt);
 		virtual InstallMethod install_method() const { return SP_RELOC_INSN; }
-
+	protected:
+		virtual bool install(SpPoint* pt);
 	};
 
 	class RelocCallBlockWorker : public InstWorker {
@@ -84,8 +111,10 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt);
 		virtual bool undo(SpPoint* pt);
+		virtual bool save(SpPoint* pt);
 		virtual InstallMethod install_method() const { return SP_RELOC_BLK; }
-
+	protected:
+		virtual bool install(SpPoint* pt);
 	};
 
 	class SpringboardWorker : public InstWorker {
@@ -94,7 +123,10 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt);
 		virtual bool undo(SpPoint* pt);
+		virtual bool save(SpPoint* pt);
 		virtual InstallMethod install_method() const { return SP_SPRINGBOARD; }
+	protected:
+		virtual bool install(SpPoint* pt);
 	};
 
 }

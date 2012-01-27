@@ -74,7 +74,9 @@ namespace sp {
 								 pt->block()->last());
       }
 #endif
-      SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, entry, exit);
+      SpSnippet::ptr sp_snip = SpSnippet::create(callee,
+																								 static_cast<SpPoint*>(pt),
+																								 context, entry, exit);
       Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);
       patcher.add(PushBackCommand::create(pt, snip));
     }

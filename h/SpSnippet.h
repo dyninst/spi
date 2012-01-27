@@ -16,14 +16,14 @@ namespace sp {
   public:
     typedef dyn_detail::boost::shared_ptr<SpSnippet> ptr;
     static ptr create(ph::PatchFunction* f,
-                      ph::Point* pt,
+                      SpPoint* pt,
                       SpContext* c,
                       PayloadFunc entry,
                       PayloadFunc exit) {
       return ptr(new SpSnippet(f, pt, c, entry, exit));
     }
     SpSnippet(ph::PatchFunction* f,
-              ph::Point* pt,
+              SpPoint* pt,
               SpContext* c,
               PayloadFunc entry, PayloadFunc exit);
     ~SpSnippet();
@@ -52,11 +52,8 @@ namespace sp {
     SpContext* context() const { return context_; }
     PayloadFunc entry() const { return entry_; }
     PayloadFunc exit() const { return exit_; }
-    ph::Point* point() const { return point_; }
+    SpPoint* point() const { return point_; }
     ph::PatchFunction* func() const { return func_; }
-
-    in::Instruction::Ptr get_orig_call_insn() const { return orig_call_insn_;}
-    void set_orig_call_insn(in::Instruction::Ptr i) {orig_call_insn_ = i;}
 
     string& orig_blk() { return orig_blk_; }
     string& orig_spring_blk() { return orig_spring_blk_; }
@@ -71,7 +68,7 @@ namespace sp {
 
   protected:
     ph::PatchFunction* func_;
-    ph::Point* point_;
+    SpPoint* point_;
     SpContext* context_;
     PayloadFunc entry_;
     PayloadFunc exit_;
@@ -90,15 +87,8 @@ namespace sp {
     string orig_spring_blk_;
     ph::PatchBlock* spring_blk_;
 
-    in::Instruction::Ptr orig_call_insn_;
     dt::Address reloc_call_addr_;
     bool realloc_;
-
-    // TODO(wenbin): 
-    // Instruction::Ptr orig_call_insn_
-    // size_t orig_call_size_
-    // Address orig_call_addr_
-    // Address orig_call_pc_ 
 
     // A bunch of code generation interfaces
     size_t emit_save(char* buf, size_t offset, bool indirect=false);

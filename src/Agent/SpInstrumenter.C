@@ -63,7 +63,6 @@ namespace sp {
       PushBackCommand* command = static_cast<PushBackCommand*>(*c);
       if (!command) continue;
 			SpPoint* spt = static_cast<SpPoint*>(command->instance()->point());
-
 			// If we only want to instrument direct call, and this point is a indirect
 			// call point, then skip it
 			if (!spt->getCallee() && g_context->directcall_only()) {
@@ -76,11 +75,27 @@ namespace sp {
 				continue;
 			}
 
+			// Associate snippet with SpPoint
+			Snippet<SpSnippet::ptr>::Ptr snip = 
+				Snippet<SpSnippet::ptr>::get(command->instance()->snippet());
+			SpSnippet::ptr sp_snip = snip->rep();
+			spt->set_snip(sp_snip);
+
+			// Handle tail call
+			Instruction::Ptr callinsn = spt->block()->getInsn(spt->block()->last());
+			if (callinsn->getCategory() == in::c_BranchInsn) {
+				spt->set_tailcall(true);
+				spt->set_ret_addr(0);
+			} else {
+				spt->set_ret_addr(spt->block()->end());
+			}
+
 			// Otherwise, apply workers one by one in order
 			// If trap only, we only apply the last worker -- trap worker
 			size_t i = g_context->trap_only() ? (workers_.size() - 1) : 0;
 			for (; i < workers_.size(); i++) {
 				InstWorker* worker = workers_[i];
+				worker->save(spt);
 				// If this worker succeeds, then we are done
 				if (worker->run(spt)) {
 					spt->set_instrumented(true);
@@ -100,16 +115,104 @@ namespace sp {
 	// -----------------------------------------------------------------------------
  	// TrapWorker
 	// -----------------------------------------------------------------------------
+	TrapWorker::InstMap TrapWorker::inst_map_;
+
 	bool
 	TrapWorker::run(SpPoint* pt) {
 		sp_debug("TRAP WORKER - runs");
-		return true;
+		assert(pt);
+
+		// Install trap handler to the trap signal
+		struct sigaction act;
+		act.sa_sigaction = TrapWorker::trap_handler;
+		act.sa_flags = SA_SIGINFO;
+		struct sigaction old_act;
+		sigaction(SIGTRAP, &act, &old_act);
+
+		// Call insn's addr
+    Address call_addr = pt->block()->last();
+
+		// This mapping is used in trap handler
+		inst_map_[call_addr] = pt->snip();
+
+		// Install
+		return install(pt);
 	}
 
 	bool
 	TrapWorker::undo(SpPoint* pt) {
 		return true;
 	}
+
+	bool
+	TrapWorker::save(SpPoint* pt) {
+		sp_debug("TRAP WORKER - saves");
+
+		// On SpPoint side
+		Address call_insn = pt->block()->last();
+		Instruction::Ptr callinsn = pt->block()->getInsn(call_insn);
+		pt->set_orig_call_insn(callinsn);
+		return true;
+	}
+
+	bool
+	TrapWorker::install(SpPoint* pt) {
+		sp_debug("TRAP WORKER - installs");
+
+    char* call_addr = (char*)pt->block()->last();
+		char* blob = pt->snip()->blob(pt->ret_addr());
+		if (!blob) return false;
+
+    char int3 = (char)0xcc;
+    size_t call_size = pt->block()->end() - pt->block()->last();
+
+    // Overwrite int3 to the call site
+    int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+		PatchMgrPtr mgr = g_context->parser()->mgr();
+    SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(mgr->as());
+    PatchObject* obj = pt->block()->object();
+    if (!as->set_range_perm((Address)call_addr, call_size, perm)) {
+			sp_debug("FAILED PERM - failed to change memory permission");
+      return false;
+    } else {
+      as->write(obj, (Address)call_addr, (Address)&int3, 1);
+    }
+
+    // Restore the permission of memory mapping
+    if (!as->restore_range_perm((Address)call_addr, 1)) {
+      return false;
+    }
+
+		sp_debug("TRAP INSTALLED - successful for call insn %lx", (long)call_addr);
+    return true;
+	}
+
+  // We resort to trap to transfer control to patch area, when we are not 
+  // able to use jump-based implementation.
+  void
+  TrapWorker::trap_handler(int sig, siginfo_t* info, void* c) {
+    Address pc = SpSnippet::get_pre_signal_pc(c) - 1;
+    InstMap& inst_map = TrapWorker::inst_map_;
+    if (inst_map.find(pc) == inst_map.end()) {
+			sp_perror("NO BLOB - for this call insn at %lx", pc);
+    }
+
+    // Get patch area's address
+    SpSnippet::ptr sp_snip = inst_map[pc];
+    char* blob = (char*)sp_snip->buf();
+    int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+    PatchMgrPtr mgr = g_context->parser()->mgr();
+    SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(mgr->as());
+
+		// Change memory permission for the snippet
+    if (!as->set_range_perm((Address)blob, sp_snip->size(), perm)) {
+      // as->dump_mem_maps();
+			sp_perror("FAILED PERM - failed to change memory permission for blob");
+    }
+
+    // Set pc to jump to patch area
+    SpSnippet::set_pc((Address)blob, c);
+  }
 
 	// -----------------------------------------------------------------------------
  	// RelocCallInsnWorker
@@ -122,6 +225,16 @@ namespace sp {
 
 	bool
 	RelocCallInsnWorker::undo(SpPoint* pt) {
+		return true;
+	}
+
+	bool
+	RelocCallInsnWorker::save(SpPoint* pt) {
+		return true;
+	}
+
+	bool
+	RelocCallInsnWorker::install(SpPoint* pt) {
 		return true;
 	}
 
@@ -139,6 +252,16 @@ namespace sp {
 		return true;
 	}
 
+	bool
+	RelocCallBlockWorker::save(SpPoint* pt) {
+		return true;
+	}
+
+	bool
+	RelocCallBlockWorker::install(SpPoint* pt) {
+		return true;
+	}
+
 	// -----------------------------------------------------------------------------
 	// SpringboardWorker
 	// -----------------------------------------------------------------------------
@@ -150,6 +273,16 @@ namespace sp {
 
 	bool
 	SpringboardWorker::undo(SpPoint* pt) {
+		return true;
+	}
+
+	bool
+	SpringboardWorker::save(SpPoint* pt) {
+		return true;
+	}
+
+	bool
+	SpringboardWorker::install(SpPoint* pt) {
 		return true;
 	}
 
