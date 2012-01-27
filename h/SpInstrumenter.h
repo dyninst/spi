@@ -3,16 +3,33 @@
 
 #include "SpAgentCommon.h"
 #include "SpSnippet.h"
+#include "SpPoint.h"
 
 namespace sp {
-class SpInstrumenter : public ph::Instrumenter {
+
+	class InstWorker {
+	public:
+		virtual bool run(SpPoint* pt) = 0;
+		virtual bool undo(SpPoint* pt) = 0;
+		virtual InstallMethod install_method() const = 0;
+	};
+
+
+	class SpInstrumenter : public ph::Instrumenter {
   public:
     static SpInstrumenter* create(ph::AddrSpace* as);
-    virtual bool run();
+
+		virtual bool run();
+		virtual bool undo();
 
   protected:
-    SpInstrumenter(ph::AddrSpace*);
+		typedef std::vector<InstWorker*> InstWorkers;
+		InstWorkers workers_;
 
+    SpInstrumenter(ph::AddrSpace*);
+		~SpInstrumenter();
+
+#if 0
     bool install_direct(SpPoint* point,
                         char*      blob,
                         size_t     blob_size);
@@ -39,7 +56,46 @@ class SpInstrumenter : public ph::Instrumenter {
     static void trap_handler(int        sig,
                              siginfo_t* info,
                              void*      c);
-};
+#endif
+	};
+
+	class TrapWorker : public InstWorker {
+	public:
+    TrapWorker() : InstWorker() {}
+
+		virtual bool run(SpPoint* pt);
+		virtual bool undo(SpPoint* pt);
+		virtual InstallMethod install_method() const { return SP_TRAP; }
+	};
+
+	class RelocCallInsnWorker : public InstWorker {
+	public:
+	  RelocCallInsnWorker() : InstWorker() {}
+
+		virtual bool run(SpPoint* pt);
+		virtual bool undo(SpPoint* pt);
+		virtual InstallMethod install_method() const { return SP_RELOC_INSN; }
+
+	};
+
+	class RelocCallBlockWorker : public InstWorker {
+	public:
+    RelocCallBlockWorker() : InstWorker() {}
+
+		virtual bool run(SpPoint* pt);
+		virtual bool undo(SpPoint* pt);
+		virtual InstallMethod install_method() const { return SP_RELOC_BLK; }
+
+	};
+
+	class SpringboardWorker : public InstWorker {
+	public:
+    SpringboardWorker() : InstWorker() {}
+
+		virtual bool run(SpPoint* pt);
+		virtual bool undo(SpPoint* pt);
+		virtual InstallMethod install_method() const { return SP_SPRINGBOARD; }
+	};
 
 }
 

@@ -18,12 +18,12 @@ namespace sp {
   SpSnippet::SpSnippet(PatchFunction* f,
                        Point* pt,
                        SpContext* c,
-                       PayloadFunc before,
-                       PayloadFunc after)
-    : func_(f), point_(pt), context_(c), before_(before), after_(after),
+                       PayloadFunc entry,
+                       PayloadFunc exit)
+    : func_(f), point_(pt), context_(c), entry_(entry), exit_(exit),
       blob_size_(0), spring_size_(0), spring_blk_(NULL), realloc_(false) {
 
-    ph::PatchMgrPtr mgr = c->mgr();
+    ph::PatchMgrPtr mgr = c->parser()->mgr();
     ph::AddrSpace* as = mgr->as();
 
     // TODO (wenbin): For now, just statically allocate a 1024-byte buffer,
@@ -77,10 +77,10 @@ namespace sp {
 
     // 3. Call payload before function call
     long param_func = 0;
-    long called_func = (long)before_;
+    long called_func = (long)entry_;
     if (context_->allow_ipc()) {
-      param_func = (long)before_;
-      called_func = (long)context_->wrapper_before();
+      param_func = (long)entry_;
+      called_func = (long)context_->wrapper_entry();
     }
     blob_size_ += emit_pass_param((long)point_, param_func, blob_, blob_size_);
     blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
@@ -106,16 +106,16 @@ namespace sp {
                                    orig_call_insn_->size(), blob_, blob_size_);
     }
 
-    if (context_->allow_ipc() || after_) {
+    if (context_->allow_ipc() || exit_) {
       // 6. save context
       blob_size_ += emit_save(blob_, blob_size_, reloc);
 
       // 7. Pass parameters
       param_func = 0;
-      called_func = (long)after_;
+      called_func = (long)exit_;
       if (context_->allow_ipc()) {
-        param_func = (long)after_;
-        called_func = (long)context_->wrapper_after();
+        param_func = (long)exit_;
+        called_func = (long)context_->wrapper_exit();
       }
       blob_size_ += emit_pass_param((long)point_, param_func, blob_, blob_size_);
       blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
@@ -248,7 +248,7 @@ namespace sp {
   // Build the spring block
   char*
   SpSnippet::spring(Address ret_addr) {
-    ph::PatchMgrPtr mgr = context_->mgr();
+    ph::PatchMgrPtr mgr = context_->parser()->mgr();
     ph::AddrSpace* as = mgr->as();
     spring_ = (char*)as->malloc(point_->obj(), 1024, static_cast<sp::SpObject*>(point_->obj())->load_addr());
     spring_size_ = 0;

@@ -14,13 +14,11 @@ class SpPropeller {
 
     bool go(ph::PatchFunction* func,
             SpContext* context,
-            PayloadFunc before,
-            PayloadFunc after,
+            PayloadFunc entry,
+            PayloadFunc exit,
             ph::Point* pt = NULL);
 
   protected:
-    //Points pts_;
-
     virtual void next_points(ph::PatchFunction* func,
                              ph::PatchMgrPtr mgr,
                              Points& pts);

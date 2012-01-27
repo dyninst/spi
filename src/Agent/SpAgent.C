@@ -40,6 +40,7 @@ SpAgent::SpAgent() {
   parse_only_ = false;
   directcall_only_ = false;
   allow_ipc_ = false;
+	trap_only_ = false;
 }
 
 SpAgent::~SpAgent() {
@@ -64,13 +65,13 @@ SpAgent::set_fini_event(SpEvent::ptr e) {
 }
 
 void
-SpAgent::set_init_before(string p) {
-  init_before_ = p;
+SpAgent::set_init_entry(string p) {
+  init_entry_ = p;
 }
 
 void
-SpAgent::set_init_after(string p) {
-  init_after_ = p;
+SpAgent::set_init_exit(string p) {
+  init_exit_ = p;
 }
 
 void
@@ -91,6 +92,11 @@ SpAgent::set_directcall_only(bool b) {
 void
 SpAgent::set_ipc(bool b) {
   allow_ipc_ = b;
+}
+
+void
+SpAgent::set_trap_only(bool b) {
+  trap_only_ = b;
 }
 
 // Here We Go! Self-propelling magic happens!
@@ -132,17 +138,17 @@ SpAgent::go() {
 #endif
     fini_event_ = SpEvent::create();
   }
-  if (init_before_.size() == 0) {
+  if (init_entry_.size() == 0) {
 #ifndef SP_RELEASE
-    sp_debug("BEFORE_PAYLOAD - Use default payload before calls");
+    sp_debug("ENTRY_PAYLOAD - Use default payload entry calls");
 #endif
-    init_before_ = "default_before";
+    init_entry_ = "default_entry";
   }
-  if (init_after_.size() == 0) {
+  if (init_exit_.size() == 0) {
 #ifndef SP_RELEASE
-    sp_debug("AFTER_PAYLOAD - No payload after calls");
+    sp_debug("EXIT_PAYLOAD - No payload exit calls");
 #endif
-    init_after_ = "";
+    init_exit_ = "";
   }
   if (!parser_) {
 #ifndef SP_RELEASE
@@ -168,16 +174,21 @@ SpAgent::go() {
   } else {
     sp_debug("SINGLE PROCESS - only support single-process instrumentation");
   }
+  if (trap_only_) {
+    sp_debug("TRAP ONLY - Only use trap-based instrumentation");
+  } else {
+    sp_debug("JUMP + TRAP - Use jump and trap for instrumentation");
+  }
 #endif
 
   // Prepare context
-  context_ = SpContext::create(init_propeller_,
-                               init_before_,
-                               init_after_,
+  g_context = SpContext::create(init_propeller_,
+                               init_entry_,
+                               init_exit_,
                                parser_);
-  context_->set_directcall_only(directcall_only_);
-  context_->set_allow_ipc(allow_ipc_);
-	g_context = context_;
+  g_context->set_directcall_only(directcall_only_);
+  g_context->set_allow_ipc(allow_ipc_);
+	g_context->set_trap_only(trap_only_);
 
   if (parse_only_) {
 #ifndef SP_RELEASE
@@ -188,7 +199,7 @@ SpAgent::go() {
   }
 
   // Register Events
-  init_event_->register_event(context_);
-  fini_event_->register_event(context_);
+  init_event_->register_event(g_context);
+  fini_event_->register_event(g_context);
 }
 

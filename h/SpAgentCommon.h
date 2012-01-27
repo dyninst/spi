@@ -18,13 +18,10 @@
 #include "Instrumenter.h"
 #include "BinaryFunction.h"
 
+
 // Shorten namespace
-namespace dt = Dyninst;
-namespace pe = Dyninst::ParseAPI;
-namespace ph = Dyninst::PatchAPI;
-namespace sb = Dyninst::SymtabAPI;
-namespace in = Dyninst::InstructionAPI;
 namespace sk = Dyninst::Stackwalker;
+namespace in = Dyninst::InstructionAPI;
 
 
 #endif /* _SPAGENTCOMMON_H_ */

@@ -33,12 +33,13 @@ namespace sp {
 
     void set_init_event(SpEvent::ptr);
     void set_fini_event(SpEvent::ptr);
-    void set_init_before(string);
-    void set_init_after(string);
+    void set_init_entry(string);
+    void set_init_exit(string);
     void set_init_propeller(SpPropeller::ptr);
 
     void set_parse_only(bool b);
     void set_directcall_only(bool b);
+		void set_trap_only(bool b);
     void set_ipc(bool b);
 
     void go();
@@ -48,14 +49,14 @@ namespace sp {
     SpEvent::ptr fini_event_;
     SpParser::ptr parser_;
     SpPropeller::ptr init_propeller_;
-    string init_before_;
-    string init_after_;
-    ph::PatchMgrPtr mgr_;
-    SpContext* context_;
+
+    string init_entry_;
+    string init_exit_;
 
     bool parse_only_;
     bool directcall_only_;
     bool allow_ipc_;
+		bool trap_only_;
 
     SpAgent();
 	};

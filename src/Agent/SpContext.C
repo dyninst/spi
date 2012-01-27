@@ -25,26 +25,28 @@ SpContext::SpContext(SpPropeller::ptr p, SpParser::ptr parser) {
   init_propeller_ = p;
   parser_ = parser;
   ipc_mgr_ = NULL;
+	directcall_only_ = false;
   allow_ipc_ = false;
+	trap_only_ = false;
 
   // Parsing the entire code
-  parse();
+  parser_->parse();
 }
 
 SpContext*
 SpContext::create(SpPropeller::ptr propeller,
-                  string init_before,
-                  string init_after,
+                  string init_entry,
+                  string init_exit,
                   SpParser::ptr parser) {
   SpContext* ret = new SpContext(propeller,
                                  parser);
   assert(ret);
-  ret->init_before_ = (void*)ret->parser()->get_func_addr(init_before);
-  ret->init_after_ = (void*)ret->parser()->get_func_addr(init_after);
-  ret->init_before_name_ = init_before;
-  ret->init_after_name_ = init_after;
-  ret->wrapper_before_ = (void*)ret->parser()->get_func_addr("wrapper_before");
-  ret->wrapper_after_ = (void*)ret->parser()->get_func_addr("wrapper_after");
+  ret->init_entry_ = (void*)ret->parser()->get_func_addr(init_entry);
+  ret->init_exit_ = (void*)ret->parser()->get_func_addr(init_exit);
+  ret->init_entry_name_ = init_entry;
+  ret->init_exit_name_ = init_exit;
+  ret->wrapper_entry_ = (void*)ret->parser()->get_func_addr("wrapper_entry");
+  ret->wrapper_exit_ = (void*)ret->parser()->get_func_addr("wrapper_exit");
   return ret;
 }
 
@@ -53,7 +55,7 @@ SpContext::create(SpPropeller::ptr propeller,
 // 1. it should be resovled by the parser.
 // 2. it should not be from some well known system libraries
 void
-SpContext::get_callstack(CallStack* call_stack) {
+SpContext::get_callstack(FuncSet* call_stack) {
   long pc, sp, bp;
   parser_->get_frame(&pc, &sp, &bp);
   sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
@@ -75,33 +77,13 @@ SpContext::get_callstack(CallStack* call_stack) {
       continue;
     }
 
-    // Step 2: push this function
+    // Step 2: add this function
 #ifndef SP_RELEASE
     sp_debug("FOUND - Function %s is in the call stack", s.c_str());
 #endif
-
-    call_stack->push_back(func);
+    call_stack->insert(func);
   }
 }
-
-void
-SpContext::parse() {
-#ifndef SP_RELEASE
-  sp_debug("START PARSING - start parsing binary code");
-#endif
-  mgr_ = parser_->parse();
-#ifndef SP_RELEASE
-  sp_debug("FINISH PARSING - finish parsing binary code");
-#endif
-}
-
-
-void
-SpContext::restore() {
-  // Restore trap handler
-  sigaction(SIGTRAP, &old_act_, NULL);
-}
-
 
 PatchFunction*
 SpContext::callee(Point* pt) {

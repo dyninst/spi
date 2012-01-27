@@ -18,14 +18,14 @@ namespace sp {
     static ptr create(ph::PatchFunction* f,
                       ph::Point* pt,
                       SpContext* c,
-                      PayloadFunc before,
-                      PayloadFunc after) {
-      return ptr(new SpSnippet(f, pt, c, before, after));
+                      PayloadFunc entry,
+                      PayloadFunc exit) {
+      return ptr(new SpSnippet(f, pt, c, entry, exit));
     }
     SpSnippet(ph::PatchFunction* f,
               ph::Point* pt,
               SpContext* c,
-              PayloadFunc before, PayloadFunc after);
+              PayloadFunc entry, PayloadFunc exit);
     ~SpSnippet();
 
     // Return the pointer to blob, but blob is empty
@@ -50,8 +50,8 @@ namespace sp {
 
     // Some getters
     SpContext* context() const { return context_; }
-    PayloadFunc before() const { return before_; }
-    PayloadFunc after() const { return after_; }
+    PayloadFunc entry() const { return entry_; }
+    PayloadFunc exit() const { return exit_; }
     ph::Point* point() const { return point_; }
     ph::PatchFunction* func() const { return func_; }
 
@@ -73,8 +73,8 @@ namespace sp {
     ph::PatchFunction* func_;
     ph::Point* point_;
     SpContext* context_;
-    PayloadFunc before_;
-    PayloadFunc after_;
+    PayloadFunc entry_;
+    PayloadFunc exit_;
     long saved_context_loc_;
 
     // Blob things

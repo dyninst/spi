@@ -16,9 +16,6 @@ typedef struct {
 } IjMsg;
 #define SHMSZ sizeof(IjMsg)
 
-// this array ended with the address 0
-unsigned long ij_lib_load_addrs[100];
-
 void ij_agent() {
   int shmid;
   key_t key = 1986;

@@ -10,10 +10,10 @@ namespace sp {
 
 typedef enum {
   SP_NONE,
-  SP_TRAP,        // Using trap
-  SP_RELOC_INSN,  // Direct jump
-  SP_RELOC_BLK,   // Indirect jump
-  SP_SPRINGBOARD  // Indirect jump, using springboard
+  SP_TRAP,      
+  SP_RELOC_INSN,
+  SP_RELOC_BLK, 
+  SP_SPRINGBOARD
 } InstallMethod;
 
 class SpPoint : public ph::Point {

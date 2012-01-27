@@ -23,21 +23,21 @@ namespace sp {
 
 
 void
-wrapper_before(SpPoint* pt, sp::PayloadFunc_t before) {
+wrapper_entry(SpPoint* pt, sp::PayloadFunc_t entry) {
   if (!SpIpcMgr::before_entry(pt)) return;
-  before(pt);
+  entry(pt);
 }
 
 
 void
-wrapper_after(SpPoint* pt, sp::PayloadFunc_t after) {
+wrapper_exit(SpPoint* pt, sp::PayloadFunc_t exit) {
   if (!SpIpcMgr::before_exit(pt)) return;
-  after(pt);
+  exit(pt);
 }
 
 /* Default payload functions */
 void
-default_before(Point* pt) {
+default_entry(Point* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
@@ -48,7 +48,7 @@ default_before(Point* pt) {
 }
 
 void
-default_after(Point* pt) {
+default_exit(Point* pt) {
   PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
@@ -85,7 +85,7 @@ namespace sp {
     if (!f) return;
 
     sp::SpPropeller::ptr p = g_context->init_propeller();
-    p->go(f, g_context, g_context->init_before(), g_context->init_after(), pt);
+    p->go(f, g_context, g_context->init_entry(), g_context->init_exit(), pt);
     spt->set_propagated(true);
   }
 

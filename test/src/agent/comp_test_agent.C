@@ -5,7 +5,7 @@ using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
 
-void test_before(SpPoint* pt) {
+void test_entry(SpPoint* pt) {
 
 	PatchFunction* f = callee(pt);
   if (!f) return;
@@ -16,7 +16,7 @@ void test_before(SpPoint* pt) {
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
-  agent->set_init_before("test_before");
+  agent->set_init_entry("test_entry");
 	// agent->set_directcall_only(true);
   agent->go();
 }

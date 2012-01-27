@@ -19,7 +19,7 @@ namespace sp {
   extern void report_timer();
 }
 
-void print_before(SpPoint* pt) {
+void print_entry(SpPoint* pt) {
   ++callcount;
   switch (pt->install_method()) {
   case SP_TRAP:
@@ -53,7 +53,7 @@ void MyAgent() {
   sp::SyncEvent::ptr event = sp::SyncEvent::create();
 
   agent->set_parser(parser);
-  agent->set_init_before("print_before");
+  agent->set_init_entry("print_entry");
   // agent->set_directcall_only(true);
   agent->go();
 }

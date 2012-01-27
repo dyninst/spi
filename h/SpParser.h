@@ -7,7 +7,10 @@ namespace sp {
 
 class SpObject;
 
-//   Parser is to parse the CFG structures of the mutatee process.
+// ----------------------------------------------------------------------------- 
+// Parser is to parse the CFG structures of the mutatee process.
+// This is a default implementation, which parses binary during runtime.
+// -----------------------------------------------------------------------------
 class SpParser : public ph::CFGMaker {
   public:
     typedef dyn_detail::boost::shared_ptr<SpParser> ptr;
@@ -55,28 +58,27 @@ class SpParser : public ph::CFGMaker {
 		// Get SpObject from a PatchFunction, this is actually a static_cast
 		SpObject* get_object(ph::PatchFunction* func);
 
+		ph::PatchMgrPtr mgr() const { return mgr_; }
   protected:
+		// Is this agent library injected (true) or preloaded (false)?
+    bool injected_;
+    string agent_name_;
+
     CodeSources code_srcs_;
     CodeObjects code_objs_;
-    ph::PatchObject* exe_obj_;
-    ph::PatchMgrPtr mgr_;
-    bool injected_;
-    ucontext_t old_context_;
-    std::vector<std::string> dyninst_libs_;
-    std::vector<std::string> well_known_libs_;
-    bool jump_;
-    size_t sp_offset_;  // offset of stack pointer for saved context
 
-    typedef std::map<string,
-      ph::PatchFunction*> RealFuncMap;
+    ph::PatchMgrPtr mgr_;
+    ph::PatchObject* exe_obj_;
+
+    StringSet dyninst_libs_;
+    StringSet well_known_libs_;
+
     RealFuncMap real_func_map_;
 
-    string agent_name_;
-    string exe_name_;
-
+		// Methods
     SpParser();
-		void init_well_known_libs();
     void init_dyninst_libs();
+		void init_well_known_libs();
 };
 
 }

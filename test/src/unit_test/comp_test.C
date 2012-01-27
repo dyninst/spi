@@ -19,7 +19,7 @@ namespace {
     virtual void TearDown() {
 		}
 	};
-
+	/*
 	// Instrument indirect function call
   TEST_F(ComponentTest, indirect_call) {
 		FILE* fp = popen("LD_PRELOAD=./comp_test_agent.so ./indcall", "r");
@@ -63,4 +63,25 @@ namespace {
 
 		pclose(fp);
 	}
+*/
+	// Trap-only instrumentation
+  TEST_F(ComponentTest, trap_only) {
+		FILE* fp = popen("LD_PRELOAD=./trap_test_agent.so ./libcall", "r");
+		char buf[1024];
+
+		// test_lib_foo() in the shared library
+		EXPECT_TRUE(fgets(buf, 1024, fp) != NULL);
+		EXPECT_STREQ(buf, "test_lib_foo\n");
+
+		// printf (called by above test_lib_foo)
+		EXPECT_TRUE(fgets(buf, 1024, fp) != NULL);
+		EXPECT_STREQ(buf, "printf\n");
+
+		// hello, 1980
+		EXPECT_TRUE(fgets(buf, 1024, fp) != NULL);
+		EXPECT_STREQ(buf, "hello, 1980\n");
+
+		pclose(fp);
+	}
+
 }

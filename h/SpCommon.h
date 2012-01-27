@@ -43,9 +43,6 @@
 #include "AddrLookup.h"
 #include "dyn_detail/boost/shared_ptr.hpp"
 
-/* Boost headers */
-// TODO: use boost
-
 /* Print facility */
 #define sp_perror(...) do {\
 		char* nodir = basename((char*)__FILE__);							\
@@ -90,7 +87,18 @@ namespace Dyninst {
 		class PatchObject;
     class PatchFunction;
   }
+
+	namespace ProcControlAPI {
+	}
 }
+
+// Shorten namespace
+namespace dt = Dyninst;
+namespace pe = Dyninst::ParseAPI;
+namespace ph = Dyninst::PatchAPI;
+namespace sb = Dyninst::SymtabAPI;
+namespace pc = Dyninst::ProcControlAPI;
+
 namespace sp {
 	typedef std::set<pid_t> PidSet;
 	typedef std::set<std::string> StringSet;
@@ -101,6 +109,8 @@ namespace sp {
 	typedef std::vector<Dyninst::SymtabAPI::Symbol*> Symbols;
   typedef std::vector<Dyninst::PatchAPI::PatchObject*> PatchObjects;
   typedef std::vector<Dyninst::ParseAPI::CodeSource*> CodeSources;
+
+  typedef std::map<std::string, Dyninst::PatchAPI::PatchFunction*> RealFuncMap;
 }
 
 #define DYN_CAST(type, obj) dyn_detail::boost::dynamic_pointer_cast<type>(obj)

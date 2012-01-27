@@ -32,20 +32,22 @@ namespace sp {
   // By default, next_points provides all call instructions of `func`.
   // However, users can inherit SpPropeller and implement their own next_points().
   bool
-  SpPropeller::go(PatchFunction* func, SpContext* context, PayloadFunc before,
-                  PayloadFunc after, Point* pt) {
+  SpPropeller::go(PatchFunction* func, SpContext* context, PayloadFunc entry,
+                  PayloadFunc exit, Point* pt) {
 #ifndef SP_RELEASE
-    sp_debug("START PROPELLING - propel to callees of function %s", func->name().c_str());
+    sp_debug("START PROPELLING - propel to callees of function %s",
+						 func->name().c_str());
 #endif
     // 1. Find points according to type
     Points pts;
-    PatchMgrPtr mgr = context->mgr();
+    PatchMgrPtr mgr = context->parser()->mgr();
     PatchFunction* cur_func = NULL;
     if (pt) {
 			sp_debug("POINT VALID - %s", func->name().c_str());
       SpPoint* spt = static_cast<SpPoint*>(pt);
-      PatchFunction* tmp_func = spt->callee();//context->parser()->findFunction(func->name());//func;
-			sp_debug("spt->callee() - %lx, func - %lx", (Dyninst::Address)tmp_func, (Dyninst::Address)func);
+      PatchFunction* tmp_func = spt->callee();
+			sp_debug("spt->callee() - %lx, func - %lx",
+							 (Dyninst::Address)tmp_func, (Dyninst::Address)func);
       cur_func = func;
     } else {
       cur_func = context->parser()->findFunction(func->name());
@@ -65,18 +67,21 @@ namespace sp {
 #ifndef SP_RELEASE
       if (callee) {
         sp_debug("POINT - instrumenting direct call at %lx to function %s (%lx)",
-                 pt->block()->last(), callee->name().c_str(), (Dyninst::Address)callee);
+                 pt->block()->last(), callee->name().c_str(),
+								 (Dyninst::Address)callee);
       } else {
-        sp_debug("POINT - instrumenting indirect call at %lx", pt->block()->last());
+        sp_debug("POINT - instrumenting indirect call at %lx",
+								 pt->block()->last());
       }
 #endif
-      SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, before, after);
+      SpSnippet::ptr sp_snip = SpSnippet::create(callee, pt, context, entry, exit);
       Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);
       patcher.add(PushBackCommand::create(pt, snip));
     }
     patcher.commit();
 #ifndef SP_RELEASE
-    sp_debug("FINISH PROPELLING - %lu callees of function %s are instrumented", (unsigned long)pts.size(), func->name().c_str());
+    sp_debug("FINISH PROPELLING - %lu callees of function %s are instrumented",
+						 (unsigned long)pts.size(), func->name().c_str());
 #endif
     return true;
   }

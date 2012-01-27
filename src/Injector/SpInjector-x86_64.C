@@ -43,8 +43,9 @@ size_t SpInjector::get_code_tmpl_size() {
   return sizeof(do_dlopen_code);
 }
 
-char* SpInjector::get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dlopen,
-                              Dyninst::Address /*code_addr*/) {
+char* SpInjector::get_code_tmpl(Dyninst::Address args_addr,
+																Dyninst::Address do_dlopen,
+																Dyninst::Address /*code_addr*/) {
   long* p = (long*)&do_dlopen_code[OFF_DODLOPEN];
   *p = (long)do_dlopen;
   p = (long*)&do_dlopen_code[OFF_ARGS];
@@ -57,7 +58,7 @@ size_t SpInjector::get_ij_tmpl_size() {
 }
 
 char* SpInjector::get_ij_tmpl(Dyninst::Address ij_addr,
-                            Dyninst::Address /*code_addr*/) {
+															Dyninst::Address /*code_addr*/) {
   long* p = (long*)&ijagent_code[OFF_IJ];
   *p = (long)ij_addr;
   return ijagent_code;

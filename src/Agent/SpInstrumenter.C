@@ -4,7 +4,7 @@
 #include "SpAddrSpace.h"
 #include "SpUtils.h"
 #include "SpPoint.h"
-
+ 
 using dt::Address;
 
 using sp::SpSnippet;
@@ -29,18 +29,131 @@ namespace sp {
 
   extern SpContext* g_context;
 
-  // Jump-based instrumenter, which is to use a jump instruction to transfer
-  // control to the patch area.
+// ----------------------------------------------------------------------------- 
+// SpInstrumenter
+// -----------------------------------------------------------------------------
   SpInstrumenter*
   SpInstrumenter::create(AddrSpace* as) {
     return new SpInstrumenter(as);
   }
 
-
   SpInstrumenter::SpInstrumenter(AddrSpace* as)
     : Instrumenter(as) {
+
+		sp_debug("INSTRUMENTER - created");
+
+		workers_.push_back(new RelocCallInsnWorker);
+		workers_.push_back(new RelocCallBlockWorker);
+		workers_.push_back(new SpringboardWorker);
+		workers_.push_back(new TrapWorker);
   }
 
+	SpInstrumenter::~SpInstrumenter() {
+		for (InstWorkers::iterator i = workers_.begin();
+				 i != workers_.end(); i++) {
+			delete *i;
+		}
+	}
+
+	bool
+	SpInstrumenter::run() {
+		// Do all callees in a function in a batch
+		for (CommandList::iterator c = user_commands_.begin();
+				 c != user_commands_.end(); c++) {
+      PushBackCommand* command = static_cast<PushBackCommand*>(*c);
+      if (!command) continue;
+			SpPoint* spt = static_cast<SpPoint*>(command->instance()->point());
+
+			// If we only want to instrument direct call, and this point is a indirect
+			// call point, then skip it
+			if (!spt->getCallee() && g_context->directcall_only()) {
+				sp_debug("SKIP INDIRECT CALL");
+				continue;
+			}
+			// If this point is already instrumented, skip it
+			if (spt->instrumented()) {
+				sp_debug("SKIP INSTRUMENTED POINT");
+				continue;
+			}
+
+			// Otherwise, apply workers one by one in order
+			// If trap only, we only apply the last worker -- trap worker
+			size_t i = g_context->trap_only() ? (workers_.size() - 1) : 0;
+			for (; i < workers_.size(); i++) {
+				InstWorker* worker = workers_[i];
+				// If this worker succeeds, then we are done
+				if (worker->run(spt)) {
+					spt->set_instrumented(true);
+					spt->set_install_method(worker->install_method());
+					break;
+				}
+			} // workers
+		} // commands
+		return true;
+	}
+
+	bool SpInstrumenter::undo() {
+		assert(0 && "TODO");
+		return true;
+	}
+
+	// -----------------------------------------------------------------------------
+ 	// TrapWorker
+	// -----------------------------------------------------------------------------
+	bool
+	TrapWorker::run(SpPoint* pt) {
+		sp_debug("TRAP WORKER - runs");
+		return true;
+	}
+
+	bool
+	TrapWorker::undo(SpPoint* pt) {
+		return true;
+	}
+
+	// -----------------------------------------------------------------------------
+ 	// RelocCallInsnWorker
+	// -----------------------------------------------------------------------------
+	bool
+	RelocCallInsnWorker::run(SpPoint* pt) {
+		sp_debug("RELOC CALLINSN WORKER - runs");
+		return true;
+	}
+
+	bool
+	RelocCallInsnWorker::undo(SpPoint* pt) {
+		return true;
+	}
+
+	// -----------------------------------------------------------------------------
+	// RelocCallBlockWorker
+	// -----------------------------------------------------------------------------
+	bool
+	RelocCallBlockWorker::run(SpPoint* pt) {
+		sp_debug("RELOC CALLBLOCK WORKER - runs");
+		return true;
+	}
+
+	bool
+	RelocCallBlockWorker::undo(SpPoint* pt) {
+		return true;
+	}
+
+	// -----------------------------------------------------------------------------
+	// SpringboardWorker
+	// -----------------------------------------------------------------------------
+	bool
+	SpringboardWorker::run(SpPoint* pt) {
+		sp_debug("SPRINGBOARD WORKER - runs");
+		return true;
+	}
+
+	bool
+	SpringboardWorker::undo(SpPoint* pt) {
+		return true;
+	}
+
+#if 0
   // Call instruction's address -> Snippet inserted here.
   // In self-propelled, we only have one snippet (or patch area) inserted per point
   typedef std::map<Address, SpSnippet::ptr> InstMap;
@@ -63,7 +176,7 @@ namespace sp {
 
     char* blob = (char*)sp_snip->buf();
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-    PatchMgrPtr mgr = g_context->mgr();
+    PatchMgrPtr mgr = g_context->parser()->mgr();
     SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(mgr->as());
     if (!as->set_range_perm((Address)blob, sp_snip->size(), perm)) {
       as->dump_mem_maps();
@@ -122,16 +235,16 @@ namespace sp {
 					// TEMP END
 					// TEMP
 					/*
-		 REALLOC:
-          long rel_addr = (long)blob - (long)eip;
-          bool jump_abs = false;
-          if (!sp::is_disp32(rel_addr)) {
-#ifndef SP_RELEASE
+						REALLOC:
+						long rel_addr = (long)blob - (long)eip;
+						bool jump_abs = false;
+						if (!sp::is_disp32(rel_addr)) {
+						#ifndef SP_RELEASE
             sp_debug("REL JUMP TOO BIG - cannot use relative jump");
-#endif
+						#endif
 						jump_abs = true;
-					}
-*/
+						}
+					*/
 					// TEMP END
 
           // Save the original instruction, in case we want to restore it later.
@@ -140,23 +253,23 @@ namespace sp {
           sp_snip->set_orig_call_insn(callinsn);
 
 					//TEMP
-              // Set trap handler for the worst case that spring jump doesn't work
-              struct sigaction act;
-              act.sa_sigaction = SpInstrumenter::trap_handler;
-              act.sa_flags = SA_SIGINFO;
-              struct sigaction old_act;
-              sigaction(SIGTRAP, &act, &old_act);
+					// Set trap handler for the worst case that spring jump doesn't work
+					struct sigaction act;
+					act.sa_sigaction = SpInstrumenter::trap_handler;
+					act.sa_flags = SA_SIGINFO;
+					struct sigaction old_act;
+					sigaction(SIGTRAP, &act, &old_act);
 
-              g_inst_map[eip] = sp_snip;
-              blob = sp_snip->blob(ret_addr);
+					g_inst_map[eip] = sp_snip;
+					blob = sp_snip->blob(ret_addr);
 
-              if (install_trap(spt, blob, sp_snip->size())) {
-                spt->set_install_method(SP_TRAP);
-                spt->set_instrumented(true);
-              } else {
-                sp_print("FAILED to use TRAP, no instrumentation for this point");
-              }
-							// END TEMP
+					if (install_trap(spt, blob, sp_snip->size())) {
+						spt->set_install_method(SP_TRAP);
+						spt->set_instrumented(true);
+					} else {
+						sp_print("FAILED to use TRAP, no instrumentation for this point");
+					}
+					// END TEMP
 #if 0
           // Indirect call
           if ((insn[0] != (char)0xe8) || jump_abs) {
@@ -478,4 +591,5 @@ namespace sp {
 #endif
     return true;
   }
+#endif
 }

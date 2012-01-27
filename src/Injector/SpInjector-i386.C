@@ -31,8 +31,9 @@ size_t SpInjector::get_code_tmpl_size() {
   return sizeof(dlopen_code);
 }
 
-char* SpInjector::get_code_tmpl(Dyninst::Address args_addr, Dyninst::Address do_dlopen,
-                              Dyninst::Address code_addr) {
+char* SpInjector::get_code_tmpl(Dyninst::Address args_addr,
+																Dyninst::Address do_dlopen,
+																Dyninst::Address code_addr) {
 
   long* p = (long*)&dlopen_code[OFF_DLOPEN];
   Dyninst::Address abs_ret = code_addr + OFF_DLRET;
@@ -48,7 +49,7 @@ size_t SpInjector::get_ij_tmpl_size() {
 }
 
 char* SpInjector::get_ij_tmpl(Dyninst::Address ij_addr,
-                            Dyninst::Address code_addr) {
+															Dyninst::Address code_addr) {
   Dyninst::Address abs_ret = code_addr + OFF_IJRET;
   long* p = (long*)&ijagent_code[OFF_IJ];
   *p = (long)ij_addr - (long)abs_ret;
@@ -58,20 +59,17 @@ char* SpInjector::get_ij_tmpl(Dyninst::Address ij_addr,
 Dyninst::Address SpInjector::get_pc() {
   Dyninst::MachRegisterVal eip;
   thr_->getRegister(Dyninst::x86::eip, eip);
-  //  sp_print("pc: %lx", eip);
   return eip;
 }
 
 Dyninst::Address SpInjector::get_sp() {
   Dyninst::MachRegisterVal esp;
   thr_->getRegister(Dyninst::x86::esp, esp);
-  //  sp_print("sp: %lx", esp);
   return esp;
 }
 
 Dyninst::Address SpInjector::get_bp() {
   Dyninst::MachRegisterVal ebp;
   thr_->getRegister(Dyninst::x86::ebp, ebp);
-  //  sp_print("bp: %lx", ebp);
   return ebp;
 }

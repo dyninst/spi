@@ -13,6 +13,8 @@ using sp::SpPropeller;
 using ph::PatchFunction;
 
 namespace sp {
+  extern SpContext* g_context;
+
   // Default Event -- dumb event, does nothing
   SpEvent::SpEvent() {
   }
@@ -21,22 +23,12 @@ namespace sp {
   SpEvent::register_event(SpContext* c) {
   }
 
-
   // AsyncEvent
   typedef void (*event_handler_t)(int, siginfo_t*, void*);
-
-  extern SpContext* g_context;
 
   void
   async_event_handler(int signum, siginfo_t* info, void* context) {
     assert(0 && "TODO");
-    /*
-      sp::g_context->parse();
-      PatchFunction* f = sp::g_context->get_first_inst_func();
-      g_context->init_propeller()->go(f, g_context,
-      g_context->init_before(),
-      g_context->init_after());
-    */
   }
 
   AsyncEvent::AsyncEvent(int signum, int sec)
@@ -66,20 +58,21 @@ namespace sp {
       sp_debug("PRELOAD - preload agent.so, and instrument main()");
 #endif
       PatchFunction* f = c->parser()->findFunction("main");
-      c->init_propeller()->go(f, c, c->init_before(), c->init_after());
+      c->init_propeller()->go(f, c, c->init_entry(), c->init_exit());
     } // LD_PRELOAD mode
 
     else {
 
       // Instrument all functions in the call stack.
-      SpContext::CallStack call_stack;
+      FuncSet call_stack;
       g_context->get_callstack(&call_stack);
       sp_debug("CALLSTACK - %lu calls in the call stack", (unsigned long)call_stack.size());
-      for (unsigned i = 0; i < call_stack.size(); i++) {
-        PatchFunction* f = call_stack[i];
+      for (FuncSet::iterator i = call_stack.begin(); 
+					 i != call_stack.end(); i++) {
+        PatchFunction* f = *i;
         g_context->init_propeller()->go(f, g_context,
-                                        g_context->init_before(),
-                                        g_context->init_after());
+                                        g_context->init_entry(),
+                                        g_context->init_exit());
         if (f->name().compare("main") == 0) {
           break;
         }

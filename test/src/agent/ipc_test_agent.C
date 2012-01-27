@@ -5,12 +5,12 @@ using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
 
-void test_before(SpPoint* pt) {
+void test_entry(SpPoint* pt) {
 
   PatchFunction* f = callee(pt);
   if (!f) return;
 
-	//sp_print("before func: %s @ pid=%d", f->name().c_str(), getpid());
+	//sp_print("entry func: %s @ pid=%d", f->name().c_str(), getpid());
 	if (is_ipc_write(pt)) {
 		fprintf(stderr, "Write: %s @ pid=%d w/ addr %lx\n", f->name().c_str(), getpid(), f->addr());
 	}
@@ -21,10 +21,10 @@ void test_before(SpPoint* pt) {
   sp::propel(pt);
 }
 
-void test_after(SpPoint* pt) {
+void test_exit(SpPoint* pt) {
   PatchFunction* f = callee(pt);
   if (!f) return;
-	//sp_print("after func: %s @ pid=%d", f->name().c_str(), getpid());
+	//sp_print("exit func: %s @ pid=%d", f->name().c_str(), getpid());
 
 	if (is_ipc_write(pt)) {
 		long size = sp::retval(pt);
@@ -39,8 +39,8 @@ void test_after(SpPoint* pt) {
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
-  agent->set_init_before("test_before");
-  agent->set_init_after("test_after");
+  agent->set_init_entry("test_entry");
+  agent->set_init_exit("test_exit");
   agent->set_ipc(true);
   agent->go();
 }
