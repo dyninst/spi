@@ -13,12 +13,12 @@ namespace sp {
   extern SpContext* g_context;
 
   // For pipe's start_tracing() implementation (we use shared memory here).
-  #define TRACING_ID 1987
-  #define TRACING_SIZE 32768
+#define TRACING_ID 1987
+#define TRACING_SIZE 32768
 
-// -----------------------------------------------------------------------------
-// IPC Manager
-// -----------------------------------------------------------------------------
+  // -------------------------------------------------------------------
+  // IPC Manager
+  // -------------------------------------------------------------------
   // Constructor
   // Instantiate workers for different IPC mechanisms.
   SpIpcMgr::SpIpcMgr() {
@@ -65,27 +65,27 @@ namespace sp {
       size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
       if (size_out) *size_out = *size;
 
-			/*
-			if (sa_out && is_tcp(*fd)) {
-				sp_debug("GET REM_SA - for fd %d at a %s ()", *fd, f->name().c_str());
-				sockaddr_in rem_sa;
-    		memset(&rem_sa, 0, sizeof(sockaddr_in));
-				socklen_t rem_len = sizeof(sockaddr_in);
-				if (getpeername(*fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
-					perror("getsockname");
-				}
-				sp_debug("REMOTE IP - %s", inet_ntoa(rem_sa.sin_addr));
-				sp_debug("REMOTE PORT - %d", htons(rem_sa.sin_port));
-			}
-			*/
+      /*
+        if (sa_out && is_tcp(*fd)) {
+        sp_debug("GET REM_SA - for fd %d at a %s ()", *fd, f->name().c_str());
+        sockaddr_in rem_sa;
+        memset(&rem_sa, 0, sizeof(sockaddr_in));
+        socklen_t rem_len = sizeof(sockaddr_in);
+        if (getpeername(*fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
+        perror("getsockname");
+        }
+        sp_debug("REMOTE IP - %s", inet_ntoa(rem_sa.sin_addr));
+        sp_debug("REMOTE PORT - %d", htons(rem_sa.sin_port));
+        }
+      */
     }
 
     if (f->name().compare("connect") == 0) {
       int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
       sockaddr** sa = (sockaddr**)sp::pop_argument(pt, &h, sizeof(sockaddr*));
-			// sockaddr* sa_tmp = (sockaddr*)malloc(sizeof(sockaddr));
-			// memcpy(sa_tmp, *sa, sizeof(sockaddr));
+      // sockaddr* sa_tmp = (sockaddr*)malloc(sizeof(sockaddr));
+      // memcpy(sa_tmp, *sa, sizeof(sockaddr));
       if (sa_out) *sa_out = *sa;
     }
 
@@ -186,21 +186,19 @@ namespace sp {
 
   // See if current process is allowed to execute the payload code
   // This is used in the user-defined payload function.
-  // Return 1 if it is allowed to execute payload code (for tracing); otherwise,
-  // 0 is returned.
+  // Return 1 if it is allowed to execute payload code (for tracing);
+  // otherwise, 0 is returned.
   char SpIpcMgr::start_tracing(int fd) {
     for (WorkerSet::iterator wi = worker_set_.begin();
          wi != worker_set_.end(); wi++) {
-			// sp_debug("START TRACING - %d for pid=%d", (*wi)->start_tracing(), getpid());
-			// fprintf(stderr, "START TRACING - %d for pid=%d\n", (*wi)->start_tracing(), getpid());
       if ((*wi)->start_tracing(fd)) return 1;
     }
     return 0;
   }
 
   // Get a worker according to the file descriptor.
-  // Return the worker if the file descriptor is for supported IPC; otherwise,
-  // return NULL.
+  // Return the worker if the file descriptor is for supported IPC;
+  // otherwise, return NULL.
   SpIpcWorker* SpIpcMgr::get_worker(int fd) {
     // PIPE
     if (is_pipe(fd)) {
@@ -237,21 +235,21 @@ namespace sp {
     if (fd != -1) {
       SpIpcWorker* worker = ipc_mgr->get_worker(fd);
       if (!worker) return false;
-			// Enable tracing for current process
-			worker->set_start_tracing(1);
+      // Enable tracing for current process
+      worker->set_start_tracing(1);
 
       SpChannel* c = worker->get_channel(fd, SP_WRITE, sa);
       if (c) {
         // Inject this agent.so to remote process
-        // Luckily, the SpInjector implementation will automatically detect whether
-        // the agent.so library is already injected. If so, it will not inject the
-        // the library again.
+        // Luckily, the SpInjector implementation will automatically detect
+        // whether the agent.so library is already injected. If so, it will
+        // not inject the library again.
         // if (c->remote_pid != -1) worker->inject(c);
-				worker->inject(c);
+        worker->inject(c);
 
-				// Enable tracing for remote process
-				if (callee(pt)->name().compare("connect") != 0)
-					worker->set_start_tracing(1, c);
+        // Enable tracing for remote process
+        if (callee(pt)->name().compare("connect") != 0)
+          worker->set_start_tracing(1, c);
         pt->set_channel(c);
       }
       return true;
@@ -302,9 +300,9 @@ namespace sp {
     return true;
   }
 
-// -----------------------------------------------------------------------------
-// IPC workers
-// -----------------------------------------------------------------------------
+  // -------------------------------------------------------------------
+  // IPC workers
+  // -------------------------------------------------------------------
 
   // Get channel from fd
   // If channel doesn't exist, construct one
@@ -314,13 +312,13 @@ namespace sp {
     if (rw == SP_WRITE) {
       if (channel_map_write_.find(fd) != channel_map_write_.end()) {
         SpChannel* c = channel_map_write_[fd];
-				// Fill in the missed information
-				if (c && c->type == SP_TCP) {
-					// TcpChannel* tcp_channel = (TcpChannel*)c;
-					// TODO
-				}
-				return c;
-			}
+        // Fill in the missed information
+        if (c && c->type == SP_TCP) {
+          // TcpChannel* tcp_channel = (TcpChannel*)c;
+          // TODO
+        }
+        return c;
+      }
     } else {
       if (channel_map_read_.find(fd) != channel_map_read_.end())
         return channel_map_read_[fd];
@@ -328,23 +326,25 @@ namespace sp {
 
     // Construct one channel.
     SpChannel* c = create_channel(fd, rw, arg);
-		assert(c);
+    assert(c);
 
     // Update cache.
     if (rw == SP_WRITE) {
       c->rw = SP_WRITE;
       channel_map_write_[fd] = c;
 #ifndef SP_RELEASE
-      sp_debug("WRITE CHANNEL @ pid = %d - get a WRITE channel with inode %ld for fd %d", getpid(), get_inode_from_fd(fd), fd);
+      sp_debug("WRITE CHANNEL @ pid = %d - get a WRITE channel with"
+               " inode %ld for fd %d", getpid(), get_inode_from_fd(fd), fd);
 #endif
     } else {
       c->rw = SP_READ;
       channel_map_read_[fd] = c;
 #ifndef SP_RELEASE
-      sp_debug("READ CHANNEL @ pid = %d - get a READ channel with inode %ld for fd %d", getpid(), get_inode_from_fd(fd), fd);
+      sp_debug("READ CHANNEL @ pid = %d - get a READ channel with"
+               " inode %ld for fd %d", getpid(), get_inode_from_fd(fd), fd);
 #endif
     }
-		c->fd = fd;
+    c->fd = fd;
     return c;
   }
 
@@ -352,7 +352,7 @@ namespace sp {
   // PIPE worker
   // Constructor
   SpPipeWorker::SpPipeWorker() {
-		// sp_debug("PIPE WORKER - created for pid=%d", getpid());
+    // sp_debug("PIPE WORKER - created for pid=%d", getpid());
     tracing_internal(&start_tracing_);
     start_tracing_[getpid()] = 0;
   }
@@ -386,28 +386,25 @@ namespace sp {
 
   void  SpPipeWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
     start_tracing_[c->remote_pid] = yes_or_no;
-		// fprintf(stderr, "PipeWorker remote [pid=%d] -start tracing %d\n", c->remote_pid, yes_or_no);
   }
 
   void SpPipeWorker::set_start_tracing(char yes_or_no) {
     start_tracing_[getpid()] = yes_or_no;
-		// fprintf(stderr, "PipeWorker local [pid=%d] -start tracing %d\n", getpid(), yes_or_no);
-	}
+  }
 
   char SpPipeWorker::start_tracing(int fd) {
-		// fprintf(stderr, "PipeWorker query local [pid=%d] -start tracing %d\n", getpid(), start_tracing_[getpid()]);
     return start_tracing_[getpid()];
   }
 
   // Invoke SpInjector::inject directly
-	bool SpPipeWorker::inject(SpChannel* c, char* agent_path,
-														char* /* ignore injector for pipe */,
-														char* /* ignore ijagent for pipe */) {
+  bool SpPipeWorker::inject(SpChannel* c, char* agent_path,
+                            char* /* ignore injector for pipe */,
+                            char* /* ignore ijagent for pipe */) {
 
-		// XXX: potential problem - two hosts may communicate w/ multiple channels.
-    //      e.g., pipe and tcp at the same time. Should have an approach to 
+    // XXX: potential problem - two hosts may communicate w/ multiple channels.
+    //      e.g., pipe and tcp at the same time. Should have an approach to
     //      do bookkeeping correctly.
-    if (c->injected) return true; 
+    if (c->injected) return true;
     sp_debug("NO INJECTED -- start injection");
     SpInjector::ptr injector = SpInjector::create(c->remote_pid);
     string agent_name = g_context->parser()->get_agent_name();
@@ -434,198 +431,157 @@ namespace sp {
     return c;
   }
 
-	SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
-		// sp_debug("TCP WORKER - created for pid=%d", getpid());
-	}
+  SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
+    // sp_debug("TCP WORKER - created for pid=%d", getpid());
+  }
 
   void SpTcpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
-		sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
-		assert(c);
-		// Sanity check
-		if (c && is_tcp(c->fd)) {
-			uint8_t mark_byte = (getpid() & 0xFF) | 1;
-			sp_debug("OOB MARK - sending %x via fd=%d", mark_byte, c->fd);
-			if (send(c->fd, &mark_byte, sizeof(mark_byte), MSG_OOB) < 0) {
-				perror("send");
-				sp_perror("OUT-OF-BAND - failed to send oob byte");
-			}
-			// fprintf(stderr,
-			//				"TcpWorker remote [fd=%d] - start tracing %d, sending mark %x\n",
-			//				c->fd, start_tracing_, mark_byte);
-		}
+    sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
+    assert(c);
+    // Sanity check
+    if (c && is_tcp(c->fd)) {
+      uint8_t mark_byte = (getpid() & 0xFF) | 1;
+      sp_debug("OOB MARK - sending %x via fd=%d", mark_byte, c->fd);
+      if (send(c->fd, &mark_byte, sizeof(mark_byte), MSG_OOB) < 0) {
+        perror("send");
+        sp_perror("OUT-OF-BAND - failed to send oob byte");
+      }
+    }
   }
 
   void SpTcpWorker::set_start_tracing(char yes_or_no) {
-		start_tracing_ = yes_or_no;
-		// fprintf(stderr, "TcpWorker local [pid=%d] - start tracing %d\n", getpid(), start_tracing_);
-	}
+    start_tracing_ = yes_or_no;
+  }
 
-	/*
-	// Out-of-band (OOB) handler
-  int g_oob_fd = -1;
-	char* g_start_tracing = NULL;
-	void oob_handler(int sig) {
-		uint8_t mark;
-		if (sockatmark(g_oob_fd)) {
-			if (recv(g_oob_fd, &mark, sizeof(mark), MSG_OOB) < 0 || mark == 0) {
-				perror("recv");
-				sp_perror("failed to recv MSG_OOB\n");
-			}
-			if (g_start_tracing) *g_start_tracing = 1;
-			// fprintf(stderr, "got mark=%x\n", mark);
-		}
-	}
-	*/
-
-	// If tcpworker has more than one read-channel, and it is not allowed to
+  // If tcpworker has more than one read-channel, and it is not allowed to
   // start tracing, then we need to wait for OOB msg
   char SpTcpWorker::start_tracing(int fd) {
 
-		if (is_tcp(fd) && !start_tracing_) {
-			/*
-			g_oob_fd = fd;
-			signal(SIGURG, oob_handler);
-			fcntl(fd, F_SETOWN, getpid());
-			g_start_tracing = &start_tracing_;
-
-			sp_debug("WAIT FOR OOB - more than 1 channel, "
-							 "and not allowed to trace for pid=%d", getpid());
-			oob_handler(0);
-			*/
-			fd_set rset, xset;
-			FD_ZERO(&rset);
-			FD_ZERO(&xset);
-			for (; ;) {
-				FD_SET(fd, &rset);
-				FD_SET(fd, &xset);
-				select(fd+1, &rset, NULL, &xset, NULL);
-				if (FD_ISSET(fd, &xset)) {
-					uint8_t mark = 0;
-					recv(fd, &mark, sizeof(mark), MSG_OOB);
-					if (mark != 0) start_tracing_ = 1;
-					//fprintf(stderr,
-					//				"TcpWorker query local [pid=%d, fd=%d] - start tracing %d w/ mark=%x\n",
-          //        getpid(), fd, start_tracing_, mark);
-					break;
-				}
-			}
-			// fprintf(stderr, "WAIT FOR OOB - more than 1 channel, "
-			//				"and not allowed to trace for pid=%d\n", getpid());
-		}
+    if (is_tcp(fd) && !start_tracing_) {
+      fd_set rset, xset;
+      FD_ZERO(&rset);
+      FD_ZERO(&xset);
+      for (; ;) {
+        FD_SET(fd, &rset);
+        FD_SET(fd, &xset);
+        select(fd+1, &rset, NULL, &xset, NULL);
+        if (FD_ISSET(fd, &xset)) {
+          uint8_t mark = 0;
+          recv(fd, &mark, sizeof(mark), MSG_OOB);
+          if (mark != 0) start_tracing_ = 1;
+          break;
+        }
+      }
+    }
     return start_tracing_;
   }
 
-	// This interface is subject to change, which implies local and remote
-	// machines are binary compatible. However, it is not true. We may define a
-	// bunch of environment variables.
-	bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
-													 char* injector_path,
-													 char* ijagent_path) {
-		// XXX: potential problem - two hosts may communicate w/ multiple channels.
-    //      e.g., pipe and tcp at the same time. Should have an approach to 
+  // This interface is subject to change, which implies local and remote
+  // machines are binary compatible. However, it is not true. We may define a
+  // bunch of environment variables.
+  bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
+                           char* injector_path,
+                           char* ijagent_path) {
+    // XXX: potential problem - two hosts may communicate w/ multiple channels.
+    //      e.g., pipe and tcp at the same time. Should have an approach to
     //      do bookkeeping correctly.
-    if (c->injected) return true; 
+    if (c->injected) return true;
     sp_debug("NO INJECTED -- start injection");
 
-		TcpChannel *tcp_channel = static_cast<TcpChannel*>(c);
-		assert(tcp_channel);
+    TcpChannel *tcp_channel = static_cast<TcpChannel*>(c);
+    assert(tcp_channel);
 
-		char local_ip[256];
-		char local_port[64];
-		char remote_ip[256];
-		char remote_port[64];
+    char local_ip[256];
+    char local_port[64];
+    char remote_ip[256];
+    char remote_port[64];
 
-		if (!get_address(&tcp_channel->local, local_ip, 256, local_port, 64)) {
-			sp_perror("failed to get local address in tcp_worker::inject()");
-		}
-		if (!get_address(&tcp_channel->remote, remote_ip, 256, remote_port, 64)) {
-			sp_perror("failed to get remote address in tcp_worker::inject()");
-		}
+    if (!get_address(&tcp_channel->local, local_ip, 256, local_port, 64)) {
+      sp_perror("failed to get local address in tcp_worker::inject()");
+    }
+    if (!get_address(&tcp_channel->remote, remote_ip, 256, remote_port, 64)) {
+      sp_perror("failed to get remote address in tcp_worker::inject()");
+    }
 
-		// XXX: how to determine it is a local machiune?
+    // XXX: how to determine it is a local machiune?
     // 1. 127.0.0.1
     // 2. local ip == remote ip
     // ??
-		bool local_machine = false;
-		if (strstr(remote_ip, "127.0.0.1")) {
-			sp_debug("LOCAL MACHINE TCP");
-			local_machine = true;
-		}
-		sp_debug("REMOTE IP: %s, REMOTE PORT: %s", remote_ip, remote_port);
+    bool local_machine = false;
+    if (strstr(remote_ip, "127.0.0.1")) {
+      sp_debug("LOCAL MACHINE TCP");
+      local_machine = true;
+    }
+    sp_debug("REMOTE IP: %s, REMOTE PORT: %s", remote_ip, remote_port);
 
-		// XXX: Should do it in a configure file
-		string default_agent_path;
-		string default_injector_path;
-		string default_ijagent_path;
+    // XXX: Should do it in a configure file
+    string default_agent_path;
+    string default_injector_path;
+    string default_ijagent_path;
 
-		if (agent_path == NULL) {
-			assert(g_context);
-			assert(g_context->parser());
-			assert(g_context->parser()->get_agent_name().size() > 0);
-			default_agent_path += getenv("SP_DIR");
-			default_agent_path += "/";
-			default_agent_path += getenv("PLATFORM");
-			default_agent_path += "/";
-			default_agent_path += sp_filename((char*)g_context->parser()->get_agent_name().c_str());
-		  agent_path = (char*)default_agent_path.c_str();
-		}
-		if (injector_path == NULL) {
-			default_injector_path += getenv("SP_DIR");
-			default_injector_path += "/";
-			default_injector_path += getenv("PLATFORM");
-			default_injector_path += "/Injector";
-			injector_path = (char*)default_injector_path.c_str();
-		}
-		if (ijagent_path == NULL) {
-			default_ijagent_path += getenv("SP_DIR");
-			default_ijagent_path += "/";
-			default_ijagent_path += getenv("PLATFORM");
-			default_ijagent_path += "/libijagent.so";
-			ijagent_path = (char*)default_ijagent_path.c_str();
-		}
+    if (agent_path == NULL) {
+      assert(g_context);
+      assert(g_context->parser());
+      assert(g_context->parser()->get_agent_name().size() > 0);
+      default_agent_path += getenv("SP_DIR");
+      default_agent_path += "/";
+      default_agent_path += getenv("PLATFORM");
+      default_agent_path += "/";
+      default_agent_path += sp_filename((char*)g_context->parser()->get_agent_name().c_str());
+      agent_path = (char*)default_agent_path.c_str();
+    }
+    if (injector_path == NULL) {
+      default_injector_path += getenv("SP_DIR");
+      default_injector_path += "/";
+      default_injector_path += getenv("PLATFORM");
+      default_injector_path += "/Injector";
+      injector_path = (char*)default_injector_path.c_str();
+    }
+    if (ijagent_path == NULL) {
+      default_ijagent_path += getenv("SP_DIR");
+      default_ijagent_path += "/";
+      default_ijagent_path += getenv("PLATFORM");
+      default_ijagent_path += "/libijagent.so";
+      ijagent_path = (char*)default_ijagent_path.c_str();
+    }
 
-		sp_debug("AGENT PATH - %s", agent_path);
-		sp_debug("INJECTOR PATH - %s", injector_path);
-		sp_debug("IJAGENT PATH - %s", ijagent_path);
+    sp_debug("AGENT PATH - %s", agent_path);
+    sp_debug("INJECTOR PATH - %s", injector_path);
+    sp_debug("IJAGENT PATH - %s", ijagent_path);
 
-		// SSH into remote machine to run Injector
-		string exe_cmd;
-		if (local_machine) {
-			exe_cmd = injector_path;
-			exe_cmd += " ";
-		}
-		else {
-			exe_cmd = "ssh ";
-			exe_cmd += remote_ip;
-			exe_cmd += " ";
-			exe_cmd += injector_path;
-			exe_cmd += " ";
-		}
-		exe_cmd += local_ip;
-		exe_cmd += " ";
-		exe_cmd += local_port;
-		exe_cmd += " ";
-		exe_cmd += remote_ip;
-		exe_cmd += " ";
-		exe_cmd += remote_port;
-		exe_cmd += " ";
-		exe_cmd += agent_path;
+    // SSH into remote machine to run Injector
+    string exe_cmd;
+    if (local_machine) {
+      exe_cmd = injector_path;
+      exe_cmd += " ";
+    }
+    else {
+      exe_cmd = "ssh ";
+      exe_cmd += remote_ip;
+      exe_cmd += " ";
+      exe_cmd += injector_path;
+      exe_cmd += " ";
+    }
+    exe_cmd += local_ip;
+    exe_cmd += " ";
+    exe_cmd += local_port;
+    exe_cmd += " ";
+    exe_cmd += remote_ip;
+    exe_cmd += " ";
+    exe_cmd += remote_port;
+    exe_cmd += " ";
+    exe_cmd += agent_path;
 
-		sp_debug("INJECT CMD - %s", exe_cmd.c_str());
-		// system(exe_cmd.c_str());
-		// return true;
-		// system("ssh feta /sbin/ifconfig");
-		// system("ssh feta cd /tmp;/tmp/Injector 128.105.166.35 3490 128.105.167.125 56360 /tmp/ipc_test_agent.so");
-		// c->injected = true;
+    sp_debug("INJECT CMD - %s", exe_cmd.c_str());
 
-		FILE* fp = popen(exe_cmd.c_str(), "r");
-		char line[1024];
-		fgets(line, 1024, fp);
-		fgets(line, 1024, fp);
-		if (strstr(line, "INJECTED") != NULL) {
-			c->injected = true;
-		}
-		pclose(fp);
+    FILE* fp = popen(exe_cmd.c_str(), "r");
+    char line[1024];
+    fgets(line, 1024, fp);
+    fgets(line, 1024, fp);
+    if (strstr(line, "INJECTED") != NULL) {
+      c->injected = true;
+    }
+    pclose(fp);
 
     return true;
   }
@@ -638,54 +594,54 @@ namespace sp {
     c->type = SP_TCP;
     c->inode = get_inode_from_fd(fd);
 
-		// connect, we can get remote ip/port from arg
-		if (arg != NULL) {
+    // connect, we can get remote ip/port from arg
+    if (arg != NULL) {
 
-			// Get local ip / port
-			char host[256];
-			char service[64];
-			c->remote = *((sockaddr_storage*)arg);
-			if (get_address(&c->remote, host, 256, service, 64)) {
-				sp_debug("connect remote host: %s, service: %s\n", host, service);
-			} else {
-				sp_perror("failed to get connect remote address");
-			}
+      // Get local ip / port
+      char host[256];
+      char service[64];
+      c->remote = *((sockaddr_storage*)arg);
+      if (get_address(&c->remote, host, 256, service, 64)) {
+        sp_debug("connect remote host: %s, service: %s\n", host, service);
+      } else {
+        sp_perror("failed to get connect remote address");
+      }
 
-			// Get local ip / port (skip it for now)
-			if (get_local_address(fd, &c->local)) {
-				if (get_address(&c->local, host, 256, service, 64)) {
-					sp_debug("connect local host: %s, service: %s\n", host, service);
-				} else {
-					sp_perror("failed to get local address for write/send");
-				}
-			} else {
-			}
-		}
+      // Get local ip / port (skip it for now)
+      if (get_local_address(fd, &c->local)) {
+        if (get_address(&c->local, host, 256, service, 64)) {
+          sp_debug("connect local host: %s, service: %s\n", host, service);
+        } else {
+          sp_perror("failed to get local address for write/send");
+        }
+      } else {
+      }
+    }
 
-		// send/write
-		else if (rw == SP_WRITE) {
-			// Get remote ip / port
-			if (get_remote_address(fd, &c->remote)) {
-				char host[256];
-				char service[64];
-				if (get_address(&c->remote, host, 256, service, 64)) {
-					sp_debug("write/send remote host: %s, service: %s\n", host, service);
-				} else {
-					sp_perror("failed to get remote address for write/send");
-				}
-			} // remote address
+    // send/write
+    else if (rw == SP_WRITE) {
+      // Get remote ip / port
+      if (get_remote_address(fd, &c->remote)) {
+        char host[256];
+        char service[64];
+        if (get_address(&c->remote, host, 256, service, 64)) {
+          sp_debug("write/send remote host: %s, service: %s\n", host, service);
+        } else {
+          sp_perror("failed to get remote address for write/send");
+        }
+      } // remote address
 
-			// Get local ip / port
-			if (get_local_address(fd, &c->local)) {
-				char host[256];
-				char service[64];
-				if (get_address(&c->local, host, 256, service, 64)) {
-					sp_debug("write/send local host: %s, service: %s\n", host, service);
-				} else {
-					sp_perror("failed to get local address for write/send");
-				}
-			} // remote address
-		}
+      // Get local ip / port
+      if (get_local_address(fd, &c->local)) {
+        char host[256];
+        char service[64];
+        if (get_address(&c->local, host, 256, service, 64)) {
+          sp_debug("write/send local host: %s, service: %s\n", host, service);
+        } else {
+          sp_perror("failed to get local address for write/send");
+        }
+      } // remote address
+    }
     return c;
   }
 
@@ -695,15 +651,15 @@ namespace sp {
   }
 
   void SpUdpWorker::set_start_tracing(char yes_or_no) {
-	}
+  }
 
   char SpUdpWorker::start_tracing(int fd) {
     return 0;
   }
 
-	bool SpUdpWorker::inject(SpChannel* c, char* agent_path,
- 													 char* injector_path,
-													 char* ijagent_path) {
+  bool SpUdpWorker::inject(SpChannel* c, char* agent_path,
+                           char* injector_path,
+                           char* ijagent_path) {
     return 0;
   }
 

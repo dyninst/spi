@@ -17,11 +17,6 @@ using sp::SpChannel;
 using sp::ArgumentHandle;
 using sp::SpIpcMgr;
 
-namespace sp {
-  extern SpContext* g_context;
-}
-
-
 void
 wrapper_entry(SpPoint* pt, sp::PayloadFunc_t entry) {
   if (!SpIpcMgr::before_entry(pt)) return;
@@ -35,7 +30,7 @@ wrapper_exit(SpPoint* pt, sp::PayloadFunc_t exit) {
   exit(pt);
 }
 
-/* Default payload functions */
+// Default payload functions
 void
 default_entry(Point* pt) {
   PatchFunction* f = sp::callee(pt);
@@ -56,22 +51,23 @@ default_exit(Point* pt) {
   sp_print("Leave %s", callee_name.c_str());
 }
 
-/* Utilities that payload writers can use in their payload functions */
+// Utilities that payload writers can use in their payload functions
 namespace sp {
+  extern SpContext* g_context;
 
-  /* Get callee from a PreCall point */
+  // Get callee from a PreCall point
   PatchFunction*
   callee(ph::Point* pt) {
     return g_context->callee(pt);
   }
 
-  /* Pop up an argument of a function call */
+  // Pop up an argument of a function call
   void*
   pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size) {
     return static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
   }
 
-  /* Propel instrumentation to next points of the point `pt` */
+  // Propel instrumentation to next points of the point `pt`
   void
   propel(ph::Point* pt) {
 
@@ -111,8 +107,6 @@ namespace sp {
   bool
   is_ipc_write(SpPoint* pt) {
     SpChannel* c = pt->channel();
-		// fprintf(stderr, "is_ipc_write - start_tracing: %d", start_tracing(c->fd));
-		// return (c && c->rw == SP_WRITE && start_tracing(c->fd));
     return (c && c->rw == SP_WRITE);
   }
 

@@ -74,7 +74,6 @@ namespace {
 		EXPECT_STREQ(last_, "exit\n");
 
 	}
-
 	/*
   TEST_F(IntegrationTest, gcc) {
 		string gcc_path;

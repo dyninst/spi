@@ -17,10 +17,7 @@ AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
   agent->set_init_entry("test_entry");
-	// agent->set_directcall_only(true);
-	if (getenv("SP_TRAP")) {
-		agent->set_trap_only(true);
-	}
+	agent->set_trap_only(true);
   agent->go();
 }
 

@@ -54,6 +54,9 @@ void MyAgent() {
 
   agent->set_parser(parser);
   agent->set_init_entry("print_entry");
+	if (getenv("SP_TRAP")) {
+		agent->set_trap_only(true);
+	}
   // agent->set_directcall_only(true);
   agent->go();
 }
@@ -64,5 +67,5 @@ void DumpOutput() {
   fprintf(stderr, "# of springboard calls: %llu (%f%%)\n", springcount, (double)springcount/(double)callcount*100.0);
   fprintf(stderr, "# of reloc insn calls: %llu (%f%%)\n", relocinsncount, (double)relocinsncount/(double)callcount*100.0);
   fprintf(stderr, "# of reloc blk calls: %llu (%f%%)\n", relocblkcount, (double)relocblkcount/(double)callcount*100.0);
-  fprintf(stderr, "# of trap calls: %llu (%f%%)\n", trapcount, (double)trapcount/(double)relocblkcount*100.0);
+  fprintf(stderr, "# of trap calls: %llu (%f%%)\n", trapcount, (double)trapcount/(double)callcount*100.0);
 }

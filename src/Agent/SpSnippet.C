@@ -29,7 +29,7 @@ namespace sp {
     // TODO (wenbin): For now, just statically allocate a 1024-byte buffer,
     // should have a smarter memory allocator.
     blob_ = (char*)as->malloc(pt->obj(), 1024,
-                              static_cast<sp::SpObject*>(pt->obj())->load_addr());
+                   static_cast<sp::SpObject*>(pt->obj())->load_addr());
   }
 
   // Destructor
@@ -55,9 +55,10 @@ namespace sp {
   // 8. Restore context;
   // 9. Jump back to ORIG_INSN_ADDR.
   char*
-  SpSnippet::blob(Address ret_addr, bool reloc, bool spring) {
+  SpSnippet::blob(bool reloc, bool spring) {
     assert(context_);
-    ret_addr_ = ret_addr;
+
+		Address ret_addr = point_->ret_addr();
 
     // If this blob is already generated? If so, just return it.
     if (blob_size_ > 0) {
@@ -82,7 +83,8 @@ namespace sp {
       param_func = (long)entry_;
       called_func = (long)context_->wrapper_entry();
     }
-    blob_size_ += emit_pass_param((long)point_, param_func, blob_, blob_size_);
+    blob_size_ += emit_pass_param((long)point_, param_func, blob_,
+																	blob_size_);
     blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
     // 4. Restore context
@@ -99,7 +101,8 @@ namespace sp {
       goto EXIT;
     } else if (ret_addr && func_) {
       // 5.2. non tail call and Direct call
-      blob_size_ += emit_call_abs((long)func_->addr(), blob_, blob_size_, false);
+      blob_size_ += emit_call_abs((long)func_->addr(), blob_,
+																	blob_size_, false);
     } else {
       // 5.3. indirect call
       blob_size_ += emit_call_orig((long)point_->block()->last(),
@@ -118,7 +121,8 @@ namespace sp {
         param_func = (long)exit_;
         called_func = (long)context_->wrapper_exit();
       }
-      blob_size_ += emit_pass_param((long)point_, param_func, blob_, blob_size_);
+      blob_size_ += emit_pass_param((long)point_, param_func,
+																		blob_, blob_size_);
       blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
       // 8. Restore context
@@ -131,8 +135,16 @@ namespace sp {
   EXIT:
 
 #ifndef SP_RELEASE
-    sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {", (unsigned long)blob_size_, point_->block()->last(), func_->name().c_str());
-    sp_debug("%s", context_->parser()->dump_insn((void*)blob_, blob_size_).c_str());
+		if (func_) {
+			sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {",
+							 (size_t)blob_size_, point_->block()->last(),
+							 func_->name().c_str());
+		} else {
+			sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx - {",
+							 (size_t)blob_size_, point_->block()->last());
+		}
+    sp_debug("%s", context_->parser()->dump_insn((void*)blob_,
+																								 blob_size_).c_str());
     sp_debug("}");
 #endif
 
@@ -147,7 +159,8 @@ namespace sp {
 
     PatchBlock::Insns insns;
     blk->getInsns(insns);
-    for (PatchBlock::Insns::iterator i = insns.begin(); i != insns.end(); i++) {
+    for (PatchBlock::Insns::iterator i = insns.begin();
+				 i != insns.end(); i++) {
       using namespace Dyninst::InstructionAPI;
 
       Address a = i->first;
@@ -178,9 +191,12 @@ namespace sp {
     long after_jmp = callblk->start() + 2;
     bool done = false;
 
+		sp_debug("LOOKING FOR SPRING BOARD - springboard size should >= %ld",
+						 min_springblk_size);
+
     // Find a nearby block
     PatchBlock* springblk = NULL;
-    ph::PatchObject* obj = callblk->obj();
+		SpObject* obj = static_cast<SpObject*>(callblk->obj());
 
     using namespace Dyninst::ParseAPI;
     CodeObject* co = obj->co();
@@ -191,14 +207,25 @@ namespace sp {
     long upper = 127 + after_jmp - jump_abs_size();
     long lower = -128 + after_jmp - jump_abs_size();
 
+		if (obj->codeBase() != 0) {
+			upper -= obj->load_addr();
+			lower -= obj->load_addr();
+		}
+		sp_debug("SAME OBJ - codebase-%lx, load_addr-%lx, range-[%lx, %lx) ",
+						 obj->codeBase(), obj->load_addr(), lower, upper);
+
     for (unsigned i = 0; i < regions.size(); i++) {
       CodeRegion* cr = regions[i];
-      if ((lower <= (long)cr->low() && (long)cr->low() < upper) ||
-          ((long)cr->low() <= lower && upper < (long)cr->high()) ||
-          (lower <= (long)cr->high() && (long)cr->high() < upper)
+			size_t cr_low = cr->low();
+			size_t cr_high = cr->high();
+			sp_debug("REGION [%lx, %lx] - (%lx, %lx)", cr_low, cr_high,
+							 lower, upper);
+      if ((lower <= (long)cr_low && (long)cr_low < upper) ||
+          ((long)cr_low <= lower && upper < (long)cr_high) ||
+          (lower <= (long)cr_high && (long)cr_high < upper)
           ) {
         // XXX: Not any method to iterate blocks in a region?
-        Address span_addr = lower;
+   			Address span_addr = lower;
         do {
           set<Block*> blks;
           co->findBlocks(cr, span_addr, blks);
@@ -210,13 +237,22 @@ namespace sp {
           for (set<Block*>::iterator bi = blks.begin(); bi != blks.end(); bi++) {
             b = *bi;
           }
+					sp_debug("POTENTIAL SPRING BOARD - %ld found, [%lx, %lx]",
+									 blks.size(), b->start(), b->size() + b->start());
+
           size_t rel = b->start() + jump_abs_size() - after_jmp;
+					if (obj->codeBase() != 0) {
+						rel += obj->load_addr();
+					}
+
           if (!sp::is_disp8(rel)) {
+						sp_debug("TOO BIG DISP, SKIPPED - disp=%ld", rel);
             span_addr = b->end();
             continue;
           }
           size_t s = b->lastInsnAddr() - b->start();
           if (s < min_springblk_size) {
+						sp_debug("TOO SMALL, SKIPPED - size=%ld", s);
             span_addr = b->end();
             continue;
           }
@@ -224,12 +260,15 @@ namespace sp {
 
           // For simplicity, we don't want call block
           if (pb->containsCall()) {
+						sp_debug("CALL BLK, SKIPPED - we don't relocate call block");
             span_addr = b->end();
             continue;
           }
 
           // For simplicity, we don't relocate used spring block
           if (context_->in_spring_set(pb)) {
+						sp_debug("SPRING BOARD, SKIPPED - we don't relocate second-hand"
+										 " spring board");
             span_addr = b->end();
             continue;
           }

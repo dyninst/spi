@@ -7,6 +7,38 @@
 
 namespace sp {
 
+	// Forward declaration
+	class InstWorker;
+
+	// ------------------------------------------------------------------- 
+	// Default implementation of Instrumenter, which invokes different
+  // workers to generate binary code:
+  // 1. We first try to overwrite call instruction with a short jump
+  // 2. If it doesn't work, we try to overwrite the call block with a
+  //    short jump or a long jump, depending on the size of call block
+  // 3. If it still doesn't work, we build one-hop spring board
+  // 4. If it doesn't work at all, we resort to overwrite call insn w/
+  //    a trap instruction
+	// -------------------------------------------------------------------
+	class SpInstrumenter : public ph::Instrumenter {
+  public:
+    static SpInstrumenter* create(ph::AddrSpace* as);
+
+		virtual bool run();
+		virtual bool undo();
+
+  protected:
+		typedef std::vector<InstWorker*> InstWorkers;
+		InstWorkers workers_;
+
+    SpInstrumenter(ph::AddrSpace*);
+		~SpInstrumenter();
+	};
+
+	// ------------------------------------------------------------------- 
+	// A bunch of workers to generate binary code
+	// -------------------------------------------------------------------
+	// The base class for workers
 	class InstWorker {
 	public:
 		// Instrument a point
@@ -30,51 +62,7 @@ namespace sp {
 		virtual bool install(SpPoint* pt) = 0;
 	};
 
-
-	class SpInstrumenter : public ph::Instrumenter {
-  public:
-    static SpInstrumenter* create(ph::AddrSpace* as);
-
-		virtual bool run();
-		virtual bool undo();
-
-  protected:
-		typedef std::vector<InstWorker*> InstWorkers;
-		InstWorkers workers_;
-
-    SpInstrumenter(ph::AddrSpace*);
-		~SpInstrumenter();
-
-#if 0
-    bool install_direct(SpPoint* point,
-                        char*      blob,
-                        size_t     blob_size);
-
-    bool install_indirect(SpPoint*         point, 
-                          sp::SpSnippet::ptr snip,
-                          bool               jump_abs,
-                          dt::Address        ret_addr);
-
-    bool install_jump(ph::PatchBlock*     blk,
-                      char*               insn,
-                      size_t              insn_size,
-                      sp::SpSnippet::ptr  snip, 
-                      dt::Address         ret_addr);
-
-    bool install_spring(ph::PatchBlock*    callblk,
-                        sp::SpSnippet::ptr snip,
-                        dt::Address        ret_addr);
-
-    bool install_trap(SpPoint* point,
-                      char*      blob,
-                      size_t     blob_size);
-
-    static void trap_handler(int        sig,
-                             siginfo_t* info,
-                             void*      c);
-#endif
-	};
-
+	// Overwrite call insn with a trap instruction
 	class TrapWorker : public InstWorker {
 	public:
     TrapWorker() : InstWorker() {}
@@ -93,6 +81,7 @@ namespace sp {
 		virtual bool install(SpPoint* pt);
 	};
 
+	// Overwrite call insn with a short jump
 	class RelocCallInsnWorker : public InstWorker {
 	public:
 	  RelocCallInsnWorker() : InstWorker() {}
@@ -105,6 +94,7 @@ namespace sp {
 		virtual bool install(SpPoint* pt);
 	};
 
+	// Overwrite call block with a short jump or a long jump
 	class RelocCallBlockWorker : public InstWorker {
 	public:
     RelocCallBlockWorker() : InstWorker() {}
@@ -115,8 +105,12 @@ namespace sp {
 		virtual InstallMethod install_method() const { return SP_RELOC_BLK; }
 	protected:
 		virtual bool install(SpPoint* pt);
+		
+		bool install_jump_to_block(SpPoint* pt, char* jump_insn,
+															 size_t insn_size);
 	};
 
+	// Generate one-hop springboard
 	class SpringboardWorker : public InstWorker {
 	public:
     SpringboardWorker() : InstWorker() {}

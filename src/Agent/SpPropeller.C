@@ -30,31 +30,31 @@ namespace sp {
   // Instrument all "interesting points" inside `func`.
   // "Interesting points" are provided by SpPropeller::next_points.
   // By default, next_points provides all call instructions of `func`.
-  // However, users can inherit SpPropeller and implement their own next_points().
+  // However, users can inherit SpPropeller and implement their own
+  // next_points().
   bool
-  SpPropeller::go(PatchFunction* func, SpContext* context, PayloadFunc entry,
-                  PayloadFunc exit, Point* pt) {
+  SpPropeller::go(PatchFunction* func, SpContext* context,
+                  PayloadFunc entry, PayloadFunc exit, Point* pt) {
 #ifndef SP_RELEASE
     sp_debug("START PROPELLING - propel to callees of function %s",
-						 func->name().c_str());
+             func->name().c_str());
 #endif
     // 1. Find points according to type
     Points pts;
     PatchMgrPtr mgr = context->parser()->mgr();
     PatchFunction* cur_func = NULL;
     if (pt) {
-			sp_debug("POINT VALID - %s", func->name().c_str());
+      sp_debug("POINT VALID - %s", func->name().c_str());
       SpPoint* spt = static_cast<SpPoint*>(pt);
       PatchFunction* tmp_func = spt->callee();
-			sp_debug("spt->callee() - %lx, func - %lx",
-							 (Dyninst::Address)tmp_func, (Dyninst::Address)func);
+      sp_debug("spt->callee() - %lx, func - %lx",
+               (Dyninst::Address)tmp_func, (Dyninst::Address)func);
       cur_func = func;
     } else {
       cur_func = context->parser()->findFunction(func->name());
     }
 
     next_points(cur_func, mgr, pts);
-
 
     // 2. Start instrumentation
     ph::Patcher patcher(mgr);
@@ -66,31 +66,34 @@ namespace sp {
       PatchFunction* callee = context->parser()->callee(pt);
 #ifndef SP_RELEASE
       if (callee) {
-        sp_debug("POINT - instrumenting direct call at %lx to function %s (%lx)",
+        sp_debug("POINT - instrumenting direct call at %lx to "
+                 "function %s (%lx)",
                  pt->block()->last(), callee->name().c_str(),
-								 (Dyninst::Address)callee);
+                 (Dyninst::Address)callee);
       } else {
         sp_debug("POINT - instrumenting indirect call at %lx",
-								 pt->block()->last());
+                 pt->block()->last());
       }
 #endif
       SpSnippet::ptr sp_snip = SpSnippet::create(callee,
-																								 static_cast<SpPoint*>(pt),
-																								 context, entry, exit);
-      Snippet<SpSnippet::ptr>::Ptr snip = Snippet<SpSnippet::ptr>::create(sp_snip);
+                                                 static_cast<SpPoint*>(pt),
+                                                 context, entry, exit);
+      Snippet<SpSnippet::ptr>::Ptr snip =
+        Snippet<SpSnippet::ptr>::create(sp_snip);
       patcher.add(PushBackCommand::create(pt, snip));
     }
     patcher.commit();
 #ifndef SP_RELEASE
-    sp_debug("FINISH PROPELLING - %lu callees of function %s are instrumented",
-						 (unsigned long)pts.size(), func->name().c_str());
+    sp_debug("FINISH PROPELLING - %lu callees of function %s are"
+             " instrumented", (size_t)pts.size(), func->name().c_str());
 #endif
     return true;
   }
 
   // Find all PreCall points
   void
-  SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr, Points& pts) {
+  SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr,
+                           Points& pts) {
     Scope scope(cur_func);
     mgr->findPoints(scope, Point::PreCall, back_inserter(pts));
   }

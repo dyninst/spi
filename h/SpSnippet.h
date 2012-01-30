@@ -12,7 +12,8 @@ namespace sp {
 
 	class SpSnippet {
 		friend class SpInstrumenter;
-
+		friend class RelocCallBlockWorker;
+		friend class SpringboardWorker;
   public:
     typedef dyn_detail::boost::shared_ptr<SpSnippet> ptr;
     static ptr create(ph::PatchFunction* f,
@@ -33,7 +34,7 @@ namespace sp {
     char* realloc(); 
 
     // Return the pointer to blob, and fill the blob
-    char* blob(dt::Address ret_addr, bool reloc = false,  bool spring = false);
+    char* blob(bool reloc = false,  bool spring = false);
 
     // Return the pointer to spring, and fill in spring
     char* spring(dt::Address ret_addr);
@@ -77,8 +78,6 @@ namespace sp {
     // Blob things
     char* blob_;
     size_t blob_size_;
-
-    dt::Address ret_addr_;
 
     // Spring block things
     char* spring_;

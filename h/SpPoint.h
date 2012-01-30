@@ -85,6 +85,14 @@ namespace sp {
 		in::Instruction::Ptr orig_call_insn() const { return orig_call_insn_; }
 		void set_orig_call_insn(in::Instruction::Ptr i) { orig_call_insn_ = i; }
 
+		dt::Address orig_call_blk_addr() const { return call_blk_addr_; }
+		string& orig_call_blk() { return orig_call_blk_; }
+		void set_orig_call_blk(ph::PatchBlock* blk);
+
+		dt::Address orig_spring_blk_addr() const { return spring_addr_; }
+		string& orig_spring() { return orig_spring_; }
+		void set_orig_spring(ph::PatchBlock* blk);
+
 		void set_ret_addr(dt::Address a) { ret_addr_ = a; }
 		dt::Address ret_addr() const { return ret_addr_; }
   protected:

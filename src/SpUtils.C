@@ -3,9 +3,9 @@
 
 namespace sp {
 
-	// -----------------------------------------------------------------------------
-	// Profiling tools
-	// -----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
+  // Profiling tools
+  // -----------------------------------------------------------------------------
   typedef long i64;
   typedef struct CPerfCounterRec {
     i64 _freq;
@@ -59,9 +59,9 @@ namespace sp {
   }
 
 
-	// -----------------------------------------------------------------------------
-	// Determine the size of a long integer
-	// -----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
+  // Determine the size of a long integer
+  // -----------------------------------------------------------------------------
   bool is_disp32(long d) {
     const long max_int32 = 2147483646;
     const long min_int32 = -2147483647;
@@ -74,21 +74,21 @@ namespace sp {
     return ((d < max_int8) && (d >= min_int8));
   }
 
-	// -----------------------------------------------------------------------------
-	// Get pid from various things
-	// -----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
+  // Get pid from various things
+  // -----------------------------------------------------------------------------
   const int MAXLEN = 255;
 
   // Get inode from file descriptor
   // Return -1 if failed to get an inode from this file descriptor
-	ino_t
-	get_inode_from_fd(int fd) {
+  ino_t
+  get_inode_from_fd(int fd) {
     struct stat s;
     if (fstat(fd, &s) != -1) {
       return s.st_ino;
     }
     return -1;
-	}
+  }
 
   // Is this process using this inode?
   bool
@@ -113,15 +113,15 @@ namespace sp {
           return false;
         }
         buffer[size] = '\0';
-				// sp_print(buffer);
+        // sp_print(buffer);
         if (sscanf(buffer, "pipe:[%lu]", &temp_node) == 1 &&
             temp_node == inode) {
           closedir(dir);
           return true;
         } // Anonymous pipe
 
-				else if (sscanf(buffer, "socket:[%lu]", &temp_node) == 1 &&
-								 temp_node == inode) {
+        else if (sscanf(buffer, "socket:[%lu]", &temp_node) == 1 &&
+                 temp_node == inode) {
           closedir(dir);
           return true;
         } // tcp
@@ -168,101 +168,101 @@ namespace sp {
     closedir(dir);
   }
 
-	// Get pids that are associated with the local/remote address pair
-	void addr_to_pids(char* loc_ip, char* loc_port,
-										char* rem_ip, char* rem_port,
-										PidSet& pid_set) {
-		char cmd[1024];
-		sprintf(cmd, "/usr/sbin/lsof -i UDP:%s -i TCP:%s", rem_port, rem_port);
-		// system(cmd);
+  // Get pids that are associated with the local/remote address pair
+  void addr_to_pids(char* loc_ip, char* loc_port,
+                    char* rem_ip, char* rem_port,
+                    PidSet& pid_set) {
+    char cmd[1024];
+    sprintf(cmd, "/usr/sbin/lsof -i UDP:%s -i TCP:%s", rem_port, rem_port);
+    // system(cmd);
 
-		FILE* fp = popen(cmd, "r");
-		char line[1024];
-		fgets(line, 1024, fp); // skip the header line
-		// fprintf(stderr, "after pipe\n");
+    FILE* fp = popen(cmd, "r");
+    char line[1024];
+    fgets(line, 1024, fp); // skip the header line
+    // fprintf(stderr, "after pipe\n");
 
-		while (fgets(line, 1024, fp) != NULL) {
-			// fprintf(stderr, "%s\n", line);
+    while (fgets(line, 1024, fp) != NULL) {
+      // fprintf(stderr, "%s\n", line);
 
-			char* pch = strtok(line, " :()->");
-			std::vector<char*> tokens;
-			while (pch != NULL) {
-				tokens.push_back(pch);
-				pch = strtok(NULL, " :()->");
-			}
-			// fprintf(stderr, "%s == %s\n", tokens[8], rem_port);
-			if (atoi(tokens[8]) == atoi(rem_port)) {
-				pid_set.insert(atoi(tokens[1]));
-			}
-		}
-		pclose(fp);
+      char* pch = strtok(line, " :()->");
+      std::vector<char*> tokens;
+      while (pch != NULL) {
+        tokens.push_back(pch);
+        pch = strtok(NULL, " :()->");
+      }
+      // fprintf(stderr, "%s == %s\n", tokens[8], rem_port);
+      if (atoi(tokens[8]) == atoi(rem_port)) {
+        pid_set.insert(atoi(tokens[1]));
+      }
+    }
+    pclose(fp);
 
-	}
+  }
 
-	in_addr_t hostname_to_ip(char * hostname , char* ip, size_t ip_len) {
-		struct hostent *he;
-		struct in_addr **addr_list;
-		int i;
+  in_addr_t hostname_to_ip(char * hostname , char* ip, size_t ip_len) {
+    struct hostent *he;
+    struct in_addr **addr_list;
+    int i;
 
-		if ( (he = gethostbyname( hostname ) ) == NULL)	{
-			perror("gethostbyname");
-			return 0;
-		}
+    if ( (he = gethostbyname( hostname ) ) == NULL) {
+      perror("gethostbyname");
+      return 0;
+    }
 
-		addr_list = (struct in_addr **) he->h_addr_list;
-		for(i = 0; addr_list[i] != NULL; i++)	{
-			//Return the first one;
-			strncpy(ip , inet_ntoa(*addr_list[i]), ip_len);
-			sockaddr_in sa;
-			if (inet_pton(AF_INET, ip, &(sa.sin_addr)) != -1)
-				return inet_lnaof(sa.sin_addr);
-			return 0;
-		}
-		return 0;
-	}
+    addr_list = (struct in_addr **) he->h_addr_list;
+    for(i = 0; addr_list[i] != NULL; i++) {
+      //Return the first one;
+      strncpy(ip , inet_ntoa(*addr_list[i]), ip_len);
+      sockaddr_in sa;
+      if (inet_pton(AF_INET, ip, &(sa.sin_addr)) != -1)
+        return inet_lnaof(sa.sin_addr);
+      return 0;
+    }
+    return 0;
+  }
 
-// ----------------------------------------------------------------------------- 
+// -----------------------------------------------------------------------------
 // /proc utilities
 // -----------------------------------------------------------------------------
 
-	// Is current executable an illegal program?
-	// We use this, because we want to avoid instrumenting some programs, e.g.,
-	// unix utilities used in self-propelled core
-	bool is_illegal_exe(StringSet& illegal_exes) {
-		std::string proc_path = "";
-		proc_path += "/proc/";
-		proc_path += Dyninst::itos(getpid());
-		proc_path += "/cmdline";
+  // Is current executable an illegal program?
+  // We use this, because we want to avoid instrumenting some programs, e.g.,
+  // unix utilities used in self-propelled core
+  bool is_illegal_exe(StringSet& illegal_exes) {
+    std::string proc_path = "";
+    proc_path += "/proc/";
+    proc_path += Dyninst::itos(getpid());
+    proc_path += "/cmdline";
 
-		std::string content = get_file_text(proc_path);
-		char* exe_name = sp_filename(content.c_str());
-		sp_debug("exe: %s", exe_name);
+    std::string content = get_file_text(proc_path);
+    char* exe_name = sp_filename(content.c_str());
+    sp_debug("exe: %s", exe_name);
 
-		for (StringSet::iterator si = illegal_exes.begin();
+    for (StringSet::iterator si = illegal_exes.begin();
          si != illegal_exes.end(); si++) {
-			sp_debug("comparing: %s", (*si).c_str());
-			if ((*si).compare(exe_name) == 0) return true;
-		}
-		return false;
-	}
+      sp_debug("comparing: %s", (*si).c_str());
+      if ((*si).compare(exe_name) == 0) return true;
+    }
+    return false;
+  }
 
-	// Get text content from a file. If file doesn't exist, return "".
-	std::string get_file_text(std::string filename) {
-		std::ifstream infile(filename.c_str()) ;
-		if ( infile ) {
-			std::string fileData((std::istreambuf_iterator<char>(infile)) ,
-														std::istreambuf_iterator<char>()) ;
+  // Get text content from a file. If file doesn't exist, return "".
+  std::string get_file_text(std::string filename) {
+    std::ifstream infile(filename.c_str()) ;
+    if ( infile ) {
+      std::string fileData((std::istreambuf_iterator<char>(infile)) ,
+                            std::istreambuf_iterator<char>()) ;
       infile.close( ) ; ;
       return fileData;
-		}
-		else {
+    }
+    else {
       return "";
-		}
-	}
+    }
+  }
 
-// ----------------------------------------------------------------------------- 
+// -----------------------------------------------------------------------------
 // IPC stuffs
-// -----------------------------------------------------------------------------	
+// -----------------------------------------------------------------------------
 
   // See if this file descriptor is for pipe.
   bool
@@ -337,50 +337,50 @@ namespace sp {
     return (is_pipe(fd) || is_tcp(fd) || is_udp(fd));
   }
 
-// ----------------------------------------------------------------------------- 
+// -----------------------------------------------------------------------------
 // Socket programming things
 // -----------------------------------------------------------------------------
-	bool get_local_address(int fd, sockaddr_storage* out) {
-		assert(out);
-		socklen_t sock_len = sizeof(sockaddr_storage);
-		if (getsockname(fd, (sockaddr*)out, &sock_len) == -1) {
-			sp_perror("getsockname @ pid = %d", getpid());
-		}
-		return true;
-	}
+  bool get_local_address(int fd, sockaddr_storage* out) {
+    assert(out);
+    socklen_t sock_len = sizeof(sockaddr_storage);
+    if (getsockname(fd, (sockaddr*)out, &sock_len) == -1) {
+      sp_perror("getsockname @ pid = %d", getpid());
+    }
+    return true;
+  }
 
-	bool get_remote_address(int fd, sockaddr_storage* out) {
-		assert(out);
-		socklen_t sock_len = sizeof(sockaddr_storage);
-		if (getpeername(fd, (sockaddr*)out, &sock_len) == -1) {
-			sp_perror("getpeername @ pid = %d", getpid());
-		}
-		return true;
-	}
+  bool get_remote_address(int fd, sockaddr_storage* out) {
+    assert(out);
+    socklen_t sock_len = sizeof(sockaddr_storage);
+    if (getpeername(fd, (sockaddr*)out, &sock_len) == -1) {
+      sp_perror("getpeername @ pid = %d", getpid());
+    }
+    return true;
+  }
 
-	bool get_address(sockaddr_storage* sa, char* host, size_t host_len,
-									 char* service, size_t service_len) {
-		assert(host);
-		assert(service);
+  bool get_address(sockaddr_storage* sa, char* host, size_t host_len,
+                   char* service, size_t service_len) {
+    assert(host);
+    assert(service);
 
-		socklen_t sock_len = 0;
-		if (sa->ss_family == AF_INET) {
-			sock_len = sizeof(sockaddr_in);
-		} else if (sa->ss_family == AF_INET6) {
-			sock_len = sizeof(sockaddr_in6);
-		} else if (sa->ss_family == AF_UNSPEC) {
-			// sp_perror("AF_UNSPEC");
-			sa->ss_family = AF_INET;
-			sock_len = sizeof(sockaddr_in);
-		}
+    socklen_t sock_len = 0;
+    if (sa->ss_family == AF_INET) {
+      sock_len = sizeof(sockaddr_in);
+    } else if (sa->ss_family == AF_INET6) {
+      sock_len = sizeof(sockaddr_in6);
+    } else if (sa->ss_family == AF_UNSPEC) {
+      // sp_perror("AF_UNSPEC");
+      sa->ss_family = AF_INET;
+      sock_len = sizeof(sockaddr_in);
+    }
 
-		int err = 0;
-		if ((err = getnameinfo((const sockaddr*)sa, sock_len, host, host_len,
-						 service, service_len, NI_NUMERICSERV|NI_NUMERICHOST)) != 0) {
-			fprintf(stderr, "%s\n", gai_strerror(err));
-			perror("getnameinfo");
-			return false;
-		}
-		return true;
-	}
+    int err = 0;
+    if ((err = getnameinfo((const sockaddr*)sa, sock_len, host, host_len,
+             service, service_len, NI_NUMERICSERV|NI_NUMERICHOST)) != 0) {
+      fprintf(stderr, "%s\n", gai_strerror(err));
+      perror("getnameinfo");
+      return false;
+    }
+    return true;
+  }
 }
