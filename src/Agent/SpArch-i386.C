@@ -25,7 +25,7 @@ namespace sp {
 
   // Save context before calling payload
   size_t
-  SpSnippet::emit_save(char* buf, size_t offset, bool) {
+  SpSnippet::emit_save(char* buf, size_t offset) {
     char* p = buf + offset;
     // pusha
     *p++ = 0x60;
@@ -36,7 +36,7 @@ namespace sp {
 
   // Restore context after calling payload
   size_t
-  SpSnippet::emit_restore( char* buf, size_t offset, bool) {
+  SpSnippet::emit_restore( char* buf, size_t offset) {
     char* p = buf + offset;
     // popa
     *p++ = 0x61;

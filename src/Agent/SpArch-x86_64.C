@@ -29,8 +29,13 @@ namespace sp {
 
   // Save context before calling payload
   size_t
-  SpSnippet::emit_save(char* buf, size_t offset, bool indirect) {
+  SpSnippet::emit_save(char* buf, size_t offset) {
     char* p = buf + offset;
+
+		bool indirect = false;
+		if (!func_) {
+			indirect = true;
+		}
 
     // Saved for direct/indirect call
     *p++ = 0x57; // push rdi
@@ -70,8 +75,13 @@ namespace sp {
 
   // Restore context after calling payload
   size_t
-  SpSnippet::emit_restore(char* buf, size_t offset, bool indirect) {
+  SpSnippet::emit_restore(char* buf, size_t offset) {
     char* p = buf + offset;
+
+		bool indirect = false;
+		if (!func_) {
+			indirect = true;
+		}
 
     // Restored for indirect call
     if (indirect) {
@@ -428,6 +438,7 @@ namespace sp {
   // Get the displacement in an instruction
   static int*
   get_disp(Instruction::Ptr insn, char* insn_buf) {
+		assert(insn);
     int* disp = NULL;
 
     int disp_offset = 0;
@@ -537,7 +548,7 @@ namespace sp {
   static size_t
   emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e,
                 Address a, char* buf) {
-
+		assert(insn);
     char* p = buf;
     char* insn_buf = (char*)insn->ptr();
 
@@ -663,6 +674,7 @@ namespace sp {
   reloc_insn_internal(Address a, Instruction::Ptr insn,
                       std::set<Expression::Ptr>& exp,
                       bool use_pc, char* p) {
+		assert(insn);
     if (use_pc) {
       // Deal with PC-sensitive instruction
       char insn_buf[20];
@@ -696,6 +708,7 @@ namespace sp {
   size_t
   SpSnippet::reloc_insn(Address src_insn, Instruction::Ptr insn,
                         Address last, char* buf) {
+		assert(insn);
     // We don't handle last instruction for now
     if (src_insn == last) {  return 0;  }
 
@@ -772,19 +785,38 @@ namespace sp {
   size_t
   SpSnippet::emit_call_orig(long src, size_t size,
                             char* buf, size_t offset) {
+#if 0
     char* p = buf + offset;
-    bool use_pc = false;
-
-    // Check whether the call instruction uses RIP
     Instruction::Ptr insn = point_->orig_call_insn();
+    set<Expression::Ptr> opSet;
+
+    bool use_pc = false;
+    // Check whether the call instruction uses RIP
     RelocVisitor visitor(context_->parser());
     Expression::Ptr trg = insn->getControlFlowTarget();
-    set<Expression::Ptr> opSet;
     if (trg) {
       trg->apply(&visitor);
       use_pc = visitor.use_pc();
       opSet.insert(trg);
     }
+
+    return reloc_insn_internal(src, insn, opSet, use_pc, p);
+#endif
+    char* p = buf + offset;
+    Instruction::Ptr insn = point_->orig_call_insn();
+		assert(insn);
+    set<Expression::Ptr> opSet;
+    bool use_pc = false;
+
+    // Check whether the call instruction uses RIP
+    RelocVisitor visitor(context_->parser());
+    Expression::Ptr trg = insn->getControlFlowTarget();
+    if (trg) {
+      trg->apply(&visitor);
+      use_pc = visitor.use_pc();
+      opSet.insert(trg);
+    }
+
     return reloc_insn_internal(src, insn, opSet, use_pc, p);
   }
 

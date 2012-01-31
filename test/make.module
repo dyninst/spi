@@ -180,7 +180,7 @@ AUX_SRCS           += $(wildcard $(AUX_DIR)/*.c)
 AUX_OBJS            = $(notdir $(AUX_SRCS:%.c=%.o))
 AUX_EXE             = $(notdir $(AUX_SRCS:%.c=%))
 
-AUX_FLAGS             += -g
+AUX_FLAGS             += -g -O0
 AUX_LDFLAGS           += -ldl -L./ -ltest1
 
 aux: $(AUX_EXE)

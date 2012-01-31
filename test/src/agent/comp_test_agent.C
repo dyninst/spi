@@ -9,7 +9,8 @@ void test_entry(SpPoint* pt) {
 
 	PatchFunction* f = callee(pt);
   if (!f) return;
-	sp_print("%s", f->name().c_str());
+	SpObject* obj = static_cast<SpObject*>(pt->block()->obj());
+	sp_print("%s in %s", f->name().c_str(), obj->name().c_str());
   sp::propel(pt);
 }
 

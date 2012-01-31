@@ -63,6 +63,7 @@ namespace sp {
 
       // It's possible that callee will be NULL, which is an indirect call.
       // In this case, we'll parse it later during runtime.
+			sp_debug("GET REAL CALLEE");
       PatchFunction* callee = context->parser()->callee(pt);
 #ifndef SP_RELEASE
       if (callee) {
@@ -85,7 +86,7 @@ namespace sp {
     patcher.commit();
 #ifndef SP_RELEASE
     sp_debug("FINISH PROPELLING - %lu callees of function %s are"
-             " instrumented", (size_t)pts.size(), func->name().c_str());
+             " instrumented", (unsigned long)pts.size(), func->name().c_str());
 #endif
     return true;
   }

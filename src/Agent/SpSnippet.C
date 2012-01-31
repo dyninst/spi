@@ -74,7 +74,7 @@ namespace sp {
 
 
     // 2. Save context (TODO: better to have liveness analysis)
-    blob_size_ += emit_save(blob_, blob_size_, reloc);
+    blob_size_ += emit_save(blob_, blob_size_);
 
     // 3. Call payload before function call
     long param_func = 0;
@@ -88,7 +88,7 @@ namespace sp {
     blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
     // 4. Restore context
-    blob_size_ += emit_restore(blob_, blob_size_, reloc);
+    blob_size_ += emit_restore(blob_, blob_size_);
 
     // 5. Call ORIG_FUNCTION
     // There are four cases need to consider:
@@ -105,6 +105,7 @@ namespace sp {
 																	blob_size_, false);
     } else {
       // 5.3. indirect call
+			assert(point_->orig_call_insn());
       blob_size_ += emit_call_orig((long)point_->block()->last(),
                                    point_->orig_call_insn()->size(),
 																	 blob_, blob_size_);
@@ -112,7 +113,7 @@ namespace sp {
 
     if (context_->allow_ipc() || exit_) {
       // 6. save context
-      blob_size_ += emit_save(blob_, blob_size_, reloc);
+      blob_size_ += emit_save(blob_, blob_size_);
 
       // 7. Pass parameters
       param_func = 0;
@@ -126,7 +127,7 @@ namespace sp {
       blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
       // 8. Restore context
-      blob_size_ += emit_restore(blob_, blob_size_, reloc);
+      blob_size_ += emit_restore(blob_, blob_size_);
     }
 
     // 9. Jump back to ORIG_INSN_ADDR
@@ -137,11 +138,11 @@ namespace sp {
 #ifndef SP_RELEASE
 		if (func_) {
 			sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {",
-							 (size_t)blob_size_, point_->block()->last(),
+							 (unsigned long)blob_size_, point_->block()->last(),
 							 func_->name().c_str());
 		} else {
 			sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx - {",
-							 (size_t)blob_size_, point_->block()->last());
+							 (unsigned long)blob_size_, point_->block()->last());
 		}
     sp_debug("%s", context_->parser()->dump_insn((void*)blob_,
 																								 blob_size_).c_str());
@@ -192,7 +193,7 @@ namespace sp {
     bool done = false;
 
 		sp_debug("LOOKING FOR SPRING BOARD - springboard size should >= %ld",
-						 min_springblk_size);
+						 (long)min_springblk_size);
 
     // Find a nearby block
     PatchBlock* springblk = NULL;
@@ -218,8 +219,8 @@ namespace sp {
       CodeRegion* cr = regions[i];
 			size_t cr_low = cr->low();
 			size_t cr_high = cr->high();
-			sp_debug("REGION [%lx, %lx] - (%lx, %lx)", cr_low, cr_high,
-							 lower, upper);
+			sp_debug("REGION [%lx, %lx] - (%lx, %lx)", (unsigned long)cr_low,
+							 (unsigned long)cr_high, lower, upper);
       if ((lower <= (long)cr_low && (long)cr_low < upper) ||
           ((long)cr_low <= lower && upper < (long)cr_high) ||
           (lower <= (long)cr_high && (long)cr_high < upper)
@@ -238,7 +239,7 @@ namespace sp {
             b = *bi;
           }
 					sp_debug("POTENTIAL SPRING BOARD - %ld found, [%lx, %lx]",
-									 blks.size(), b->start(), b->size() + b->start());
+									 (unsigned long)blks.size(), b->start(), b->size() + b->start());
 
           size_t rel = b->start() + jump_abs_size() - after_jmp;
 					if (obj->codeBase() != 0) {
@@ -246,13 +247,13 @@ namespace sp {
 					}
 
           if (!sp::is_disp8(rel)) {
-						sp_debug("TOO BIG DISP, SKIPPED - disp=%ld", rel);
+						sp_debug("TOO BIG DISP, SKIPPED - disp=%ld", (long)rel);
             span_addr = b->end();
             continue;
           }
           size_t s = b->lastInsnAddr() - b->start();
           if (s < min_springblk_size) {
-						sp_debug("TOO SMALL, SKIPPED - size=%ld", s);
+						sp_debug("TOO SMALL, SKIPPED - size=%ld", (long)s);
             span_addr = b->end();
             continue;
           }

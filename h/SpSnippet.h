@@ -90,8 +90,8 @@ namespace sp {
     bool realloc_;
 
     // A bunch of code generation interfaces
-    size_t emit_save(char* buf, size_t offset, bool indirect=false);
-    size_t emit_restore( char* buf, size_t offset, bool indirect=false);
+    size_t emit_save(char* buf, size_t offset);
+    size_t emit_restore( char* buf, size_t offset);
     size_t emit_fault(char* buf, size_t offset);
     size_t emit_pass_param(long point, long payload, char* buf, size_t offset);
     size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);

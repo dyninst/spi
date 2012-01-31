@@ -49,7 +49,7 @@
   fprintf(stderr, "ERROR in %s [%d]: ", nodir, __LINE__); \
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n"); \
-  exit(0);\
+  ::exit(0);						 \
 	} while(0)
 
 #define sp_print(...) do {\

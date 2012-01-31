@@ -101,7 +101,9 @@ namespace sp {
 
       // Handle tail call
       Instruction::Ptr callinsn = spt->block()->getInsn(spt->block()->last());
+			assert(callinsn);
       if (callinsn->getCategory() == in::c_BranchInsn) {
+				sp_debug("TAIL CALL");
         spt->set_tailcall(true);
         spt->set_ret_addr(0);
       } else {
@@ -254,11 +256,12 @@ namespace sp {
     // Check if we are able to overwrite the call insn w/ a short jmp,
     // where we check two things:
 
-    // 1. is it a direct call instruction (the instruction starting w/ 0xe8?
+    // 1. is it a direct call instruction
 
     Address call_insn_addr = pt->block()->last();
     char* call_insn = (char*)call_insn_addr;
-    if (call_insn[0] != (char)0xe8) {
+    if (call_insn[0] != (char)0xe8 &&
+				!pt->tailcall()) {
       sp_debug("NOT DIRECT CALL - try other workers");
       return false;
     }
@@ -309,7 +312,7 @@ namespace sp {
 
     SpParser::ptr parser = g_context->parser();
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx for %s- {",
-             pt->block()->size(), (size_t)call_addr,
+             (unsigned long)pt->block()->size(), (unsigned long)call_addr,
              pt->callee()->name().c_str());
     sp_debug("%s", parser->dump_insn((void*)pt->block()->start(),
                                      pt->block()->size()).c_str());
@@ -320,7 +323,7 @@ namespace sp {
     size_t insn_length = pt->block()->end() - pt->block()->last();
     *lp = (int)((long)blob - (long)call_addr - insn_length);
     sp_debug("REL CAL - blob at %lx, last insn at %lx, insn length %lu",
-             (size_t)blob, pt->block()->end(), (size_t)insn_length);
+             (unsigned long)blob, pt->block()->end(), (unsigned long)insn_length);
     sp_debug("JUMP REL - jump to relative address %x", *lp);
 
     // Replace "call" with a "jump" instruction
@@ -521,6 +524,12 @@ namespace sp {
     PatchBlock* springblk = snip->spring_blk();
     if (!springblk) return false;
 
+    sp_debug("BEFORE INSTALL SPRING BLK (%lu bytes) for point %lx - {",
+             springblk->size(), callblk->last());
+    sp_debug("%s", parser->dump_insn((void*)springblk->start(),
+                                     springblk->size()).c_str());
+    sp_debug("}");
+
     // Build blob & change the permission of snippet
     char* blob = snip->blob(/*reloc=*/true, /*spring=*/true);
     PatchObject* obj = callblk->obj();
@@ -534,11 +543,6 @@ namespace sp {
       exit(0);
     }
 
-    sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
-             callblk->size(), callblk->last());
-    sp_debug("%s", parser->dump_insn((void*)callblk->start(),
-                                     callblk->size()).c_str());
-    sp_debug("}");
 
     // Relocate spring block & change the permission of the relocated
     // spring block
@@ -597,6 +601,19 @@ namespace sp {
     if (!as->restore_range_perm((Address)addr, callblk->size())) {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
+
+    sp_debug("AFTER INSTALL CALL BLK (%lu bytes) for point %lx - {",
+             callblk->size(), callblk->last());
+    sp_debug("%s", parser->dump_insn((void*)callblk->start(),
+                                     callblk->size()).c_str());
+    sp_debug("}");
+
+    sp_debug("AFTER INSTALL SPRING BLK (%lu bytes) for point %lx - {",
+             springblk->size(), callblk->last());
+    sp_debug("%s", parser->dump_insn((void*)springblk->start(),
+                                     springblk->size()).c_str());
+    sp_debug("}");
+
 #ifndef SP_RELEASE
     sp_debug("USE SPRING - piont %lx is instrumented using 1-hop spring",
              callblk->last());
