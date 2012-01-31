@@ -486,8 +486,10 @@ namespace sp {
     // 1. Looking for direct call
     PatchFunction* f = pt->getCallee();
     if (f) {
+
       PatchFunction* tmp_f = g_context->parser()->findFunction(f->name());
       if (tmp_f && tmp_f != f)  f = tmp_f; 
+
       spt->set_callee(f);
       return f;
     } 
@@ -497,7 +499,8 @@ namespace sp {
 
     // 2. Looking for indirect call
     if (parse_indirect) {
-      sp_debug("PARSING INDIRECT - for call insn %lx", pt->block()->last());
+      sp_debug("PARSING INDIRECT - for call insn %lx",
+							 pt->block()->last());
       Instruction::Ptr insn = spt->orig_call_insn();
       Expression::Ptr trg = insn->getControlFlowTarget();
       Address call_addr = 0;

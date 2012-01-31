@@ -458,8 +458,11 @@ namespace sp {
       : Visitor(), imm_(0), a_(a) { }
     virtual void visit(RegisterAST* r) {
       // value in RIP is a_
-      imm_ = a_;
-      stack_.push(imm_);
+			if (is_pc(r->getID())) {
+				imm_ = a_;
+				stack_.push(imm_);
+				sp_debug("EMU VISITOR - pc %lx", a_);
+			}
     }
     virtual void visit(BinaryFunction* b) {
       Address i1 = stack_.top();
@@ -469,8 +472,10 @@ namespace sp {
 
       if (b->isAdd()) {
         imm_ = i1 + i2;
+				sp_debug("EMU VISITOR - %lx + %lx = %lx", i1, i2, imm_);
       } else if (b->isMultiply()) {
         imm_ = i1 * i2;
+				sp_debug("EMU VISITOR - %lx * %lx = %lx", i1, i2, imm_);
       } else {
         assert(0);
       }
@@ -496,6 +501,7 @@ namespace sp {
         break;
       }
       }
+			sp_debug("EMU VISITOR - IMM %lx", imm_);
       stack_.push(imm_);
     }
     virtual void visit(Dereference* d) {
@@ -513,19 +519,21 @@ namespace sp {
     Address a_;
   };
 
-  /* We emulate the instruction by this sequence:
-     Case 1: if R8 is not used in this instruction
-     push %r8
-     mov IMM, %r8
-     modified original instruction, and use %r8
-     pop %r8
+  // We emulate the instruction by this sequence:
+  //
+  // Case 1: if R8 is not used in this instruction
+  // push %r8
+  // mov IMM, %r8
+  // modified original instruction, and use %r8
+  // pop %r8
+  //
+  // Case 2: if R8 is used in this instruciton
+  // push %r9
+  // mov IMM, %r9, and use %r9
+  // modified original instruction
+  // pop %r9
+  //
 
-     Case 2: if R8 is used in this instruciton
-     push %r9
-     mov IMM, %r9, and use %r9
-     modified original instruction
-     pop %r9
-  */
   static size_t
   emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e,
                 Address a, char* buf) {
@@ -584,16 +592,26 @@ namespace sp {
     }
     long* l = (long*)p;
 
-    EmuVisitor visitor(a+insn->size());
-    e->apply(&visitor);
-    *l = visitor.imm();
 
     // Deal with lea instruction
     if ((char)insn_buf[1] == (char)0x8d) {
       int* dis = get_disp(insn, insn_buf);
+			sp_debug("LEA - orig-disp(%d), orig-insn-addr(%lx),"
+							 " orig-insn-size(%ld), abs-trg(%lx)",
+							 *dis, a, insn->size(), *dis+a+insn->size());
       *l =*dis + a + insn->size();
     }
-    p += sizeof(l);
+
+		// Deal with non-lea instruction
+		else {
+			EmuVisitor visitor(a+insn->size());
+			e->apply(&visitor);
+			*l = visitor.imm();
+
+			sp_debug("OTHER PC-INSN - orig-insn-size(%ld), abs-trg(%lx)",
+							 insn->size(), *l);
+		}
+    p += sizeof(*l);
 
     // Set rex
     if (rex) {
@@ -682,45 +700,63 @@ namespace sp {
     if (src_insn == last) {  return 0;  }
 
     // See if this instruction is a pc-sensitive instruction
-    set<RegisterAST::Ptr> opSet;
-    set<Expression::Ptr> pcExp;
+    set<Expression::Ptr> opSet;
+    bool use_pc = false;
 
-    bool read_use_pc = false;
-    insn->getReadSet(opSet);
-    for (set<RegisterAST::Ptr>::iterator i = opSet.begin();
-         i != opSet.end(); i++) {
-      RelocVisitor visitor(context_->parser());
-      (*i)->apply(&visitor);
-      read_use_pc = visitor.use_pc();
-      if (read_use_pc) {
-        pcExp.insert(*i);
-        break;
-      }
-    }
+		// Non-lea
+		char* insn_buf = (char*)insn->ptr();
+		if ((char)insn_buf[1] != (char)0x8d) {
+			if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
+			else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
 
-    bool write_use_pc = false;
-    insn->getWriteSet(opSet);
-    for (set<RegisterAST::Ptr>::iterator i = opSet.begin();
-         i != opSet.end(); i++) {
-      RelocVisitor visitor(context_->parser());
-      (*i)->apply(&visitor);
-      write_use_pc = visitor.use_pc();
-      if (write_use_pc) {
-        pcExp.insert(*i);
-        break;
-      }
-    }
+			for (set<Expression::Ptr>::iterator i = opSet.begin(); i != opSet.end(); i++) {
+				RelocVisitor visitor(context_->parser());
+				(*i)->apply(&visitor);
+				use_pc = visitor.use_pc();
+			}
+		}
+		// lea instruction
+		else {
+			set<RegisterAST::Ptr> pcExp;
 
-    bool use_pc = (read_use_pc || write_use_pc);
-    if (use_pc) {
-      assert(pcExp.size() == 1);
-      sp_debug("USE PC - at %lx", src_insn);
-    } else {
-      sp_debug("NOT USE PC - at %lx", src_insn);
-    }
+			bool read_use_pc = false;
+			insn->getReadSet(pcExp);
+			for (set<RegisterAST::Ptr>::iterator i = pcExp.begin();
+					 i != pcExp.end(); i++) {
+				RelocVisitor visitor(context_->parser());
+				(*i)->apply(&visitor);
+				read_use_pc = visitor.use_pc();
+				if (read_use_pc) {
+					opSet.insert(*i);
+					break;
+				}
+			}
+
+			bool write_use_pc = false;
+			insn->getWriteSet(pcExp);
+			for (set<RegisterAST::Ptr>::iterator i = pcExp.begin();
+					 i != pcExp.end(); i++) {
+				RelocVisitor visitor(context_->parser());
+				(*i)->apply(&visitor);
+				write_use_pc = visitor.use_pc();
+				if (write_use_pc) {
+					opSet.insert(*i);
+					break;
+				}
+			}
+
+			use_pc = (read_use_pc || write_use_pc);
+		}
+
+		if (use_pc) {
+			assert(opSet.size() == 1);
+			sp_debug("USE_PC - at %lx", src_insn);
+		} else {
+			sp_debug("NOT_USE PC - at %lx", src_insn);
+		}
 
     // Here we go!
-    return reloc_insn_internal(src_insn, insn, pcExp, use_pc, buf);
+    return reloc_insn_internal(src_insn, insn, opSet, use_pc, buf);
   }
 
   // The upper bound for a jump instruction.

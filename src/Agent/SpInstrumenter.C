@@ -43,17 +43,24 @@ namespace sp {
     sp_debug("INSTRUMENTER - created");
 
     if (getenv("SP_TEST_SPRING") == NULL &&
-        getenv("SP_TEST_RELOCBLK") == NULL) {
+        getenv("SP_TEST_RELOCBLK") == NULL &&
+				getenv("SP_TEST_TRAP") == NULL) {
 			// sp_print("RelocCallInsn");
       workers_.push_back(new RelocCallInsnWorker);
     }
 
-    if (getenv("SP_TEST_SPRING") == NULL) {
+    if (getenv("SP_TEST_SPRING") == NULL &&
+				getenv("SP_TEST_TRAP") == NULL) {
 			// sp_print("RelocCallBlock");
       workers_.push_back(new RelocCallBlockWorker);
     }
-    workers_.push_back(new SpringboardWorker);
+
+		if (getenv("SP_TEST_TRAP") == NULL) {
+			workers_.push_back(new SpringboardWorker);
+		}
+
     workers_.push_back(new TrapWorker);
+
   }
 
   SpInstrumenter::~SpInstrumenter() {
@@ -82,7 +89,7 @@ namespace sp {
 
       // If this point is already instrumented, skip it
       if (spt->instrumented()) {
-        sp_debug("SKIP INSTRUMENTED POINT");
+        // sp_debug("SKIP INSTRUMENTED POINT");
         continue;
       }
 
@@ -473,7 +480,6 @@ namespace sp {
   bool
   SpringboardWorker::run(SpPoint* pt) {
     sp_debug("SPRINGBOARD WORKER - runs");
-		sp_print("Spring Run");
     return install(pt);
   }
 
@@ -486,7 +492,6 @@ namespace sp {
   bool
   SpringboardWorker::save(SpPoint* pt) {
     sp_debug("SPRING WORKER - saves");
-		sp_print("Spring Save");
     PatchBlock* springblk = pt->snip()->spring_blk();
     if (!springblk) {
       sp_debug("NO SPRING BOARD - cannot find suitable spring board");

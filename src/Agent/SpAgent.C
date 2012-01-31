@@ -125,6 +125,9 @@ SpAgent::go() {
 		return;
 	}
 
+	if (getenv("SP_DIRECTCALL_ONLY")) directcall_only_ = true;
+	if (getenv("SP_TRAP")) trap_only_ = true;
+
   // Sanity check. If not user-provided configuration, use default ones
   if (!init_event_) {
 #ifndef SP_RELEASE
@@ -186,8 +189,11 @@ SpAgent::go() {
                                init_entry_,
                                init_exit_,
                                parser_);
+
+
   g_context->set_directcall_only(directcall_only_);
   g_context->set_allow_ipc(allow_ipc_);
+
 	g_context->set_trap_only(trap_only_);
 
   if (parse_only_) {
