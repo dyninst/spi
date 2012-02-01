@@ -41,7 +41,7 @@ namespace sp {
     : Instrumenter(as) {
 
     sp_debug("INSTRUMENTER - created");
-
+		/*
     if (getenv("SP_TEST_SPRING") == NULL &&
         getenv("SP_TEST_RELOCBLK") == NULL &&
 				getenv("SP_TEST_TRAP") == NULL) {
@@ -58,7 +58,7 @@ namespace sp {
 		if (getenv("SP_TEST_TRAP") == NULL) {
 			workers_.push_back(new SpringboardWorker);
 		}
-
+		*/
     workers_.push_back(new TrapWorker);
 
   }
@@ -72,6 +72,7 @@ namespace sp {
 
   bool
   SpInstrumenter::run() {
+
     // Do all callees in a function in a batch
     for (CommandList::iterator c = user_commands_.begin();
          c != user_commands_.end(); c++) {
@@ -82,7 +83,7 @@ namespace sp {
 
       // If we only want to instrument direct call, and this point is a
 			// indirect call point, then skip it
-      if (!spt->getCallee() && g_context->directcall_only()) {
+      if (spt && !spt->getCallee() && g_context->directcall_only()) {
         sp_debug("SKIP INDIRECT CALL");
         continue;
       }
@@ -93,22 +94,26 @@ namespace sp {
         continue;
       }
 
-      // Associate snippet with SpPoint
-      Snippet<SpSnippet::ptr>::Ptr snip =
-        Snippet<SpSnippet::ptr>::get(command->instance()->snippet());
-      SpSnippet::ptr sp_snip = snip->rep();
-      spt->set_snip(sp_snip);
-
       // Handle tail call
       Instruction::Ptr callinsn = spt->block()->getInsn(spt->block()->last());
 			assert(callinsn);
       if (callinsn->getCategory() == in::c_BranchInsn) {
+				// XXX
 				sp_debug("TAIL CALL");
+				if (getenv("SP_NO_TAILCALL"))	{
+					continue;
+				}
         spt->set_tailcall(true);
         spt->set_ret_addr(0);
       } else {
         spt->set_ret_addr(spt->block()->end());
       }
+
+      // Associate snippet with SpPoint
+      Snippet<SpSnippet::ptr>::Ptr snip =
+        Snippet<SpSnippet::ptr>::get(command->instance()->snippet());
+      SpSnippet::ptr sp_snip = snip->rep();
+      spt->set_snip(sp_snip);
 
       // Otherwise, apply workers one by one in order
       // If trap only, we only apply the last worker -- trap worker
@@ -119,26 +124,20 @@ namespace sp {
 
         // If we cannot successfully save original instructions, it is
         // very dangous when we want to restore in the future.
-        if (!worker->save(spt)) {
-					// sp_print("# %ld failed to save", i);
-          continue;
+				// If this worker succeeds, then we are done for current point
+        if (worker->save(spt) && worker->run(spt)) {
+					spt->set_instrumented(true);
+					spt->set_install_method(worker->install_method());
+					break; // escape the worker loop
         }
-
-        // If this worker succeeds, then we are done
-        if (worker->run(spt)) {
-          spt->set_instrumented(true);
-          spt->set_install_method(worker->install_method());
-          break;
-        } else {
-					// sp_print("# %ld failed to run", i);
-				}
       } // workers
     } // commands
+
     return true;
   }
 
   bool SpInstrumenter::undo() {
-    assert(0 && "TODO");
+    // assert(0 && "TODO");
     return true;
   }
 
@@ -191,6 +190,14 @@ namespace sp {
   TrapWorker::install(SpPoint* pt) {
     sp_debug("TRAP WORKER - installs");
 
+    SpParser::ptr parser = g_context->parser();
+    sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
+             (unsigned long)pt->block()->size(),
+						 (unsigned long)pt->block()->last());
+    sp_debug("%s", parser->dump_insn((void*)pt->block()->start(),
+						 pt->block()->end() - pt->block()->start()).c_str());
+    sp_debug("}");
+
     char* call_addr = (char*)pt->block()->last();
     char* blob = pt->snip()->blob();
     if (!blob) return false;
@@ -211,9 +218,16 @@ namespace sp {
     }
 
     // Restore the permission of memory mapping
-    if (!as->restore_range_perm((Address)call_addr, 1)) {
+    if (!as->restore_range_perm((Address)call_addr, call_size)) {
       return false;
     }
+
+    sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
+             (unsigned long)pt->block()->size(),
+						 (unsigned long)pt->block()->last());
+    sp_debug("%s", parser->dump_insn((void*)pt->block()->start(),
+  	pt->block()->last() - pt->block()->start() +1).c_str());
+    sp_debug("}");
 
     sp_debug("TRAP INSTALLED - successful for call insn %lx", (long)call_addr);
     return true;
@@ -256,17 +270,26 @@ namespace sp {
     // Check if we are able to overwrite the call insn w/ a short jmp,
     // where we check two things:
 
-    // 1. is it a direct call instruction
-
     Address call_insn_addr = pt->block()->last();
     char* call_insn = (char*)call_insn_addr;
-    if (call_insn[0] != (char)0xe8 &&
-				!pt->tailcall()) {
+		size_t call_insn_size = pt->block()->end() - call_insn_addr;
+
+		// 1. is the instruction >= 5 bytes?
+		if (call_insn_size < 5) {
+			sp_debug("SMALL CALL INSN - call insn is too small (< 5-byte),"
+							 " try other workers");
+			return false;
+		}
+
+    // 2. is it a direct call instruction
+
+    if (call_insn[0] != (char)0xe8 &&  // A direct call?
+				!pt->tailcall()) {             // A jump for direct tail call?
       sp_debug("NOT DIRECT CALL - try other workers");
       return false;
     }
 
-    // 2. is the relative address to snippet within 4-byte?
+    // 3. is the relative address to snippet within 4-byte?
 
     long rel_addr = (long)pt->snip()->buf() - (long)call_insn_addr;
     if (!sp::is_disp32(rel_addr)) {
@@ -311,6 +334,7 @@ namespace sp {
     int* lp = (int*)p;
 
     SpParser::ptr parser = g_context->parser();
+		assert(pt->callee());
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx for %s- {",
              (unsigned long)pt->block()->size(), (unsigned long)call_addr,
              pt->callee()->name().c_str());
@@ -350,6 +374,7 @@ namespace sp {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
 
+		assert(pt->callee());
     sp_debug("AFTER INSTALL (%lu bytes) for point %lx for %s- {",
              pt->block()->size(), pt->block()->last(),
              pt->callee()->name().c_str());
