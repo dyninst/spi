@@ -232,6 +232,39 @@ namespace sp {
   // Find the function that contains addr
   PatchFunction*
   SpParser::findFunction(Address addr) {
+#if 0
+    AddrSpace* as = mgr_->as();
+    for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
+      PatchObject* obj = ci->second;
+      SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+      Symtab* sym = cs->getSymtabObject();
+      Address lower_bound = obj->codeBase();
+      if (!lower_bound) lower_bound = sym->getLoadOffset();
+      Address upper_bound = lower_bound + cs->length();
+
+      if (addr >= lower_bound && addr <= upper_bound) {
+        Address address = addr;
+				sb::Function* f;
+        if (!sym->getContainingFunction(address, f)) {
+          address -= lower_bound;
+        }
+
+        for (std::vector<CodeRegion*>::const_iterator ri = cs->regions().begin();
+             ri != cs->regions().end(); ri++) {
+					std::set<pe::Function*> funcs;
+          obj->co()->findFuncs(*ri, address, funcs);
+
+          if (funcs.size() > 0) {
+            PatchFunction* pfunc = obj->getFunc(*funcs.begin());
+            return pfunc;
+          }
+        }
+        break;
+      }
+    }
+    return NULL;
+#endif
+
 #ifndef SP_RELEASE
     sp_debug("FIND FUNC BY ADDR - for call insn %lx", addr);
 #endif
@@ -323,6 +356,37 @@ namespace sp {
   // Find function by name.
   PatchFunction*
   SpParser::findFunction(string name) {
+#if 0
+    if (real_func_map_.find(name) != real_func_map_.end()) {
+      return real_func_map_[name];
+    }
+
+    AddrSpace* as = mgr_->as();
+    for (AddrSpace::ObjMap::iterator ci = as->objMap().begin(); ci != as->objMap().end(); ci++) {
+
+      PatchObject* obj = ci->second;
+      CodeObject* co = obj->co();
+			CodeObject::funclist& all = co->funcs();
+      SymtabCodeSource* cs = (SymtabCodeSource*)obj->co()->cs();
+      Symtab* sym = cs->getSymtabObject();
+      if (is_well_known_lib(sp_filename(sym->name().c_str()))) {
+        continue;
+      }
+
+      for (CodeObject::funclist::iterator fit = all.begin(); fit != all.end(); fit++) {
+        if ((*fit)->name().compare(name) == 0) {
+          Region* region = sym->findEnclosingRegion((*fit)->addr());
+          if (region && region->getRegionName().compare(".plt") == 0) {
+            continue;
+          }
+          PatchFunction* found = obj->getFunc(*fit);
+          real_func_map_[name] = found;
+          return found;
+        }
+      }
+    }
+    return NULL;
+#endif
 #ifndef SP_RELEASE
     sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
 #endif

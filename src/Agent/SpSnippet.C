@@ -59,14 +59,17 @@ namespace sp {
     assert(context_);
 
 		Address ret_addr = point_->ret_addr();
-
     // If this blob is already generated? If so, just return it.
     if (blob_size_ > 0) {
       return blob_;
     }
 
+		sp_debug("RET_ADDR - is %lx for point %lx", ret_addr,
+						 (Address)point_->block()->last());
+
     // 1. Relocate call block, if it's indirect call
     if (reloc) {
+			sp_debug("RELOC BLOCK");
       PatchBlock* blk = NULL;
       blk = point_->block();
       blob_size_ += reloc_block(blk, blob_, blob_size_);
@@ -96,17 +99,22 @@ namespace sp {
     // Case 2: non tail call and direct call
     // Case 3: indirect call (tail call or non tail call)
     if (!ret_addr && func_) {
+			sp_debug("TAIL_CALL_DIRECT_CALL ");
       // 5.1. tail call and direct call
       blob_size_ += emit_jump_abs((long)func_->addr(), blob_, blob_size_);
       goto EXIT;
     } else if (ret_addr && func_) {
+			sp_debug("SIMPLE_DIRECT_CALL ");
       // 5.2. non tail call and Direct call
       blob_size_ += emit_call_abs((long)func_->addr(), blob_,
 																	blob_size_, false);
     } else {
+			if (ret_addr)	sp_debug("INDIRECT_CALL ");
+			else sp_debug("TAIL_CALL_INDIRECT_CALL");
+
       // 5.3. indirect call
 			assert(point_->orig_call_insn());
-      blob_size_ += emit_call_orig((long)point_->block()->last(),
+      blob_size_ += emit_call_orig((long)point_->orig_call_insn()->ptr(),
                                    point_->orig_call_insn()->size(),
 																	 blob_, blob_size_);
     }

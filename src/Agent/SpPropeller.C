@@ -39,18 +39,15 @@ namespace sp {
     sp_debug("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
 #endif
+
+		if (!func) return false;
+		if (!context) return false;
+
     // 1. Find points according to type
     Points pts;
     PatchMgrPtr mgr = context->parser()->mgr();
     PatchFunction* cur_func = NULL;
     if (pt) {
-#ifndef SP_RELEASE
-      sp_debug("POINT VALID - %s", func->name().c_str());
-      SpPoint* spt = static_cast<SpPoint*>(pt);
-      PatchFunction* tmp_func = spt->callee();
-      sp_debug("spt->callee() - %lx, func - %lx",
-               (Dyninst::Address)tmp_func, (Dyninst::Address)func);
-#endif
       cur_func = func;
     } else {
       cur_func = context->parser()->findFunction(func->name());
@@ -70,12 +67,12 @@ namespace sp {
 #ifndef SP_RELEASE
       if (callee) {
         sp_debug("POINT - instrumenting direct call at %lx to "
-                 "function %s (%lx)",
+                 "function %s (%lx) for point %lx",
                  pt->block()->last(), callee->name().c_str(),
-                 (Dyninst::Address)callee);
+                 (dt::Address)callee, (dt::Address)pt);
       } else {
-        sp_debug("POINT - instrumenting indirect call at %lx",
-                 pt->block()->last());
+        sp_debug("POINT - instrumenting indirect call at %lx for point %lx",
+                 pt->block()->last(), (dt::Address)pt);
       }
 #endif
       SpSnippet::ptr sp_snip = SpSnippet::create(callee,
@@ -87,8 +84,8 @@ namespace sp {
     }
     patcher.commit();
 #ifndef SP_RELEASE
-    sp_debug("FINISH PROPELLING - %lu callees of function %s are"
-             " instrumented", (unsigned long)pts.size(), func->name().c_str());
+    sp_debug("FINISH PROPELLING - callees of function %s are"
+             " instrumented", func->name().c_str());
 #endif
     return true;
   }

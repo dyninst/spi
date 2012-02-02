@@ -42,6 +42,7 @@ namespace sp {
 #ifndef SP_RELEASE
     sp_debug("INSTRUMENTER - created");
 #endif
+
 		/*
     if (getenv("SP_TEST_SPRING") == NULL &&
         getenv("SP_TEST_RELOCBLK") == NULL &&
@@ -49,20 +50,19 @@ namespace sp {
 			// sp_print("RelocCallInsn");
       workers_.push_back(new RelocCallInsnWorker);
     }
-		*/
 
     if (getenv("SP_TEST_SPRING") == NULL &&
 				getenv("SP_TEST_TRAP") == NULL) {
 			// sp_print("RelocCallBlock");
       workers_.push_back(new RelocCallBlockWorker);
     }
-		/*
+
 		if (getenv("SP_TEST_TRAP") == NULL) {
 			workers_.push_back(new SpringboardWorker);
 		}
-
-    workers_.push_back(new TrapWorker);
 		*/
+    workers_.push_back(new TrapWorker);
+
   }
 
   SpInstrumenter::~SpInstrumenter() {
@@ -75,6 +75,7 @@ namespace sp {
   bool
   SpInstrumenter::run() {
 
+		int success_count = 0;
     // Do all callees in a function in a batch
     for (CommandList::iterator c = user_commands_.begin();
          c != user_commands_.end(); c++) {
@@ -134,10 +135,16 @@ namespace sp {
         if (worker->save(spt) && worker->run(spt)) {
 					spt->set_instrumented(true);
 					spt->set_install_method(worker->install_method());
+					++success_count;
 					break; // escape the worker loop
         }
+				sp_debug("FAILED TO INSTALL - for call insn %lx", spt->block()->last());
       } // workers
     } // commands
+
+		sp_debug("BATCH DONE - %d / %lu succeeded", success_count,
+						 (unsigned long)user_commands_.size());
+		user_commands_.clear();
 
     return true;
   }
@@ -213,7 +220,11 @@ namespace sp {
 
     char* call_addr = (char*)pt->block()->last();
     char* blob = pt->snip()->blob();
-    if (!blob) return false;
+    if (!blob) {
+			sp_debug("FAILED BLOB - failed to generate blob for call insn %lx",
+							 (unsigned long)call_addr);
+			return false;
+		}
 
     char int3 = (char)0xcc;
     size_t call_size = pt->block()->end() - pt->block()->last();
@@ -232,6 +243,8 @@ namespace sp {
 
     // Restore the permission of memory mapping
     if (!as->restore_range_perm((Address)call_addr, call_size)) {
+			sp_debug("FAILED RESTORE - failed to restore perm for call insn %lx",
+							 (unsigned long)call_addr);
       return false;
     }
 
@@ -256,7 +269,9 @@ namespace sp {
     Address pc = SpSnippet::get_pre_signal_pc(c) - 1;
     InstMap& inst_map = TrapWorker::inst_map_;
     if (inst_map.find(pc) == inst_map.end()) {
+
       sp_perror("NO BLOB - for this call insn at %lx", pc);
+      // sp_print("NO BLOB - for this call insn at %lx", pc);
     }
 
     // Get patch area's address
@@ -449,6 +464,11 @@ namespace sp {
     sp_debug("RELOC CALLBLOCK WORKER - saves");
 #endif
 
+    Address call_insn = pt->block()->last();
+    Instruction::Ptr callinsn = pt->block()->getInsn(call_insn);
+    if (!callinsn) return false;
+    pt->set_orig_call_insn(callinsn);
+
     if (!pt->block()) return false;
     pt->set_orig_call_blk(pt->block());
     return true;
@@ -467,7 +487,7 @@ namespace sp {
       sp_debug("4-byte DISP - install a short jump");
 #endif
 
-      // General a short jump to store in insn[64]
+      // Generate a short jump to store in insn[64]
       char* p = insn;
       *p++ = 0xe9;
       long* lp = (long*)p;
@@ -581,6 +601,15 @@ namespace sp {
       return false;
     }
     pt->set_orig_spring(springblk);
+
+    Address call_insn = pt->block()->last();
+    Instruction::Ptr callinsn = pt->block()->getInsn(call_insn);
+    if (!callinsn) return false;
+    pt->set_orig_call_insn(callinsn);
+
+    if (!pt->block()) return false;
+    pt->set_orig_call_blk(pt->block());
+
     return true;
   }
 
