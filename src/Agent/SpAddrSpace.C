@@ -91,7 +91,10 @@ namespace sp {
       if ((a >= start && code_end < end) ||
           (a <= start && code_end >= start && code_end <= end) ||
           (a >= start && a < end && code_end >= end)) {
-        sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)", start, end, a, code_end);
+#ifndef SP_RELEASE
+        sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)",
+								 start, end, a, code_end);
+#endif
         if (mprotect((void*)start, end - start, perm) < 0) {
           sp_print("MPROTECT - Failed to change memory access permission");
           perror("mprotect");

@@ -39,8 +39,9 @@ namespace sp {
 
   SpInstrumenter::SpInstrumenter(AddrSpace* as)
     : Instrumenter(as) {
-
+#ifndef SP_RELEASE
     sp_debug("INSTRUMENTER - created");
+#endif
 		/*
     if (getenv("SP_TEST_SPRING") == NULL &&
         getenv("SP_TEST_RELOCBLK") == NULL &&
@@ -48,19 +49,20 @@ namespace sp {
 			// sp_print("RelocCallInsn");
       workers_.push_back(new RelocCallInsnWorker);
     }
+		*/
 
     if (getenv("SP_TEST_SPRING") == NULL &&
 				getenv("SP_TEST_TRAP") == NULL) {
 			// sp_print("RelocCallBlock");
       workers_.push_back(new RelocCallBlockWorker);
     }
-
+		/*
 		if (getenv("SP_TEST_TRAP") == NULL) {
 			workers_.push_back(new SpringboardWorker);
 		}
-		*/
-    workers_.push_back(new TrapWorker);
 
+    workers_.push_back(new TrapWorker);
+		*/
   }
 
   SpInstrumenter::~SpInstrumenter() {
@@ -84,7 +86,9 @@ namespace sp {
       // If we only want to instrument direct call, and this point is a
 			// indirect call point, then skip it
       if (spt && !spt->getCallee() && g_context->directcall_only()) {
+#ifndef SP_RELEASE
         sp_debug("SKIP INDIRECT CALL");
+#endif
         continue;
       }
 
@@ -99,7 +103,9 @@ namespace sp {
 			assert(callinsn);
       if (callinsn->getCategory() == in::c_BranchInsn) {
 				// XXX
+#ifndef SP_RELEASE
 				sp_debug("TAIL CALL");
+#endif
 				if (getenv("SP_NO_TAILCALL"))	{
 					continue;
 				}
@@ -148,9 +154,10 @@ namespace sp {
 
   bool
   TrapWorker::run(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("TRAP WORKER - runs");
+#endif
     assert(pt);
-		// sp_print("Trap Run");
 
     // Install trap handler to the trap signal
     struct sigaction act;
@@ -176,7 +183,9 @@ namespace sp {
 
   bool
   TrapWorker::save(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("TRAP WORKER - saves");
+#endif
 		// sp_print("Trap Save");
 
     Address call_insn = pt->block()->last();
@@ -188,15 +197,19 @@ namespace sp {
 
   bool
   TrapWorker::install(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("TRAP WORKER - installs");
+#endif
 
     SpParser::ptr parser = g_context->parser();
+#ifndef SP_RELEASE
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
              (unsigned long)pt->block()->size(),
 						 (unsigned long)pt->block()->last());
     sp_debug("%s", parser->dump_insn((void*)pt->block()->start(),
 						 pt->block()->end() - pt->block()->start()).c_str());
     sp_debug("}");
+#endif
 
     char* call_addr = (char*)pt->block()->last();
     char* blob = pt->snip()->blob();
@@ -222,6 +235,7 @@ namespace sp {
       return false;
     }
 
+#ifndef SP_RELEASE
     sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
              (unsigned long)pt->block()->size(),
 						 (unsigned long)pt->block()->last());
@@ -229,7 +243,9 @@ namespace sp {
   	pt->block()->last() - pt->block()->start() +1).c_str());
     sp_debug("}");
 
-    sp_debug("TRAP INSTALLED - successful for call insn %lx", (long)call_addr);
+    sp_debug("TRAP INSTALLED - successful for call insn %lx",
+						 (long)call_addr);
+#endif
     return true;
   }
 
@@ -250,11 +266,15 @@ namespace sp {
     PatchMgrPtr mgr = g_context->parser()->mgr();
     SpAddrSpace* as = dynamic_cast<SpAddrSpace*>(mgr->as());
 
+		sp_debug("TRAP HANDLER - for call insn %lx", pc);
+
     // Change memory permission for the snippet
     if (!as->set_range_perm((Address)blob, sp_snip->size(), perm)) {
       // as->dump_mem_maps();
       sp_perror("FAILED PERM - failed to change memory permission for blob");
     }
+
+		sp_debug("JUMP TO BLOB - at %lx", (Address)blob);
 
     // Set pc to jump to patch area
     SpSnippet::set_pc((Address)blob, c);
@@ -265,7 +285,9 @@ namespace sp {
   // -------------------------------------------------------------------
   bool
   RelocCallInsnWorker::run(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("RELOC CALLINSN WORKER - runs");
+#endif
 
     // Check if we are able to overwrite the call insn w/ a short jmp,
     // where we check two things:
@@ -276,8 +298,10 @@ namespace sp {
 
 		// 1. is the instruction >= 5 bytes?
 		if (call_insn_size < 5) {
+#ifndef SP_RELEASE
 			sp_debug("SMALL CALL INSN - call insn is too small (< 5-byte),"
 							 " try other workers");
+#endif
 			return false;
 		}
 
@@ -285,7 +309,10 @@ namespace sp {
 
     if (call_insn[0] != (char)0xe8 &&  // A direct call?
 				!pt->tailcall()) {             // A jump for direct tail call?
+
+#ifndef SP_RELEASE
       sp_debug("NOT DIRECT CALL - try other workers");
+#endif
       return false;
     }
 
@@ -293,7 +320,9 @@ namespace sp {
 
     long rel_addr = (long)pt->snip()->buf() - (long)call_insn_addr;
     if (!sp::is_disp32(rel_addr)) {
+#ifndef SP_RELEASE
       sp_debug("NOT 4-byte DISP - try other workers");
+#endif
       return false;
     }
 
@@ -308,8 +337,10 @@ namespace sp {
 
   bool
   RelocCallInsnWorker::save(SpPoint* pt) {
-    sp_debug("RELOC_CALL_INSN WORKER - saves");
 
+#ifndef SP_RELEASE
+    sp_debug("RELOC_CALL_INSN WORKER - saves");
+#endif
     Address call_insn = pt->block()->last();
     Instruction::Ptr callinsn = pt->block()->getInsn(call_insn);
     if (!callinsn) return false;
@@ -335,21 +366,23 @@ namespace sp {
 
     SpParser::ptr parser = g_context->parser();
 		assert(pt->callee());
+#ifndef SP_RELEASE
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx for %s- {",
              (unsigned long)pt->block()->size(), (unsigned long)call_addr,
              pt->callee()->name().c_str());
     sp_debug("%s", parser->dump_insn((void*)pt->block()->start(),
                                      pt->block()->size()).c_str());
     sp_debug("}");
-
+#endif
     // Build the jump instruction
     PatchObject* obj = pt->block()->object();
     size_t insn_length = pt->block()->end() - pt->block()->last();
     *lp = (int)((long)blob - (long)call_addr - insn_length);
+#ifndef SP_RELEASE
     sp_debug("REL CAL - blob at %lx, last insn at %lx, insn length %lu",
              (unsigned long)blob, pt->block()->end(), (unsigned long)insn_length);
     sp_debug("JUMP REL - jump to relative address %x", *lp);
-
+#endif
     // Replace "call" with a "jump" instruction
     SpAddrSpace* as =
       static_cast<SpAddrSpace*>(parser->mgr()->as());
@@ -375,13 +408,14 @@ namespace sp {
     }
 
 		assert(pt->callee());
+#ifndef SP_RELEASE
     sp_debug("AFTER INSTALL (%lu bytes) for point %lx for %s- {",
              pt->block()->size(), pt->block()->last(),
              pt->callee()->name().c_str());
     sp_debug("%s", parser->dump_insn((void*)pt->block()->start(),
                                      pt->block()->size()).c_str());
     sp_debug("}");
-
+#endif
     return true;
   }
 
@@ -391,7 +425,9 @@ namespace sp {
   // -------------------------------------------------------------------
   bool
   RelocCallBlockWorker::run(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("RELOC CALLBLOCK WORKER - runs");
+#endif
 
     // Assumption:
     // This worker must be run after RelocCallInsnWorker.
@@ -409,7 +445,10 @@ namespace sp {
 
   bool
   RelocCallBlockWorker::save(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("RELOC CALLBLOCK WORKER - saves");
+#endif
+
     if (!pt->block()) return false;
     pt->set_orig_call_blk(pt->block());
     return true;
@@ -424,7 +463,9 @@ namespace sp {
     char insn[64];    // the jump instruction to overwrite call blk
 
     if (sp::is_disp32(rel_addr)) {
+#ifndef SP_RELEASE
       sp_debug("4-byte DISP - install a short jump");
+#endif
 
       // General a short jump to store in insn[64]
       char* p = insn;
@@ -437,7 +478,10 @@ namespace sp {
 
     // Try to install long jump
     if (pt->block()->size() >= pt->snip()->jump_abs_size()) {
+
+#ifndef SP_RELEASE
       sp_debug("> 4-byte DISP - install a long jump");
+#endif
 
       // Generate a long jump to store in insn[64]
       size_t insn_size = pt->snip()->emit_jump_abs((long)pt->snip()->buf(),
@@ -447,7 +491,9 @@ namespace sp {
     }
 
     // Well, let's try spring board next ...
+#ifndef SP_RELEASE
     sp_debug("FAILED RELOC BLK - try other worker");
+#endif
     return false;
   }
 
@@ -455,11 +501,14 @@ namespace sp {
                                                    char* jump_insn,
                                                    size_t insn_size) {
     SpParser::ptr parser = g_context->parser();
+
+#ifndef SP_RELEASE
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
              pt->block()->size(), pt->block()->last());
     sp_debug("%s", parser->dump_insn((void*)pt->block()->start(),
                                      pt->block()->size()).c_str());
     sp_debug("}");
+#endif
 
     // Build blob & change the permission of snippet
     char* blob = pt->snip()->blob(/*reloc=*/true);
@@ -507,7 +556,9 @@ namespace sp {
   // -------------------------------------------------------------------
   bool
   SpringboardWorker::run(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("SPRINGBOARD WORKER - runs");
+#endif
     return install(pt);
   }
 
@@ -519,10 +570,14 @@ namespace sp {
 
   bool
   SpringboardWorker::save(SpPoint* pt) {
+#ifndef SP_RELEASE
     sp_debug("SPRING WORKER - saves");
+#endif
     PatchBlock* springblk = pt->snip()->spring_blk();
     if (!springblk) {
+#ifndef SP_RELEASE
       sp_debug("NO SPRING BOARD - cannot find suitable spring board");
+#endif
       return false;
     }
     pt->set_orig_spring(springblk);
@@ -534,13 +589,13 @@ namespace sp {
     SpParser::ptr parser = g_context->parser();
     PatchBlock* callblk = pt->block();
     SpSnippet::ptr snip = pt->snip();
-
+#ifndef SP_RELEASE
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
              callblk->size(), callblk->last());
     sp_debug("%s", parser->dump_insn((void*)callblk->start(),
                                      callblk->size()).c_str());
     sp_debug("}");
-
+#endif
     // Find a spring block. A spring block should:
     // - big enough to hold two absolute jumps
     // - close enough to short jump from call block
@@ -549,12 +604,13 @@ namespace sp {
     PatchBlock* springblk = snip->spring_blk();
     if (!springblk) return false;
 
+#ifndef SP_RELEASE
     sp_debug("BEFORE INSTALL SPRING BLK (%lu bytes) for point %lx - {",
              springblk->size(), callblk->last());
     sp_debug("%s", parser->dump_insn((void*)springblk->start(),
                                      springblk->size()).c_str());
     sp_debug("}");
-
+#endif
     // Build blob & change the permission of snippet
     char* blob = snip->blob(/*reloc=*/true, /*spring=*/true);
     PatchObject* obj = callblk->obj();
@@ -627,6 +683,7 @@ namespace sp {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
 
+#ifndef SP_RELEASE
     sp_debug("AFTER INSTALL CALL BLK (%lu bytes) for point %lx - {",
              callblk->size(), callblk->last());
     sp_debug("%s", parser->dump_insn((void*)callblk->start(),
@@ -639,7 +696,6 @@ namespace sp {
                                      springblk->size()).c_str());
     sp_debug("}");
 
-#ifndef SP_RELEASE
     sp_debug("USE SPRING - piont %lx is instrumented using 1-hop spring",
              callblk->last());
 #endif

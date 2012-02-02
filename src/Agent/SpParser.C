@@ -232,7 +232,9 @@ namespace sp {
   // Find the function that contains addr
   PatchFunction*
   SpParser::findFunction(Address addr) {
+#ifndef SP_RELEASE
     sp_debug("FIND FUNC BY ADDR - for call insn %lx", addr);
+#endif
     AddrSpace* as = mgr_->as();
     for (AddrSpace::ObjMap::iterator ci = as->objMap().begin();
          ci != as->objMap().end(); ci++) {
@@ -248,7 +250,10 @@ namespace sp {
 				continue;
 			else if(cnt == 1) {
         co->findBlocks(*match.begin(), addr, blocks);
+
+#ifndef SP_RELEASE
 				sp_debug("%ld blocks found", (long)blocks.size());
+#endif
 				if (blocks.size() == 1) {
 					std::vector<pe::Function*> funcs;
 					(*blocks.begin())->getFuncs(funcs);
@@ -318,7 +323,9 @@ namespace sp {
   // Find function by name.
   PatchFunction*
   SpParser::findFunction(string name) {
+#ifndef SP_RELEASE
     sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
+#endif
     if (real_func_map_.find(name) != real_func_map_.end()) {
       return real_func_map_[name];
     }
@@ -334,9 +341,13 @@ namespace sp {
       if (!sym) {
         sp_perror("Failed to get Symtab object");
       }
+#ifndef SP_RELEASE
       sp_debug("IN OBJECT - %s", sym->name().c_str());
+#endif
       if (is_well_known_lib(sp_filename(sym->name().c_str()))) {
+#ifndef SP_RELEASE
         sp_debug("SKIP - well known lib %s", sp_filename(sym->name().c_str()));
+#endif
         continue;
       }
 
@@ -347,7 +358,10 @@ namespace sp {
         if ((*fit)->name().compare(name) == 0) {
           Region* region = sym->findEnclosingRegion((*fit)->addr());
           if (region && region->getRegionName().compare(".plt") == 0) {
+
+#ifndef SP_RELEASE
             sp_debug("A PLT, SKIP - %s at %lx", name.c_str(), (*fit)->addr());
+#endif
             continue;
           }
           PatchFunction* found = obj->getFunc(*fit);
@@ -361,8 +375,9 @@ namespace sp {
     if (func_set.size() == 1) {
       return *func_set.begin();
     }
-
+#ifndef SP_RELEASE
     sp_debug("NO FOUND - %s", name.c_str());
+#endif
     return NULL;
   }
 
@@ -405,7 +420,10 @@ namespace sp {
         Address rval = pt_->snip()->get_saved_reg(r->getID());
         call_addr_ = rval;
       }
+
+#ifndef SP_RELEASE
 			sp_debug("SP_VISITOR - reg value %lx", call_addr_);
+#endif
       stack_.push(call_addr_);
     }
     virtual void visit(BinaryFunction* b) {
@@ -416,10 +434,14 @@ namespace sp {
 
       if (b->isAdd()) {
         call_addr_ = i1 + i2;
+#ifndef SP_RELEASE
 				sp_debug("SP_VISITOR - %lx + %lx = %lx", i1, i2, call_addr_);
+#endif
       } else if (b->isMultiply()) {
         call_addr_ = i1 * i2;
+#ifndef SP_RELEASE
 				sp_debug("SP_VISITOR - %lx * %lx = %lx", i1, i2, call_addr_);
+#endif
       } else {
         assert(0);
       }
@@ -446,15 +468,20 @@ namespace sp {
         break;
       }
       }
+
+#ifndef SP_RELEASE
 			sp_debug("SP_VISITOR - imm %lx ", call_addr_);
+#endif
       stack_.push(call_addr_);
     }
     virtual void visit(Dereference* d) {
       Address* addr = (Address*)stack_.top();
       stack_.pop();
       call_addr_ = *addr;
+#ifndef SP_RELEASE
 			sp_debug("SP_VISITOR - dereference %lx => %lx ",
 							 (Address)addr, call_addr_);
+#endif
       stack_.push(call_addr_);
     }
 
@@ -496,16 +523,19 @@ namespace sp {
 
     // 2. Looking for indirect call
     if (parse_indirect) {
+#ifndef SP_RELEASE
       sp_debug("PARSING INDIRECT - for call insn %lx",
 							 pt->block()->last());
+#endif
       Instruction::Ptr insn = spt->orig_call_insn();
-
+			assert(insn);
+#ifndef SP_RELEASE
       sp_debug("DUMP INDCALL INSN (%ld bytes)- {", (long)insn->size());
       sp_debug("%s",
                dump_insn((void*)insn->ptr(),
                          insn->size()).c_str());
       sp_debug("DUMP INSN - }");
-
+#endif
       Expression::Ptr trg = insn->getControlFlowTarget();
       Address call_addr = 0;
       if (trg) {
@@ -514,15 +544,18 @@ namespace sp {
         call_addr = visitor.call_addr();
         f = findFunction(call_addr);
         if (f) {
+#ifndef SP_RELEASE
 					sp_debug("PARSED INDIRECT - %lx is %s in %s", pt->block()->last(),
 									 f->name().c_str(), get_object(f)->name().c_str());
+#endif
           spt->set_callee(f);
           return f;
         }
       }
+#ifndef SP_RELEASE
       sp_debug("CANNOT FIND INDRECT CALL - for call insn %lx",
                pt->block()->last());
-
+#endif
 #if 0
       sp_print("DUMP INSN (%d bytes)- {", spt->snip()->size());
       sp_print("%s",

@@ -607,9 +607,11 @@ namespace sp {
     // Deal with lea instruction
     if ((char)insn_buf[1] == (char)0x8d) {
       int* dis = get_disp(insn, insn_buf);
+#ifndef SP_RELEASE
 			sp_debug("LEA - orig-disp(%d), orig-insn-addr(%lx),"
 							 " orig-insn-size(%ld), abs-trg(%lx)",
 							 *dis, a, insn->size(), *dis+a+insn->size());
+#endif
       *l =*dis + a + insn->size();
     }
 
@@ -619,8 +621,10 @@ namespace sp {
 			e->apply(&visitor);
 			*l = visitor.imm();
 
+#ifndef SP_RELEASE
 			sp_debug("OTHER PC-INSN - orig-insn-size(%ld), abs-trg(%lx)",
 							 insn->size(), *l);
+#endif
 		}
     p += sizeof(*l);
 
@@ -683,9 +687,12 @@ namespace sp {
       long old_rip = a;
       long new_rip = (long)p;
       long long_new_dis = (old_rip - new_rip) + *dis_buf;
+
+#ifndef SP_RELEASE
       sp_debug("RELOC INSN - insn addr %lx, old_rip %lx, new_rip %lx,"
                " displacement %x", a, old_rip,new_rip, *dis_buf);
       sp_debug("RELOC INSN - new displacement %lx", long_new_dis);
+#endif
 
       if (sp::is_disp32(long_new_dis)) {
         // Easy case: just modify the displacement

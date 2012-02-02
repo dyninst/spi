@@ -44,11 +44,13 @@ namespace sp {
     PatchMgrPtr mgr = context->parser()->mgr();
     PatchFunction* cur_func = NULL;
     if (pt) {
+#ifndef SP_RELEASE
       sp_debug("POINT VALID - %s", func->name().c_str());
       SpPoint* spt = static_cast<SpPoint*>(pt);
       PatchFunction* tmp_func = spt->callee();
       sp_debug("spt->callee() - %lx, func - %lx",
                (Dyninst::Address)tmp_func, (Dyninst::Address)func);
+#endif
       cur_func = func;
     } else {
       cur_func = context->parser()->findFunction(func->name());
@@ -63,7 +65,7 @@ namespace sp {
 
       // It's possible that callee will be NULL, which is an indirect call.
       // In this case, we'll parse it later during runtime.
-			sp_debug("GET REAL CALLEE");
+
       PatchFunction* callee = context->parser()->callee(pt);
 #ifndef SP_RELEASE
       if (callee) {
