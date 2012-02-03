@@ -1,6 +1,7 @@
 #ifndef SP_PAYLOAD_H_
 #define SP_PAYLOAD_H_
 
+#include "SpCFG.h"
 #include "SpAgentCommon.h"
 
 namespace sp {
@@ -21,27 +22,26 @@ namespace sp {
     long num;
     std::vector<char*> bufs;
   };
-  void wrapper_before(ph::Point* pt, PayloadFunc_t before);
-  void wrapper_after(ph::Point* pt, PayloadFunc_t before);
+  void wrapper_before(SpPoint* pt, PayloadFunc_t before);
+  void wrapper_after(SpPoint* pt, PayloadFunc_t before);
 
   // ------------------------
   //       Public things
   // ------------------------
 
   // Only used in before_payload
-  void propel(ph::Point* pt_);
-  void* pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size);
+  void propel(SpPoint* pt_);
+  void* pop_argument(SpPoint* pt, ArgumentHandle* h, size_t size);
 
 	// Implicitly call start_tracing()
   bool is_ipc_write(SpPoint*); 
   bool is_ipc_read(SpPoint*); 
-  // void get_ipc_op_param(char** buf, size_t* size);
 
   // Only used in after_payload
   long retval(SpPoint* pt);
 
   // Used in both payloads
-  ph::PatchFunction* callee(ph::Point* pt_);
+  SpFunction* callee(SpPoint* pt_);
   char start_tracing(int fd);
 
 }

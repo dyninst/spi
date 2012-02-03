@@ -115,7 +115,13 @@ namespace sp {
   typedef std::map<std::string, Dyninst::PatchAPI::PatchFunction*> RealFuncMap;
 }
 
-#define DYN_CAST(type, obj) dyn_detail::boost::dynamic_pointer_cast<type>(obj)
+#define DYN_CAST(type, obj) \
+	dyn_detail::boost::dynamic_pointer_cast<type>(obj)
+
+#define FUNC_CAST(f) static_cast<SpFunction*>(f)
+#define BLK_CAST(b) static_cast<SpBlock*>(b)
+#define OBJ_CAST(o) static_cast<SpObject*>(o)
+#define AS_CAST(a) static_cast<SpAddrSpace*>(a)
 
 #define IJMSG_ID        1986
 #define IJLIB_ID        1985

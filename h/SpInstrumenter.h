@@ -48,7 +48,7 @@ namespace sp {
 		virtual bool undo(SpPoint* pt) = 0;
 
 		// Save code that will be modified for a point
-		virtual bool save(SpPoint* pt) = 0;
+		virtual bool save(SpPoint* pt);
 
 		// How to install instrumentation?
 		// - SP_NONE,
@@ -69,7 +69,6 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt);
 		virtual bool undo(SpPoint* pt);
-		virtual bool save(SpPoint* pt);
 		virtual InstallMethod install_method() const { return SP_TRAP; }
 	private:
 		typedef std::map<dt::Address, SpSnippet::ptr> InstMap;
@@ -88,7 +87,6 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt);
 		virtual bool undo(SpPoint* pt);
-		virtual bool save(SpPoint* pt);
 		virtual InstallMethod install_method() const { return SP_RELOC_INSN; }
 	protected:
 		virtual bool install(SpPoint* pt);
@@ -101,7 +99,6 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt);
 		virtual bool undo(SpPoint* pt);
-		virtual bool save(SpPoint* pt);
 		virtual InstallMethod install_method() const { return SP_RELOC_BLK; }
 	protected:
 		virtual bool install(SpPoint* pt);

@@ -1,27 +1,15 @@
 #include "SpEvent.h"
+#include "SpPoint.h"
+#include "SpUtils.h"
 #include "SpParser.h"
 #include "SpContext.h"
 #include "SpSnippet.h"
-#include "SpPoint.h"
-#include "SpUtils.h"
-
-using dt::Address;
-
-using ph::PatchFunction;
-
-using in::Result;
-using in::Visitor;
-using in::Immediate;
-using in::Expression;
-using in::Instruction;
-using in::Dereference;
-using in::RegisterAST;
-using in::BinaryFunction;
-
+#include "SpAgentCommon.h"
 
 namespace sp {
 
-  extern SpContext* g_context;
+	extern SpContext* g_context;
+	extern SpParser::ptr g_parser;
 
   // -------------------------------------------------------------------
   // Code Generation
@@ -29,7 +17,8 @@ namespace sp {
 
   // Save context before calling payload
   size_t
-  SpSnippet::emit_save(char* buf, size_t offset) {
+  SpSnippet::emit_save(char* buf,
+											 size_t offset) {
     char* p = buf + offset;
 
 		bool indirect = false;
@@ -75,7 +64,8 @@ namespace sp {
 
   // Restore context after calling payload
   size_t
-  SpSnippet::emit_restore(char* buf, size_t offset) {
+  SpSnippet::emit_restore(char* buf,
+													size_t offset) {
     char* p = buf + offset;
 
 		bool indirect = false;
@@ -119,7 +109,8 @@ namespace sp {
   // 1. Resolve indirect call during runtime
   // 2. Get argument of callees in payload function
   size_t
-  SpSnippet::emit_save_sp(char* buf, size_t offset) {
+  SpSnippet::emit_save_sp(char* buf,
+													size_t offset) {
     char* p = buf + offset;
 
     // mov loc, %rax
@@ -139,7 +130,8 @@ namespace sp {
 
   // For debugging, cause segment fault
   size_t
-  SpSnippet::emit_fault(char* buf, size_t offset) {
+  SpSnippet::emit_fault(char* buf,
+												size_t offset) {
     char* p = buf + offset;
 
     // mov $0, 0
@@ -160,7 +152,9 @@ namespace sp {
 
   // Move imm64 to %rdi
   static size_t
-  emit_mov_imm64_rdi(long imm, char* buf, size_t offset) {
+  emit_mov_imm64_rdi(long imm,
+										 char* buf,
+										 size_t offset) {
     char* p = buf + offset;
     // mov imm, %rdi
     *p = (char)0x48; p++;
@@ -171,7 +165,9 @@ namespace sp {
 
   // Move imm64 to %rsi
   static size_t
-  emit_mov_imm64_rsi(long imm, char* buf, size_t offset) {
+  emit_mov_imm64_rsi(long imm,
+										 char* buf,
+										 size_t offset) {
     char* p = buf + offset;
     // mov imm, %rsi
     *p = (char)0x48; p++;
@@ -184,7 +180,9 @@ namespace sp {
   // Two parameters - POINT and Payload function
   // If payload == 0, then we are dealing with single-process only
   size_t
-  SpSnippet::emit_pass_param(long point, long payload, char* buf,
+  SpSnippet::emit_pass_param(long point,
+														 long payload,
+														 char* buf,
                              size_t offset) {
     char* p = buf + offset;
     size_t insnsize = 0;
@@ -204,7 +202,9 @@ namespace sp {
 
   // Emulate to push an imm64 in stack
   static size_t
-  emit_push_imm64(long imm, char* buf, size_t offset) {
+  emit_push_imm64(long imm,
+									char* buf,
+									size_t offset) {
     char* p = buf + offset;
 
     // push imm16
@@ -225,12 +225,15 @@ namespace sp {
   // Call a function w/ address `callee`
   // Assumption: for 5-byte relative call instruction only
   size_t
-  SpSnippet::emit_call_abs(long callee, char* buf, size_t offset, bool) {
+  SpSnippet::emit_call_abs(long callee,
+													 char* buf,
+													 size_t offset,
+													 bool) {
     char* p = buf + offset;
 
     // Case 1: we are lucky to use relative call instruction.
-    Address retaddr = (Address)p+5;
-    Address rel_addr = (callee - retaddr);
+    dt::Address retaddr = (dt::Address)p+5;
+    dt::Address rel_addr = (callee - retaddr);
     if (sp::is_disp32(rel_addr)) {
 
       // call `callee`
@@ -270,12 +273,15 @@ namespace sp {
 
   // Jump to target address `trg`.
   size_t
-  SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
+  SpSnippet::emit_jump_abs(long trg,
+													 char* buf,
+													 size_t offset,
+													 bool abs) {
     char* p = buf + offset;
     size_t insnsize = 0;
 
-    Address retaddr = (Address)p+5;
-    Address rel_addr = (trg - retaddr);
+    dt::Address retaddr = (dt::Address)p+5;
+    dt::Address rel_addr = (trg - retaddr);
 
     if (sp::is_disp32(rel_addr) && !abs) {
       // Case 1: we are lucky to use relative jump.
@@ -303,22 +309,22 @@ namespace sp {
   // -------------------------------------------------------------------
 
   // Used in trap handler to decide the pc value right at the call
-  Address
+  dt::Address
   SpSnippet::get_pre_signal_pc(void* context) {
     ucontext_t* ctx = (ucontext_t*)context;
     return ctx->uc_mcontext.gregs[REG_RIP];
   }
 
   // Used in trap handler to jump to snippet
-  Address
-  SpSnippet::set_pc(Address pc, void* context) {
+  dt::Address
+  SpSnippet::set_pc(dt::Address pc, void* context) {
     ucontext_t* ctx = (ucontext_t*)context;
     ctx->uc_mcontext.gregs[REG_RIP] = pc;
     return pc;
   }
 
   // Get the saved register, for resolving indirect call
-  Address
+  dt::Address
   SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 
 #define RAX (0)
@@ -386,20 +392,21 @@ namespace sp {
     return false;
   }
 
-  class RelocVisitor : public Visitor {
+  class RelocVisitor : public in::Visitor {
   public:
-    RelocVisitor(SpParser::ptr p) : Visitor(), p_(p), use_pc_(false) {}
-    virtual void visit(RegisterAST* r) {
+    RelocVisitor(SpParser::ptr p)
+			: in::Visitor(), p_(p), use_pc_(false) {}
+    virtual void visit(in::RegisterAST* r) {
       // sp_debug("USE REG");
       if (is_pc(r->getID())) {
         use_pc_ = true;
       }
     }
-    virtual void visit(BinaryFunction* b) {
+    virtual void visit(in::BinaryFunction* b) {
     }
-    virtual void visit(Immediate* i) {
+    virtual void visit(in::Immediate* i) {
     }
-    virtual void visit(Dereference* d) {
+    virtual void visit(in::Dereference* d) {
     }
     bool use_pc() const { return use_pc_; }
   private:
@@ -437,7 +444,7 @@ namespace sp {
 
   // Get the displacement in an instruction
   static int*
-  get_disp(Instruction::Ptr insn, char* insn_buf) {
+  get_disp(in::Instruction::Ptr insn, char* insn_buf) {
 		assert(insn);
     int* disp = NULL;
 
@@ -463,11 +470,11 @@ namespace sp {
   }
 
   // This visitor visits a PC-sensitive call instruction
-  class EmuVisitor : public Visitor {
+  class EmuVisitor : public in::Visitor {
   public:
-    EmuVisitor(Address a)
+    EmuVisitor(dt::Address a)
       : Visitor(), imm_(0), a_(a) { }
-    virtual void visit(RegisterAST* r) {
+    virtual void visit(in::RegisterAST* r) {
       // value in RIP is a_
 			if (is_pc(r->getID())) {
 				imm_ = a_;
@@ -475,10 +482,10 @@ namespace sp {
 				sp_debug("EMU VISITOR - pc %lx", a_);
 			}
     }
-    virtual void visit(BinaryFunction* b) {
-      Address i1 = stack_.top();
+    virtual void visit(in::BinaryFunction* b) {
+      dt::Address i1 = stack_.top();
       stack_.pop();
-      Address i2 = stack_.top();
+      dt::Address i2 = stack_.top();
       stack_.pop();
 
       if (b->isAdd()) {
@@ -492,8 +499,8 @@ namespace sp {
       }
       stack_.push(imm_);
     }
-    virtual void visit(Immediate* i) {
-      Result res = i->eval();
+    virtual void visit(in::Immediate* i) {
+			in::Result res = i->eval();
       switch (res.size()) {
       case 1: {
         imm_ =res.val.u8val;
@@ -515,19 +522,19 @@ namespace sp {
 			sp_debug("EMU VISITOR - IMM %lx", imm_);
       stack_.push(imm_);
     }
-    virtual void visit(Dereference* d) {
+    virtual void visit(in::Dereference* d) {
       // Don't dereference for now
       // Should do it in runtime, not in instrumentation time
     }
 
-    Address imm() const {
+    dt::Address imm() const {
       return imm_;
     }
 
   private:
-    std::stack<Address> stack_;
-    Address imm_;
-    Address a_;
+    std::stack<dt::Address> stack_;
+    dt::Address imm_;
+    dt::Address a_;
   };
 
   // We emulate the instruction by this sequence:
@@ -546,8 +553,10 @@ namespace sp {
   //
 
   static size_t
-  emulate_pcsen(Instruction::Ptr insn, Expression::Ptr e,
-                Address a, char* buf) {
+  emulate_pcsen(in::Instruction::Ptr insn,
+								in::Expression::Ptr e,
+                dt::Address a,
+								char* buf) {
 		assert(insn);
     char* p = buf;
     char* insn_buf = (char*)insn->ptr();
@@ -675,9 +684,11 @@ namespace sp {
   }
 
   static size_t
-  reloc_insn_internal(Address a, Instruction::Ptr insn,
-                      std::set<Expression::Ptr>& exp,
-                      bool use_pc, char* p) {
+  reloc_insn_internal(dt::Address a,
+											in::Instruction::Ptr insn,
+                      std::set<in::Expression::Ptr>& exp,
+                      bool use_pc,
+											char* p) {
 		assert(insn);
     if (use_pc) {
       // Deal with PC-sensitive instruction
@@ -722,14 +733,16 @@ namespace sp {
   //    a pc-relative insn
 
   size_t
-  SpSnippet::reloc_insn(Address src_insn, Instruction::Ptr insn,
-                        Address last, char* buf) {
+  SpSnippet::reloc_insn(dt::Address src_insn,
+												in::Instruction::Ptr insn,
+                        dt::Address last,
+												char* buf) {
 		assert(insn);
     // We don't handle last instruction for now
     if (src_insn == last) {  return 0;  }
 
     // See if this instruction is a pc-sensitive instruction
-    set<Expression::Ptr> opSet;
+    set<in::Expression::Ptr> opSet;
     bool use_pc = false;
 
 		// Non-lea
@@ -738,21 +751,22 @@ namespace sp {
 			if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
 			else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
 
-			for (set<Expression::Ptr>::iterator i = opSet.begin(); i != opSet.end(); i++) {
-				RelocVisitor visitor(context_->parser());
+			for (set<in::Expression::Ptr>::iterator i = opSet.begin();
+					 i != opSet.end(); i++) {
+				RelocVisitor visitor(g_parser);
 				(*i)->apply(&visitor);
 				use_pc = visitor.use_pc();
 			}
 		}
 		// lea instruction
 		else {
-			set<RegisterAST::Ptr> pcExp;
+			set<in::RegisterAST::Ptr> pcExp;
 
 			bool read_use_pc = false;
 			insn->getReadSet(pcExp);
-			for (set<RegisterAST::Ptr>::iterator i = pcExp.begin();
+			for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
 					 i != pcExp.end(); i++) {
-				RelocVisitor visitor(context_->parser());
+				RelocVisitor visitor(g_parser);
 				(*i)->apply(&visitor);
 				read_use_pc = visitor.use_pc();
 				if (read_use_pc) {
@@ -763,9 +777,9 @@ namespace sp {
 
 			bool write_use_pc = false;
 			insn->getWriteSet(pcExp);
-			for (set<RegisterAST::Ptr>::iterator i = pcExp.begin();
+			for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
 					 i != pcExp.end(); i++) {
-				RelocVisitor visitor(context_->parser());
+				RelocVisitor visitor(g_parser);
 				(*i)->apply(&visitor);
 				write_use_pc = visitor.use_pc();
 				if (write_use_pc) {
@@ -799,18 +813,21 @@ namespace sp {
   // Relocate the call instruction
   // This is used in deadling with indirect call
   size_t
-  SpSnippet::emit_call_orig(char* buf, size_t offset) {
+  SpSnippet::emit_call_orig(char* buf,
+														size_t offset) {
     char* p = buf + offset;
-		long src = point_->block()->last();
+		SpBlock* b = point_->get_block();
+		assert(b);
+		long src = b->last();
 
-    Instruction::Ptr insn = point_->orig_call_insn();
+		in::Instruction::Ptr insn = b->orig_call_insn();
 		assert(insn);
-    set<Expression::Ptr> opSet;
+    set<in::Expression::Ptr> opSet;
     bool use_pc = false;
 
     // Check whether the call instruction uses RIP
-    RelocVisitor visitor(context_->parser());
-    Expression::Ptr trg = insn->getControlFlowTarget();
+    RelocVisitor visitor(g_parser);
+		in::Expression::Ptr trg = insn->getControlFlowTarget();
     if (trg) {
       trg->apply(&visitor);
       use_pc = visitor.use_pc();
@@ -818,20 +835,23 @@ namespace sp {
     }
 
 		sp_debug("EMIT_CALL_ORIG - for call insn at %lx", src);
-    sp_debug("BEFORE RELOC - %s", context_->parser()->dump_insn((void*)insn->ptr(),	insn->size()).c_str());
+    sp_debug("BEFORE RELOC - %s",
+						 g_parser->dump_insn((void*)insn->ptr(),
+															 insn->size()).c_str());
 		if (use_pc) sp_debug("PC-REL CALL");
 		size_t insn_size = reloc_insn_internal(src, insn, opSet, use_pc, p);
-    sp_debug("AFTER RELOC %s", context_->parser()->dump_insn((void*)p,
-																								 insn_size).c_str());
+    sp_debug("AFTER RELOC %s", g_parser->dump_insn((void*)p,
+																									 insn_size).c_str());
 		return insn_size;
   }
 
   // Get argument of a function call
   void*
-  SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
+  SpSnippet::pop_argument(ArgumentHandle* h,
+													size_t size) {
     using namespace Dyninst::x86_64;
     if (h->num < 6) {
-      Address a = 0;
+      dt::Address a = 0;
       switch(h->num) {
       case 0:
         a = get_saved_reg(rdi);

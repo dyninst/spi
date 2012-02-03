@@ -29,11 +29,12 @@ void hello(int a) {
 }
 
 int main(int argc, char** argv) {
+	/*
 	void* h = dlopen("./comp_test_agent.so", RTLD_NOW);
 	if (!h) {
 		printf("%s\n",dlerror());
 	}
-
+*/
 	// original
   dummy d;
   d.f = foo;
@@ -44,7 +45,8 @@ int main(int argc, char** argv) {
 
   bar();
 	// original end
-
+	/*
 	hello(1988);
+	*/
   return 0;
 }

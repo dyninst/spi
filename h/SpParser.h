@@ -5,13 +5,15 @@
 
 namespace sp {
 
-class SpObject;
+	class SpPoint;
+	class SpObject;
+	class SpFunction;
 
-// ----------------------------------------------------------------------------- 
-// Parser is to parse the CFG structures of the mutatee process.
-// This is a default implementation, which parses binary during runtime.
-// -----------------------------------------------------------------------------
-class SpParser : public ph::CFGMaker {
+	// -----------------------------------------------------------------------
+	// Parser is to parse the CFG structures of the mutatee process.
+	// This is a default implementation, which parses binary during runtime.
+	// -----------------------------------------------------------------------
+	class SpParser : public ph::CFGMaker {
   public:
     typedef dyn_detail::boost::shared_ptr<SpParser> ptr;
 
@@ -37,8 +39,8 @@ class SpParser : public ph::CFGMaker {
     ph::PatchFunction* findFunction(string name);
 
 		// Get callee from a call point
-    ph::PatchFunction* callee(ph::Point* pt,
-                              bool       parse_indirect = false);
+    SpFunction* callee(SpPoint* pt,
+											 bool     parse_indirect = false);
 
 		// Get function absolute address from function name
     dt::Address get_func_addr(string name);
@@ -54,9 +56,6 @@ class SpParser : public ph::CFGMaker {
 
 		// Check if the library is a well known library (lib name is w/o path)
     bool is_well_known_lib(string lib);
-
-		// Get SpObject from a PatchFunction, this is actually a static_cast
-		SpObject* get_object(ph::PatchFunction* func);
 
 		ph::PatchMgrPtr mgr() const { return mgr_; }
   protected:
@@ -79,7 +78,7 @@ class SpParser : public ph::CFGMaker {
     SpParser();
     void init_dyninst_libs();
 		void init_well_known_libs();
-};
+	};
 
 }
 

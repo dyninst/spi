@@ -1,46 +1,46 @@
 #include "SpAddrSpace.h"
 #include "SpObject.h"
- 
-using dt::Address;
-using sp::SpAddrSpace;
-using ph::PatchObject;
 
 namespace sp {
 
   // Build mapped memory area.
   // TODO (wenbin): should update mapped memory area dynamically
-  SpAddrSpace::SpAddrSpace() : ph::AddrSpace() {
+  SpAddrSpace::SpAddrSpace()
+		: ph::AddrSpace() {
     update_mem_maps();
     //dump_mem_maps();
   }
 
   // Standard PatchAPI stuff ...
   SpAddrSpace*
-  SpAddrSpace::create(PatchObject* obj) {
+  SpAddrSpace::create(ph::PatchObject* obj) {
     assert(obj);
     SpAddrSpace* ret = new SpAddrSpace;
-    if (!ret) return ret;
+    if (!ret) {
+			sp_perror("FAILED TO CREATE SpAddrSpace");
+			return ret;
+		}
     ret->init(obj);
     return ret;
   }
 
-  // Memory allocator, which is maily to allocate a buffer for the patch area.
-  Address
-  SpAddrSpace::malloc(PatchObject* obj, size_t size, Address near) {
-    Address buf = 0;
-    buf = (Address)::malloc(size+ getpagesize() -1);
+  // Memory allocator, which is maily to allocate a buffer for the
+	// patch area.
+  dt::Address
+  SpAddrSpace::malloc(ph::PatchObject* obj,
+											size_t size,
+											dt::Address near) {
+    dt::Address buf = 0;
+    buf = (dt::Address)::malloc(size+ getpagesize() -1);
     if (!buf) return 0;
-    buf = (((Address)buf + getpagesize()-1) & ~(getpagesize()-1));
+    buf = (((dt::Address)buf + getpagesize()-1) & ~(getpagesize()-1));
     return buf;
 
     // TODO (wenbin): should have a better memory allocation subsystem
-    Address ps = getpagesize();
-    Address r_near = ((near + ps -1) & ~(ps - 1));
-    Address r_size = ((size + ps -1) & ~(ps - 1));
+    dt::Address ps = getpagesize();
+    dt::Address r_near = ((near + ps -1) & ~(ps - 1));
+    dt::Address r_size = ((size + ps -1) & ~(ps - 1));
     buf = r_near;
-
-    // sp_print("page size: %d, near: %lx, r_near: %lx, size: %d, r_size: %d",
-    //         ps, near, r_near, size, r_size);
     void* m = NULL;
     int fd = -1;
     while (!m || (long)m == -1) {
@@ -55,18 +55,22 @@ namespace sp {
     }
     if (!m) return 0;
     // sp_print("get buf: %lx", m);
-    return (Address)m;
+    return (dt::Address)m;
   }
 
   // Copy a buffer to another buffer.
   bool
-  SpAddrSpace::write(PatchObject* obj, Address to, Address from, size_t size) {
+  SpAddrSpace::write(ph::PatchObject* obj,
+										 dt::Address to,
+										 dt::Address from,
+										 size_t size) {
     return (memcpy((void*)to, (void*)from, size) == (void*)to);
   }
 
   // Deallocate a buffer.
   bool
-  SpAddrSpace::free(PatchObject* obj, Address orig) {
+  SpAddrSpace::free(ph::PatchObject* obj,
+										dt::Address orig) {
     // TODO (wenbin): should implement uninstrumentation and deallocation
     // of patch area.
     ::free((void*)orig);
@@ -75,19 +79,22 @@ namespace sp {
 
   // Set access permission to a memory area.
   bool
-  SpAddrSpace::set_range_perm(Address a, size_t length, int perm) {
+  SpAddrSpace::set_range_perm(dt::Address a,
+															size_t length,
+															int perm) {
     bool ret = false;
 
     // Check the mapped memory area.
-    // We change permission for the entire range that overlaps what we provide
-    // in the argument list.
-    // TODO (wenbin): safer to only change a minimal range of area's permission ...
+    // We change permission for the entire range that overlaps what we
+		// provide in the argument list.
+    // TODO (wenbin): safer to only change a minimal range of area's
+		//                permission ...
     for (MemMappings::iterator mi = mem_maps_.begin();
          mi != mem_maps_.end(); mi++) {
-      Address start = mi->first;
+      dt::Address start = mi->first;
       MemMapping& mm = mi->second;
-      Address end = mm.end;
-      Address code_end = a + length;
+      dt::Address end = mm.end;
+      dt::Address code_end = a + length;
       if ((a >= start && code_end < end) ||
           (a <= start && code_end >= start && code_end <= end) ||
           (a >= start && a < end && code_end >= end)) {
@@ -107,9 +114,9 @@ namespace sp {
 
     // Last resort to align the address ...
     if (!ret) {
-      Address aligned = a;
+      dt::Address aligned = a;
       size_t pz = getpagesize();
-      aligned = (Address)(((Address) aligned + pz-1) & ~(pz-1));
+      aligned = (dt::Address)(((dt::Address) aligned + pz-1) & ~(pz-1));
       if (mprotect((void*)aligned, length, perm) < 0) {
         sp_print("MPROTECT - Failed to change memory access permission");
         perror("mprotect");
@@ -123,14 +130,15 @@ namespace sp {
   }
 
   bool
-  SpAddrSpace::restore_range_perm(Address a, size_t length) {
+  SpAddrSpace::restore_range_perm(dt::Address a,
+																	size_t length) {
     bool ret = false;
     for (MemMappings::iterator mi = mem_maps_.begin();
          mi != mem_maps_.end(); mi++) {
-      Address start = mi->first;
+      dt::Address start = mi->first;
       MemMapping& mm = mi->second;
-      Address end = mm.end;
-      Address code_end = a + length;
+      dt::Address end = mm.end;
+      dt::Address code_end = a + length;
       if ((a >= start && code_end < end) ||
           (a <= start && code_end >= start && code_end <= end) ||
           (a >= start && a < end && code_end >= end)) {
@@ -191,7 +199,7 @@ namespace sp {
       }
 
       char* pDummy;
-      Address start = strtoll(start_addr_s, &pDummy, 16);
+      dt::Address start = strtoll(start_addr_s, &pDummy, 16);
 
 
       if (mem_maps_.find(start) == mem_maps_.end()) {
@@ -225,22 +233,23 @@ namespace sp {
 
   void
   SpAddrSpace::dump_mem_maps() {
-#ifndef SP_RELEASE
+
     sp_debug("MMAPS - %lu memory mappings", (unsigned long)mem_maps_.size());
-#endif
-    for (MemMappings::iterator mi = mem_maps_.begin(); mi != mem_maps_.end(); mi++) {
-#ifndef SP_RELEASE
+
+    for (MemMappings::iterator mi = mem_maps_.begin();
+				 mi != mem_maps_.end(); mi++) {
+
       MemMapping& mapping = mi->second;
-      sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s, Inode %lu, Path %s",
+      sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+							 " Inode %lu, Path %s",
                mapping.start, mapping.end, mapping.offset, mapping.perms,
                mapping.dev.c_str(), mapping.inode, mapping.path.c_str());
-#endif
     }
   }
 
   void SpAddrSpace::loadLibrary(ph::PatchObject* obj) {
     loadObject(obj);
-    pre_alloc_near(static_cast<SpObject*>(obj));
+    pre_alloc_near(OBJ_CAST(obj));
   }
 
   // Preallocate a set of 1KB buffers near an object.
@@ -254,14 +263,15 @@ namespace sp {
     max_buf_num_ = 10;
     size_t max_size = max_buf_num_ * buf_size_;
 
-    Address ps = getpagesize();
-    Address r_near = ((obj->load_addr() + ps -1) & ~(ps - 1));
-    Address r_size = ((max_size + ps -1) & ~(ps - 1));
-    Address buf = r_near;
+    dt::Address ps = getpagesize();
+    dt::Address r_near = ((obj->load_addr() + ps -1) & ~(ps - 1));
+    dt::Address r_size = ((max_size + ps -1) & ~(ps - 1));
+    dt::Address buf = r_near;
 
     update_mem_maps();
     dump_mem_maps();
-    sp_print("codeBase: %lx, r_near: %lx, r_size: %lu", obj->codeBase(), r_near, r_size);
+    sp_print("codeBase: %lx, r_near: %lx, r_size: %lu",
+						 obj->codeBase(), r_near, r_size);
     //  while(1);
     void* m = NULL;
     int fd = -1;
@@ -278,9 +288,8 @@ namespace sp {
     }
     if (!m) {
       // Something bad happen... Skip it for now.
-      // sp_print("WARNING: cannot prealloc buffer before %lx", obj->load_addr());
     } else {
-      sp_print("get buf: %lx", (Dyninst::Address)m);
+      sp_print("get buf: %lx", (dt::Address)m);
     }
   }
 

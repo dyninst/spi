@@ -18,7 +18,7 @@ void MyAgent() {
 
 	SpParser::ptr p = agent->parser();
 	PatchFunction* main_func = p->findFunction("main");
-	SpObject* obj = p->get_object(main_func);
+	SpObject* obj = FUNC_CAST(main_func)->get_object();
 	if (obj) {
 		sp_print(obj->name().c_str());
 	} else {

@@ -1,23 +1,12 @@
 #include "SpEvent.h"
+#include "SpUtils.h"
+#include "SpPoint.h"
 #include "SpParser.h"
 #include "SpContext.h"
 #include "SpSnippet.h"
-#include "SpUtils.h"
-#include "SpPoint.h"
-
-using dt::Address;
-
-using in::Result;
-using in::Visitor;
-using in::Immediate;
-using in::c_CallInsn;
-using in::Expression;
-using in::Instruction;
-using in::Dereference;
-using in::RegisterAST;
-using in::BinaryFunction;
 
 namespace sp {
+	extern SpContext* g_context;
 
   // -------------------------------------------------------------------
   // Code Generation
@@ -25,7 +14,8 @@ namespace sp {
 
   // Save context before calling payload
   size_t
-  SpSnippet::emit_save(char* buf, size_t offset) {
+  SpSnippet::emit_save(char* buf,
+											 size_t offset) {
     char* p = buf + offset;
     // pusha
     *p++ = 0x60;
@@ -36,7 +26,8 @@ namespace sp {
 
   // Restore context after calling payload
   size_t
-  SpSnippet::emit_restore( char* buf, size_t offset) {
+  SpSnippet::emit_restore(char* buf,
+													size_t offset) {
     char* p = buf + offset;
     // popa
     *p++ = 0x61;
@@ -45,7 +36,8 @@ namespace sp {
 
   // For debugging, cause segment fault
   size_t
-  SpSnippet::emit_fault(char* buf, size_t offset) {
+  SpSnippet::emit_fault(char* buf,
+												size_t offset) {
     char* p = buf + offset;
 
     // mov $0, 0
@@ -69,7 +61,8 @@ namespace sp {
   // 1. Resolve indirect call during runtime
   // 2. Get argument of callees in payload function
   size_t
-  SpSnippet::emit_save_sp(char* buf, size_t offset) {
+  SpSnippet::emit_save_sp(char* buf,
+													size_t offset) {
     char* p = buf + offset;
 
     *p++ = 0x89;   // mov %esp, (loc)
@@ -84,7 +77,9 @@ namespace sp {
 
   // Push an imm32 in stack
   static size_t
-  emit_push_imm32(long imm, char* buf, size_t offset) {
+  emit_push_imm32(long imm,
+									char* buf,
+									size_t offset) {
     char* p = buf + offset;
 
     // push imm32
@@ -98,7 +93,8 @@ namespace sp {
 
   // Get the saved imm32 from stack to %eax
   static size_t
-  emit_pop_imm32(char* buf, size_t offset) {
+  emit_pop_imm32(char* buf,
+								 size_t offset) {
     char* p = buf + offset;
     // pop %eax
     *p++ = 0x58;
@@ -109,7 +105,10 @@ namespace sp {
   // Two parameters - POINT and Payload function
   // If payload == 0, then we are dealing with single-process only
   size_t
-  SpSnippet::emit_pass_param(long point, long payload, char* buf, size_t offset) {
+  SpSnippet::emit_pass_param(long point,
+														 long payload,
+														 char* buf,
+														 size_t offset) {
     char* p = buf + offset;
     size_t insnsize = 0;
 
@@ -130,12 +129,14 @@ namespace sp {
   // `restore` indicates whether we need to pop out the pushed argument,
   // this only happens when we call payload function
   size_t
-  SpSnippet::emit_call_abs(long callee, char* buf,
-                           size_t offset, bool restore) {
+  SpSnippet::emit_call_abs(long callee,
+													 char* buf,
+                           size_t offset,
+													 bool restore) {
     char* p = buf + offset;
-    Address retaddr = (Address)p+5;
+    dt::Address retaddr = (dt::Address)p+5;
     size_t insnsize = 0;
-    Address rel_addr = (callee - retaddr);
+    dt::Address rel_addr = (callee - retaddr);
 
     if (sp::is_disp32(rel_addr)) {
       // call callee
@@ -152,7 +153,7 @@ namespace sp {
       insnsize = emit_pop_imm32(p, 0);
       p += insnsize;
 
-      if (context_->allow_ipc()) {
+      if (g_context->allow_ipc()) {
         // pop payload
         insnsize = emit_pop_imm32(p, 0);
         p += insnsize;
@@ -167,12 +168,15 @@ namespace sp {
   // we make such decision dynamically; otherwise, we mandate absolute
   // jump for determinism.
   size_t
-  SpSnippet::emit_jump_abs(long trg, char* buf, size_t offset, bool abs) {
+  SpSnippet::emit_jump_abs(long trg,
+													 char* buf,
+													 size_t offset,
+													 bool abs) {
     char* p = buf + offset;
     size_t insnsize = 0;
 
-    Address retaddr = (Address)p+5;
-    Address rel_addr = (trg - retaddr);
+    dt::Address retaddr = (dt::Address)p+5;
+    dt::Address rel_addr = (trg - retaddr);
 
     if (sp::is_disp32(rel_addr) && !abs) {
       // jmp trg
@@ -194,25 +198,31 @@ namespace sp {
   // Relocate the call instruction
   // This is used in dealing with indirect call
   size_t
-  SpSnippet::emit_call_orig(char* buf, size_t offset) {
+  SpSnippet::emit_call_orig(char* buf,
+														size_t offset) {
+		SpBlock* b = point_->blk();
+		assert(b);
+
     char* p = buf + offset;
-    char* psrc = (char*)point_->orig_call_insn()->ptr();
-		size_t size = point_->orig_call_insn()->size();
+    char* psrc = (char*)b->orig_call_insn()->ptr();
+		size_t size = b->orig_call_insn()->size();
     memcpy(p, psrc, size);
     return size;
   }
 
   // Relocate an ordinary instruction
   size_t
-  SpSnippet::reloc_insn(Address src_insn, Instruction::Ptr insn,
-                        Address last, char* buf) {
+  SpSnippet::reloc_insn(dt::Address src_insn,
+												in::Instruction::Ptr insn,
+                        dt::Address last,
+												char* buf) {
     // Case 1: we don't relocate the last insn
     // because we'll do it later
-    Address a = src_insn;
+    dt::Address a = src_insn;
     if (a == last)  return 0;
 
     char* p = buf;
-    if (insn->getCategory() == c_CallInsn &&
+    if (insn->getCategory() == in::c_CallInsn &&
         a != last)  {
 			sp_debug("THUNK CALL - at insn %lx", src_insn);
       // Case 2: handle thunk call
@@ -234,22 +244,23 @@ namespace sp {
   // -------------------------------------------------------------------
 
   // Used in trap handler to decide the pc value right at the call
-  Address
+  dt::Address
   SpSnippet::get_pre_signal_pc(void* context) {
     ucontext_t* ctx = (ucontext_t*)context;
     return ctx->uc_mcontext.gregs[REG_EIP];
   }
 
   // Used in trap handler to jump to snippet
-  Address
-  SpSnippet::set_pc(Address pc, void* context) {
+  dt::Address
+  SpSnippet::set_pc(dt::Address pc,
+										void* context) {
     ucontext_t* ctx = (ucontext_t*)context;
     ctx->uc_mcontext.gregs[REG_EIP] = pc;
     return pc;
   }
 
   // Get the saved register, for resolving indirect call
-  Address
+  dt::Address
   SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
 
     // Pushed Left to right in order:
@@ -300,7 +311,8 @@ namespace sp {
 
   // Get argument of a function call
   void*
-  SpSnippet::pop_argument(ArgumentHandle* h, size_t size) {
+  SpSnippet::pop_argument(ArgumentHandle* h,
+													size_t size) {
     void* a = (void*)(saved_context_loc_ + 32 + h->offset);
     h->offset += size;
     return a;

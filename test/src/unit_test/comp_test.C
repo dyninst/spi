@@ -78,7 +78,7 @@ namespace {
 	}
 
   TEST_F(ComponentTest, spring_board) {
-		FILE* fp = popen("SP_TEST_SPRING=1 LD_PRELOAD=./comp_test_agent.so ./libcall", "r");
+		FILE* fp = popen("SP_TEST_SPRING=1 SP_TEST_TRAP=1 LD_PRELOAD=./comp_test_agent.so ./libcall", "r");
 		char buf[1024];
 
 		// bar (direct)

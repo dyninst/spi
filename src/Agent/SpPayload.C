@@ -1,39 +1,31 @@
+#include "SpCFG.h"
+#include "SpUtils.h"
+#include "SpPoint.h"
 #include "SpPayload.h"
 #include "SpContext.h"
-#include "SpPoint.h"
-#include "SpUtils.h"
 
-using ph::Point;
-using ph::Scope;
-using ph::PatchMgr;
-using ph::PatchEdge;
-using ph::PatchBlock;
-using ph::PatchMgrPtr;
-using ph::PatchObject;
-using ph::PatchFunction;
-
-using sp::SpPoint;
-using sp::SpChannel;
-using sp::ArgumentHandle;
-using sp::SpIpcMgr;
-
+// ------------------------------------------------------------------- 
+// The two wrappers are used only in IPC mode
+// -------------------------------------------------------------------
 void
-wrapper_entry(SpPoint* pt, sp::PayloadFunc_t entry) {
-  if (!SpIpcMgr::before_entry(pt)) return;
+wrapper_entry(sp::SpPoint* pt, sp::PayloadFunc_t entry) {
+  if (!sp::SpIpcMgr::before_entry(pt)) return;
   entry(pt);
 }
 
 
 void
-wrapper_exit(SpPoint* pt, sp::PayloadFunc_t exit) {
-  if (!SpIpcMgr::before_exit(pt)) return;
+wrapper_exit(sp::SpPoint* pt, sp::PayloadFunc_t exit) {
+  if (!sp::SpIpcMgr::before_exit(pt)) return;
   exit(pt);
 }
 
+// ------------------------------------------------------------------- 
 // Default payload functions
+// -------------------------------------------------------------------
 void
-default_entry(Point* pt) {
-  PatchFunction* f = sp::callee(pt);
+default_entry(sp::SpPoint* pt) {
+	ph::PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
   string callee_name = f->name();
@@ -43,52 +35,60 @@ default_entry(Point* pt) {
 }
 
 void
-default_exit(Point* pt) {
-  PatchFunction* f = sp::callee(pt);
+default_exit(sp::SpPoint* pt) {
+	ph::PatchFunction* f = sp::callee(pt);
   if (!f) return;
 
   string callee_name = f->name();
   sp_print("Leave %s", callee_name.c_str());
 }
 
+// ------------------------------------------------------------------- 
 // Utilities that payload writers can use in their payload functions
+// -------------------------------------------------------------------
 namespace sp {
   extern SpContext* g_context;
+	extern SpParser::ptr g_parser;
 
   // Get callee from a PreCall point
-  PatchFunction*
-  callee(ph::Point* pt) {
-    return g_context->callee(pt);
+	SpFunction*
+  callee(SpPoint* pt) {
+		bool parse_indirect = true;
+
+		// If we just want to instrument direct call, then we skip parsing
+		// indirect calls
+		if (g_context->directcall_only()) parse_indirect = false;
+
+    return g_parser->callee(pt, parse_indirect);
   }
 
   // Pop up an argument of a function call
   void*
-  pop_argument(ph::Point* pt, ArgumentHandle* h, size_t size) {
+  pop_argument(SpPoint* pt, ArgumentHandle* h, size_t size) {
     return static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
   }
 
   // Propel instrumentation to next points of the point `pt`
   void
-  propel(ph::Point* pt) {
+  propel(SpPoint* pt) {
 
-    /* Skip if we have already propagated from this point */
-		/*
-    SpPoint* spt = static_cast<sp::SpPoint*>(pt);
-    if (spt->propagated()) {
-      return;
-    }
-		*/
-    PatchFunction* f = callee(pt);
-    if (!f) return;
+    SpFunction* f = callee(pt);
+    if (!f) {
+			sp_debug("NOT VALID FUNC - stop propagation");
+			return;
+		}
 
-		if (g_context->is_func_propagated(f)) return;
+    // Skip if we have already propagated from this point
+		if (f->propagated()) return;
 
     sp::SpPropeller::ptr p = g_context->init_propeller();
-    p->go(f, g_context, g_context->init_entry(), g_context->init_exit(), pt);
-		/*
-    spt->set_propagated(true);
-		*/
-		g_context->add_func_propagated(f);
+		assert(p);
+
+    p->go(f,
+					g_context->init_entry(),
+					g_context->init_exit(),
+					pt);
+		f->set_propagated(true);
   }
 
   ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}

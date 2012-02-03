@@ -5,7 +5,7 @@
 #include "SpPayload.h"
 
 namespace sp {
-class SpContext;
+
 class SpPropeller {
   public:
     typedef dyn_detail::boost::shared_ptr<SpPropeller> ptr;
@@ -13,7 +13,6 @@ class SpPropeller {
     SpPropeller();
 
     bool go(ph::PatchFunction* func,
-            SpContext* context,
             PayloadFunc entry,
             PayloadFunc exit,
             ph::Point* pt = NULL);

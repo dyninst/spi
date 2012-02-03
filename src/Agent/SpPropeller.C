@@ -1,23 +1,13 @@
-#include "SpPropeller.h"
-#include "SpContext.h"
-#include "SpSnippet.h"
 #include "SpUtils.h"
 #include "SpPoint.h"
-
-using sp::SpContext;
-using sp::SpPropeller;
-
-using ph::Point;
-using ph::Scope;
-using ph::Patcher;
-using ph::Snippet;
-using ph::PatchMgr;
-using ph::PatchBlock;
-using ph::PatchMgrPtr;
-using ph::PatchFunction;
-using ph::PushBackCommand;
+#include "SpContext.h"
+#include "SpSnippet.h"
+#include "SpPropeller.h"
 
 namespace sp {
+
+	extern SpContext* g_context;
+	extern SpParser::ptr g_parser;
 
   SpPropeller::SpPropeller() {
   }
@@ -33,24 +23,26 @@ namespace sp {
   // However, users can inherit SpPropeller and implement their own
   // next_points().
   bool
-  SpPropeller::go(PatchFunction* func, SpContext* context,
-                  PayloadFunc entry, PayloadFunc exit, Point* pt) {
+  SpPropeller::go(ph::PatchFunction* func,
+                  PayloadFunc entry,
+									PayloadFunc exit,
+									ph::Point* pt) {
+		assert(func);
+
 #ifndef SP_RELEASE
     sp_debug("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
 #endif
 
-		if (!func) return false;
-		if (!context) return false;
-
     // 1. Find points according to type
     Points pts;
-    PatchMgrPtr mgr = context->parser()->mgr();
-    PatchFunction* cur_func = NULL;
+		ph::PatchMgrPtr mgr = g_parser->mgr();
+		assert(mgr);
+		ph::PatchFunction* cur_func = NULL;
     if (pt) {
       cur_func = func;
     } else {
-      cur_func = context->parser()->findFunction(func->name());
+      cur_func = g_parser->findFunction(func->name());
     }
 
     next_points(cur_func, mgr, pts);
@@ -58,54 +50,61 @@ namespace sp {
     // 2. Start instrumentation
     ph::Patcher patcher(mgr);
     for (unsigned i = 0; i < pts.size(); i++) {
-      Point* pt = pts[i];
+      SpPoint* pt = static_cast<SpPoint*>(pts[i]);
+			assert(pt);
+			SpBlock* blk = pt->get_block();
+			assert(blk);
 
-			if (pt->block()->isShared()) {
-				// sp_print("%lx is shared", pt->block()->last());
-				if (context->is_blk_instrumented(pt->block())) {
-					// sp_print("instrumented, skip");
+			if (blk->isShared()) {
+				if (blk->instrumented()) {
 					continue;
 				}
-				context->add_blk_instrumented(pt->block());
-				// sp_print("make this block instrumented");
 			}
 
       // It's possible that callee will be NULL, which is an indirect call.
       // In this case, we'll parse it later during runtime.
 
-      PatchFunction* callee = context->parser()->callee(pt);
-#ifndef SP_RELEASE
+			SpFunction* callee = g_parser->callee(pt);
+
       if (callee) {
         sp_debug("POINT - instrumenting direct call at %lx to "
                  "function %s (%lx) for point %lx",
-                 pt->block()->last(), callee->name().c_str(),
+                 blk->last(), callee->name().c_str(),
                  (dt::Address)callee, (dt::Address)pt);
       } else {
         sp_debug("POINT - instrumenting indirect call at %lx for point %lx",
-                 pt->block()->last(), (dt::Address)pt);
+                 blk->last(), (dt::Address)pt);
       }
-#endif
+
       SpSnippet::ptr sp_snip = SpSnippet::create(callee,
-                                                 static_cast<SpPoint*>(pt),
-                                                 context, entry, exit);
-      Snippet<SpSnippet::ptr>::Ptr snip =
-        Snippet<SpSnippet::ptr>::create(sp_snip);
-      patcher.add(PushBackCommand::create(pt, snip));
+                                                 pt,
+																								 entry,
+																								 exit);
+			ph::Snippet<SpSnippet::ptr>::Ptr snip =
+        ph::Snippet<SpSnippet::ptr>::create(sp_snip);
+			assert(sp_snip && snip);
+			pt->set_snip(sp_snip);
+      patcher.add(ph::PushBackCommand::create(pt, snip));
     }
-    patcher.commit();
-#ifndef SP_RELEASE
-    sp_debug("FINISH PROPELLING - callees of function %s are"
-             " instrumented", func->name().c_str());
-#endif
-    return true;
+    bool ret = patcher.commit();
+
+		if (ret) {
+			sp_debug("FINISH PROPELLING - callees of function %s are"
+							 " instrumented", func->name().c_str());
+		} else {
+			sp_debug("FINISH PROPELLING - instrumentation failed for"
+							 " callees of %s", func->name().c_str());
+		}
+    return ret;
   }
 
   // Find all PreCall points
   void
-  SpPropeller::next_points(PatchFunction* cur_func, PatchMgrPtr mgr,
+  SpPropeller::next_points(ph::PatchFunction* cur_func,
+													 ph::PatchMgrPtr mgr,
                            Points& pts) {
-    Scope scope(cur_func);
-    mgr->findPoints(scope, Point::PreCall, back_inserter(pts));
+		ph::Scope scope(cur_func);
+    mgr->findPoints(scope, ph::Point::PreCall, back_inserter(pts));
   }
 
 }

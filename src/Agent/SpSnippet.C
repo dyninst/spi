@@ -1,49 +1,47 @@
 #include "SpEvent.h"
-#include "SpParser.h"
-#include "SpContext.h"
-#include "SpSnippet.h"
 #include "SpPoint.h"
 #include "SpUtils.h"
+#include "SpParser.h"
 #include "SpObject.h"
-
-using ph::Point;
-using dt::Address;
-using ph::PatchBlock;
-using ph::PatchFunction;
+#include "SpContext.h"
+#include "SpSnippet.h"
+#include "SpAddrSpace.h"
 
 const size_t BLOB_SIZE = 1024;
 const size_t BLK_LIMIT = BLOB_SIZE - 200;
 
 namespace sp {
 
+	extern SpContext* g_context;
+	extern SpAddrSpace* g_as;
+	extern SpParser::ptr g_parser;
+
   // Constructor
   // Allocate a buffer to hold generated patch area for a call site.
-  SpSnippet::SpSnippet(PatchFunction* f,
+  SpSnippet::SpSnippet(SpFunction* f,
                        SpPoint* pt,
-                       SpContext* c,
                        PayloadFunc entry,
                        PayloadFunc exit)
-    : func_(f), point_(pt), context_(c), entry_(entry), exit_(exit),
-      blob_size_(0), spring_size_(0), spring_blk_(NULL), realloc_(false) {
-
-    ph::PatchMgrPtr mgr = c->parser()->mgr();
-    ph::AddrSpace* as = mgr->as();
+    : func_(f),
+			point_(pt),
+			entry_(entry),
+			exit_(exit),
+      blob_size_(0),
+			spring_size_(0),
+			spring_blk_(NULL)	{
 
     // TODO (wenbin): For now, just statically allocate a 1024-byte buffer,
     // should have a smarter memory allocator.
-    blob_ = (char*)as->malloc(pt->obj(), BLOB_SIZE,
-                   static_cast<sp::SpObject*>(pt->obj())->load_addr());
+    blob_ = (char*)g_as->malloc(pt->obj(), BLOB_SIZE,
+                   OBJ_CAST(pt->obj())->load_addr());
   }
 
   // Destructor
   SpSnippet::~SpSnippet() {
-    if (!realloc_) free(blob_);
   }
 
   char* SpSnippet::realloc() {
     char* buf = NULL;
-    realloc_ = true;
-
     return buf;
   }
 
@@ -59,28 +57,30 @@ namespace sp {
   // 9. Jump back to ORIG_INSN_ADDR.
   char*
   SpSnippet::blob(bool reloc, bool spring) {
-    assert(context_);
 
-		Address ret_addr = point_->ret_addr();
+		dt::Address ret_addr = point_->ret_addr();
+
     // If this blob is already generated? If so, just return it.
-    if (blob_size_ > 0) {
+    if (blob_size_ > 0 && blob_) {
       return blob_;
     }
 
+		assert(point_);
+		SpBlock* b = point_->get_block();
+		assert(b);
+
 		sp_debug("RET_ADDR - is %lx for point %lx", ret_addr,
-						 (Address)point_->block()->last());
+						 (dt::Address)b->last());
 
     // 1. Relocate call block, if it's indirect call
     if (reloc) {
 			sp_debug("RELOC BLOCK");
-      PatchBlock* blk = NULL;
-      blk = point_->block();
-			if (blk->size() >= BLK_LIMIT) {
+			if (b->size() >= BLK_LIMIT) {
 				sp_debug("NO SUFFICIENT SPACE - for BLOB (%lu >= %lu)",
-								 blk->size(), (unsigned long)BLK_LIMIT);
+								 b->size(), (unsigned long)BLK_LIMIT);
 				return NULL;
 			}
-      blob_size_ += reloc_block(blk, blob_, blob_size_);
+      blob_size_ += reloc_block(b, blob_, blob_size_);
     }
 
 
@@ -90,9 +90,9 @@ namespace sp {
     // 3. Call payload before function call
     long param_func = 0;
     long called_func = (long)entry_;
-    if (context_->allow_ipc()) {
+    if (g_context->allow_ipc()) {
       param_func = (long)entry_;
-      called_func = (long)context_->wrapper_entry();
+      called_func = (long)g_context->wrapper_entry();
     }
     blob_size_ += emit_pass_param((long)point_, param_func, blob_,
 																	blob_size_);
@@ -106,38 +106,48 @@ namespace sp {
     // Case 1: tail call and direct call
     // Case 2: non tail call and direct call
     // Case 3: indirect call (tail call or non tail call)
-    if (!ret_addr && func_) {
+
+    if (point_->tailcall() && func_) {
 			sp_debug("TAIL_CALL_DIRECT_CALL ");
+			assert(!ret_addr);
       // 5.1. tail call and direct call
       blob_size_ += emit_jump_abs((long)func_->addr(), blob_, blob_size_);
       goto EXIT;
-    } else if (ret_addr && func_) {
+    } else if (!point_->tailcall() && func_) {
+			assert(ret_addr);
 			sp_debug("SIMPLE_DIRECT_CALL ");
       // 5.2. non tail call and Direct call
-      blob_size_ += emit_call_abs((long)func_->addr(), blob_,
-																	blob_size_, false);
+      blob_size_ += emit_call_abs((long)func_->addr(),
+																	blob_,
+																	blob_size_,
+																	false);
     } else {
-			if (ret_addr)	sp_debug("INDIRECT_CALL ");
-			else sp_debug("TAIL_CALL_INDIRECT_CALL");
+
+			if (!point_->tailcall())
+				sp_debug("INDIRECT_CALL ");
+			else
+				sp_debug("TAIL_CALL_INDIRECT_CALL");
 
       // 5.3. indirect call
-			assert(point_->orig_call_insn());
+			assert(b->orig_call_insn());
       blob_size_ += emit_call_orig(blob_, blob_size_);
     }
 
-    if (context_->allow_ipc() || exit_) {
+    if (g_context->allow_ipc() || exit_) {
       // 6. save context
       blob_size_ += emit_save(blob_, blob_size_);
 
       // 7. Pass parameters
       param_func = 0;
       called_func = (long)exit_;
-      if (context_->allow_ipc()) {
+      if (g_context->allow_ipc()) {
         param_func = (long)exit_;
-        called_func = (long)context_->wrapper_exit();
+        called_func = (long)g_context->wrapper_exit();
       }
-      blob_size_ += emit_pass_param((long)point_, param_func,
-																		blob_, blob_size_);
+      blob_size_ += emit_pass_param((long)point_,
+																		param_func,
+																		blob_,
+																		blob_size_);
       blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
       // 8. Restore context
@@ -149,37 +159,36 @@ namespace sp {
 
   EXIT:
 
-#ifndef SP_RELEASE
 		if (func_) {
 			sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {",
-							 (unsigned long)blob_size_, point_->block()->last(),
+							 (unsigned long)blob_size_, b->last(),
 							 func_->name().c_str());
 		} else {
 			sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx - {",
-							 (unsigned long)blob_size_, point_->block()->last());
+							 (unsigned long)blob_size_, b->last());
 		}
-    sp_debug("%s", context_->parser()->dump_insn((void*)blob_,
-																								 blob_size_).c_str());
+    sp_debug("%s", g_parser->dump_insn((void*)blob_,
+																			 blob_size_).c_str());
     sp_debug("}");
-#endif
 
     return blob_;
   }
 
   // Relocate a block to the patch area
   size_t
-  SpSnippet::reloc_block(PatchBlock* blk, char* buf, size_t offset) {
+  SpSnippet::reloc_block(SpBlock* blk,
+												 char* buf,
+												 size_t offset) {
+		assert(blk);
     char* p = buf + offset;
-    Address call_addr = blk->last();
+    dt::Address call_addr = blk->last();
 
-    PatchBlock::Insns insns;
+		ph::PatchBlock::Insns insns;
     blk->getInsns(insns);
-    for (PatchBlock::Insns::iterator i = insns.begin();
+    for (ph::PatchBlock::Insns::iterator i = insns.begin();
 				 i != insns.end(); i++) {
-      using namespace Dyninst::InstructionAPI;
-
-      Address a = i->first;
-      Instruction::Ptr insn = i->second;
+      dt::Address a = i->first;
+			in::Instruction::Ptr insn = i->second;
       p += reloc_insn(a, insn, call_addr, p);
     }
 
@@ -195,12 +204,12 @@ namespace sp {
   // 4. close enough to the call block (within 128-byte)
   // We iterate through all CodeRegions, and get then narrow down the search
   // space in one, two, or up to three CodeRegions.
-  PatchBlock*
+	SpBlock*
   SpSnippet::spring_blk() {
     if (spring_blk_) return spring_blk_;
 
     size_t min_springblk_size = jump_abs_size() * 2;
-    PatchBlock* callblk = point_->block();
+		SpBlock* callblk = point_->get_block();
 
     // Short jump is 2 bytes
     long after_jmp = callblk->start() + 2;
@@ -210,13 +219,12 @@ namespace sp {
 						 (long)min_springblk_size);
 
     // Find a nearby block
-    PatchBlock* springblk = NULL;
-		SpObject* obj = static_cast<SpObject*>(callblk->obj());
+		SpObject* obj = OBJ_CAST(callblk->obj());
+		assert(obj);
 
-    using namespace Dyninst::ParseAPI;
-    CodeObject* co = obj->co();
-    CodeSource* cs = co->cs();
-    std::vector<CodeRegion*> regions = cs->regions();
+		pe::CodeObject* co = obj->co();
+		pe::CodeSource* cs = co->cs();
+    std::vector<pe::CodeRegion*> regions = cs->regions();
 
     // -128 <= b->start() + jump_abs_size() - after_jmp < 127
     long upper = 127 + after_jmp - jump_abs_size();
@@ -230,7 +238,7 @@ namespace sp {
 						 obj->codeBase(), obj->load_addr(), lower, upper);
 
     for (unsigned i = 0; i < regions.size(); i++) {
-      CodeRegion* cr = regions[i];
+			pe::CodeRegion* cr = regions[i];
 			size_t cr_low = cr->low();
 			size_t cr_high = cr->high();
 			sp_debug("REGION [%lx, %lx] - (%lx, %lx)", (unsigned long)cr_low,
@@ -240,20 +248,22 @@ namespace sp {
           (lower <= (long)cr_high && (long)cr_high < upper)
           ) {
         // XXX: Not any method to iterate blocks in a region?
-   			Address span_addr = lower;
+   			dt::Address span_addr = lower;
         do {
-          set<Block*> blks;
+          set<pe::Block*> blks;
           co->findBlocks(cr, span_addr, blks);
           if (blks.size() == 0) {
             ++span_addr;
             continue;
           }
-          Block* b;
-          for (set<Block*>::iterator bi = blks.begin(); bi != blks.end(); bi++) {
+					pe::Block* b;
+          for (set<pe::Block*>::iterator bi = blks.begin();
+							 bi != blks.end(); bi++) {
             b = *bi;
           }
 					sp_debug("POTENTIAL SPRING BOARD - %ld found, [%lx, %lx]",
-									 (unsigned long)blks.size(), b->start(), b->size() + b->start());
+									 (unsigned long)blks.size(), b->start(),
+									 b->size() + b->start());
 
           size_t rel = b->start() + jump_abs_size() - after_jmp;
 					if (obj->codeBase() != 0) {
@@ -271,7 +281,8 @@ namespace sp {
             span_addr = b->end();
             continue;
           }
-          PatchBlock* pb = obj->getBlock(b);
+					SpBlock* pb = BLK_CAST(obj->getBlock(b));
+					assert(pb);
 
           // For simplicity, we don't want call block
           if (pb->containsCall()) {
@@ -281,14 +292,15 @@ namespace sp {
           }
 
           // For simplicity, we don't relocate used spring block
-          if (context_->in_spring_set(pb)) {
+          if (pb->is_spring()) {
 						sp_debug("SPRING BOARD, SKIPPED - we don't relocate second-hand"
 										 " spring board");
             span_addr = b->end();
             continue;
           }
-          springblk = pb;
-          context_->add_spring(pb);
+					sp_debug("GOT SPRING BOARD");
+          spring_blk_ = pb;
+          pb->set_is_spring(true);
           done = true;
           break;
         } while ((long)span_addr < upper);
@@ -296,16 +308,18 @@ namespace sp {
       }
     }
 
-    spring_blk_ = springblk;
-    return springblk;
+    return spring_blk_;
   }
 
   // Build the spring block
   char*
-  SpSnippet::spring(Address ret_addr) {
-    ph::PatchMgrPtr mgr = context_->parser()->mgr();
-    ph::AddrSpace* as = mgr->as();
-    spring_ = (char*)as->malloc(point_->obj(), BLOB_SIZE, static_cast<sp::SpObject*>(point_->obj())->load_addr());
+  SpSnippet::spring(dt::Address ret_addr) {
+		assert(g_as);
+		SpObject* obj = point_->get_object();
+		assert(obj);
+    spring_ = (char*)g_as->malloc(obj,
+																	BLOB_SIZE,
+																	obj->load_addr());
     spring_size_ = 0;
 
     // 1, Relocate spring block to the patch area
@@ -314,11 +328,11 @@ namespace sp {
     // 2, Jump back
     spring_size_ += emit_jump_abs(ret_addr, spring_, spring_size_);
 
-#ifndef SP_RELEASE
+		assert(point_->block());
     sp_debug("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {", (unsigned long)spring_size_, point_->block()->last());
-    sp_debug("%s", context_->parser()->dump_insn((void*)spring_, spring_size_).c_str());
+    sp_debug("%s", g_parser->dump_insn((void*)spring_, spring_size_).c_str());
     sp_debug("}");
-#endif
+
     return spring_;
   }
 

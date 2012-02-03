@@ -23,5 +23,4 @@
 namespace sk = Dyninst::Stackwalker;
 namespace in = Dyninst::InstructionAPI;
 
-
 #endif /* _SPAGENTCOMMON_H_ */
