@@ -65,7 +65,7 @@ namespace sp {
     bool propagated() { return propagated_; }
 
     void set_instrumented(bool b) { instrumented_ = b; }
-    bool instrumented() { return instrumented_; }
+    bool instrumented();
 
     void set_tailcall(bool b) { tail_call_ = b; }
     bool tailcall() { return tail_call_; }

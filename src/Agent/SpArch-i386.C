@@ -194,9 +194,10 @@ namespace sp {
   // Relocate the call instruction
   // This is used in dealing with indirect call
   size_t
-  SpSnippet::emit_call_orig(long src, size_t size, char* buf, size_t offset) {
+  SpSnippet::emit_call_orig(char* buf, size_t offset) {
     char* p = buf + offset;
-    char* psrc = (char*)src;
+    char* psrc = (char*)point_->orig_call_insn()->ptr();
+		size_t size = point_->orig_call_insn()->size();
     memcpy(p, psrc, size);
     return size;
   }
@@ -213,6 +214,7 @@ namespace sp {
     char* p = buf;
     if (insn->getCategory() == c_CallInsn &&
         a != last)  {
+			sp_debug("THUNK CALL - at insn %lx", src_insn);
       // Case 2: handle thunk call
       // What thunk does, is to move current pc value to ebx.
       // mov orig_pc, ebx

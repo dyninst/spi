@@ -55,6 +55,23 @@ class SpContext {
 		bool trap_only() const { return trap_only_; }
     void set_trap_only(bool b) { trap_only_ = b; }
 
+		// TODO: should make it elegent by providing CFGMaker
+		bool is_blk_instrumented(ph::PatchBlock* b) {
+			return (inst_blks_.find(b) != inst_blks_.end());
+		}
+
+		void add_blk_instrumented(ph::PatchBlock* b) {
+			inst_blks_.insert(b);
+		}
+
+		bool is_func_propagated(ph::PatchFunction* f) {
+			return (inst_funcs_.find(f) != inst_funcs_.end());
+		}
+
+		void add_func_propagated(ph::PatchFunction* f) {
+			inst_funcs_.insert(f);
+		}
+
   protected:
 
     PayloadFunc init_entry_;
@@ -75,6 +92,8 @@ class SpContext {
     bool directcall_only_;
 
     SpringSet spring_set_;
+		BlkSet inst_blks_;
+		FuncSet inst_funcs_;
 
     SpContext(SpPropeller::ptr, SpParser::ptr);
 };

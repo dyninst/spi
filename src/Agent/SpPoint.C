@@ -20,4 +20,7 @@ namespace sp {
     }
   }
 
+  bool SpPoint::instrumented() {
+		return instrumented_;
+	}
 }

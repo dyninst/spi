@@ -72,17 +72,23 @@ namespace sp {
   propel(ph::Point* pt) {
 
     /* Skip if we have already propagated from this point */
+		/*
     SpPoint* spt = static_cast<sp::SpPoint*>(pt);
     if (spt->propagated()) {
       return;
     }
-
+		*/
     PatchFunction* f = callee(pt);
     if (!f) return;
 
+		if (g_context->is_func_propagated(f)) return;
+
     sp::SpPropeller::ptr p = g_context->init_propeller();
     p->go(f, g_context, g_context->init_entry(), g_context->init_exit(), pt);
+		/*
     spt->set_propagated(true);
+		*/
+		g_context->add_func_propagated(f);
   }
 
   ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}

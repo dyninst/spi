@@ -11,6 +11,9 @@ using dt::Address;
 using ph::PatchBlock;
 using ph::PatchFunction;
 
+const size_t BLOB_SIZE = 1024;
+const size_t BLK_LIMIT = BLOB_SIZE - 200;
+
 namespace sp {
 
   // Constructor
@@ -28,7 +31,7 @@ namespace sp {
 
     // TODO (wenbin): For now, just statically allocate a 1024-byte buffer,
     // should have a smarter memory allocator.
-    blob_ = (char*)as->malloc(pt->obj(), 1024,
+    blob_ = (char*)as->malloc(pt->obj(), BLOB_SIZE,
                    static_cast<sp::SpObject*>(pt->obj())->load_addr());
   }
 
@@ -72,6 +75,11 @@ namespace sp {
 			sp_debug("RELOC BLOCK");
       PatchBlock* blk = NULL;
       blk = point_->block();
+			if (blk->size() >= BLK_LIMIT) {
+				sp_debug("NO SUFFICIENT SPACE - for BLOB (%lu >= %lu)",
+								 blk->size(), (unsigned long)BLK_LIMIT);
+				return NULL;
+			}
       blob_size_ += reloc_block(blk, blob_, blob_size_);
     }
 
@@ -114,9 +122,7 @@ namespace sp {
 
       // 5.3. indirect call
 			assert(point_->orig_call_insn());
-      blob_size_ += emit_call_orig((long)point_->orig_call_insn()->ptr(),
-                                   point_->orig_call_insn()->size(),
-																	 blob_, blob_size_);
+      blob_size_ += emit_call_orig(blob_, blob_size_);
     }
 
     if (context_->allow_ipc() || exit_) {
@@ -299,7 +305,7 @@ namespace sp {
   SpSnippet::spring(Address ret_addr) {
     ph::PatchMgrPtr mgr = context_->parser()->mgr();
     ph::AddrSpace* as = mgr->as();
-    spring_ = (char*)as->malloc(point_->obj(), 1024, static_cast<sp::SpObject*>(point_->obj())->load_addr());
+    spring_ = (char*)as->malloc(point_->obj(), BLOB_SIZE, static_cast<sp::SpObject*>(point_->obj())->load_addr());
     spring_size_ = 0;
 
     // 1, Relocate spring block to the patch area

@@ -712,6 +712,15 @@ namespace sp {
   }
 
   // Relocate an ordinary instruction
+  //
+	// The rule: 
+  // 1. We skip the last insn in the block, which would be a call
+	//    insn, and we'll do it later.
+  // 2. For non-lea insn, we rely on memory read/write operands to
+	//    determine wheheter it is pc-relative insn
+	// 3. For lea insn, we use readSet/writeSet to determine if it is
+  //    a pc-relative insn
+
   size_t
   SpSnippet::reloc_insn(Address src_insn, Instruction::Ptr insn,
                         Address last, char* buf) {
@@ -790,26 +799,10 @@ namespace sp {
   // Relocate the call instruction
   // This is used in deadling with indirect call
   size_t
-  SpSnippet::emit_call_orig(long src, size_t size,
-                            char* buf, size_t offset) {
-#if 0
+  SpSnippet::emit_call_orig(char* buf, size_t offset) {
     char* p = buf + offset;
-    Instruction::Ptr insn = point_->orig_call_insn();
-    set<Expression::Ptr> opSet;
+		long src = point_->block()->last();
 
-    bool use_pc = false;
-    // Check whether the call instruction uses RIP
-    RelocVisitor visitor(context_->parser());
-    Expression::Ptr trg = insn->getControlFlowTarget();
-    if (trg) {
-      trg->apply(&visitor);
-      use_pc = visitor.use_pc();
-      opSet.insert(trg);
-    }
-
-    return reloc_insn_internal(src, insn, opSet, use_pc, p);
-#endif
-    char* p = buf + offset;
     Instruction::Ptr insn = point_->orig_call_insn();
 		assert(insn);
     set<Expression::Ptr> opSet;
@@ -824,7 +817,13 @@ namespace sp {
       opSet.insert(trg);
     }
 
-    return reloc_insn_internal(src, insn, opSet, use_pc, p);
+		sp_debug("EMIT_CALL_ORIG - for call insn at %lx", src);
+    sp_debug("BEFORE RELOC - %s", context_->parser()->dump_insn((void*)insn->ptr(),	insn->size()).c_str());
+		if (use_pc) sp_debug("PC-REL CALL");
+		size_t insn_size = reloc_insn_internal(src, insn, opSet, use_pc, p);
+    sp_debug("AFTER RELOC %s", context_->parser()->dump_insn((void*)p,
+																								 insn_size).c_str());
+		return insn_size;
   }
 
   // Get argument of a function call

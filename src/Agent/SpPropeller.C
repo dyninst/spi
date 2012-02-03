@@ -60,6 +60,16 @@ namespace sp {
     for (unsigned i = 0; i < pts.size(); i++) {
       Point* pt = pts[i];
 
+			if (pt->block()->isShared()) {
+				// sp_print("%lx is shared", pt->block()->last());
+				if (context->is_blk_instrumented(pt->block())) {
+					// sp_print("instrumented, skip");
+					continue;
+				}
+				context->add_blk_instrumented(pt->block());
+				// sp_print("make this block instrumented");
+			}
+
       // It's possible that callee will be NULL, which is an indirect call.
       // In this case, we'll parse it later during runtime.
 

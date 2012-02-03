@@ -181,7 +181,7 @@ namespace sp {
       CodeObject* co = new CodeObject(scs);
       code_objs_.push_back(co);
       co->parse();
-
+			/*
       vector<CodeRegion *>::const_iterator rit = scs->regions().begin();
       for( ; rit != scs->regions().end(); ++rit) {
         SymtabCodeRegion * scr = static_cast<SymtabCodeRegion*>(*rit);
@@ -189,7 +189,7 @@ namespace sp {
           co->parseGaps(scr);
         }
       }
-
+			*/
       // Create PatchObjects. This Parser is in fact a CFGMaker, if Agent-writer
       // wants to provide their own Parser, they can pass this "this" pointer to
       // the PatchObject constructor.

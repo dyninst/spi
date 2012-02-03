@@ -86,6 +86,7 @@ namespace Dyninst {
     class Point;
 		class PatchObject;
     class PatchFunction;
+    class PatchBlock;
   }
 
 	namespace ProcControlAPI {
@@ -105,6 +106,7 @@ namespace sp {
 
 	typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 	typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;
+	typedef std::set<Dyninst::PatchAPI::PatchBlock*> BlkSet;
   typedef std::vector<Dyninst::ParseAPI::CodeObject*> CodeObjects;
 	typedef std::vector<Dyninst::SymtabAPI::Symbol*> Symbols;
   typedef std::vector<Dyninst::PatchAPI::PatchObject*> PatchObjects;

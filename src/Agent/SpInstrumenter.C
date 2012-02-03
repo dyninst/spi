@@ -43,7 +43,6 @@ namespace sp {
     sp_debug("INSTRUMENTER - created");
 #endif
 
-		/*
     if (getenv("SP_TEST_SPRING") == NULL &&
         getenv("SP_TEST_RELOCBLK") == NULL &&
 				getenv("SP_TEST_TRAP") == NULL) {
@@ -60,7 +59,7 @@ namespace sp {
 		if (getenv("SP_TEST_TRAP") == NULL) {
 			workers_.push_back(new SpringboardWorker);
 		}
-		*/
+
     workers_.push_back(new TrapWorker);
 
   }
@@ -83,7 +82,7 @@ namespace sp {
       if (!command) continue;
 
       SpPoint* spt = static_cast<SpPoint*>(command->instance()->point());
-
+			sp_debug("INST POINT - for call insn %lx", spt->block()->last());
       // If we only want to instrument direct call, and this point is a
 			// indirect call point, then skip it
       if (spt && !spt->getCallee() && g_context->directcall_only()) {
@@ -102,6 +101,17 @@ namespace sp {
       // Handle tail call
       Instruction::Ptr callinsn = spt->block()->getInsn(spt->block()->last());
 			assert(callinsn);
+			/*
+			char* insn_buf = (char*)spt->block()->last();
+			sp_debug("CALL INSN %s (%d)",
+							 g_context->parser()->dump_insn((void*)spt->block()->last(),
+							 spt->block()->end() - spt->block()->last()).c_str(),
+							 callinsn->getCategory());
+			sp_debug("API INSN %s",
+							 g_context->parser()->dump_insn((void*)callinsn->ptr(),
+																							callinsn->size()).c_str());
+			sp_debug("leading code: %x", insn_buf[0]);
+			*/
       if (callinsn->getCategory() == in::c_BranchInsn) {
 				// XXX
 #ifndef SP_RELEASE
@@ -132,13 +142,19 @@ namespace sp {
         // If we cannot successfully save original instructions, it is
         // very dangous when we want to restore in the future.
 				// If this worker succeeds, then we are done for current point
-        if (worker->save(spt) && worker->run(spt)) {
-					spt->set_instrumented(true);
-					spt->set_install_method(worker->install_method());
-					++success_count;
-					break; // escape the worker loop
-        }
-				sp_debug("FAILED TO INSTALL - for call insn %lx", spt->block()->last());
+        if (worker->save(spt)) {
+					if (worker->run(spt)) {
+						spt->set_instrumented(true);
+						spt->set_install_method(worker->install_method());
+						++success_count;
+						break; // escape the worker loop
+					} else {
+						sp_debug("FAILED TO INSTALL - for call insn %lx",
+										 spt->block()->last());
+					} // install
+        } else {
+					sp_debug("FAILED TO SAVE - for call insn %lx", spt->block()->last());
+				} // save
       } // workers
     } // commands
 
@@ -322,13 +338,18 @@ namespace sp {
 
     // 2. is it a direct call instruction
 
-    if (call_insn[0] != (char)0xe8 &&  // A direct call?
-				!pt->tailcall()) {             // A jump for direct tail call?
-
+    if (call_insn[0] != (char)0xe8) {  // A direct call?
+			sp_debug("NOT DIRECT CALL");
+			if (!pt->tailcall()) {             // A jump for direct tail call?
 #ifndef SP_RELEASE
-      sp_debug("NOT DIRECT CALL - try other workers");
+				sp_debug("NOT TAIL CALL - try other workers");
 #endif
-      return false;
+				return false;
+			} else {
+#ifndef SP_RELEASE
+				sp_debug("IS TAIL CALL");
+#endif
+			}
     }
 
     // 3. is the relative address to snippet within 4-byte?
@@ -529,9 +550,11 @@ namespace sp {
                                      pt->block()->size()).c_str());
     sp_debug("}");
 #endif
-
+		assert(pt);
+		assert(pt->snip());
     // Build blob & change the permission of snippet
     char* blob = pt->snip()->blob(/*reloc=*/true);
+		if (!blob) return false;
 
     PatchObject* obj = pt->block()->obj();
     SpAddrSpace* as = static_cast<SpAddrSpace*>(parser->mgr()->as());

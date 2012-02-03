@@ -95,7 +95,7 @@ namespace sp {
     size_t emit_fault(char* buf, size_t offset);
     size_t emit_pass_param(long point, long payload, char* buf, size_t offset);
     size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
-    size_t emit_call_orig(long src, size_t size, char* buf, size_t offset);
+    size_t emit_call_orig(char* buf, size_t offset);
     size_t emit_save_sp(char* buf, size_t offset);
     size_t emit_jump_abs(long trg, char* buf, size_t offset, bool abs = false);
 
