@@ -19,6 +19,7 @@ namespace sp {
   size_t
   SpSnippet::emit_save(char* buf,
 											 size_t offset) {
+		assert(buf);
     char* p = buf + offset;
 
 		bool indirect = false;
@@ -66,6 +67,7 @@ namespace sp {
   size_t
   SpSnippet::emit_restore(char* buf,
 													size_t offset) {
+		assert(buf);
     char* p = buf + offset;
 
 		bool indirect = false;
@@ -111,12 +113,14 @@ namespace sp {
   size_t
   SpSnippet::emit_save_sp(char* buf,
 													size_t offset) {
+		assert(buf);
     char* p = buf + offset;
 
     // mov loc, %rax
     *p++ = 0x48;
     *p++ = 0xb8;
     long* l = (long*)p;
+
     *l = (long)&saved_context_loc_;
     p += sizeof(long);
 
@@ -132,6 +136,7 @@ namespace sp {
   size_t
   SpSnippet::emit_fault(char* buf,
 												size_t offset) {
+		assert(buf);
     char* p = buf + offset;
 
     // mov $0, 0
@@ -155,6 +160,7 @@ namespace sp {
   emit_mov_imm64_rdi(long imm,
 										 char* buf,
 										 size_t offset) {
+		assert(buf);
     char* p = buf + offset;
     // mov imm, %rdi
     *p = (char)0x48; p++;
@@ -168,6 +174,7 @@ namespace sp {
   emit_mov_imm64_rsi(long imm,
 										 char* buf,
 										 size_t offset) {
+		assert(buf);
     char* p = buf + offset;
     // mov imm, %rsi
     *p = (char)0x48; p++;
@@ -184,6 +191,7 @@ namespace sp {
 														 long payload,
 														 char* buf,
                              size_t offset) {
+		assert(buf);
     char* p = buf + offset;
     size_t insnsize = 0;
 
@@ -205,6 +213,7 @@ namespace sp {
   emit_push_imm64(long imm,
 									char* buf,
 									size_t offset) {
+		assert(buf);
     char* p = buf + offset;
 
     // push imm16
@@ -229,6 +238,7 @@ namespace sp {
 													 char* buf,
 													 size_t offset,
 													 bool) {
+		assert(buf);
     char* p = buf + offset;
 
     // Case 1: we are lucky to use relative call instruction.
@@ -277,6 +287,7 @@ namespace sp {
 													 char* buf,
 													 size_t offset,
 													 bool abs) {
+		assert(buf);
     char* p = buf + offset;
     size_t insnsize = 0;
 
@@ -311,6 +322,7 @@ namespace sp {
   // Used in trap handler to decide the pc value right at the call
   dt::Address
   SpSnippet::get_pre_signal_pc(void* context) {
+		assert(context);
     ucontext_t* ctx = (ucontext_t*)context;
     return ctx->uc_mcontext.gregs[REG_RIP];
   }
@@ -318,6 +330,7 @@ namespace sp {
   // Used in trap handler to jump to snippet
   dt::Address
   SpSnippet::set_pc(dt::Address pc, void* context) {
+		assert(context);
     ucontext_t* ctx = (ucontext_t*)context;
     ctx->uc_mcontext.gregs[REG_RIP] = pc;
     return pc;
@@ -398,6 +411,7 @@ namespace sp {
 			: in::Visitor(), p_(p), use_pc_(false) {}
     virtual void visit(in::RegisterAST* r) {
       // sp_debug("USE REG");
+			assert(r);
       if (is_pc(r->getID())) {
         use_pc_ = true;
       }
@@ -446,6 +460,7 @@ namespace sp {
   static int*
   get_disp(in::Instruction::Ptr insn, char* insn_buf) {
 		assert(insn);
+		assert(insn_buf);
     int* disp = NULL;
 
     int disp_offset = 0;
@@ -475,6 +490,7 @@ namespace sp {
     EmuVisitor(dt::Address a)
       : Visitor(), imm_(0), a_(a) { }
     virtual void visit(in::RegisterAST* r) {
+			assert(r);
       // value in RIP is a_
 			if (is_pc(r->getID())) {
 				imm_ = a_;
@@ -483,6 +499,7 @@ namespace sp {
 			}
     }
     virtual void visit(in::BinaryFunction* b) {
+			assert(b);
       dt::Address i1 = stack_.top();
       stack_.pop();
       dt::Address i2 = stack_.top();
@@ -500,6 +517,7 @@ namespace sp {
       stack_.push(imm_);
     }
     virtual void visit(in::Immediate* i) {
+			assert(i);
 			in::Result res = i->eval();
       switch (res.size()) {
       case 1: {
@@ -558,8 +576,10 @@ namespace sp {
                 dt::Address a,
 								char* buf) {
 		assert(insn);
+		assert(buf);
     char* p = buf;
     char* insn_buf = (char*)insn->ptr();
+		assert(insn_buf);
 
     // Step 1: see if %r8 is used, so get register first
 
@@ -690,6 +710,7 @@ namespace sp {
                       bool use_pc,
 											char* p) {
 		assert(insn);
+		assert(p);
     if (use_pc) {
       // Deal with PC-sensitive instruction
       char insn_buf[20];
@@ -738,6 +759,7 @@ namespace sp {
                         dt::Address last,
 												char* buf) {
 		assert(insn);
+		assert(buf);
     // We don't handle last instruction for now
     if (src_insn == last) {  return 0;  }
 
@@ -747,6 +769,7 @@ namespace sp {
 
 		// Non-lea
 		char* insn_buf = (char*)insn->ptr();
+		assert(insn_buf);
 		if ((char)insn_buf[1] != (char)0x8d) {
 			if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
 			else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
@@ -815,6 +838,7 @@ namespace sp {
   size_t
   SpSnippet::emit_call_orig(char* buf,
 														size_t offset) {
+		assert(buf);
     char* p = buf + offset;
 		SpBlock* b = point_->get_block();
 		assert(b);
@@ -849,6 +873,7 @@ namespace sp {
   void*
   SpSnippet::pop_argument(ArgumentHandle* h,
 													size_t size) {
+		assert(h);
     using namespace Dyninst::x86_64;
     if (h->num < 6) {
       dt::Address a = 0;

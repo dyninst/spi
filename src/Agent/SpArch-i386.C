@@ -200,7 +200,7 @@ namespace sp {
   size_t
   SpSnippet::emit_call_orig(char* buf,
 														size_t offset) {
-		SpBlock* b = point_->blk();
+		SpBlock* b = point_->get_block();
 		assert(b);
 
     char* p = buf + offset;

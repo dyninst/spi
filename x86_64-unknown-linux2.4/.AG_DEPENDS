@@ -2067,7 +2067,8 @@ SpAddrSpace.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/Instrumenter.h \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/instructionAPI/h/BinaryFunction.h \
- /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpObject.h
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpObject.h \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpParser.h
 SpSnippet.o: \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Agent/SpSnippet.C \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpEvent.h \

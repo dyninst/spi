@@ -32,18 +32,16 @@ namespace sp {
 
     // TODO (wenbin): For now, just statically allocate a 1024-byte buffer,
     // should have a smarter memory allocator.
-    blob_ = (char*)g_as->malloc(pt->obj(), BLOB_SIZE,
-                   OBJ_CAST(pt->obj())->load_addr());
+		assert(g_as);
+		assert(pt);
+    blob_ = (char*)g_as->malloc(pt->get_object(), BLOB_SIZE,
+                   pt->get_object()->load_addr());
   }
 
   // Destructor
   SpSnippet::~SpSnippet() {
   }
 
-  char* SpSnippet::realloc() {
-    char* buf = NULL;
-    return buf;
-  }
 
   // The core part of code generation for the patch area. The basic logic:
   // 1. Relocate call block, if it's indirect call;
@@ -58,14 +56,15 @@ namespace sp {
   char*
   SpSnippet::blob(bool reloc, bool spring) {
 
+		assert(point_);
 		dt::Address ret_addr = point_->ret_addr();
 
     // If this blob is already generated? If so, just return it.
     if (blob_size_ > 0 && blob_) {
+			sp_debug("BLOB EXIST - avoid regenerating it");
       return blob_;
     }
 
-		assert(point_);
 		SpBlock* b = point_->get_block();
 		assert(b);
 
@@ -90,6 +89,7 @@ namespace sp {
     // 3. Call payload before function call
     long param_func = 0;
     long called_func = (long)entry_;
+		assert(g_context);
     if (g_context->allow_ipc()) {
       param_func = (long)entry_;
       called_func = (long)g_context->wrapper_entry();
@@ -208,10 +208,12 @@ namespace sp {
   SpSnippet::spring_blk() {
     if (spring_blk_) return spring_blk_;
 
+		assert(point_);
     size_t min_springblk_size = jump_abs_size() * 2;
 		SpBlock* callblk = point_->get_block();
 
     // Short jump is 2 bytes
+		assert(callblk);
     long after_jmp = callblk->start() + 2;
     bool done = false;
 
@@ -219,7 +221,7 @@ namespace sp {
 						 (long)min_springblk_size);
 
     // Find a nearby block
-		SpObject* obj = OBJ_CAST(callblk->obj());
+		SpObject* obj = callblk->get_object();
 		assert(obj);
 
 		pe::CodeObject* co = obj->co();
@@ -329,7 +331,8 @@ namespace sp {
     spring_size_ += emit_jump_abs(ret_addr, spring_, spring_size_);
 
 		assert(point_->block());
-    sp_debug("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {", (unsigned long)spring_size_, point_->block()->last());
+    sp_debug("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {",
+						 (unsigned long)spring_size_, point_->block()->last());
     sp_debug("%s", g_parser->dump_insn((void*)spring_, spring_size_).c_str());
     sp_debug("}");
 

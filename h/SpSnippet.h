@@ -31,7 +31,6 @@ namespace sp {
 
     // Return the pointer to blob, but blob is empty
     dt::Address buf() const { return (dt::Address)blob_; }
-    char* realloc(); 
 
     // Return the pointer to blob, and fill the blob
     char* blob(bool reloc = false,  bool spring = false);

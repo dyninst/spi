@@ -9,6 +9,17 @@ namespace sp {
 	class SpObject;
 	class SpFunction;
 
+	typedef struct {
+		dt::Address start;
+		dt::Address end;
+		dt::Address offset;
+		string dev;
+		unsigned long inode;
+		int perms;
+		string path;
+	} MemMapping;
+  typedef std::map<dt::Address, MemMapping> MemMappings;
+
 	// -----------------------------------------------------------------------
 	// Parser is to parse the CFG structures of the mutatee process.
 	// This is a default implementation, which parses binary during runtime.
@@ -58,6 +69,10 @@ namespace sp {
     bool is_well_known_lib(string lib);
 
 		ph::PatchMgrPtr mgr() const { return mgr_; }
+
+		MemMappings& mem_maps() { return mem_maps_; }
+
+		bool get_shared_libs();
   protected:
 		// Is this agent library injected (true) or preloaded (false)?
     bool injected_;
@@ -74,10 +89,15 @@ namespace sp {
 
     RealFuncMap real_func_map_;
 
+    MemMappings mem_maps_;
+
 		// Methods
     SpParser();
     void init_dyninst_libs();
 		void init_well_known_libs();
+
+    void update_mem_maps();
+    void dump_mem_maps();
 	};
 
 }

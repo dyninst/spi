@@ -6,6 +6,7 @@
 #include "SpIpcMgr.h"
 #include "SpChannel.h"
 #include "SpUtils.h"
+#include "SpParser.h"
 
 using namespace sp;
 using namespace std;
@@ -51,11 +52,28 @@ namespace {
 		EXPECT_STREQ(buf, "parser_agent_name.so\n");
 		pclose(fp);
 	}
-	*/
+
 
   TEST_F(ParserTest, parser_stripped) {
 		std::string cmd = "LD_PRELOAD=./parser_test_agent.so ./stripped";
 		system(cmd.c_str());
+	}
+
+	*/
+
+  TEST_F(ParserTest, parse_shared_libs) {
+		// std::string cmd = "LD_PRELOAD=./parser_test_agent.so ./indcall";
+		// system(cmd.c_str());
+		sp::SpParser::ptr p = sp::SpParser::create();
+		p->get_shared_libs();
+
+		/*
+		FILE* fp = popen(cmd.c_str(), "r");
+		char buf[1024];
+		EXPECT_TRUE(fgets(buf, 1024, fp) != NULL);
+		EXPECT_STREQ(buf, "OKAY\n");
+		pclose(fp);
+		*/
 	}
 
 }

@@ -31,15 +31,7 @@ class SpContext {
     SpIpcMgr* ipc_mgr() const { return ipc_mgr_; }
     SpPropeller::ptr   init_propeller() const { return init_propeller_; }
 
-
     void get_callstack(FuncSet* func_set);
-
-		// XXX: to remove, by associating info w/ SpBlock 
-    typedef std::set<ph::PatchBlock*> SpringSet;
-    bool in_spring_set(ph::PatchBlock* b) {
-			return (spring_set_.find(b) != spring_set_.end());
-		}
-    void add_spring(ph::PatchBlock* b) { spring_set_.insert(b); }
 
 		// Controlling Instrumentation
     void set_directcall_only(bool b) { directcall_only_ = b; }
@@ -65,8 +57,6 @@ class SpContext {
 
     bool allow_ipc_;
     bool directcall_only_;
-
-    SpringSet spring_set_;
 
     SpContext(SpPropeller::ptr, SpParser::ptr);
 };

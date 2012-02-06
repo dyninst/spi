@@ -20,6 +20,8 @@ namespace sp {
   SpParser::SpParser()
     : injected_(false), exe_obj_(NULL) {
 
+    update_mem_maps();
+
     init_well_known_libs();
     init_dyninst_libs();
 
@@ -99,7 +101,8 @@ namespace sp {
   SpParser::parse() {
 
     // Avoid duplicate parsing. If a shared library is loaded during runtime,
-    // we have to use PatchAPI's loadLibrary method to add this shared library
+    // we have to use PatchAPI's loadLibrary method to add this shared
+		// library
     if (mgr_) return mgr_;
 
     // Get all symtabs in this process
@@ -107,6 +110,7 @@ namespace sp {
     al->refresh();
     std::vector<sb::Symtab*> tabs;
     al->getAllSymtabs(tabs);
+		sp_debug("SYMTABS - %ld symtabs found", tabs.size());
 
     // Determine whether the agent is injected or preloaded.
     //   - true: injected by other process (because libijagent.so is loaded)
@@ -119,6 +123,7 @@ namespace sp {
         break;
       }
     }
+
 
 		PatchObjects patch_objs;
 
@@ -176,6 +181,10 @@ namespace sp {
 #endif
       }
     } // End of symtab iteration
+
+		if (!exe_obj_) {
+			exe_obj_ = patch_objs[0];
+		}
 
     // Initialize PatchAPI stuffs
     SpAddrSpace* as = SpAddrSpace::create(exe_obj_);
@@ -613,4 +622,107 @@ namespace sp {
     *sp = shm->sp;
     *bp = shm->bp;
   }
+
+  // Parse /proc/pid/maps file to build memory mappings
+  void
+  SpParser::update_mem_maps() {
+
+    char maps_file[256];
+    sprintf(maps_file, "/proc/%d/maps", getpid());
+
+    FILE* fp = fopen(maps_file, "r");
+    if (!fp) {
+      sp_perror("FAILED to open memory mapping file %s", maps_file);
+    }
+    char linebuf[2048];
+    while (fgets(linebuf, 2048, fp) != NULL) {
+      char* start_addr_s = linebuf;
+      char* end_addr_s = strchr(linebuf, '-');
+      *end_addr_s = '\0';
+      end_addr_s++;
+
+      char* perms_s = strchr(end_addr_s, ' ');
+      *perms_s = '\0';
+      perms_s++;
+
+      char* offset_s = strchr(perms_s, ' ');
+      *offset_s = '\0';
+      offset_s++;
+
+      char* dev_s = strchr(offset_s, ' ');
+      *dev_s = '\0';
+      dev_s++;
+
+      char* inode_s = strchr(dev_s, ' ');
+      *inode_s = '\0';
+      inode_s++;
+
+      char* pch = strtok(inode_s, " \n\r");
+      inode_s = pch;
+      char* path_s = NULL;
+      if (pch != NULL) {
+        pch = strtok(NULL, " \n\r");
+        if (pch) {
+          path_s = pch;
+        }
+      }
+
+      char* pDummy;
+      dt::Address start = strtoll(start_addr_s, &pDummy, 16);
+
+
+      if (mem_maps_.find(start) == mem_maps_.end()) {
+        MemMapping& mapping = mem_maps_[start];
+        mapping.start = start;
+        mapping.end = strtol(end_addr_s, &pDummy, 16);
+        mapping.offset = strtol(offset_s, &pDummy, 16);
+        mapping.dev = dev_s;
+        mapping.inode = strtol(inode_s, &pDummy, 16);
+        if (path_s) mapping.path = path_s;
+        int perms = 0;
+        int count = 0;
+        if (perms_s[0] == 'r') {
+          perms |= PROT_READ;
+          ++count;
+        }
+        if (perms_s[1] == 'w') {
+          perms |= PROT_WRITE;
+          ++count;
+        }
+        if (perms_s[2] == 'x') {
+          perms |= PROT_EXEC;
+          ++count;
+        }
+        if (count == 3) perms = PROT_NONE;
+        mapping.perms = perms;
+      }
+    }
+    fclose(fp);
+  }
+
+  void
+  SpParser::dump_mem_maps() {
+
+    sp_debug("MMAPS - %lu memory mappings", (unsigned long)mem_maps_.size());
+
+    for (MemMappings::iterator mi = mem_maps_.begin();
+				 mi != mem_maps_.end(); mi++) {
+
+      MemMapping& mapping = mi->second;
+      sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+							 " Inode %lu, Path %s",
+               mapping.start, mapping.end, mapping.offset, mapping.perms,
+               mapping.dev.c_str(), mapping.inode, mapping.path.c_str());
+    }
+  }
+
+	bool SpParser::get_shared_libs() {
+		sb::AddressLookup* al = sb::AddressLookup::createAddressLookup(getpid());
+    al->refresh();
+    std::vector<sb::Symtab*> tabs;
+    al->getAllSymtabs(tabs);
+		sp_debug("SYMTABS - %ld symtabs found", tabs.size());
+
+		return false;
+	}
 }

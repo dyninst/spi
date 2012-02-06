@@ -45,17 +45,23 @@ namespace sp {
 
   void
   SyncEvent::register_event() {
+		bool fail_preload = false;
     if (!g_parser->injected()) {
 #ifndef SP_RELEASE
       sp_debug("PRELOAD - preload agent.so, and instrument main()");
 #endif
 			ph::PatchFunction* f = g_parser->findFunction("main");
-      g_context->init_propeller()->go(f,
-																			g_context->init_entry(),
-																			g_context->init_exit());
+			if (f) {
+        g_context->init_propeller()->go(f,
+																				g_context->init_entry(),
+																				g_context->init_exit());
+			} else {
+				sp_debug("FAIL PRELOAD - try injection ...");
+				fail_preload = true;
+			}
     } // LD_PRELOAD mode
 
-    else {
+    if (g_parser->injected() || fail_preload) {
 
       // Instrument all functions in the call stack.
       FuncSet call_stack;
@@ -68,6 +74,7 @@ namespace sp {
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
+				// We instrument all functions along the call stack, until main
         if (f->name().compare("main") == 0) {
           break;
         }
