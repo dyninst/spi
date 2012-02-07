@@ -46,3 +46,8 @@ TEST_F(UtilsTest, addr_to_pid_without_injector) {
 	pclose(fp);
 }
 
+TEST_F(UtilsTest, get_exe_name) {
+	string exe = sp::get_exe_name();
+	sp_print("%s at pid=%d", exe.c_str(), getpid());
+	while(1);
+}

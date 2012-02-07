@@ -246,6 +246,20 @@ namespace sp {
     return false;
   }
 
+	std::string get_exe_name() {
+    std::string proc_path = "";
+    proc_path += "/proc/";
+    proc_path += Dyninst::itos(getpid());
+    proc_path += "/cmdline";
+
+    std::string content = get_file_text(proc_path);
+
+		// The format for /proc/pid/cmdline is:
+		// full_path_of_exe\0arg1\0arg2\0 ...
+
+		return content;
+	}
+
   // Get text content from a file. If file doesn't exist, return "".
   std::string get_file_text(std::string filename) {
     std::ifstream infile(filename.c_str()) ;

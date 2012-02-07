@@ -66,6 +66,8 @@ namespace sp {
 		// Get text content from a file. If file doesn't exist, return "".
 		std::string get_file_text(std::string filename);
 
+		// Get full path of the executable file
+		std::string get_exe_name();
 // ----------------------------------------------------------------------------- 
 // IPC stuffs
 // -----------------------------------------------------------------------------

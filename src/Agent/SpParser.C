@@ -112,24 +112,31 @@ namespace sp {
     al->getAllSymtabs(tabs);
 		sp_debug("SYMTABS - %ld symtabs found", tabs.size());
 
+    std::set<sb::Symtab*> unique_tabs;
+
     // Determine whether the agent is injected or preloaded.
     //   - true: injected by other process (because libijagent.so is loaded)
     //   - false: preloaded
+		// XXX: The other fuunctionality of this loop is to deduplicate symtabs.
+		//      current impl has some problems ...
     for (std::vector<sb::Symtab*>::iterator i = tabs.begin();
          i != tabs.end(); i++) {
 			sb::Symtab* sym = *i;
+
+			// XXX
+			unique_tabs.insert(sym);
+
+			// sp_debug("%lx - %s", (unsigned long)sym, sym->name().c_str());
       if (sym->name().find("libijagent.so") != string::npos) {
         injected_ = true;
-        break;
       }
     }
-
 
 		PatchObjects patch_objs;
 
     // The main loop to build PatchObject for all dependencies
-    for (std::vector<sb::Symtab*>::iterator i = tabs.begin();
-         i != tabs.end(); i++) {
+    for (std::set<sb::Symtab*>::iterator i = unique_tabs.begin();
+         i != unique_tabs.end(); i++) {
 			sb::Symtab* sym = *i;
 			dt::Address load_addr = 0;
       al->getLoadAddress(sym, load_addr);
@@ -182,9 +189,23 @@ namespace sp {
       }
     } // End of symtab iteration
 
+		// XXX: In the case of executable shared library, we cannot get exe_obj_
+		// via symtabAPI, so we resort to /proc
 		if (!exe_obj_) {
-			exe_obj_ = patch_objs[0];
-		}
+			for (PatchObjects::iterator oi = patch_objs.begin();
+					 oi != patch_objs.end(); oi++) {
+				SpObject* obj = OBJ_CAST(*oi);
+				assert(obj);
+				char* s1 = sp_filename(sp::get_exe_name().c_str());
+				char* s2 = sp_filename(obj->name().c_str());
+				// sp_debug("PARSE EXE - s1=%s, s2 =%s", s1, s2);
+				if (strcmp(s1, s2) == 0) {
+					sp_debug("GOT EXE - %s is an executable shared library", s2);
+					exe_obj_ = obj;
+					break;
+				} // strcmp
+			} // for each obj
+		} // !exe_obj_
 
     // Initialize PatchAPI stuffs
     SpAddrSpace* as = SpAddrSpace::create(exe_obj_);
