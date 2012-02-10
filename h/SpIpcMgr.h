@@ -125,6 +125,7 @@ namespace sp {
     // Return NULL if not a valid IPC channel; otherwise, the channel.
     virtual SpChannel* get_channel(int fd, ChannelRW rw, void* arg = NULL);
 
+		virtual ~SpIpcWorker() {}
   protected:
     // fd-to-SpChannel mapping
     typedef std::map<long, SpChannel*> ChannelMap;

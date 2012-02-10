@@ -8,6 +8,8 @@ namespace sp {
 
 class SpEvent {
   public:
+    virtual ~SpEvent() {}
+
     typedef dyn_detail::boost::shared_ptr<SpEvent> ptr;
     static ptr create() { return ptr(new SpEvent); }
     virtual void register_event();

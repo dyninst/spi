@@ -57,6 +57,8 @@ namespace sp {
     // - SP_RELOC_BLK, 
     // - SP_SPRINGBOARD
 		virtual InstallMethod install_method() const = 0;
+
+		virtual ~InstWorker() {}
 	protected:
 		// Install the instrumentation
 		virtual bool install(SpPoint* pt) = 0;

@@ -350,41 +350,10 @@ namespace sp {
   }
 
   // Find function by name.
+  // If allow_plt = true, then we may return a plt entry;
+  // otherwise, we strictly skip plt entries.
 	ph::PatchFunction*
-  SpParser::findFunction(string name) {
-#if 0
-    if (real_func_map_.find(name) != real_func_map_.end()) {
-      return real_func_map_[name];
-    }
-
-		ph::AddrSpace* as = mgr_->as();
-    for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
-				 ci != as->objMap().end(); ci++) {
-
-			ph::PatchObject* obj = ci->second;
-			pe::CodeObject* co = obj->co();
-			pe::CodeObject::funclist& all = co->funcs();
-			pe::SymtabCodeSource* cs = (pe::SymtabCodeSource*)obj->co()->cs();
-			sb::Symtab* sym = cs->getSymtabObject();
-      if (is_well_known_lib(sp_filename(sym->name().c_str()))) {
-        continue;
-      }
-
-      for (pe::CodeObject::funclist::iterator fit = all.begin();
-					 fit != all.end(); fit++) {
-        if ((*fit)->name().compare(name) == 0) {
-					pe::Region* region = sym->findEnclosingRegion((*fit)->addr());
-          if (region && region->getRegionName().compare(".plt") == 0) {
-            continue;
-          }
-					ph::PatchFunction* found = obj->getFunc(*fit);
-          real_func_map_[name] = found;
-          return found;
-        }
-      }
-    }
-    return NULL;
-#endif
+  SpParser::findFunction(string name, bool allow_plt) {
 #ifndef SP_RELEASE
     sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
 #endif
@@ -403,9 +372,9 @@ namespace sp {
       if (!sym) {
         sp_perror("Failed to get Symtab object");
       }
-#ifndef SP_RELEASE
-      sp_debug("IN OBJECT - %s", sym->name().c_str());
-#endif
+
+      // sp_debug("IN OBJECT - %s", sym->name().c_str());
+
       if (is_well_known_lib(sp_filename(sym->name().c_str()))) {
 #ifndef SP_RELEASE
         sp_debug("SKIP - well known lib %s", sp_filename(sym->name().c_str()));
@@ -419,7 +388,7 @@ namespace sp {
 
         if ((*fit)->name().compare(name) == 0) {
 					sb::Region* region = sym->findEnclosingRegion((*fit)->addr());
-          if (region && region->getRegionName().compare(".plt") == 0) {
+          if (allow_plt && region && (region->getRegionName().compare(".plt") == 0)) {
 
 #ifndef SP_RELEASE
             sp_debug("A PLT, SKIP - %s at %lx", name.c_str(), (*fit)->addr());
@@ -435,6 +404,8 @@ namespace sp {
     } // For each object
 
     if (func_set.size() == 1) {
+			sp_debug("FOUND - %s in object %s", name.c_str(),
+							 static_cast<SpFunction*>((*func_set.begin()))->get_object()->name().c_str());
       return *func_set.begin();
     }
 #ifndef SP_RELEASE

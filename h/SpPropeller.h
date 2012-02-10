@@ -11,6 +11,7 @@ class SpPropeller {
     typedef dyn_detail::boost::shared_ptr<SpPropeller> ptr;
     static ptr create();
     SpPropeller();
+		virtual ~SpPropeller() {}
 
     bool go(ph::PatchFunction* func,
             PayloadFunc entry,

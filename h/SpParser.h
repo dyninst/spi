@@ -47,7 +47,7 @@ namespace sp {
     ph::PatchFunction* findFunction(dt::Address addr);
 
 		// Find function by its name
-    ph::PatchFunction* findFunction(string name);
+    ph::PatchFunction* findFunction(string name, bool allow_plt=false);
 
 		// Get callee from a call point
     SpFunction* callee(SpPoint* pt,
