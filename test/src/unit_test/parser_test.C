@@ -61,19 +61,10 @@ namespace {
 
 	*/
 
-  TEST_F(ParserTest, parse_shared_libs) {
-		// std::string cmd = "LD_PRELOAD=./parser_test_agent.so ./indcall";
-		// system(cmd.c_str());
-		sp::SpParser::ptr p = sp::SpParser::create();
-		p->get_shared_libs();
+  TEST_F(ParserTest, parse_from_file) {
 
-		/*
-		FILE* fp = popen(cmd.c_str(), "r");
-		char buf[1024];
-		EXPECT_TRUE(fgets(buf, 1024, fp) != NULL);
-		EXPECT_STREQ(buf, "OKAY\n");
-		pclose(fp);
-		*/
+		std::string cmd = "LD_PRELOAD=./parser_test_agent.so ./indcall";
+		system(cmd.c_str());
 	}
 
 }

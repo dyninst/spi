@@ -5,11 +5,22 @@ namespace sp {
 
   // Get the object's name
   std::string SpObject::name() {
-    if (name_.size() > 0) return name_;
-
-		pe::SymtabCodeSource* cs = (pe::SymtabCodeSource*)co()->cs();
-		sb::Symtab* sym = cs->getSymtabObject();
-    if (sym) name_ = sym->name();
-    return name_;
+		assert(symtab_);
+    return symtab_->name();
   }
+
+	bool
+	SpObject::serialize(const char* target_dir,
+											SpObject* obj) {
+
+		return true;
+	}
+
+	bool
+	SpObject::deserialize(const char* target_dir,
+												const char* target_obj,
+												SpObject* obj) {
+		return true;
+	}
+
 }

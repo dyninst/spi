@@ -75,6 +75,7 @@
 namespace Dyninst {
 	namespace SymtabAPI {
 		class Symbol;
+		class Symtab;
 	}
 
 	namespace ParseAPI {
@@ -104,6 +105,7 @@ namespace sp {
 	typedef std::set<pid_t> PidSet;
 	typedef std::set<std::string> StringSet;
 
+	typedef std::set<Dyninst::SymtabAPI::Symtab*> SymtabSet;
 	typedef std::vector<Dyninst::PatchAPI::Point*> Points;
 	typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;
 	typedef std::set<Dyninst::PatchAPI::PatchBlock*> BlkSet;

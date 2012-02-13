@@ -20,10 +20,10 @@ namespace sp {
 	} MemMapping;
   typedef std::map<dt::Address, MemMapping> MemMappings;
 
-	// -----------------------------------------------------------------------
+	// -------------------------------------------------------------------
 	// Parser is to parse the CFG structures of the mutatee process.
 	// This is a default implementation, which parses binary during runtime.
-	// -----------------------------------------------------------------------
+	// -------------------------------------------------------------------
 	class SpParser : public ph::CFGMaker {
   public:
     typedef dyn_detail::boost::shared_ptr<SpParser> ptr;
@@ -59,20 +59,21 @@ namespace sp {
 		// Dump instructions from a buffer
     string dump_insn(void* addr, size_t size);
 
-		// Check if this agent library is injected (true) or is preloaded (false)
+		// Check if this agent library is injected (true) or is
+    // preloaded (false)
     bool injected() const { return injected_; }
 
 		// Check if the library is a dyninst library (lib name is w/o path)
     bool is_dyninst_lib(string lib);
 
-		// Check if the library is a well known library (lib name is w/o path)
+		// Check if the library is a well known library (lib name is w/o
+		// path)
     bool is_well_known_lib(string lib);
 
 		ph::PatchMgrPtr mgr() const { return mgr_; }
 
 		MemMappings& mem_maps() { return mem_maps_; }
 
-		bool get_shared_libs();
   protected:
 		// Is this agent library injected (true) or preloaded (false)?
     bool injected_;
@@ -98,6 +99,25 @@ namespace sp {
 
     void update_mem_maps();
     void dump_mem_maps();
+
+		// All about parsing
+		sb::AddressLookup* get_runtime_symtabs(SymtabSet& symtabs);
+
+		bool create_patchobjs(SymtabSet& symtabs,
+													sb::AddressLookup* al,
+													PatchObjects& patch_objs);
+
+		SpObject* create_object(sb::Symtab* symtab,
+														dt::Address load_addr);
+		SpObject* create_object_from_runtime(sb::Symtab* symtab,
+																				 dt::Address load_addr);
+		SpObject* create_object_from_file(sb::Symtab* symtab,
+																			dt::Address load_addr);
+
+		SpObject* get_exe_from_procfs(PatchObjects& patch_objs);
+
+		ph::PatchMgrPtr create_mgr(PatchObjects& patch_objs);
+
 	};
 
 }

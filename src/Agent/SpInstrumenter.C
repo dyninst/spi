@@ -61,7 +61,7 @@ namespace sp {
 		workers_.push_back(new RelocCallInsnWorker);
 		workers_.push_back(new RelocCallBlockWorker);
 		workers_.push_back(new SpringboardWorker);
-		// workers_.push_back(new TrapWorker);
+		workers_.push_back(new TrapWorker);
   }
 
   SpInstrumenter::~SpInstrumenter() {
