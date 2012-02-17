@@ -13,8 +13,8 @@ AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
   agent->set_init_entry("test_entry");
-  agent->set_parse_only(true);
-  agent->set_directcall_only(true);
+  // agent->set_parse_only(true);
+  // agent->set_directcall_only(true);
   agent->go();
 }
 

@@ -3,6 +3,7 @@
 #include "SpParser.h"
 #include "SpContext.h"
 #include "SpPropeller.h"
+#include "SpInjector.h"
 
 namespace sp {
 
@@ -80,6 +81,9 @@ namespace sp {
 
   SpContext::~SpContext() {
     delete ipc_mgr_;
+
+		int* fork_load = (int*)sp::SpInjector::get_shm(1989, sizeof(int));
+		*fork_load = 0;
   }
 
   void

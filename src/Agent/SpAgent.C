@@ -2,6 +2,7 @@
 #include "SpUtils.h"
 #include "SpContext.h"
 #include "SpAddrSpace.h"
+#include "SpInjector.h"
 
 namespace sp {
 
@@ -93,9 +94,9 @@ namespace sp {
 	}
 
 	// Here We Go! Self-propelling magic happens!
+
 	void
 	SpAgent::go() {
-
 		sp_debug("==== Start Self-propelled instrumentation @ Process %d ====",
 						 getpid());
 

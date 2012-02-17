@@ -6,7 +6,26 @@
 // PatchAPI stuffs.
 namespace sp {
 
+	// Structures for memory allocator
+	typedef std::list<unsigned> FreeList;
+
+	typedef enum {
+		SMALL_BUF,
+		MID_BUF,
+		BIG_BUF
+	} BufType;
+
+	typedef std::map<dt::Address, BufType> BufTypeMap;
+
+	typedef struct {
+		dt::Address base;   // The base address for all these buffers
+		size_t buf_size;    // Each buffer's size
+		FreeList list;      // A list of offsets for free buffers
+	} FreeBufs;
+
   class SpObject : public ph::PatchObject {
+		friend class SpParser;
+		friend class SpAddrSpace;
   public:
 
     SpObject(pe::CodeObject* o,
@@ -27,17 +46,20 @@ namespace sp {
 		// Get this object's associated symtab
 		sb::Symtab* symtab() const { return symtab_; }
 
-		// Serialization / Deserialization
-		static bool serialize(const char* target_dir,
-						              SpObject* obj);
-		static bool deserialize(const char* target_dir,
-														const char* target_obj,
-														SpObject* obj);
   protected:
     dt::Address load_addr_;
 		std::string name_;
-
 		sb::Symtab* symtab_;
+
+		FreeBufs small_freebufs_;  // Small buffers
+		FreeBufs mid_freebufs_;    // Midium buffers
+		FreeBufs big_freebufs_;    // Big buffers
+		BufTypeMap alloc_bufs_;    // To facilitate future deallocation
+
+		void init_memory_alloc(dt::Address base,
+													 size_t size);
+		dt::Address get_freebuf(size_t size);
+		bool put_freebuf(dt::Address buf);
 };
 
 }

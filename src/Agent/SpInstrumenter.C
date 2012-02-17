@@ -34,7 +34,7 @@ namespace sp {
 		// Relocate call block
 		if (getenv("SP_TEST_RELOCBLK")) {
 			sp_debug("ONLY TEST RELOCBLK WORKER");
-			workers_.push_back(new RelocCallInsnWorker);
+			workers_.push_back(new RelocCallBlockWorker);
 		}
 
 		// Only use springboard
@@ -488,7 +488,10 @@ namespace sp {
                                                    insn, 0, true);
 
       return install_jump_to_block(pt, insn, insn_size);
-    }
+    } else {
+      sp_debug("CALL BLK TOO SMALL - %ld < %ld", b->size(),
+							 pt->snip()->jump_abs_size());
+		}
 
     // Well, let's try spring board next ...
     sp_debug("FAILED RELOC BLK - try other worker");

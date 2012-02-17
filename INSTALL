@@ -24,3 +24,8 @@ Environment variables related to self-propelled instrumentation:
 2.1. SP_DIR
 2.2. SP_PLATFORM
 2.3. SP_PARSE_DIR
+
+Shared memory id used:
+1. 1986
+2. 1985
+3. 1989 - disallow_fork_load

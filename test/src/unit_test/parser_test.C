@@ -59,12 +59,34 @@ namespace {
 		system(cmd.c_str());
 	}
 
-	*/
 
   TEST_F(ParserTest, parse_from_file) {
 
 		std::string cmd = "LD_PRELOAD=./parser_test_agent.so ./indcall";
 		system(cmd.c_str());
 	}
+	*/
 
+  TEST_F(ParserTest, obj_serialization) {
+		// Get runtime symtabs
+		sb::AddressLookup* al =
+			sb::AddressLookup::createAddressLookup(getpid());
+		EXPECT_TRUE(al != NULL);
+
+    al->refresh();
+    std::vector<sb::Symtab*> tabs;
+    al->getAllSymtabs(tabs);
+		EXPECT_TRUE(tabs.size() > 0);
+
+		// Build CodeObjects
+    for (std::vector<sb::Symtab*>::iterator i = tabs.begin();
+				 i != tabs.end(); i++) {
+			sb::Symtab* sym = *i;
+			ASSERT_TRUE(sym);
+			sp_debug("Parsing %s", sym->name().c_str());
+			pe::SymtabCodeSource* scs = new pe::SymtabCodeSource(sym);
+			pe::CodeObject* co = new pe::CodeObject(scs);
+			co->parse();
+    } // End of symtab iteration
+	}
 }

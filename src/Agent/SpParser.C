@@ -470,7 +470,9 @@ namespace sp {
     if (!fp) {
       sp_perror("FAILED to open memory mapping file %s", maps_file);
     }
+
     char linebuf[2048];
+		dt::Address previous_end = 0;
     while (fgets(linebuf, 2048, fp) != NULL) {
       char* start_addr_s = linebuf;
       char* end_addr_s = strchr(linebuf, '-');
@@ -509,11 +511,14 @@ namespace sp {
 
       if (mem_maps_.find(start) == mem_maps_.end()) {
         MemMapping& mapping = mem_maps_[start];
+				mapping.previous_end = previous_end;
         mapping.start = start;
         mapping.end = strtol(end_addr_s, &pDummy, 16);
         mapping.offset = strtol(offset_s, &pDummy, 16);
         mapping.dev = dev_s;
         mapping.inode = strtol(inode_s, &pDummy, 16);
+
+				previous_end = mapping.end;
         if (path_s) mapping.path = path_s;
         int perms = 0;
         int count = 0;
@@ -547,10 +552,11 @@ namespace sp {
 
       MemMapping& mapping = mi->second;
       sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
-							 " Inode %lu, Path %s",
+							 " Inode %lu, Path %s, previous_end %lx",
                mapping.start, mapping.end, mapping.offset,
 							 mapping.perms, mapping.dev.c_str(), mapping.inode,
-							 mapping.path.c_str());
+							 mapping.path.c_str(),
+							 mapping.previous_end);
     }
   }
 
@@ -678,6 +684,24 @@ namespace sp {
     for (PatchObjects::iterator i = patch_objs.begin();
          i != patch_objs.end(); i++) {
       if (*i != exe_obj_) as->loadLibrary(*i);
+
+			SpObject* obj = static_cast<SpObject*>(*i);
+			assert(obj);
+
+      MemMapping& mapping = mem_maps_[obj->load_addr()];
+      sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+							 " Inode %lu, Path %s, previous_end %lx",
+               mapping.start, mapping.end, mapping.offset,
+							 mapping.perms, mapping.dev.c_str(), mapping.inode,
+							 mapping.path.c_str(),
+							 mapping.previous_end);
+
+			size_t size = mapping.start - mapping.previous_end;
+			size_t ps = getpagesize();
+      size = ((size + ps -1) & ~(ps - 1));
+			size = (size <= 2147483646 ? size : 2147483646);
+			dt::Address base = mapping.start - size;
+			obj->init_memory_alloc(base, size);
     }
 
 		return mgr;

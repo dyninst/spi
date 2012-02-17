@@ -9,8 +9,6 @@ namespace sp {
   // TODO (wenbin): should update mapped memory area dynamically
   SpAddrSpace::SpAddrSpace()
 		: ph::AddrSpace() {
-    //update_mem_maps();
-    //dump_mem_maps();
   }
 
   // Standard PatchAPI stuff ...
@@ -32,32 +30,20 @@ namespace sp {
   SpAddrSpace::malloc(ph::PatchObject* obj,
 											size_t size,
 											dt::Address near) {
-    dt::Address buf = 0;
-    buf = (dt::Address)::malloc(size+ getpagesize() -1);
-    if (!buf) return 0;
-    buf = (((dt::Address)buf + getpagesize()-1) & ~(getpagesize()-1));
-    return buf;
+		SpObject* o = OBJ_CAST(obj);
+		assert(o);
 
-    // TODO (wenbin): should have a better memory allocation subsystem
-    dt::Address ps = getpagesize();
-    dt::Address r_near = ((near + ps -1) & ~(ps - 1));
-    dt::Address r_size = ((size + ps -1) & ~(ps - 1));
-    buf = r_near;
-    void* m = NULL;
-    int fd = -1;
-    while (!m || (long)m == -1) {
-      buf -= r_size;
-      sp_print("looking for %lx", buf);
-      m = mmap((void*)buf,
-               r_size,
-               PROT_WRITE | PROT_READ,
-               MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS,
-               fd,
-               0);
-    }
-    if (!m) return 0;
-    // sp_print("get buf: %lx", m);
-    return (dt::Address)m;
+		// Allocate a nearby buffer
+		dt::Address buf = o->get_freebuf(size);
+		if (buf) {
+			sp_debug("SUCCESSFUL TO GET A CLOSE BUFFER to %lx", near);
+			return buf;
+		}
+
+		sp_debug("FAILED TO GET A CLOSE BUFFER %lx", buf);
+		// If the above effort fails, we resort to malloc
+    buf = (dt::Address)::malloc(size);
+    return buf;
   }
 
   // Copy a buffer to another buffer.
@@ -73,9 +59,12 @@ namespace sp {
   bool
   SpAddrSpace::free(ph::PatchObject* obj,
 										dt::Address orig) {
-    // TODO (wenbin): should implement uninstrumentation and deallocation
-    // of patch area.
-    ::free((void*)orig);
+		SpObject* o = static_cast<SpObject*>(obj);
+		assert(o);
+		if (!o->put_freebuf(orig)) {
+			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", orig);
+			::free((void*)orig);
+		}
     return true;
   }
 

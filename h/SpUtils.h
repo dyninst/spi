@@ -92,6 +92,11 @@ namespace sp {
 	bool get_local_address(int fd, sockaddr_storage* out);
 	bool get_remote_address(int fd, sockaddr_storage* out);
 
+// ---------------------------------------------------------------------
+// Serialization
+// ---------------------------------------------------------------------
+	bool serialize_co(pe::CodeObject* co, const char* dir);
+	pe::CodeObject* deserialize_co(const char* dir, const char* file);
 }
 
 #endif /* _SPUTILS_H_ */

@@ -30,13 +30,11 @@ class SpAddrSpace : public ph::AddrSpace {
     bool restore_range_perm(dt::Address addr,
                             size_t      length);
 
-    void sp_init(ph::PatchObject*);
-
     void loadLibrary(ph::PatchObject*);
+
   protected:
 
     SpAddrSpace();
-
 };
 
 }

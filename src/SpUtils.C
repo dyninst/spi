@@ -59,9 +59,9 @@ namespace sp {
   }
 
 
-  // -----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------
   // Determine the size of a long integer
-  // -----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------
   bool is_disp32(long d) {
     const long max_int32 = 2147483646;
     const long min_int32 = -2147483647;
@@ -397,4 +397,18 @@ namespace sp {
     }
     return true;
   }
+
+// ------------------------------------------------------------------- 
+// Serialization for CodeObject
+// -------------------------------------------------------------------
+	bool
+	serialize_co(pe::CodeObject* co, const char* dir) {
+		return false;
+	}
+
+	pe::CodeObject*
+	deserialize_co(const char* dir, const char* file) {
+		return NULL;
+	}
 }
+

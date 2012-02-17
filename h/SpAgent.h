@@ -10,7 +10,7 @@
 
 namespace sp {
 
-// ----------------------------------------------------------------------------- 
+// --------------------------------------------------------------------------
 // Agent is to manage Agent's configuration parameters, including:
 // - The event that causes the activation of instrumentation.
 //   - Default: the callees of current function
@@ -20,7 +20,7 @@ namespace sp {
 //   - Default: print out the current function name
 // - The parser to parse CFG structures of current running process.
 //   - Default: runtime parsing
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 	class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
 		friend class SpContext;
   public:

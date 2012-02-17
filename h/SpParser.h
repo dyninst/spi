@@ -10,6 +10,7 @@ namespace sp {
 	class SpFunction;
 
 	typedef struct {
+		dt::Address previous_end;  // previous object's end addr
 		dt::Address start;
 		dt::Address end;
 		dt::Address offset;
@@ -35,7 +36,7 @@ namespace sp {
     virtual ph::PatchMgrPtr parse();
 
 		// Get the PatchObject that represents the executable
-    ph::PatchObject* exe_obj();
+    ph::PatchObject* exe_obj() const { return exe_obj_; }
 
 		// Get the agent library's name
     string get_agent_name();
