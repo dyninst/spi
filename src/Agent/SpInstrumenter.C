@@ -203,6 +203,7 @@ namespace sp {
   bool
   TrapWorker::install(SpPoint* pt) {
 		assert(pt);
+		assert(pt->snip());
 
 		SpBlock* b = pt->get_block();
 		assert(b);
@@ -219,7 +220,9 @@ namespace sp {
     char* call_addr = (char*)b->last();
 		assert(call_addr);
 
-    char* blob = pt->snip()->blob();
+    char* blob = (char*)pt->snip()->buf(TrapWorker::est_blob_size());
+		assert(blob);
+		pt->snip()->blob();
     if (!blob) {
 			sp_debug("FAILED BLOB - failed to generate blob for call insn %lx",
 							 (unsigned long)call_addr);

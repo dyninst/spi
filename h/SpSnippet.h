@@ -30,7 +30,7 @@ namespace sp {
     ~SpSnippet();
 
     // Return the pointer to blob, but blob is empty
-    dt::Address buf() const { return (dt::Address)blob_; }
+    dt::Address buf(size_t estimate_size = 0);
 
     // Return the pointer to blob, and fill the blob
     char* blob(bool reloc = false,  bool spring = false);

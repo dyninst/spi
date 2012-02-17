@@ -473,6 +473,7 @@ namespace sp {
 
     char linebuf[2048];
 		dt::Address previous_end = 0;
+
     while (fgets(linebuf, 2048, fp) != NULL) {
       char* start_addr_s = linebuf;
       char* end_addr_s = strchr(linebuf, '-');
@@ -517,6 +518,14 @@ namespace sp {
         mapping.offset = strtol(offset_s, &pDummy, 16);
         mapping.dev = dev_s;
         mapping.inode = strtol(inode_s, &pDummy, 16);
+
+				if (previous_end != mapping.start) {
+					FreeInterval interval;
+					interval.start = previous_end;
+					interval.end = mapping.start;
+					interval.used = false;
+					free_intervals_.push_back(interval);
+				}
 
 				previous_end = mapping.end;
         if (path_s) mapping.path = path_s;
@@ -681,6 +690,8 @@ namespace sp {
 																							 new SpPointMaker);
 		assert(mgr);
 
+		dump_mem_maps();
+		dump_free_intervals();
     for (PatchObjects::iterator i = patch_objs.begin();
          i != patch_objs.end(); i++) {
       if (*i != exe_obj_) as->loadLibrary(*i);
@@ -696,11 +707,17 @@ namespace sp {
 							 mapping.path.c_str(),
 							 mapping.previous_end);
 
-			size_t size = mapping.start - mapping.previous_end;
+			FreeInterval* interval = NULL;
+			if (!get_closest_interval(mapping.start, &interval)) {
+				sp_debug("FAILED TO GET FREE INTERVAL - for %lx", mapping.start);
+				continue;
+			}
+			assert(interval);
+			size_t size = interval->size();
 			size_t ps = getpagesize();
       size = ((size + ps -1) & ~(ps - 1));
 			size = (size <= 2147483646 ? size : 2147483646);
-			dt::Address base = mapping.start - size;
+			dt::Address base = interval->end - size;
 			obj->init_memory_alloc(base, size);
     }
 
@@ -788,4 +805,32 @@ namespace sp {
 		return obj;
 	}
 
+	void
+	SpParser::dump_free_intervals() {
+		for (FreeIntervalList::iterator i = free_intervals_.begin();
+				 i != free_intervals_.end(); i++) {
+			sp_debug("FREE INTERVAL - [%lx ~ %lx], used %d",
+							 (*i).start, (*i).end, (*i).used);
+		}
+	}
+
+	bool
+	SpParser::get_closest_interval(dt::Address addr,
+																 FreeInterval** interval) {
+		FreeInterval* previous = NULL;
+		for (FreeIntervalList::iterator i = free_intervals_.begin();
+				 i != free_intervals_.end(); i++) {
+			if ((*i).end <= addr) {
+				previous = &(*i);
+				continue;
+			} else {
+				if (!previous) return false;
+				if (previous->used) return false;
+				*interval = previous;
+				(*interval)->used = true;
+				return true;
+			}
+		}
+		return false;
+	} // get_closest_interval
 }

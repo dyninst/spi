@@ -26,7 +26,9 @@ namespace sp {
 			point_(pt),
 			entry_(entry),
 			exit_(exit),
+			blob_(NULL),
       blob_size_(0),
+			spring_(NULL),
 			spring_size_(0),
 			spring_blk_(NULL)	{
 
@@ -34,8 +36,10 @@ namespace sp {
     // should have a smarter memory allocator.
 		assert(g_as);
 		assert(pt);
+		/*
     blob_ = (char*)g_as->malloc(pt->get_object(), BLOB_SIZE,
                    pt->get_object()->load_addr());
+		*/
   }
 
   // Destructor
@@ -339,5 +343,22 @@ namespace sp {
     return spring_;
   }
 
+  dt::Address
+	SpSnippet::buf(size_t estimate_size) {
+		assert(point_);
+		SpObject* obj = point_->get_object();
+		assert(obj);
+
+		if (estimate_size == 0) {
+			return (dt::Address)blob_;
+		} else if (blob_) {
+			g_as->free(obj, (dt::Address)blob_);
+		}
+
+		blob_ = (char*)g_as->malloc(obj, estimate_size,
+																obj->load_addr());
+		assert(blob_);
+		return (dt::Address)blob_;
+	}
 
 }

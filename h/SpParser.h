@@ -21,6 +21,14 @@ namespace sp {
 	} MemMapping;
   typedef std::map<dt::Address, MemMapping> MemMappings;
 
+	typedef struct {
+		dt::Address start;
+		dt::Address end;
+		dt::Address size() { return (end - start); }
+		bool used;
+	} FreeInterval;
+	typedef std::list<FreeInterval> FreeIntervalList;
+
 	// -------------------------------------------------------------------
 	// Parser is to parse the CFG structures of the mutatee process.
 	// This is a default implementation, which parses binary during runtime.
@@ -92,6 +100,7 @@ namespace sp {
     RealFuncMap real_func_map_;
 
     MemMappings mem_maps_;
+		FreeIntervalList free_intervals_;
 
 		// Methods
     SpParser();
@@ -100,6 +109,9 @@ namespace sp {
 
     void update_mem_maps();
     void dump_mem_maps();
+    void dump_free_intervals();
+		bool get_closest_interval(dt::Address addr,
+															FreeInterval** interval);
 
 		// All about parsing
 		sb::AddressLookup* get_runtime_symtabs(SymtabSet& symtabs);

@@ -13,16 +13,33 @@ namespace sp {
 		sp_debug("INIT MEMORY ALLOC");
 
 		// MMap this big buffer
-		void* m = mmap((void*)base,
-									 size,
-									 PROT_WRITE | PROT_READ,
-									 MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS,
-									 0,
-									 0);
-		if (!m) {
+		void* m = MAP_FAILED;
+		m = mmap((void*)base,
+						 size,
+						 PROT_WRITE | PROT_READ | PROT_EXEC,
+						 MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS,
+						 0,
+						 0);
+
+		while(m == MAP_FAILED) {
+			base += getpagesize();
+			size -= getpagesize();
+			if ((long)size < 0) break;
+			m = mmap((void*)base,
+							 size,
+							 PROT_WRITE | PROT_READ | PROT_EXEC,
+							 MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS,
+							 0,
+							 0);
+		}
+
+		if (m == MAP_FAILED) {
 			sp_debug("FAILED TO MAP TO %lx (size %ld)",
 							 base, size);
 			return;
+		} else {
+			sp_debug("SUCCEED TO MAP TO %lx (size %ld)",
+							 (long)m, size);
 		}
 
 		const double small_buf_num_ratio = 0.8;

@@ -78,6 +78,7 @@ namespace sp {
 
 		// For trap handler
 		static void trap_handler(int sig, siginfo_t* info, void* c);
+		static size_t est_blob_size();
 
 		virtual bool install(SpPoint* pt);
 	};

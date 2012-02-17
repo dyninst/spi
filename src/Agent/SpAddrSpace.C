@@ -36,13 +36,15 @@ namespace sp {
 		// Allocate a nearby buffer
 		dt::Address buf = o->get_freebuf(size);
 		if (buf) {
-			sp_debug("SUCCESSFUL TO GET A CLOSE BUFFER to %lx", near);
+			sp_debug("SUCCESSFUL TO GET A CLOSE BUFFER to %lx - %lx allocaed",
+							 near, buf);
 			return buf;
 		}
 
-		sp_debug("FAILED TO GET A CLOSE BUFFER %lx", buf);
 		// If the above effort fails, we resort to malloc
     buf = (dt::Address)::malloc(size);
+		assert(buf);
+		sp_debug("FAILED TO GET A CLOSE BUFFER %lx - %lx malloced", near, buf);
     return buf;
   }
 

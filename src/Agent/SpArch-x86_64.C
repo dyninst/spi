@@ -5,6 +5,7 @@
 #include "SpContext.h"
 #include "SpSnippet.h"
 #include "SpAgentCommon.h"
+#include "SpInstrumenter.h"
 
 namespace sp {
 
@@ -917,4 +918,8 @@ namespace sp {
     return get_saved_reg(Dyninst::x86_64::rax);
   }
 
+	size_t
+	TrapWorker::est_blob_size() {
+		return 100;
+	}
 }
