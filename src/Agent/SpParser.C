@@ -699,6 +699,8 @@ namespace sp {
 			SpObject* obj = static_cast<SpObject*>(*i);
 			assert(obj);
 
+			// Bind preallocated close free buffers to each object
+
       MemMapping& mapping = mem_maps_[obj->load_addr()];
       sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
 							 " Inode %lu, Path %s, previous_end %lx",
@@ -715,8 +717,14 @@ namespace sp {
 			assert(interval);
 			size_t size = interval->size();
 			size_t ps = getpagesize();
-      size = ((size + ps -1) & ~(ps - 1));
+
+			sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
+							 "rounded size %ld", interval->start, interval->end,
+							 interval->size(), size);
+
 			size = (size <= 2147483646 ? size : 2147483646);
+      size = ((size + ps -1) & ~(ps - 1));
+
 			dt::Address base = interval->end - size;
 			obj->init_memory_alloc(base, size);
     }

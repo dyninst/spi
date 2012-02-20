@@ -62,6 +62,15 @@ namespace sp {
 	protected:
 		// Install the instrumentation
 		virtual bool install(SpPoint* pt) = 0;
+		virtual size_t est_blob_size(SpPoint* pt) = 0;
+
+		// The base size of generated binary code (excluding relocated insns)
+
+		// For relocating an insn
+		static size_t base_est_reloc_insn_size(SpPoint* pt);
+
+		// For relocating a block
+		static size_t base_est_reloc_blk_size(SpPoint* pt);
 	};
 
 	// Overwrite call insn with a trap instruction
@@ -76,11 +85,12 @@ namespace sp {
 		typedef std::map<dt::Address, SpSnippet::ptr> InstMap;
 		static InstMap inst_map_;
 
+		virtual bool install(SpPoint* pt);
+		virtual size_t est_blob_size(SpPoint* pt);
+
 		// For trap handler
 		static void trap_handler(int sig, siginfo_t* info, void* c);
-		static size_t est_blob_size();
 
-		virtual bool install(SpPoint* pt);
 	};
 
 	// Overwrite call insn with a short jump
@@ -93,6 +103,7 @@ namespace sp {
 		virtual InstallMethod install_method() const { return SP_RELOC_INSN; }
 	protected:
 		virtual bool install(SpPoint* pt);
+		virtual size_t est_blob_size(SpPoint* pt);
 	};
 
 	// Overwrite call block with a short jump or a long jump
@@ -105,6 +116,7 @@ namespace sp {
 		virtual InstallMethod install_method() const { return SP_RELOC_BLK; }
 	protected:
 		virtual bool install(SpPoint* pt);
+		virtual size_t est_blob_size(SpPoint* pt);
 		
 		bool install_jump_to_block(SpPoint* pt, char* jump_insn,
 															 size_t insn_size);
@@ -121,6 +133,7 @@ namespace sp {
 		virtual InstallMethod install_method() const { return SP_SPRINGBOARD; }
 	protected:
 		virtual bool install(SpPoint* pt);
+		virtual size_t est_blob_size(SpPoint* pt);
 	};
 
 }

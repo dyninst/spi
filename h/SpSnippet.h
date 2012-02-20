@@ -30,13 +30,15 @@ namespace sp {
     ~SpSnippet();
 
     // Return the pointer to blob, but blob is empty
-    dt::Address buf(size_t estimate_size = 0);
+		// If estimate_size is non-zero, we (re)allocate blob
+    dt::Address get_blob(size_t estimate_size = 0);
 
     // Return the pointer to blob, and fill the blob
-    char* blob(bool reloc = false,  bool spring = false);
+    char* build_blob(size_t est_size,
+										 bool reloc = false);
 
     // Return the pointer to spring, and fill in spring
-    char* spring(dt::Address ret_addr);
+    char* spring(SpBlock* spring_blk);
 
     // blob size
     size_t size() const { return blob_size_; }

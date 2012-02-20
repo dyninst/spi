@@ -220,9 +220,8 @@ namespace sp {
     char* call_addr = (char*)b->last();
 		assert(call_addr);
 
-    char* blob = (char*)pt->snip()->buf(TrapWorker::est_blob_size());
-		assert(blob);
-		pt->snip()->blob();
+		size_t est_size = est_blob_size(pt);
+		char* blob = pt->snip()->build_blob(est_size);
     if (!blob) {
 			sp_debug("FAILED BLOB - failed to generate blob for call insn %lx",
 							 (unsigned long)call_addr);
@@ -280,7 +279,7 @@ namespace sp {
     SpSnippet::ptr sp_snip = inst_map[pc];
 		assert(sp_snip);
 
-    char* blob = (char*)sp_snip->buf();
+    char* blob = (char*)sp_snip->get_blob();
 		assert(sp_snip);
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
@@ -340,9 +339,12 @@ namespace sp {
     }
 
     // 3. is the relative address to snippet within 4-byte?
-		assert(pt->snip());
-		assert(pt->snip()->buf());
-    long rel_addr = (long)pt->snip()->buf() - (long)call_insn_addr;
+		SpSnippet::ptr snip = pt->snip();
+		assert(snip);
+		size_t est_size = est_blob_size(pt);
+		dt::Address blob = snip->get_blob(est_size);
+		assert(blob);
+    long rel_addr = (long)blob - (long)call_insn_addr;
     if (!sp::is_disp32(rel_addr)) {
       sp_debug("NOT 4-byte DISP - try other workers");
       return false;
@@ -368,8 +370,13 @@ namespace sp {
     char* call_addr = (char*)b->last();
 		assert(call_addr);
 
-    char* blob = pt->snip()->blob();
-    size_t blob_size = pt->snip()->size();
+		SpSnippet::ptr snip = pt->snip();
+		assert(snip);
+
+		size_t est_size = est_blob_size(pt);
+		char* blob = snip->build_blob(est_size);
+		assert(blob);
+    size_t blob_size = snip->size();
     if (!blob) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
@@ -464,9 +471,12 @@ namespace sp {
     dt::Address call_blk_addr = b->start();
 
     // Try to install short jump
-		assert(pt->snip());
-		assert(pt->snip()->buf());
-    long rel_addr = (long)pt->snip()->buf() - (long)call_blk_addr - 5;
+		SpSnippet::ptr snip = pt->snip();
+		assert(snip);
+		size_t est_size = est_blob_size(pt);
+		dt::Address blob = snip->get_blob(est_size);
+		assert(blob);
+    long rel_addr = (long)blob - (long)call_blk_addr - 5;
     char insn[64];    // the jump instruction to overwrite call blk
 
     if (sp::is_disp32(rel_addr)) {
@@ -482,18 +492,18 @@ namespace sp {
     }
 
     // Try to install long jump
-    if (b->size() >= pt->snip()->jump_abs_size()) {
+    if (b->size() >= snip->jump_abs_size()) {
 
       sp_debug("> 4-byte DISP - install a long jump");
 
       // Generate a long jump to store in insn[64]
-      size_t insn_size = pt->snip()->emit_jump_abs((long)pt->snip()->buf(),
-                                                   insn, 0, true);
+      size_t insn_size = snip->emit_jump_abs((long)blob,
+																						 insn, 0, true);
 
       return install_jump_to_block(pt, insn, insn_size);
     } else {
       sp_debug("CALL BLK TOO SMALL - %ld < %ld", b->size(),
-							 pt->snip()->jump_abs_size());
+							 snip->jump_abs_size());
 		}
 
     // Well, let's try spring board next ...
@@ -516,10 +526,13 @@ namespace sp {
 																			 b->size()).c_str());
     sp_debug("}");
 
-		assert(pt);
-		assert(pt->snip());
+		SpSnippet::ptr snip = pt->snip();
+		assert(snip);
+
     // Build blob & change the permission of snippet
-    char* blob = pt->snip()->blob(/*reloc=*/true);
+		size_t est_size = est_blob_size(pt);
+    char* blob = snip->build_blob(est_size,
+																	/*reloc=*/true);
 		if (!blob) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
@@ -530,7 +543,7 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (!g_as->set_range_perm((dt::Address)blob, pt->snip()->size(), perm)) {
+    if (!g_as->set_range_perm((dt::Address)blob, snip->size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
@@ -625,7 +638,7 @@ namespace sp {
     // - close enough to short jump from call block
     // if we cannot find one available spring block, just use trap or
     // ignore this call
-		ph::PatchBlock* springblk = snip->spring_blk();
+		SpBlock* springblk = snip->spring_blk();
     if (!springblk) {
 			sp_debug("FAILED TO GET A SPRINGBOARD BLOCK");
 			return false;
@@ -638,7 +651,9 @@ namespace sp {
     sp_debug("}");
 
     // Build blob & change the permission of snippet
-    char* blob = snip->blob(/*reloc=*/true, /*spring=*/true);
+		size_t est_size = est_blob_size(pt);
+    char* blob = snip->build_blob(est_size,
+																	/*reloc=*/true);
 		if (!blob) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
@@ -658,12 +673,12 @@ namespace sp {
 
     // Relocate spring block & change the permission of the relocated
     // spring block
-    char* spring = snip->spring(springblk->last());
+    char* spring = snip->spring(springblk);
 		if (!spring) {
 			sp_debug("FAILED TO RELOCATE SPRINGBOARD BLOCK");
 			return false;
 		}
-    obj = BLK_CAST(springblk)->get_object();
+    obj = springblk->get_object();
     if (!g_as->set_range_perm((dt::Address)spring,
 															snip->spring_size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"

@@ -10,7 +10,7 @@ namespace sp {
   }
 
 	void SpObject::init_memory_alloc(dt::Address base, size_t size) {
-		sp_debug("INIT MEMORY ALLOC");
+		sp_debug("INIT MEMORY ALLOC - base %lx, size %ld", base, size);
 
 		// MMap this big buffer
 		void* m = MAP_FAILED;

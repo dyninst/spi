@@ -58,9 +58,17 @@ namespace sp {
   // 8. Restore context;
   // 9. Jump back to ORIG_INSN_ADDR.
   char*
-  SpSnippet::blob(bool reloc, bool spring) {
+  SpSnippet::build_blob(size_t est_size, // The estimate blob size
+												bool reloc) {    // Need to relocate a block?
+											
 
 		assert(point_);
+		if (!blob_) {
+			sp_debug("ALLOC BLOB - for size %ld", est_size);
+			blob_ = (char*)get_blob(est_size);
+			assert(blob_);
+		}
+
 		dt::Address ret_addr = point_->ret_addr();
 
     // If this blob is already generated? If so, just return it.
@@ -319,12 +327,14 @@ namespace sp {
 
   // Build the spring block
   char*
-  SpSnippet::spring(dt::Address ret_addr) {
+  SpSnippet::spring(SpBlock* spring_blk) {
+		assert(spring_blk);
+		dt::Address ret_addr = spring_blk->last();
 		assert(g_as);
 		SpObject* obj = point_->get_object();
 		assert(obj);
     spring_ = (char*)g_as->malloc(obj,
-																	BLOB_SIZE,
+																	spring_blk->size() + jump_abs_size(),
 																	obj->load_addr());
     spring_size_ = 0;
 
@@ -344,14 +354,18 @@ namespace sp {
   }
 
   dt::Address
-	SpSnippet::buf(size_t estimate_size) {
+	SpSnippet::get_blob(size_t estimate_size) {
+		if (estimate_size == 0) {
+			// Possible to return NULL
+			return (dt::Address)blob_;
+		}
+
 		assert(point_);
 		SpObject* obj = point_->get_object();
 		assert(obj);
 
-		if (estimate_size == 0) {
-			return (dt::Address)blob_;
-		} else if (blob_) {
+		// We may want to reallocate it, so free existing buffer first
+		if (blob_) {
 			g_as->free(obj, (dt::Address)blob_);
 		}
 

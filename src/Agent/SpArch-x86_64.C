@@ -918,8 +918,39 @@ namespace sp {
     return get_saved_reg(Dyninst::x86_64::rax);
   }
 
+// ------------------------------------------------------------------- 
+// The estimate blob size for different instrumentation worker
+// -------------------------------------------------------------------
 	size_t
-	TrapWorker::est_blob_size() {
+	InstWorker::base_est_reloc_insn_size(SpPoint* pt) {
 		return 100;
+	}
+
+	size_t
+	InstWorker::base_est_reloc_blk_size(SpPoint* pt) {
+		assert(pt);
+		SpBlock* blk = pt->get_block();
+		assert(blk);
+		return blk->size() + InstWorker::base_est_reloc_insn_size(pt);
+	}
+
+	size_t
+	TrapWorker::est_blob_size(SpPoint* pt) {
+		return InstWorker::base_est_reloc_insn_size(pt);
+	}
+
+	size_t
+	RelocCallInsnWorker::est_blob_size(SpPoint* pt) {
+		return InstWorker::base_est_reloc_insn_size(pt);
+	}
+
+	size_t
+	RelocCallBlockWorker::est_blob_size(SpPoint* pt) {
+		return InstWorker::base_est_reloc_blk_size(pt);
+	}
+
+	size_t
+	SpringboardWorker::est_blob_size(SpPoint* pt) {
+		return InstWorker::base_est_reloc_blk_size(pt);
 	}
 }
