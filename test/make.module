@@ -161,7 +161,7 @@ AUX_LIB_OBJS            = $(notdir $(AUX_LIB_SRCS:%.c=%.o))
 AUX_LIB_SO             = $(notdir $(AUX_LIB_SRCS:%.c=%.so))
 
 AUX_LIB_FLAGS             += -g -fPIC
-AUX_LIB_LDFLAGS           += -shared
+AUX_LIB_LDFLAGS           += -shared -lpthread
 
 aux_lib: $(AUX_LIB_SO)
 $(AUX_LIB_OBJS): %.o : $(AUX_LIB_DIR)/%.c
@@ -181,7 +181,7 @@ AUX_OBJS            = $(notdir $(AUX_SRCS:%.c=%.o))
 AUX_EXE             = $(notdir $(AUX_SRCS:%.c=%))
 
 AUX_FLAGS             += -g -O0
-AUX_LDFLAGS           += -ldl -L./ -ltest1
+AUX_LDFLAGS           += -ldl -L./ -ltest1  -lpthread
 
 aux: $(AUX_EXE)
 

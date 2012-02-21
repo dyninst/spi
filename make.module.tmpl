@@ -34,7 +34,8 @@ IJ_DEP      = .IJ_DEPENDS
 
 $(shell if test -f $(IJ_DEP); then true; else \
 $(GXX) -MM $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_SRCS) > $(IJ_DEP); \
-fi);\
+fi);
+
 include $(IJ_DEP)
 
 $(IJ_OBJS): %.o : $(IJ_DIR)/%.C
@@ -50,7 +51,8 @@ IJMAIN_DEP      = .IJMAIN_DEPENDS
 
 $(shell if test -f $(IJMAIN_DEP); then true; else \
 $(GXX) -MM $(IJ_IFLAGS) $(IJ_FLAGS) $(IJMAIN_SRCS) > $(IJMAIN_DEP); \
-fi);\
+fi);
+
 include $(IJMAIN_DEP)
 
 $(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.C
@@ -97,7 +99,8 @@ AG_OBJS    += $(notdir $(AG_SRCS:%.C=%.o))
 AG_DEP  = .AG_DEPENDS
 $(shell if test -f $(AG_DEP); then true; else \
 $(GXX) -MM $(AG_IFLAGS) $(AG_FLAGS) $(AG_SRCS) > $(AG_DEP);\
-fi);\
+fi);
+
 include $(AG_DEP)
 
 agent: $(AGENT)
@@ -142,13 +145,13 @@ clean_objs:
 	$(RM) *.o
 
 clean:
-	@$(RM) -f $(INJECTOR) $(AGENT) $(IJAGENT) *.o
+	@$(RM) -f $(INJECTOR) $(AGENT) $(IJAGENT) *.o *.so
 	@$(RM) -f $(IJ_DEP) $(AG_DEP) $(IJMAIN_DEP)
 
 msg:
-	@echo "================================================================================="
+	@echo "========================================================================"
 	@echo " Please set the environment variable SP_DIR to -- "
 	@echo " $(SP_DIR) "
 	@echo "   * In csh : setenv SP_DIR $(SP_DIR)"
 	@echo "   * In bash: export SP_DIR=$(SP_DIR)"
-	@echo "================================================================================="
+	@echo "========================================================================"

@@ -1,3 +1,11 @@
+#include <sys/shm.h>
+#include <sys/mman.h>
+#include <dirent.h>
+#include <stack>
+
+#include "Symtab.h"
+#include "AddrLookup.h"
+
 #include "SpMaker.h"
 #include "SpUtils.h"
 #include "SpPoint.h"
@@ -7,6 +15,12 @@
 #include "SpInjector.h"
 #include "SpAddrSpace.h"
 #include "SpInstrumenter.h"
+
+#include "PatchMgr.h"
+
+#include "Visitor.h"
+#include "Immediate.h"
+#include "BinaryFunction.h"
 
 // Magic number to identify agent library
 // ( make the name long enough ... )
@@ -59,6 +73,66 @@ namespace sp {
     well_known_libs_.insert("libstdc++");
     well_known_libs_.insert("libgcc");
     well_known_libs_.insert("libpthread-");
+
+		// For chrome
+    well_known_libs_.insert("libgtk-");
+    well_known_libs_.insert("libgdk");
+    well_known_libs_.insert("libcairo");       // Drawing
+    well_known_libs_.insert("libpangocairo-");
+    well_known_libs_.insert("libpango-");
+    well_known_libs_.insert("libz.so");
+    well_known_libs_.insert("libnss3.so");     // Network security service
+    well_known_libs_.insert("libXext.so");
+    well_known_libs_.insert("libnssutil3.so");
+    well_known_libs_.insert("librt-");
+    well_known_libs_.insert("libXss.so");
+    well_known_libs_.insert("libXrender");
+    well_known_libs_.insert("libglib-");
+    well_known_libs_.insert("libX11");
+    well_known_libs_.insert("libsmime3.so");
+    well_known_libs_.insert("libnspr4.so");
+    well_known_libs_.insert("libfontconfig.so");
+    well_known_libs_.insert("libplc4");
+    well_known_libs_.insert("libgthread-");
+    well_known_libs_.insert("libfreetype.so");
+    well_known_libs_.insert("libgobject-");
+    well_known_libs_.insert("libgio-");
+    well_known_libs_.insert("libatk-");
+    well_known_libs_.insert("libXdamage.so");
+    well_known_libs_.insert("libXfixes.so");
+    well_known_libs_.insert("libcrypt-");
+    well_known_libs_.insert("libXcomposite.so");
+    well_known_libs_.insert("libXinerama.so");
+    well_known_libs_.insert("libgpg-error.so");
+    well_known_libs_.insert("libXcursor.so");
+    well_known_libs_.insert("libXdmcp.so");
+    well_known_libs_.insert("libXau.so");
+    well_known_libs_.insert("libcrypto.so");
+    well_known_libs_.insert("libexpat.so");
+    well_known_libs_.insert("libdbus-glib-");
+    well_known_libs_.insert("libdbus-");
+    well_known_libs_.insert("libbz2.so");
+    well_known_libs_.insert("libkeyutils-");
+    well_known_libs_.insert("libcups.so");
+    well_known_libs_.insert("libgcrypt.so");
+    well_known_libs_.insert("libasound.so");
+    well_known_libs_.insert("libssl.so");
+    well_known_libs_.insert("libresolv-");
+    well_known_libs_.insert("libpng14.so");
+    well_known_libs_.insert("libgconf-");
+    well_known_libs_.insert("libkrb5support.so");
+    well_known_libs_.insert("libk5crypto.so");
+    well_known_libs_.insert("libcom_err.so");
+    well_known_libs_.insert("libkrb5.so");
+    well_known_libs_.insert("libORBit-");
+    well_known_libs_.insert("libgssapi_krb5.so");
+    well_known_libs_.insert("libplds4.so");
+    well_known_libs_.insert("libcom_err.so");
+    well_known_libs_.insert("libpangoft2-1.0.so");
+    well_known_libs_.insert("libgmodule-2.0.so");
+    well_known_libs_.insert("libsepol.so");
+    well_known_libs_.insert("libselinux.so");
+    well_known_libs_.insert("libpixman-1.so");
   }
 
   bool
@@ -298,7 +372,7 @@ namespace sp {
     SpVisitor(sp::SpPoint* pt)
       : Visitor(), call_addr_(0), pt_(pt), use_pc_(false) { }
     virtual void visit(in::RegisterAST* r) {
-      if (is_pc(r->getID())) {
+      if (IsPcRegister(r->getID())) {
         use_pc_ = true;
         call_addr_ = pt_->block()->end();
         // call_addr_ = pt_->block()->last();
@@ -701,6 +775,8 @@ namespace sp {
 
 			// Bind preallocated close free buffers to each object
 
+			sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
+							 obj->name().c_str(), obj->load_addr(), obj->codeBase());
       MemMapping& mapping = mem_maps_[obj->load_addr()];
       sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
 							 " Inode %lu, Path %s, previous_end %lx",
@@ -711,7 +787,8 @@ namespace sp {
 
 			FreeInterval* interval = NULL;
 			if (!get_closest_interval(mapping.start, &interval)) {
-				sp_debug("FAILED TO GET FREE INTERVAL - for %lx", mapping.start);
+				sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
+								 mapping.start, obj->name().c_str());
 				continue;
 			}
 			assert(interval);

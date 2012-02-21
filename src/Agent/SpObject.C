@@ -1,5 +1,7 @@
+#include <sys/mman.h>
+
 #include "SpObject.h"
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 
 namespace sp {
 

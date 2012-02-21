@@ -1,7 +1,7 @@
 #ifndef SP_CONTEXT_H_
 #define SP_CONTEXT_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 #include "SpPayload.h"
 #include "SpPropeller.h"
 #include "SpParser.h"
@@ -10,6 +10,7 @@
 #include "SpIpcMgr.h"
 
 namespace sp {
+typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;
 
 class SpContext {
   public:

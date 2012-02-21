@@ -284,7 +284,7 @@ namespace sp {
 						rel += obj->load_addr();
 					}
 
-          if (!sp::is_disp8(rel)) {
+          if (!sp::IsDisp8(rel)) {
 						sp_debug("TOO BIG DISP, SKIPPED - disp=%ld", (long)rel);
             span_addr = b->end();
             continue;
@@ -374,5 +374,8 @@ namespace sp {
 		assert(blob_);
 		return (dt::Address)blob_;
 	}
+
+void abc() {
+}
 
 }

@@ -16,6 +16,7 @@ protected:
 	}
 };
 
+/*
 TEST_F(UtilsTest, get_file_text) {
 	string content = get_file_text("/proc/self/cmdline");
 	EXPECT_STREQ(content.c_str(), "./utils_test");
@@ -49,5 +50,11 @@ TEST_F(UtilsTest, addr_to_pid_without_injector) {
 TEST_F(UtilsTest, get_exe_name) {
 	string exe = sp::get_exe_name();
 	sp_print("%s at pid=%d", exe.c_str(), getpid());
-	while(1);
+}
+*/
+
+TEST_F(UtilsTest, lock_unlock) {
+	int lock1;
+	lock(&lock1);
+	unlock(&lock1);
 }

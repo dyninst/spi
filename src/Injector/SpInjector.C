@@ -1,20 +1,18 @@
-#include "SpUtils.h"
-#include "SpCommon.h"
-#include "SpInjector.h"
+#include <sys/stat.h>
+#include <sys/shm.h>
+#include <dlfcn.h>
+#include <signal.h>
+
+#include "Symtab.h"
+#include "Function.h"
+#include "AddrLookup.h"
+
 #include "int_process.h"
+#include "SpCommon.h"
+#include "SpUtils.h"
+#include "SpInjector.h"
 
-using dt::Address;
-using sp::SpInjector;
-
-using pc::IRPC;
-using pc::Library;
-using pc::Process;
-using pc::LibraryPool;
-
-using sb::Symtab;
-using sb::Symbol;
-using sb::Function;
-using sb::AddressLookup;
+namespace sp {
 
 SpInjector::ptr
 SpInjector::create(dt::PID pid) {
@@ -23,7 +21,7 @@ SpInjector::create(dt::PID pid) {
 }
 
 SpInjector::SpInjector(dt::PID pid)
-	: pid_(pid) {
+    : pid_(pid) {
 
   proc_ = Process::attachProcess(pid);
   if (!proc_) {
@@ -46,9 +44,9 @@ SpInjector::find_func(char* func) {
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
     std::string name = (*li)->getName();
     if (name.size() <= 0) continue;
-    Symtab *obj = NULL;
-    bool ret = Symtab::openFile(obj, name);
-    std::vector <Function *> funcs;
+    sb::Symtab *obj = NULL;
+    bool ret = sb::Symtab::openFile(obj, name);
+    std::vector <sb::Function *> funcs;
     if (!obj || !ret) {
       sp_perror("Injector [pid = %5d] - Failed to open %s",
 								getpid(), sp_filename(name.c_str()));
@@ -380,8 +378,8 @@ bool SpInjector::get_resolved_lib_path(const std::string &filename,
   DepVector vpaths;
   std::copy(paths.begin(), paths.end(), back_inserter(vpaths));
   for (DepVector::iterator j = vpaths.begin(); j != vpaths.end();) {
-    Symtab* obj = NULL;
-    bool ret = Symtab::openFile(obj, *j);
+    sb::Symtab* obj = NULL;
+    bool ret = sb::Symtab::openFile(obj, *j);
     if (ret) {
       if ((Address)obj->getAddressWidth() ==
 					(Address)proc_->llproc()->getAddressWidth()) {
@@ -415,4 +413,6 @@ void SpInjector::update_frame() {
   shm->pc = get_pc();
   shm->sp = get_sp();
   shm->bp = get_bp();
+}
+
 }

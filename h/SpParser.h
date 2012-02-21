@@ -1,7 +1,10 @@
 #ifndef SP_PARSER_H_
 #define SP_PARSER_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
+#include "SpUtils.h"
+
+#include "CFGMaker.h"
 
 namespace sp {
 
@@ -9,12 +12,19 @@ namespace sp {
 	class SpObject;
 	class SpFunction;
 
+  typedef std::set<sb::Symtab*> SymtabSet;
+  typedef std::vector<pe::CodeObject*> CodeObjects;
+  typedef std::vector<pe::CodeSource*> CodeSources;
+	typedef std::vector<sb::Symbol*> Symbols;
+  typedef std::vector<ph::PatchObject*> PatchObjects;
+  typedef std::map<std::string, ph::PatchFunction*> RealFuncMap;
+  
 	typedef struct {
 		dt::Address previous_end;  // previous object's end addr
 		dt::Address start;
 		dt::Address end;
 		dt::Address offset;
-		string dev;
+    std::string dev;
 		unsigned long inode;
 		int perms;
 		string path;

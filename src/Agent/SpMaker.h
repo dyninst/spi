@@ -3,7 +3,7 @@
 
 #include "CFGMaker.h"
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 
 // PatchAPI stuffs: build customized points and CFG
 namespace sp {

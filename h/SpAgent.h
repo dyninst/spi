@@ -1,12 +1,13 @@
 #ifndef SP_AGENT_H_
 #define SP_AGENT_H_
-
-#include "SpAgentCommon.h"
+ 
+#include "SpCommon.h"
 
 #include "SpParser.h"
 #include "SpEvent.h"
 #include "SpPayload.h"
 #include "SpPropeller.h"
+
 
 namespace sp {
 

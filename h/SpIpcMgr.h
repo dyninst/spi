@@ -1,8 +1,9 @@
 #ifndef _SPIPCMGR_H_
 #define _SPIPCMGR_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 #include "SpChannel.h"
+#include "SpUtils.h"
 
 namespace sp {
 

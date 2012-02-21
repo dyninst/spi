@@ -2,7 +2,7 @@
 #define SP_PAYLOAD_H_
 
 #include "SpCFG.h"
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 
 namespace sp {
   class SpContext;

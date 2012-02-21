@@ -6,6 +6,9 @@ using namespace PatchAPI;
 using namespace sp;
 
 void test_entry(SpPoint* pt) {
+	PatchFunction* f = callee(pt);
+  if (!f) return;
+	sp_print("%s", f->name().c_str());
   sp::propel(pt);
 }
 
@@ -14,7 +17,7 @@ void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::create();
   agent->set_init_entry("test_entry");
   // agent->set_parse_only(true);
-  // agent->set_directcall_only(true);
+  agent->set_directcall_only(true);
   agent->go();
 }
 

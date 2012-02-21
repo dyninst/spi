@@ -1,13 +1,14 @@
 #ifndef SP_PROPEL_H_
 #define SP_PROPEL_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 #include "SpPayload.h"
 
 namespace sp {
 
-class SpPropeller {
-  public:
+  typedef std::vector<Dyninst::PatchAPI::Point*> Points;
+  class SpPropeller {
+ public:
     typedef dyn_detail::boost::shared_ptr<SpPropeller> ptr;
     static ptr create();
     SpPropeller();
@@ -18,11 +19,11 @@ class SpPropeller {
             PayloadFunc exit,
             ph::Point* pt = NULL);
 
-  protected:
+ protected:
     virtual void next_points(ph::PatchFunction* func,
                              ph::PatchMgrPtr mgr,
                              Points& pts);
-};
+  };
 
 }
 

@@ -138,7 +138,7 @@ namespace sp {
     size_t insnsize = 0;
     dt::Address rel_addr = (callee - retaddr);
 
-    if (sp::is_disp32(rel_addr)) {
+    if (sp::IsDisp32(rel_addr)) {
       // call callee
       *p++ = 0xe8;
       int* rel_p = (int*)p;
@@ -178,7 +178,7 @@ namespace sp {
     dt::Address retaddr = (dt::Address)p+5;
     dt::Address rel_addr = (trg - retaddr);
 
-    if (sp::is_disp32(rel_addr) && !abs) {
+    if (sp::IsDisp32(rel_addr) && !abs) {
       // jmp trg
       *p++ = 0xe9;
       int* rel_p = (int*)p;
@@ -295,7 +295,7 @@ namespace sp {
 
   // Is this register EIP?
   bool
-  is_pc(Dyninst::MachRegister r) {
+  IsPcRegister(Dyninst::MachRegister r) {
     if (r == Dyninst::x86::eip) return true;
     return false;
   }

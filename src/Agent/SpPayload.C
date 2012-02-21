@@ -49,28 +49,37 @@ default_exit(sp::SpPoint* pt) {
 namespace sp {
   extern SpContext* g_context;
 	extern SpParser::ptr g_parser;
+	extern int g_propel_lock;
 
   // Get callee from a PreCall point
 	SpFunction*
   callee(SpPoint* pt) {
+
+
 		bool parse_indirect = true;
 
 		// If we just want to instrument direct call, then we skip parsing
 		// indirect calls
 		if (g_context->directcall_only()) parse_indirect = false;
 
-    return g_parser->callee(pt, parse_indirect);
+    SpFunction* f = g_parser->callee(pt, parse_indirect);
+
+		return f;
   }
 
   // Pop up an argument of a function call
   void*
   pop_argument(SpPoint* pt, ArgumentHandle* h, size_t size) {
-    return static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
+
+    void* arg = static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
+
+		return arg;
   }
 
   // Propel instrumentation to next points of the point `pt`
   void
   propel(SpPoint* pt) {
+    //		lock(&g_propel_lock);
 
     SpFunction* f = callee(pt);
     if (!f) {
@@ -89,6 +98,8 @@ namespace sp {
 					g_context->init_exit(),
 					pt);
 		f->set_propagated(true);
+
+    //		unlock(&g_propel_lock);
   }
 
   ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}
@@ -106,14 +117,16 @@ namespace sp {
 
   long
   retval(sp::SpPoint* pt) {
-    return pt->snip()->get_ret_val();
+    long ret = pt->snip()->get_ret_val();
+		return ret;
   }
 
 	// Implicitly call start_tracing()
   bool
   is_ipc_write(SpPoint* pt) {
     SpChannel* c = pt->channel();
-    return (c && c->rw == SP_WRITE);
+    bool ret = (c && c->rw == SP_WRITE);
+		return ret;
   }
 
 	// Implicitly call start_tracing()
@@ -124,13 +137,18 @@ namespace sp {
     if (callee(pt)->name().compare("accept") != 0)
 			return (c && c->rw == SP_READ && start_tracing(c->fd));
 
-		return (c && c->rw == SP_READ);
+		bool ret = (c && c->rw == SP_READ);
+
+		return ret;
   }
 
   char
   start_tracing(int fd) {
+
     sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
-    return ipc_mgr->start_tracing(fd);
+    char ret = ipc_mgr->start_tracing(fd);
+
+		return ret;
   }
 
 }

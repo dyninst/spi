@@ -8,6 +8,8 @@
 #include "SpUtils.h"
 #include "SpParser.h"
 
+#include "AddrLookup.h"
+
 using namespace sp;
 using namespace std;
 

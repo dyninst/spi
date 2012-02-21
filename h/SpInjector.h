@@ -2,6 +2,8 @@
 #define SP_INJECTOR_H_
 
 #include "SpCommon.h"
+#include "SpUtils.h"
+
 #include "Process.h"
 
 namespace sp {

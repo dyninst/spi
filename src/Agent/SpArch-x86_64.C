@@ -1,11 +1,17 @@
+#include <stack>
+
 #include "SpEvent.h"
 #include "SpPoint.h"
 #include "SpUtils.h"
 #include "SpParser.h"
 #include "SpContext.h"
 #include "SpSnippet.h"
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 #include "SpInstrumenter.h"
+
+#include "Visitor.h"
+#include "Immediate.h"
+#include "BinaryFunction.h"
 
 namespace sp {
 
@@ -245,7 +251,7 @@ namespace sp {
     // Case 1: we are lucky to use relative call instruction.
     dt::Address retaddr = (dt::Address)p+5;
     dt::Address rel_addr = (callee - retaddr);
-    if (sp::is_disp32(rel_addr)) {
+    if (sp::IsDisp32(rel_addr)) {
 
       // call `callee`
       *p++ = 0xe8;
@@ -295,7 +301,7 @@ namespace sp {
     dt::Address retaddr = (dt::Address)p+5;
     dt::Address rel_addr = (trg - retaddr);
 
-    if (sp::is_disp32(rel_addr) && !abs) {
+    if (sp::IsDisp32(rel_addr) && !abs) {
       // Case 1: we are lucky to use relative jump.
 
       // jmp trg
@@ -401,7 +407,7 @@ namespace sp {
 
   // Is this register RIP?
   bool
-  is_pc(Dyninst::MachRegister r) {
+  IsPcRegister(Dyninst::MachRegister r) {
     if (r == Dyninst::x86_64::rip) return true;
     return false;
   }
@@ -413,7 +419,7 @@ namespace sp {
     virtual void visit(in::RegisterAST* r) {
       // sp_debug("USE REG");
 			assert(r);
-      if (is_pc(r->getID())) {
+      if (IsPcRegister(r->getID())) {
         use_pc_ = true;
       }
     }
@@ -493,7 +499,7 @@ namespace sp {
     virtual void visit(in::RegisterAST* r) {
 			assert(r);
       // value in RIP is a_
-			if (is_pc(r->getID())) {
+			if (IsPcRegister(r->getID())) {
 				imm_ = a_;
 				stack_.push(imm_);
 				sp_debug("EMU VISITOR - pc %lx", a_);
@@ -727,7 +733,7 @@ namespace sp {
       sp_debug("RELOC INSN - new displacement %lx", long_new_dis);
 #endif
 
-      if (sp::is_disp32(long_new_dis)) {
+      if (sp::IsDisp32(long_new_dis)) {
         // Easy case: just modify the displacement
         *dis_buf = (int)long_new_dis;
         memcpy(p, insn_buf, insn->size());

@@ -1,7 +1,7 @@
 #ifndef _SPSNIPPET_H_
 #define _SPSNIPPET_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 #include "SpPayload.h"
 
 namespace sp {

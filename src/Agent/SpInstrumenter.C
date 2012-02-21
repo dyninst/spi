@@ -1,3 +1,5 @@
+#include <sys/mman.h>
+
 #include "SpUtils.h"
 #include "SpPoint.h"
 #include "SpObject.h"
@@ -345,7 +347,7 @@ namespace sp {
 		dt::Address blob = snip->get_blob(est_size);
 		assert(blob);
     long rel_addr = (long)blob - (long)call_insn_addr;
-    if (!sp::is_disp32(rel_addr)) {
+    if (!sp::IsDisp32(rel_addr)) {
       sp_debug("NOT 4-byte DISP - try other workers");
       return false;
     }
@@ -479,7 +481,7 @@ namespace sp {
     long rel_addr = (long)blob - (long)call_blk_addr - 5;
     char insn[64];    // the jump instruction to overwrite call blk
 
-    if (sp::is_disp32(rel_addr)) {
+    if (sp::IsDisp32(rel_addr)) {
       sp_debug("4-byte DISP - install a short jump");
 
       // Generate a short jump to store in insn[64]

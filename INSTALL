@@ -28,4 +28,3 @@ Environment variables related to self-propelled instrumentation:
 Shared memory id used:
 1. 1986
 2. 1985
-3. 1989 - disallow_fork_load

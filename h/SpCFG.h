@@ -3,7 +3,7 @@
 
 #include "CFG.h"
 #include "PatchCFG.h"
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 
 namespace sp {
 	class SpObject;

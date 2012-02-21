@@ -1,7 +1,9 @@
 #ifndef _SPADDRSPACE_H_
 #define _SPADDRSPACE_H_
 
-#include "SpAgentCommon.h"
+#include "AddrSpace.h"
+
+#include "SpCommon.h"
 
 namespace sp {
 class SpObject;

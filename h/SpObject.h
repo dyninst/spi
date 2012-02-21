@@ -1,7 +1,9 @@
 #ifndef _SPOBJECT_H_
 #define _SPOBJECT_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
+
+#include "PatchObject.h"
 
 // PatchAPI stuffs.
 namespace sp {

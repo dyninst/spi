@@ -1,7 +1,9 @@
 #ifndef _SPCHANNEL_H_
 #define _SPCHANNEL_H_
 
-#include "SpAgentCommon.h"
+#include <sys/socket.h>
+
+#include "SpCommon.h"
 
 namespace sp {
 

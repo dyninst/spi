@@ -1,8 +1,12 @@
+#include <sys/resource.h>
+
 #include "SpAgent.h"
 #include "SpUtils.h"
 #include "SpContext.h"
 #include "SpAddrSpace.h"
 #include "SpInjector.h"
+
+#include "PatchMgr.h"
 
 namespace sp {
 
@@ -10,6 +14,7 @@ namespace sp {
 	SpContext*    g_context = NULL;
 	SpAddrSpace*  g_as = NULL;
 	SpParser::ptr g_parser;
+	int g_propel_lock;
 
 	// Constructor for SpAgent
 	SpAgent::ptr
@@ -117,6 +122,9 @@ namespace sp {
 			sp_debug("ILLEGAL EXE - avoid instrumenting");
 			return;
 		}
+
+		// Init lock
+		init_lock(&g_propel_lock);
 
 		if (getenv("SP_DIRECTCALL_ONLY")) directcall_only_ = true;
 		if (getenv("SP_TRAP")) trap_only_ = true;

@@ -1,7 +1,7 @@
 #ifndef _SPPOINT_H_
 #define _SPPOINT_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 #include "SpSnippet.h"
 
 namespace sp {

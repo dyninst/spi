@@ -1,41 +1,33 @@
 #ifndef _SPUTILS_H_
 #define _SPUTILS_H_
 
+#include <set>
+#include <string>
+#include <sys/types.h>
+#include <netinet/in.h>
+
 #include "SpCommon.h"
 
-// Shorten namespace
-namespace dt = Dyninst;
-
 namespace sp {
+	typedef std::set<pid_t> PidSet;
+  typedef std::set<std::string> StringSet;
+  
+  // Profiling tools (e.g., timer)
+  void SetupTimer(int timer_id);
+  void StartTimer(int timer_id);
+  void StopTimer(int timer_id);
+  void ResetTimer(int timer_id);
+  double GetTimer(int timer_id);
+  void PrintTime(char* message, int timer_id);
 
-// ---------------------------------------------------------------------
-// Profiling tools
-// ---------------------------------------------------------------------
 
-  void SetupTimer(int);
-  void StartTimer(int);
-  void StopTimer(int);
-  void ResetTimer(int);
-  double GetTimer(int);
-  void PrintTime(char *, int);
+  // Code Generation stuffs
+  bool IsDisp32(long d);                     // Is 32-bit displacement?
+  bool IsDisp8(long d);                      // Is 8-bit displacement?
+  bool IsPcRegister(dt::MachRegister reg);   // Is a pc register?
 
-// ---------------------------------------------------------------------
-// Code Generation stuffs
-// ---------------------------------------------------------------------
 
-  // Determine whether a long integer has a value within 32-bit range.
-  bool is_disp32(long d);
-
-  // Determine whether a long integer has a value within 8-bit range.
-  bool is_disp8(long d);
-
-	// Determine whether a register is a pc register (rip for x86-64, and eip for
-  // i386)
-  bool is_pc(dt::MachRegister);
-
-// ---------------------------------------------------------------------
-// Get pid from various things
-// ---------------------------------------------------------------------
+  // Get pid from various things
 
 		// Get inode number from the file descriptor fd
     ino_t get_inode_from_fd(int fd);
@@ -55,9 +47,9 @@ namespace sp {
 		in_addr_t hostname_to_ip(char * hostname , char* ip, size_t ip_len);
 
 
-// ----------------------------------------------------------------------------- 
+// -------------------------------------------------------------------
 // /proc utilities
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------
 		// Is current executable an illegal program?
 		// We use this, because we want to avoid instrumenting some programs, e.g.,
 		// unix utilities used in self-propelled core
@@ -68,9 +60,9 @@ namespace sp {
 
 		// Get full path of the executable file
 		std::string get_exe_name();
-// ---------------------------------------------------------------------
+// -------------------------------------------------------------------
 // IPC stuffs
-// ---------------------------------------------------------------------
+// -------------------------------------------------------------------
 
 		// See if the file descriptor is for pipe
     bool is_pipe(int fd);
@@ -97,6 +89,14 @@ namespace sp {
 // ---------------------------------------------------------------------
 	bool serialize_co(pe::CodeObject* co, const char* dir);
 	pe::CodeObject* deserialize_co(const char* dir, const char* file);
+
+// ------------------------------------------------------------------- 
+// Lock / Unlock
+// -------------------------------------------------------------------
+	void init_lock(int* lock);
+	void lock(int* lock);
+	void unlock(int* lock);
+
 }
 
 #endif /* _SPUTILS_H_ */

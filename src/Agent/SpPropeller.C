@@ -4,6 +4,9 @@
 #include "SpSnippet.h"
 #include "SpPropeller.h"
 
+#include "Command.h"
+#include "PatchMgr.h"
+
 namespace sp {
 
 	extern SpContext* g_context;

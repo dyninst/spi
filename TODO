@@ -1,10 +1,7 @@
 General:
-- [ ] Change comments to //, instead of /* */
-- [X] get rid of .DEPS from git
-- [X] make user agent statically linked
+- [ ] Change to google's coding style
 - [ ] fix dependency problem for .h files
 - [ ] configure file
-- [X] use environment variable to setup the Injector/ijagent.so/Agent
 
 Injector:
 - [X] debug the networking mode
@@ -13,7 +10,6 @@ Injector:
 
 Agent:
 - [ ] test reloc_insn on x86-64
-- [ ] Rename before_ to entry_ and after_ to exit_ for payload function
 - [ ] Should test on /bin/bash
 - [ ] Change before/after to entry/exit
 - [ ] A better memory manager to allocate blob
@@ -21,12 +17,6 @@ Agent:
 - [ ] Allow user to specify what libraries to skip parsing
 - [ ] port to windows 
 - [ ] uninstrument / unload agent.so
-
-SpServer:
-- [X] pipe
-- [X] tcp
-- [ ] udp
-- [ ] more ipc mechanisms
 - [ ] port to windows 
 
 

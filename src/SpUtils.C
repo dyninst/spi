@@ -1,11 +1,21 @@
-#include "SpUtils.h"
+#include <vector>
 #include <fstream>
+#include <sys/stat.h>
+#include <sys/dir.h>
+#include <sys/time.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <linux/udp.h>
+#include <netinet/tcp.h>
+
+#include "SpUtils.h"
+#include "dynutil/h/util.h"
 
 namespace sp {
 
-  // -----------------------------------------------------------------------------
+  // ----------------------------------------------------------------------
   // Profiling tools
-  // -----------------------------------------------------------------------------
+  // ----------------------------------------------------------------------
   typedef long i64;
   typedef struct CPerfCounterRec {
     i64 _freq;
@@ -62,13 +72,13 @@ namespace sp {
   // -----------------------------------------------------------------------
   // Determine the size of a long integer
   // -----------------------------------------------------------------------
-  bool is_disp32(long d) {
+  bool IsDisp32(long d) {
     const long max_int32 = 2147483646;
     const long min_int32 = -2147483647;
     return ((d < max_int32) && (d >= min_int32));
   }
 
-  bool is_disp8(long d) {
+  bool IsDisp8(long d) {
     const long max_int8 = 127;
     const long min_int8 = -128;
     return ((d < max_int8) && (d >= min_int8));
@@ -221,9 +231,9 @@ namespace sp {
     return 0;
   }
 
-// -----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // /proc utilities
-// -----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
   // Is current executable an illegal program?
   // We use this, because we want to avoid instrumenting some programs, e.g.,
@@ -409,6 +419,24 @@ namespace sp {
 	pe::CodeObject*
 	deserialize_co(const char* dir, const char* file) {
 		return NULL;
+	}
+
+// ------------------------------------------------------------------- 
+// Lock / Unlock
+// -------------------------------------------------------------------
+	void init_lock(int* lock) {
+		*lock = 0;
+	}
+
+	void lock(int* lock) {
+		while(__sync_lock_test_and_set(lock, 1)) {
+			while (*lock);
+		}
+	}
+
+	void unlock(int* lock) {
+		__sync_synchronize();
+		*lock = 0;
 	}
 }
 

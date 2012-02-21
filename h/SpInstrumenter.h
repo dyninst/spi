@@ -1,9 +1,11 @@
 #ifndef _SPINSTRUMENTER_H_
 #define _SPINSTRUMENTER_H_
 
-#include "SpAgentCommon.h"
+#include "SpCommon.h"
 #include "SpSnippet.h"
 #include "SpPoint.h"
+
+#include "Instrumenter.h"
 
 namespace sp {
 

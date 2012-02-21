@@ -1,9 +1,11 @@
+#include <sys/shm.h>
+#include <sys/wait.h>
+
 #include "SpPoint.h"
 #include "SpUtils.h"
 #include "SpIpcMgr.h"
 #include "SpContext.h"
 #include "SpInjector.h"
-#include <sys/wait.h>
 
 using ph::PatchFunction;
 

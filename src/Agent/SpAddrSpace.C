@@ -1,3 +1,5 @@
+#include <sys/mman.h>
+
 #include "SpAddrSpace.h"
 #include "SpObject.h"
 #include "SpParser.h"
