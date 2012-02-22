@@ -37,7 +37,7 @@ class InjectorTest : public testing::Test {
 
 		// Get the tcp_server's pid
 		PidSet pid_set;
-		get_pids_from_fd(fileno(server_), pid_set);
+		GetPidsFromFileDesc(fileno(server_), pid_set);
 		pid_ = *(pid_set.begin());
 		ASSERT_TRUE(pid_set.size() > 0);
 	}

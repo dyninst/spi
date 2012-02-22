@@ -1,6 +1,6 @@
-IJ_SRCS       =  ../src/Injector/SpInjector-x86_64.C \
+IJ_SRCS       =  ../src/injector/injector-x86_64.cc \
 
-AG_SRCS       =  ../src/Agent/SpArch-x86_64.C \
+AG_SRCS       =  ../src/agent/arch-x86_64.cc \
 
 SERVER_SRCS   =
 

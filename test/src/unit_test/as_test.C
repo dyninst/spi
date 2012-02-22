@@ -3,11 +3,8 @@
 #include "gtest/gtest.h"
 
 // Self-propelled stuffs
-#include "SpAgent.h"
-#include "SpUtils.h"
-#include "SpParser.h"
-
-#include "PatchMgr.h"
+#include "SpInc.h"
+#include "patchAPI/h/PatchMgr.h"
 
 using namespace sp;
 using namespace std;

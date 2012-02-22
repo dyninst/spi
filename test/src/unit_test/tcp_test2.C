@@ -3,9 +3,7 @@
 #include "gtest/gtest.h"
 
 // Self-propelled stuffs
-#include "SpIpcMgr.h"
-#include "SpChannel.h"
-#include "SpUtils.h"
+#include "SpInc.h"
 
 using namespace sp;
 using namespace std;
@@ -40,7 +38,7 @@ namespace {
 			sleep(3);
 
       PidSet server_pid_set;
-      get_pids_from_fd(fileno(server_), server_pid_set);
+      GetPidsFromFileDesc(fileno(server_), server_pid_set);
       ASSERT_TRUE(server_pid_set.size() > 0);
       server_pid_ = *(server_pid_set.begin());
     }
@@ -67,7 +65,7 @@ namespace {
 			// 2. Client hasn't started to connect
       //    -- need to wait()
 			PidSet client_pid_set;
-			get_pids_from_fd(fileno(client_), client_pid_set);
+			GetPidsFromFileDesc(fileno(client_), client_pid_set);
 			if (client_pid_set.size() > 0) {
 				client_pid_ = *(client_pid_set.begin());
 				int status;
@@ -90,7 +88,7 @@ namespace {
 			// 2. Client hasn't started to connect
       //    -- need to wait()
 			PidSet client_pid_set;
-			get_pids_from_fd(fileno(client_), client_pid_set);
+			GetPidsFromFileDesc(fileno(client_), client_pid_set);
 			if (client_pid_set.size() > 0) {
 				client_pid_ = *(client_pid_set.begin());
 				int status;

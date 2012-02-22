@@ -46,7 +46,7 @@ GMOCK_HEADERS = $(GMOCK_DIR)/include/gmock/*.h \
                 $(GMOCK_DIR)/include/gmock/internal/*.h \
                 $(GTEST_HEADERS)
 
-all : unit copy agent aux mutatee
+all : unit copy test_agent aux mutatee
 
 # Builds gmock.a and gmock_main.a.  These libraries contain both
 # Google Mock and Google Test.  A test should link with either gmock.a
@@ -141,7 +141,7 @@ fi);\
 include $(AG_DEP)
 
 
-agent: $(AGENT_SO) 
+test_agent: $(AGENT_SO) 
 
 $(AGENT_OBJS): %.o : $(AGENT_DIR)/%.C $(SP_DIR)/$(PLATFORM)/libagent.a
 	@echo "Compiling $@"
@@ -217,7 +217,7 @@ clean-mutatee:
 clean :
 	rm -rf $(TESTS) $(RUNALL) gmock.a gmock_main.a *.o *.so ./Injector $(AUX_EXE)
 
-copy: agent
+copy: test_agent
 	@echo "Copying agent to $(SP_DIR)/$(PLATFORM)"
 #	@cp -f $(SP_DIR)/$(PLATFORM)/*.so $(SP_DIR)/$(PLATFORM)/Injector ./
 	@cp -f $(AGENT_SO) $(SP_DIR)/$(PLATFORM)

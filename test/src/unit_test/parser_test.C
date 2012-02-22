@@ -3,12 +3,8 @@
 #include "gtest/gtest.h"
 
 // Self-propelled stuffs
-#include "SpIpcMgr.h"
-#include "SpChannel.h"
-#include "SpUtils.h"
-#include "SpParser.h"
-
-#include "AddrLookup.h"
+#include "SpInc.h"
+#include "symtabAPI/h/AddrLookup.h"
 
 using namespace sp;
 using namespace std;

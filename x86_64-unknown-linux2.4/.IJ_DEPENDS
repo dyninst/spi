@@ -1,7 +1,8 @@
-SpInjector-x86_64.o: ../src/Injector/SpInjector-x86_64.C \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpInjector.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpCommon.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpUtils.h \
+injector-x86_64.o: ../src/injector/injector-x86_64.cc \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/injector/injector.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/proccontrol/h/Process.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/dyntypes.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/dyn_regs.h \
@@ -32,8 +33,8 @@ SpInjector-x86_64.o: ../src/Injector/SpInjector-x86_64.C \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/dyn_detail/boost/weak_ptr.hpp \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/dyn_detail/boost/shared_ptr.hpp
-SpInjector.o:  \
- /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/Injector/SpInjector.C \
+injector.o:  \
+ /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/injector/injector.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/symtabAPI/h/Symtab.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/symtabAPI/h/Symbol.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/symtabAPI/h/symutil.h \
@@ -231,9 +232,8 @@ SpInjector.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/common/h/dthread.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/dyn_regs.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/SymReader.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpCommon.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpUtils.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpCommon.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpInjector.h \
-  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/h/SpUtils.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/injector/injector.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h \
+  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/proccontrol/h/Process.h

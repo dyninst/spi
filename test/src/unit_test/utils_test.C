@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 
 // Self-propelled stuffs
-#include "SpUtils.h"
+#include "common/utils.h"
 
 using namespace sp;
 using namespace std;
@@ -16,16 +16,16 @@ protected:
 	}
 };
 
-/*
+
 TEST_F(UtilsTest, get_file_text) {
-	string content = get_file_text("/proc/self/cmdline");
-	EXPECT_STREQ(content.c_str(), "./utils_test");
+	const char* content = GetFileText("/proc/self/cmdline");
+	EXPECT_STREQ(content, "./utils_test");
 }
 
 TEST_F(UtilsTest, is_illegal_exe) {
 	StringSet illegal_exe;
 	illegal_exe.insert("utils_test");
-	EXPECT_TRUE(is_illegal_exe(illegal_exe));
+	EXPECT_TRUE(IsIllegalProgram(illegal_exe));
 }
 
 TEST_F(UtilsTest, addr_to_pid_without_injector) {
@@ -35,7 +35,9 @@ TEST_F(UtilsTest, addr_to_pid_without_injector) {
 	pid_t p = -1;
 	int retry = 4;
 	do {
-		addr_to_pids((char*)"0.0.0.0", (char*)"0", (char*)"0.0.0.0", (char*)"3490", pid_set);
+		GetPidsFromAddrs("0.0.0.0", "0",
+                     "0.0.0.0", "3490",
+                     pid_set);
 		for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
 			p = *i;
 		}
@@ -48,13 +50,14 @@ TEST_F(UtilsTest, addr_to_pid_without_injector) {
 }
 
 TEST_F(UtilsTest, get_exe_name) {
-	string exe = sp::get_exe_name();
-	sp_print("%s at pid=%d", exe.c_str(), getpid());
+	const char* exe = sp::GetExeName();
+  EXPECT_STREQ(exe, "./utils_test");
 }
-*/
+
 
 TEST_F(UtilsTest, lock_unlock) {
 	int lock1;
-	lock(&lock1);
-	unlock(&lock1);
+  InitLock(&lock1);
+	Lock(&lock1);
+	Unlock(&lock1);
 }

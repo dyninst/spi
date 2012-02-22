@@ -3,9 +3,7 @@
 #include "gtest/gtest.h"
 
 // Self-propelled stuffs
-#include "SpIpcMgr.h"
-#include "SpChannel.h"
-#include "SpUtils.h"
+#include "SpInc.h"
 
 using namespace sp;
 using namespace std;

@@ -2,16 +2,16 @@
 #define _SPINC_H_
 
 /* This is used by user agent implementation. */
-#include "SpAgent.h"
-#include "SpEvent.h"
-#include "SpPoint.h"
-#include "SpUtils.h"
-#include "SpParser.h"
-#include "SpObject.h"
-#include "SpSnippet.h"
-#include "SpPayload.h"
-#include "SpContext.h"
-#include "SpPropeller.h"
+#include "agent/agent.h"
+#include "agent/event.h"
+#include "agent/point.h"
+#include "agent/parser.h"
+#include "agent/object.h"
+#include "agent/snippet.h"
+#include "agent/payload.h"
+#include "agent/context.h"
+#include "agent/propeller.h"
+#include "injector/injector.h"
 
 #define AGENT_INIT __attribute__((constructor))
 #define AGENT_FINI __attribute__((destructor))

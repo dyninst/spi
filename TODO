@@ -2,6 +2,7 @@ General:
 - [ ] Change to google's coding style
 - [ ] fix dependency problem for .h files
 - [ ] configure file
+     - interested shared libraries + exe
 
 Injector:
 - [X] debug the networking mode

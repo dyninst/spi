@@ -1,9 +1,9 @@
 
-INJECTOR   = Injector
+INJECTOR   = injector
 IJAGENT    = libijagent.so
 AGENT      = libagent.a
 
-all: injector agent msg
+all: injector_exe agent_lib msg
 
 GCC        = gcc
 GXX        = g++
@@ -13,23 +13,23 @@ RM         = rm -f
 # Utils
 #======================================
 
-UTILS_SRCS    += $(UTILS_DIR)/SpUtils.C
-UTILS_OBJS    += $(notdir $(UTILS_SRCS:%.C=%.o))
-$(UTILS_OBJS): %.o : $(UTILS_DIR)/%.C
+UTILS_SRCS    += $(UTILS_DIR)/utils.cc
+UTILS_OBJS    += $(notdir $(UTILS_SRCS:%.cc=%.o))
+$(UTILS_OBJS): %.o : $(UTILS_DIR)/%.cc
 	@echo Compiling $*.o
-	@$(GCC) -c -o $@ $(COMMON_IFLAGS) $(COMMON_FLAGS) $(UTILS_DIR)/$*.C
+	@$(GCC) -c -o $@ $(COMMON_IFLAGS) $(COMMON_FLAGS) $(UTILS_DIR)/$*.cc
 
 #======================================
 # Injector
 #======================================
 
-injector: $(INJECTOR) $(IJAGENT)
+injector_exe: $(INJECTOR) $(IJAGENT)
 
 #---------------- 
 # injector objs
 #---------------- 
-IJ_SRCS    += $(IJ_DIR)/SpInjector.C
-IJ_OBJS    += $(notdir $(IJ_SRCS:%.C=%.o))
+IJ_SRCS    += $(IJ_DIR)/injector.cc
+IJ_OBJS    += $(notdir $(IJ_SRCS:%.cc=%.o))
 IJ_DEP      = .IJ_DEPENDS
 
 $(shell if test -f $(IJ_DEP); then true; else \
@@ -38,15 +38,15 @@ fi);
 
 include $(IJ_DEP)
 
-$(IJ_OBJS): %.o : $(IJ_DIR)/%.C
+$(IJ_OBJS): %.o : $(IJ_DIR)/%.cc
 	@echo Compiling $*.o
-	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
+	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.cc
 
 #---------------- 
 # Injector Exe
 #---------------- 
-IJMAIN_SRCS    += $(IJ_DIR)/SpInjectorMain.C
-IJMAIN_OBJS    += $(notdir $(IJMAIN_SRCS:%.C=%.o))
+IJMAIN_SRCS    += $(IJ_DIR)/injector_main.cc
+IJMAIN_OBJS    += $(notdir $(IJMAIN_SRCS:%.cc=%.o))
 IJMAIN_DEP      = .IJMAIN_DEPENDS
 
 $(shell if test -f $(IJMAIN_DEP); then true; else \
@@ -55,9 +55,9 @@ fi);
 
 include $(IJMAIN_DEP)
 
-$(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.C
+$(IJMAIN_OBJS): %.o : $(IJ_DIR)/%.cc
 	@echo Compiling $*.o
-	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.C
+	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.cc
 
 $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
@@ -66,7 +66,7 @@ $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 #---------------- 
 # libijagent.so
 #---------------- 
-IJA_SRCS   += $(IJ_DIR)/IjAgent.c
+IJA_SRCS   += $(IJ_DIR)/ijagent.c
 IJA_OBJS   += $(notdir $(IJA_SRCS:%.c=%.o))
 
 $(IJA_OBJS): %.o : $(IJ_DIR)/%.c
@@ -79,22 +79,26 @@ $(IJAGENT): $(IJA_OBJS)
 #======================================
 # Agent
 #======================================
-AG_SRCS    += $(AG_DIR)/SpAgent.C \
-              $(AG_DIR)/SpParser.C \
-              $(AG_DIR)/SpEvent.C \
-              $(AG_DIR)/SpPropeller.C \
-              $(AG_DIR)/SpPayload.C \
-              $(AG_DIR)/SpContext.C \
-              $(AG_DIR)/SpInstrumenter.C \
-              $(AG_DIR)/SpAddrSpace.C \
-              $(AG_DIR)/SpSnippet.C \
-              $(AG_DIR)/SpIpcMgr.C \
-              $(AG_DIR)/SpObject.C \
-              $(AG_DIR)/SpPoint.C \
-              $(AG_DIR)/SpMaker.C \
-              $(AG_DIR)/SpCFG.C \
+AG_SRCS    += $(AG_DIR)/agent.cc \
+              $(AG_DIR)/parser.cc \
+              $(AG_DIR)/event.cc \
+              $(AG_DIR)/propeller.cc \
+              $(AG_DIR)/payload.cc \
+              $(AG_DIR)/context.cc \
+              $(AG_DIR)/instrumenter.cc \
+              $(AG_DIR)/addr_space.cc \
+              $(AG_DIR)/snippet.cc \
+              $(AG_DIR)/ipc_mgr.cc \
+              $(AG_DIR)/object.cc \
+              $(AG_DIR)/point.cc \
+              $(AG_DIR)/maker.cc \
+              $(AG_DIR)/cfg.cc \
+              $(AG_DIR)/trap_worker_impl.cc \
+              $(AG_DIR)/callinsn_worker_impl.cc \
+              $(AG_DIR)/callblk_worker_impl.cc \
+              $(AG_DIR)/spring_worker_impl.cc \
 
-AG_OBJS    += $(notdir $(AG_SRCS:%.C=%.o))
+AG_OBJS    += $(notdir $(AG_SRCS:%.cc=%.o))
 
 AG_DEP  = .AG_DEPENDS
 $(shell if test -f $(AG_DEP); then true; else \
@@ -103,11 +107,11 @@ fi);
 
 include $(AG_DEP)
 
-agent: $(AGENT)
+agent_lib: $(AGENT)
 
-$(AG_OBJS): %.o :$(AG_DIR)/%.C
+$(AG_OBJS): %.o :$(AG_DIR)/%.cc
 	@echo Compiling $*.o
-	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AG_DIR)/$*.C
+	@$(GXX) -c -o $@ $(AG_IFLAGS) $(AG_FLAGS) $(AG_DIR)/$*.cc
 
 $(AGENT): $(AG_OBJS)  $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
