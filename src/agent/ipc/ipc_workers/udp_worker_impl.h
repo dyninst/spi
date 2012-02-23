@@ -29,24 +29,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-// This provides a one-stop header, used by user agent implementation.
+// UDP worker
 
-#ifndef _SPINC_H_
-#define _SPINC_H_
+#ifndef _UDP_WORKER_IMPL_H_
+#define _UDP_WORKER_IMPL_H_
 
-#include "agent/agent.h"
-#include "agent/context.h"
-#include "agent/event.h"
-#include "agent/parser.h"
-#include "agent/payload.h"
-#include "agent/patchapi/cfg.h"
-#include "agent/patchapi/object.h"
-#include "agent/patchapi/point.h"
-#include "agent/propeller.h"
-#include "agent/snippet.h"
-#include "injector/injector.h"
+#include "agent/ipc/ipc_workers/ipc_worker_delegate.h"
 
-#define AGENT_INIT __attribute__((constructor))
-#define AGENT_FINI __attribute__((destructor))
+namespace sp {
 
-#endif  // _SPINC_H_
+	class SpUdpWorker : public SpIpcWorkerDelegate {
+  public:
+    virtual void set_start_tracing(char yes_or_no,
+                                   SpChannel* c);
+    virtual void set_start_tracing(char yes_or_no);
+
+    virtual char start_tracing(int fd);
+    virtual bool inject(SpChannel*,
+                        char* agent_path = NULL,
+                        char* injector_path = NULL,
+												char* ijagent_path = NULL);
+
+  protected:
+		virtual SpChannel* create_channel(int fd,
+                                      ChannelRW rw,
+                                      void* arg);
+	};
+
+}
+
+#endif  // _UDP_WORKER_IMPL_H_

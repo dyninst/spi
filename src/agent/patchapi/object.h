@@ -36,7 +36,7 @@
 
 #include "patchAPI/h/PatchObject.h"
 
-// PatchAPI stuffs.
+
 namespace sp {
 
 	// Structures for memory allocator

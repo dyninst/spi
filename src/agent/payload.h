@@ -32,7 +32,7 @@
 #ifndef SP_PAYLOAD_H_
 #define SP_PAYLOAD_H_
 
-#include "agent/cfg.h"
+#include "agent/patchapi/cfg.h"
 #include "common/common.h"
 
 namespace sp {

@@ -94,25 +94,32 @@ $(IJAGENT): $(IJA_OBJS)
 #======================================
 VPATH       = $(AG_DIR) \
               $(AG_DIR)/inst_workers \
+              $(AG_DIR)/ipc \
+              $(AG_DIR)/ipc/ipc_workers \
+              $(AG_DIR)/patchapi \
 
 AG_SRCS    += $(AG_DIR)/agent.cc \
-              $(AG_DIR)/parser.cc \
-              $(AG_DIR)/event.cc \
-              $(AG_DIR)/propeller.cc \
-              $(AG_DIR)/payload.cc \
               $(AG_DIR)/context.cc \
-              $(AG_DIR)/instrumenter.cc \
-              $(AG_DIR)/addr_space.cc \
-              $(AG_DIR)/snippet.cc \
-              $(AG_DIR)/ipc_mgr.cc \
-              $(AG_DIR)/object.cc \
-              $(AG_DIR)/point.cc \
-              $(AG_DIR)/maker.cc \
-              $(AG_DIR)/cfg.cc \
+              $(AG_DIR)/event.cc \
+              $(AG_DIR)/parser.cc \
+              $(AG_DIR)/payload.cc \
+              $(AG_DIR)/propeller.cc \
               $(AG_DIR)/inst_workers/trap_worker_impl.cc \
               $(AG_DIR)/inst_workers/callinsn_worker_impl.cc \
               $(AG_DIR)/inst_workers/callblk_worker_impl.cc \
               $(AG_DIR)/inst_workers/spring_worker_impl.cc \
+              $(AG_DIR)/ipc/ipc_mgr.cc \
+              $(AG_DIR)/ipc/ipc_workers/ipc_worker_delegate.cc \
+              $(AG_DIR)/ipc/ipc_workers/pipe_worker_impl.cc \
+              $(AG_DIR)/ipc/ipc_workers/tcp_worker_impl.cc \
+              $(AG_DIR)/ipc/ipc_workers/udp_worker_impl.cc \
+              $(AG_DIR)/patchapi/addr_space.cc \
+              $(AG_DIR)/patchapi/cfg.cc \
+              $(AG_DIR)/patchapi/instrumenter.cc \
+              $(AG_DIR)/patchapi/maker.cc \
+              $(AG_DIR)/patchapi/object.cc \
+              $(AG_DIR)/patchapi/point.cc \
+              $(AG_DIR)/snippet.cc \
 
 AG_OBJS  = $(addprefix $(OBJS_DIR)/, $(notdir $(AG_SRCS:%.cc=%.o)))
 
@@ -184,6 +191,8 @@ clean_all:
 	@$(RM) $(IJ_DEP) $(IJMAIN_DEP) $(AG_DEP)
 
 msg: agent_lib injector_exe
+	@echo ""
+	@echo ""
 	@echo " Successfully built ..."
 	@echo " Please set the environment variable SP_DIR to -- "
 	@echo " $(SP_DIR) "

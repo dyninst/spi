@@ -29,39 +29,48 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "agent/cfg.h"
-#include "agent/object.h"
+// Pipe worker
+
+#ifndef _PIPE_WORKER_IMPL_H_
+#define _PIPE_WORKER_IMPL_H_
+
+#include "agent/ipc/ipc_workers/ipc_worker_delegate.h"
 
 namespace sp {
 
-// SpFunction
+	class SpPipeWorker : public SpIpcWorkerDelegate {
+  public:
+    SpPipeWorker();
+    ~SpPipeWorker();
 
-	SpObject* SpFunction::GetObject() const {
-    return OBJ_CAST(obj());
-	}
+    virtual void set_start_tracing(char yes_or_no,
+                                   SpChannel* c);
+    virtual void set_start_tracing(char yes_or_no);
 
+    virtual char start_tracing(int fd);
+    virtual bool inject(SpChannel*,
+                        char* agent_path = NULL,
+                        char* injector_path = NULL,
+												char* ijagent_path = NULL);
 
-// SpBlock
+  protected:
 
-	bool SpBlock::save() {
+    // Child process set
+    PidSet child_proc_set_;
 
-		// Save the call instruction
-		orig_call_addr_ = last();
-		orig_call_insn_ = getInsn(orig_call_addr_);
-    if (!orig_call_insn_) return false;
+    // Can payload do trace?
+    // This buffer is in shared memory
+    char* start_tracing_;
 
-		// Save the entire block
-    char* blk_buf = (char*)start();
-    for (unsigned i = 0; i < size(); i++) {
-      orig_code_ += (char)blk_buf[i];
-    }
-		
+	  // Initialize shared memory
+    void tracing_internal(char** start_tracing);
 
-		return true;
-	}
+		virtual SpChannel* create_channel(int fd,
+                                      ChannelRW rw,
+                                      void* arg);
+	};
 
-	SpObject* SpBlock::GetObject() const {
-    return OBJ_CAST(obj());
-	}
 
 }
+
+#endif /* _PIPE_WORKER_IMPL_H_ */

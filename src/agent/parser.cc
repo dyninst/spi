@@ -3,25 +3,23 @@
 #include <dirent.h>
 #include <stack>
 
-#include "symtabAPI/h/Symtab.h"
+#include "instructionAPI/h/BinaryFunction.h"
+#include "instructionAPI/h/Immediate.h"
+#include "instructionAPI/h/Visitor.h"
+#include "patchAPI/h/PatchMgr.h"
 #include "symtabAPI/h/AddrLookup.h"
+#include "symtabAPI/h/Symtab.h"
 
+#include "agent/context.h"
+#include "agent/parser.h"
+#include "agent/patchapi/addr_space.h"
+#include "agent/patchapi/instrumenter.h"
+#include "agent/patchapi/maker.h"
+#include "agent/patchapi/object.h"
+#include "agent/patchapi/point.h"
+#include "common/utils.h"
 #include "injector/injector.h"
 
-#include "agent/point.h"
-#include "agent/parser.h"
-#include "agent/object.h"
-#include "agent/addr_space.h"
-#include "agent/context.h"
-#include "agent/maker.h"
-#include "agent/instrumenter.h"
-#include "common/utils.h"
-
-#include "patchAPI/h/PatchMgr.h"
-
-#include "instructionAPI/h/Visitor.h"
-#include "instructionAPI/h/Immediate.h"
-#include "instructionAPI/h/BinaryFunction.h"
 
 // Magic number to identify agent library
 // ( make the name long enough ... )

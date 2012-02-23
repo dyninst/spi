@@ -34,7 +34,7 @@
 
 #include <signal.h>
 
-#include "agent/point.h"
+#include "agent/patchapi/point.h"
 
 namespace sp {
 

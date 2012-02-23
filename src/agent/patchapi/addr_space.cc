@@ -31,9 +31,9 @@
 
 #include <sys/mman.h>
 
-#include "agent/addr_space.h"
-#include "agent/object.h"
 #include "agent/parser.h"
+#include "agent/patchapi/addr_space.h"
+#include "agent/patchapi/object.h"
 
 namespace sp {
 	extern SpParser::ptr g_parser;

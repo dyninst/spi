@@ -7,7 +7,7 @@
 #include "agent/parser.h"
 #include "agent/event.h"
 #include "agent/snippet.h"
-#include "agent/ipc_mgr.h"
+#include "agent/ipc/ipc_mgr.h"
 
 namespace sp {
 typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;

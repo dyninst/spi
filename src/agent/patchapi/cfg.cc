@@ -29,24 +29,39 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-// This provides a one-stop header, used by user agent implementation.
-
-#ifndef _SPINC_H_
-#define _SPINC_H_
-
-#include "agent/agent.h"
-#include "agent/context.h"
-#include "agent/event.h"
-#include "agent/parser.h"
-#include "agent/payload.h"
 #include "agent/patchapi/cfg.h"
 #include "agent/patchapi/object.h"
-#include "agent/patchapi/point.h"
-#include "agent/propeller.h"
-#include "agent/snippet.h"
-#include "injector/injector.h"
 
-#define AGENT_INIT __attribute__((constructor))
-#define AGENT_FINI __attribute__((destructor))
+namespace sp {
 
-#endif  // _SPINC_H_
+// SpFunction
+
+	SpObject* SpFunction::GetObject() const {
+    return OBJ_CAST(obj());
+	}
+
+
+// SpBlock
+
+	bool SpBlock::save() {
+
+		// Save the call instruction
+		orig_call_addr_ = last();
+		orig_call_insn_ = getInsn(orig_call_addr_);
+    if (!orig_call_insn_) return false;
+
+		// Save the entire block
+    char* blk_buf = (char*)start();
+    for (unsigned i = 0; i < size(); i++) {
+      orig_code_ += (char)blk_buf[i];
+    }
+		
+
+		return true;
+	}
+
+	SpObject* SpBlock::GetObject() const {
+    return OBJ_CAST(obj());
+	}
+
+}

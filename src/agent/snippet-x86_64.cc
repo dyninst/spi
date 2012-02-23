@@ -33,12 +33,12 @@
 
 #include "common/common.h"
 
-#include "agent/event.h"
-#include "agent/point.h"
-#include "agent/parser.h"
-#include "agent/snippet.h"
 #include "agent/context.h"
-#include "agent/instrumenter.h"
+#include "agent/event.h"
+#include "agent/parser.h"
+#include "agent/patchapi/instrumenter.h"
+#include "agent/patchapi/point.h"
+#include "agent/snippet.h"
 
 #include "common/utils.h"
 

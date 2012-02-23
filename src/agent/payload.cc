@@ -1,8 +1,8 @@
 
-#include "agent/point.h"
-#include "agent/payload.h"
-#include "agent/cfg.h"
 #include "agent/context.h"
+#include "agent/patchapi/cfg.h"
+#include "agent/patchapi/point.h"
+#include "agent/payload.h"
 #include "common/utils.h"
 
 // ------------------------------------------------------------------- 

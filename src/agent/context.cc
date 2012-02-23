@@ -1,10 +1,10 @@
 #include "injector/injector.h"
 
-#include "agent/addr_space.h"
-#include "agent/point.h"
-#include "agent/parser.h"
-#include "agent/propeller.h"
 #include "agent/context.h"
+#include "agent/parser.h"
+#include "agent/patchapi/addr_space.h"
+#include "agent/patchapi/point.h"
+#include "agent/propeller.h"
 #include "common/utils.h"
 
 #include "stackwalk/h/frame.h"

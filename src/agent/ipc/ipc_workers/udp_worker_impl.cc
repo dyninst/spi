@@ -29,45 +29,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-// This defines an instrumenter that does binary instrumentation logics
-// by trying different workers one by one to generate binary code.
-// For current implementation:
-// 1. We first try to overwrite call instruction with a short jump
-// 2. If it doesn't work, we try to overwrite the call block with a
-//    short jump or a long jump, depending on the size of call block
-// 3. If it still doesn't work, we build one-hop spring board
-// 4. If it doesn't work at all, we resort to overwrite call insn w/
-//    a trap instruction
+#include <sys/shm.h>
+#include <sys/wait.h>
 
-#ifndef _SPINSTRUMENTER_H_
-#define _SPINSTRUMENTER_H_
-
-#include "agent/point.h"
-#include "agent/snippet.h"
-#include "common/common.h"
-
-#include "patchAPI/h/Instrumenter.h"
+#include "agent/context.h"
+#include "agent/ipc/ipc_mgr.h"
+#include "agent/ipc/ipc_workers/udp_worker_impl.h"
 
 namespace sp {
 
-	// Forward declaration
-	class InstWorkerDelegate;
+  // UDP worker
+  void  SpUdpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
+  }
 
-	class AGENT_EXPORT SpInstrumenter : public ph::Instrumenter {
-  public:
-    static SpInstrumenter* create(ph::AddrSpace* as);
+  void SpUdpWorker::set_start_tracing(char yes_or_no) {
+  }
 
-		virtual bool run() OVERRIDE;
-		virtual bool undo() OVERRIDE;
+  char SpUdpWorker::start_tracing(int fd) {
+    return 0;
+  }
 
-  protected:
-    // For future extension, we many want more instworkers ...
-		typedef std::vector<InstWorkerDelegate*> InstWorkers;
-		InstWorkers workers_;
+  bool SpUdpWorker::inject(SpChannel* c, char* agent_path,
+                           char* injector_path,
+                           char* ijagent_path) {
+    return 0;
+  }
 
-    SpInstrumenter(ph::AddrSpace* as);
-		~SpInstrumenter();
-	};
+  SpChannel* SpUdpWorker::create_channel(int fd, ChannelRW rw, void*) {
+    return NULL;
+  }
 
-}
-#endif /* _SPINSTRUMENTER_H_ */
+} // Namespace sp

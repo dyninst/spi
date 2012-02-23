@@ -31,11 +31,11 @@
 
 #include <sys/mman.h>
 
-#include "agent/object.h"
-#include "agent/parser.h"
 #include "agent/context.h"
-#include "agent/addr_space.h"
 #include "agent/inst_workers/trap_worker_impl.h"
+#include "agent/patchapi/addr_space.h"
+#include "agent/parser.h"
+#include "agent/patchapi/object.h"
 
 namespace sp {
   extern SpContext* g_context;

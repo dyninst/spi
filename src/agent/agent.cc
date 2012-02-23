@@ -31,9 +31,9 @@
 
 #include <sys/resource.h>
 
-#include "agent/addr_space.h"
 #include "agent/agent.h"
 #include "agent/context.h"
+#include "agent/patchapi/addr_space.h"
 #include "common/utils.h"
 #include "injector/injector.h"
 

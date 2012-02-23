@@ -29,24 +29,45 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-// This provides a one-stop header, used by user agent implementation.
+// This defines an instrumenter that does binary instrumentation logics
+// by trying different workers one by one to generate binary code.
+// For current implementation:
+// 1. We first try to overwrite call instruction with a short jump
+// 2. If it doesn't work, we try to overwrite the call block with a
+//    short jump or a long jump, depending on the size of call block
+// 3. If it still doesn't work, we build one-hop spring board
+// 4. If it doesn't work at all, we resort to overwrite call insn w/
+//    a trap instruction
 
-#ifndef _SPINC_H_
-#define _SPINC_H_
+#ifndef _SPINSTRUMENTER_H_
+#define _SPINSTRUMENTER_H_
 
-#include "agent/agent.h"
-#include "agent/context.h"
-#include "agent/event.h"
-#include "agent/parser.h"
-#include "agent/payload.h"
-#include "agent/patchapi/cfg.h"
-#include "agent/patchapi/object.h"
 #include "agent/patchapi/point.h"
-#include "agent/propeller.h"
 #include "agent/snippet.h"
-#include "injector/injector.h"
+#include "common/common.h"
 
-#define AGENT_INIT __attribute__((constructor))
-#define AGENT_FINI __attribute__((destructor))
+#include "patchAPI/h/Instrumenter.h"
 
-#endif  // _SPINC_H_
+namespace sp {
+
+	// Forward declaration
+	class InstWorkerDelegate;
+
+	class AGENT_EXPORT SpInstrumenter : public ph::Instrumenter {
+  public:
+    static SpInstrumenter* create(ph::AddrSpace* as);
+
+		virtual bool run() OVERRIDE;
+		virtual bool undo() OVERRIDE;
+
+  protected:
+    // For future extension, we many want more instworkers ...
+		typedef std::vector<InstWorkerDelegate*> InstWorkers;
+		InstWorkers workers_;
+
+    SpInstrumenter(ph::AddrSpace* as);
+		~SpInstrumenter();
+	};
+
+}
+#endif /* _SPINSTRUMENTER_H_ */
