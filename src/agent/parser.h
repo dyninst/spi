@@ -73,7 +73,7 @@ namespace sp {
 	} FreeInterval;
 	typedef std::list<FreeInterval> FreeIntervalList;
 
-	class SpParser : public ph::CFGMaker {
+	class AGENT_EXPORT SpParser : public ph::CFGMaker {
   public:
     typedef SHARED_PTR(SpParser) ptr;
 

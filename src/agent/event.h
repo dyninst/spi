@@ -39,7 +39,7 @@
 
 namespace sp {
 
-class SpEvent {
+class AGENT_EXPORT SpEvent {
   public:
     virtual ~SpEvent() {}
 

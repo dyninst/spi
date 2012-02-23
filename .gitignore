@@ -1,3 +1,4 @@
 *.so
 *.o
 ._*
+external_mutatee

@@ -148,7 +148,7 @@ endif
 #======================================
 # Unit Tests
 #======================================
-
+include $(SP_DIR)/make.module.test.tmpl
 
 #=================================================
 # build dyninst
@@ -189,6 +189,10 @@ clean_all:
 	@echo "Cleaning all ..."
 	@$(RM) -r $(INJECTOR) $(AGENT) $(IJAGENT) *.o *.so *.a $(OBJS_DIR)
 	@$(RM) $(IJ_DEP) $(IJMAIN_DEP) $(AG_DEP)
+
+clean_test:
+	@echo "Cleaning tests ..."
+	@$(RM) -r test
 
 msg: agent_lib injector_exe
 	@echo ""
