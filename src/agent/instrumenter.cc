@@ -32,16 +32,16 @@
 #include <sys/mman.h>
 
 #include "agent/addr_space.h"
-#include "agent/callblk_worker_impl.h"
-#include "agent/callinsn_worker_impl.h"
 #include "agent/context.h"
-#include "agent/inst_worker_delegate.h"
+#include "agent/inst_workers/callblk_worker_impl.h"
+#include "agent/inst_workers/callinsn_worker_impl.h"
+#include "agent/inst_workers/inst_worker_delegate.h"
+#include "agent/inst_workers/spring_worker_impl.h"
+#include "agent/inst_workers/trap_worker_impl.h"
 #include "agent/instrumenter.h"
 #include "agent/object.h"
 #include "agent/point.h"
 #include "agent/snippet.h"
-#include "agent/spring_worker_impl.h"
-#include "agent/trap_worker_impl.h"
 
 #include "common/utils.h"
 

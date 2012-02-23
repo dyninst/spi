@@ -161,7 +161,6 @@ namespace sp {
   SpParser::get_func_addr(string name) {
 		ph::AddrSpace* as = mgr_->as();
     assert(as);
-    sp_debug("GET FUNC ADDR - %ld objs", as->objMap().size());
     for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
          ci != as->objMap().end(); ci++) {
 			SpObject* obj = OBJ_CAST(ci->second);
@@ -563,7 +562,7 @@ namespace sp {
 			sp_debug("FOUND NO SYMTABS");
 			return NULL;
 		}
-		sp_debug("SYMTABS - %ld symtabs found", tabs.size());
+		sp_debug("SYMTABS - %ld symtabs found", (long)tabs.size());
 
     // Determine whether the agent is injected or preloaded.
     //   - true: injected by other process (libijagent.so is loaded)
@@ -697,8 +696,8 @@ namespace sp {
         size_t ps = getpagesize();
 
         sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
-                 "rounded size %ld", interval->start, interval->end,
-                 interval->size(), size);
+                 "rounded size %ld", (long)interval->start,
+                 (long)interval->end, (long)interval->size(), (long)size);
 
         size = (size <= 2147483646 ? size : 2147483646);
         size = ((size + ps -1) & ~(ps - 1));

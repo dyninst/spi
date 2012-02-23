@@ -63,7 +63,8 @@ namespace sp {
 		sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker);
     walker->walkStackFromFrame(stackwalk, *f);
 
-		sp_debug("WALKED STACK - %ld function calls found", stackwalk.size());
+		sp_debug("WALKED STACK - %ld function calls found",
+             (long)stackwalk.size());
     for (unsigned i=0; i<stackwalk.size(); i++) {
       string s;
       stackwalk[i].getName(s);

@@ -12,7 +12,8 @@ namespace sp {
   }
 
 	void SpObject::init_memory_alloc(dt::Address base, size_t size) {
-		sp_debug("INIT MEMORY ALLOC - base %lx, size %ld", base, size);
+		sp_debug("INIT MEMORY ALLOC - base %lx, size %ld",
+             (long)base, (long)size);
 
 		// MMap this big buffer
 		void* m = MAP_FAILED;
@@ -37,11 +38,11 @@ namespace sp {
 
 		if (m == MAP_FAILED) {
 			sp_debug("FAILED TO MAP TO %lx (size %ld)",
-							 base, size);
+							 (long)base, (long)size);
 			return;
 		} else {
 			sp_debug("SUCCEED TO MAP TO %lx (size %ld)",
-							 (long)m, size);
+							 (long)m, (long)size);
 		}
 
 		const double small_buf_num_ratio = 0.8;
@@ -68,10 +69,10 @@ namespace sp {
 		offset -= small_buf_size;
 
 		sp_debug("SMALL BUF (total %ld)- base %lx, total_size %ld, buf_size %ld",
-						 small_freebufs_.list.size(),
-						 small_freebufs_.base,
-						 small_freebufs_.buf_size * small_freebufs_.list.size(),
-						 small_freebufs_.buf_size);
+						 (long)small_freebufs_.list.size(),
+						 (long)small_freebufs_.base,
+						 (long)small_freebufs_.buf_size * small_freebufs_.list.size(),
+						 (long)small_freebufs_.buf_size);
 
 		// For midium free bufs
 		mid_freebufs_.base = base;
@@ -84,10 +85,10 @@ namespace sp {
 		offset -= mid_buf_size;
 
 		sp_debug("MID BUF (total %ld) - base %lx, total_size %ld, buf_size %ld",
-						 mid_freebufs_.list.size(),
-						 mid_freebufs_.base,
-						 mid_freebufs_.buf_size * mid_freebufs_.list.size(),
-						 mid_freebufs_.buf_size);
+						 (long)mid_freebufs_.list.size(),
+						 (long)mid_freebufs_.base,
+						 (long)mid_freebufs_.buf_size * mid_freebufs_.list.size(),
+						 (long)mid_freebufs_.buf_size);
 
 
 		// For big free bufs
@@ -100,10 +101,10 @@ namespace sp {
 		offset -= big_buf_size;
 
 		sp_debug("BIG BUF (total %ld) - base %lx, total_size %ld, buf_size %ld",
-						 big_freebufs_.list.size(),
-						 big_freebufs_.base,
-						 big_freebufs_.buf_size * big_freebufs_.list.size(),
-						 big_freebufs_.buf_size);
+						 (long)big_freebufs_.list.size(),
+						 (long)big_freebufs_.base,
+						 (long)big_freebufs_.buf_size * big_freebufs_.list.size(),
+						 (long)big_freebufs_.buf_size);
 
 	}
 

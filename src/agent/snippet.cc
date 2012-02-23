@@ -61,7 +61,7 @@ namespace sp {
 
 		assert(point_);
 		if (!blob_) {
-			sp_debug("ALLOC BLOB - for size %ld", est_size);
+			sp_debug("ALLOC BLOB - for size %ld", (long)est_size);
 			blob_ = (char*)GetBlob(est_size);
 			assert(blob_);
 		}

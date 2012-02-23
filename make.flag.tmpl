@@ -1,3 +1,5 @@
+DYNLINK ?= false
+
 #=================================================
 # For COMMON
 #=================================================
@@ -21,6 +23,8 @@ COMMON_LDFLAGS   += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
 COMMON_LDFLAGS   += -lsymtabAPI
 
 UTILS_DIR         = $(SP_DIR)/src/common
+
+OBJS_DIR          = $(SP_DIR)/$(PLATFORM)/objs
 
 #=================================================
 # For Injector

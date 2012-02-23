@@ -29,8 +29,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "SpInjector.h"
-#include "SpCommon.h"
+#include "injector/injector.h"
 
 namespace sp {
 // The code snippet to invoke do_dlopen

@@ -1,6 +1,6 @@
-IJ_SRCS       =  ../src/Injector/SpInjector-i386.C \
+IJ_SRCS       =  ../src/injector/injector-i386.cc \
 
-AG_SRCS       = ../src/Agent/SpArch-i386.C \
+AG_SRCS       = ../src/agent/snippet-i386.cc \
 
 UTILS_SRCS    = 
 
