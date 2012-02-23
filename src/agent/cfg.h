@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+// This provides a thin CFG layer on top of PatchAPI's
+
 #ifndef _SPCFG_H_
 #define _SPCFG_H_
 
@@ -8,11 +41,10 @@
 namespace sp {
 	class SpObject;
 
-	// ------------------------------------------------------------------- 
-	// Function, the unit of propagation
-	// -------------------------------------------------------------------
 
-	class SpFunction : public ph::PatchFunction {
+	// Function, the unit of propagation
+
+	class AGENT_EXPORT SpFunction : public ph::PatchFunction {
 	public:
 	SpFunction(pe::Function *f,
 						 ph::PatchObject* o)
@@ -27,21 +59,20 @@ namespace sp {
 		virtual ~SpFunction() {}
 
 		// For convenience
-		SpObject* get_object() const;
+		SpObject* GetObject() const;
 
 		// Has instrumentation been propagated to callees of this function?
 		bool propagated() const { return propagated_; }
-		void set_propagated(bool b) { propagated_ = b; }
+		void SetPropagated(bool b) { propagated_ = b; }
 
 	protected:
 		bool propagated_;
 	};
 
-	// ------------------------------------------------------------------- 
-	// Block, the unit of instrumentation
-	// -------------------------------------------------------------------
 
-	class SpBlock : public ph::PatchBlock {
+	// Block, the unit of instrumentation
+
+	class AGENT_EXPORT SpBlock : public ph::PatchBlock {
 	public:
 	SpBlock(const ph::PatchBlock *parblk,
 					ph::PatchObject *child) 
@@ -59,17 +90,17 @@ namespace sp {
 
 		// Has this block been instrumented?
 		bool instrumented() const { return instrumented_; }
-		void set_instrumented(bool b) { instrumented_ = b; }
+		void SetInstrumented(bool b) { instrumented_ = b; }
 
 		// Springboard stuffs
-		bool is_spring() const { return is_spring_; }
-		void set_is_spring(bool b) { is_spring_ = b; }
+		bool IsSpring() const { return is_spring_; }
+		void SetIsSpring(bool b) { is_spring_ = b; }
 
 		// Save the whole block
 		bool save();
 
 		// For convenience
-		SpObject* get_object() const;
+		SpObject* GetObject() const;
 		size_t call_size() const { return (size_t)(end() - last()); }
 
 		// Get original code
@@ -84,11 +115,10 @@ namespace sp {
 		in::Instruction::Ptr orig_call_insn_;
 	};
 
-	// ------------------------------------------------------------------- 
-	// Edge
-	// -------------------------------------------------------------------
 
-	class SpEdge : public ph::PatchEdge {
+	// Edge, only for completeness ...
+
+	class AGENT_EXPORT SpEdge : public ph::PatchEdge {
 	public:
 	SpEdge(pe::Edge *internalEdge,
 				 ph::PatchBlock *source,

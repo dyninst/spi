@@ -50,7 +50,7 @@ default_exit(sp::SpPoint* pt) {
 namespace sp {
   extern SpContext* g_context;
 	extern SpParser::ptr g_parser;
-	extern int g_propel_lock;
+	extern SpLock* g_propel_lock;
 
   // Get callee from a PreCall point
 	SpFunction*
@@ -80,16 +80,27 @@ namespace sp {
   // Propel instrumentation to next points of the point `pt`
   void
   propel(SpPoint* pt) {
-    //		lock(&g_propel_lock);
+
+    int result = Lock(g_propel_lock);
+    if (result == SP_DEAD_LOCK) {
+      sp_print("DEAD LOCK - skip instrumentation for %s at %lx",
+               pt->getCallee()->name().c_str(), pt->block()->last());
+      Unlock(g_propel_lock);
+      return;
+    }
 
     SpFunction* f = callee(pt);
     if (!f) {
 			sp_debug("NOT VALID FUNC - stop propagation");
+      Unlock(g_propel_lock);
 			return;
 		}
 
     // Skip if we have already propagated from this point
-		if (f->propagated()) return;
+		if (f->propagated()) {
+      Unlock(g_propel_lock);
+      return;
+    }
 
     sp::SpPropeller::ptr p = g_context->init_propeller();
 		assert(p);
@@ -98,9 +109,9 @@ namespace sp {
 					g_context->init_entry(),
 					g_context->init_exit(),
 					pt);
-		f->set_propagated(true);
+		f->SetPropagated(true);
 
-    //		unlock(&g_propel_lock);
+    Unlock(g_propel_lock);
   }
 
   ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}

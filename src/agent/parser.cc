@@ -37,9 +37,10 @@ namespace sp {
 
     update_mem_maps();
 
-    init_well_known_libs();
-    init_dyninst_libs();
+    // init_well_known_libs();
+    // init_dyninst_libs();
 
+    binaries_to_inst_.insert(sp_filename(GetExeName()));
   }
 
   // Clean up memory buffers for ParseAPI stuffs
@@ -64,110 +65,6 @@ namespace sp {
     return ptr(new SpParser);
   }
 
-  // We skip "well known libraries" to parse
-  void
-  SpParser::init_well_known_libs() {
-    well_known_libs_.insert("libc-");
-    well_known_libs_.insert("libm-");
-    well_known_libs_.insert("ld-");
-    well_known_libs_.insert("libdl-");
-    well_known_libs_.insert("libstdc++");
-    well_known_libs_.insert("libgcc");
-    well_known_libs_.insert("libpthread-");
-
-		// For chrome
-    well_known_libs_.insert("libgtk-");
-    well_known_libs_.insert("libgdk");
-    well_known_libs_.insert("libcairo");       // Drawing
-    well_known_libs_.insert("libpangocairo-");
-    well_known_libs_.insert("libpango-");
-    well_known_libs_.insert("libz.so");
-    well_known_libs_.insert("libnss3.so");     // Network security service
-    well_known_libs_.insert("libXext.so");
-    well_known_libs_.insert("libnssutil3.so");
-    well_known_libs_.insert("librt-");
-    well_known_libs_.insert("libXss.so");
-    well_known_libs_.insert("libXrender");
-    well_known_libs_.insert("libglib-");
-    well_known_libs_.insert("libX11");
-    well_known_libs_.insert("libsmime3.so");
-    well_known_libs_.insert("libnspr4.so");
-    well_known_libs_.insert("libfontconfig.so");
-    well_known_libs_.insert("libplc4");
-    well_known_libs_.insert("libgthread-");
-    well_known_libs_.insert("libfreetype.so");
-    well_known_libs_.insert("libgobject-");
-    well_known_libs_.insert("libgio-");
-    well_known_libs_.insert("libatk-");
-    well_known_libs_.insert("libXdamage.so");
-    well_known_libs_.insert("libXfixes.so");
-    well_known_libs_.insert("libcrypt-");
-    well_known_libs_.insert("libXcomposite.so");
-    well_known_libs_.insert("libXinerama.so");
-    well_known_libs_.insert("libgpg-error.so");
-    well_known_libs_.insert("libXcursor.so");
-    well_known_libs_.insert("libXdmcp.so");
-    well_known_libs_.insert("libXau.so");
-    well_known_libs_.insert("libcrypto.so");
-    well_known_libs_.insert("libexpat.so");
-    well_known_libs_.insert("libdbus-glib-");
-    well_known_libs_.insert("libdbus-");
-    well_known_libs_.insert("libbz2.so");
-    well_known_libs_.insert("libkeyutils-");
-    well_known_libs_.insert("libcups.so");
-    well_known_libs_.insert("libgcrypt.so");
-    well_known_libs_.insert("libasound.so");
-    well_known_libs_.insert("libssl.so");
-    well_known_libs_.insert("libresolv-");
-    well_known_libs_.insert("libpng14.so");
-    well_known_libs_.insert("libgconf-");
-    well_known_libs_.insert("libkrb5support.so");
-    well_known_libs_.insert("libk5crypto.so");
-    well_known_libs_.insert("libcom_err.so");
-    well_known_libs_.insert("libkrb5.so");
-    well_known_libs_.insert("libORBit-");
-    well_known_libs_.insert("libgssapi_krb5.so");
-    well_known_libs_.insert("libplds4.so");
-    well_known_libs_.insert("libcom_err.so");
-    well_known_libs_.insert("libpangoft2-1.0.so");
-    well_known_libs_.insert("libgmodule-2.0.so");
-    well_known_libs_.insert("libsepol.so");
-    well_known_libs_.insert("libselinux.so");
-    well_known_libs_.insert("libpixman-1.so");
-  }
-
-  bool
-  SpParser::is_well_known_lib(string lib) {
-    for (StringSet::iterator i = well_known_libs_.begin();
-         i != well_known_libs_.end(); i++) {
-      if (lib.find(*i) != string::npos) return true;
-    }
-    return false;
-  }
-
-  // We will skip dyninst libraries for parsing.
-  bool
-  SpParser::is_dyninst_lib(string lib) {
-    for (StringSet::iterator i = dyninst_libs_.begin();
-         i != dyninst_libs_.end(); i++) {
-      if (lib.find(*i) != string::npos) return true;
-    }
-    return false;
-  }
-
-  void
-  SpParser::init_dyninst_libs() {
-    dyninst_libs_.insert("libpatchAPI.so");
-    dyninst_libs_.insert("libparseAPI.so");
-    dyninst_libs_.insert("libstackwalk.so");
-    dyninst_libs_.insert("libsymtabAPI.so");
-    dyninst_libs_.insert("libinstructionAPI.so");
-    dyninst_libs_.insert("libelf.so");
-    dyninst_libs_.insert("libdwarf.so");
-    dyninst_libs_.insert("libcommon.so");
-    dyninst_libs_.insert("libpcontrol.so");
-  }
-
   // The main parsing routine.
   // This is the default implementation, which parses binary during 
 	// runtime.
@@ -185,6 +82,8 @@ namespace sp {
 		if (!al) {
 			sp_perror("FAILED TO GET RUNTIME SYMTABS");
 		}
+    assert(agent_name_.size() > 0);
+    binaries_to_inst_.insert(agent_name_);
 
 		// Step 2: Create patchapi objects
 		PatchObjects patch_objs;
@@ -206,11 +105,6 @@ namespace sp {
 		if (!mgr_) {
 			sp_perror("FAILED TO CREATE PATCHMGR");
 		}
-
-		// Step 4: Add agent library's name here, because we need to parse
-		// agent library for the payload function, but we don't want to
-    // iterate agent library's functions to find a user function
-    well_known_libs_.insert(agent_name_);
 
     return mgr_;
   }
@@ -266,9 +160,13 @@ namespace sp {
   dt::Address
   SpParser::get_func_addr(string name) {
 		ph::AddrSpace* as = mgr_->as();
+    assert(as);
+    sp_debug("GET FUNC ADDR - %ld objs", as->objMap().size());
     for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
          ci != as->objMap().end(); ci++) {
-			ph::PatchObject* obj = ci->second;
+			SpObject* obj = OBJ_CAST(ci->second);
+      assert(obj);
+      sp_debug("GET FUNC ADDR - in object %s", obj->name().c_str());
 			pe::CodeObject* co = obj->co();
 			pe::CodeObject::funclist& all = co->funcs();
       for (pe::CodeObject::funclist::iterator fit = all.begin();
@@ -279,6 +177,7 @@ namespace sp {
         }
       }
     }
+    sp_debug("GET FUNC ADDR - cannot find %s", name.c_str());
     return 0;
   }
 
@@ -305,8 +204,8 @@ namespace sp {
 
       sp_debug("IN OBJECT - %s", sym->name().c_str());
 
-      if (is_well_known_lib(sp_filename(sym->name().c_str()))) {
-        sp_debug("SKIP - well known lib %s",
+      if (!CanInstrument(sp_filename(sym->name().c_str()))) {
+        sp_debug("SKIP - lib %s",
 								 sp_filename(sym->name().c_str()));
         continue;
       }
@@ -336,7 +235,7 @@ namespace sp {
 
     if (func_set.size() == 1) {
 			sp_debug("FOUND - %s in object %s", name.c_str(),
-        FUNC_CAST((*func_set.begin()))->get_object()->name().c_str());
+        FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
       return *func_set.begin();
     }
     sp_debug("NO FOUND - %s", name.c_str());
@@ -477,7 +376,7 @@ namespace sp {
 
     // 2. Looking for indirect call
     if (parse_indirect) {
-			SpBlock* b = pt->get_block();
+			SpBlock* b = pt->GetBlock();
 			assert(b);
 
       sp_debug("PARSING INDIRECT - for call insn %lx",
@@ -504,7 +403,7 @@ namespace sp {
 					assert(sfunc);
 					sp_debug("PARSED INDIRECT - %lx is %s in %s", b->last(),
 									 sfunc->name().c_str(),
-									 sfunc->get_object()->name().c_str());
+									 sfunc->GetObject()->name().c_str());
 
           pt->set_callee(sfunc);
           return sfunc;
@@ -528,7 +427,7 @@ namespace sp {
   }
 
   void SpParser::get_frame(long* pc, long* sp, long* bp) {
-    IjMsg* shm = (IjMsg*)SpInjector::get_shm(1986, sizeof(IjMsg));
+    IjMsg* shm = (IjMsg*)GetSharedMemory(1986, sizeof(IjMsg));
     *pc = shm->pc;
     *sp = shm->sp;
     *bp = shm->bp;
@@ -708,8 +607,7 @@ namespace sp {
 			// parsing the libraries that are either well known (e.g., libc,
 			// or dyninst).
       string libname_no_path = sp_filename(sym->name().c_str());
-      if (is_dyninst_lib(libname_no_path) ||
-          is_well_known_lib(libname_no_path)) {
+      if (!CanInstrument(libname_no_path)) {
         sp_debug("SKIPED - skip parsing %s",
 								 sp_filename(sym->name().c_str()));
         continue;
@@ -754,7 +652,7 @@ namespace sp {
 	// Create a PatchMgr object.
 	ph::PatchMgrPtr
 	SpParser::create_mgr(PatchObjects& patch_objs) {
-		SpAddrSpace* as = SpAddrSpace::create(exe_obj_);
+		SpAddrSpace* as = SpAddrSpace::Create(exe_obj_);
 		assert(as);
 
     SpInstrumenter* inst = sp::SpInstrumenter::create(as);
@@ -764,47 +662,50 @@ namespace sp {
 																							 inst,
 																							 new SpPointMaker);
 		assert(mgr);
-
-		dump_mem_maps();
-		dump_free_intervals();
+    dump_mem_maps();
+    dump_free_intervals();
     for (PatchObjects::iterator i = patch_objs.begin();
          i != patch_objs.end(); i++) {
-      if (*i != exe_obj_) as->loadLibrary(*i);
+      if (*i != exe_obj_) {
+        as->loadObject(*i);
+      }
 
-			SpObject* obj = static_cast<SpObject*>(*i);
-			assert(obj);
+      if (!getenv("SP_LIBC_MALLOC")) {
+        SpObject* obj = static_cast<SpObject*>(*i);
+        assert(obj);
 
-			// Bind preallocated close free buffers to each object
+        // Bind preallocated close free buffers to each object
 
-			sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
-							 obj->name().c_str(), obj->load_addr(), obj->codeBase());
-      MemMapping& mapping = mem_maps_[obj->load_addr()];
-      sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
-							 " Inode %lu, Path %s, previous_end %lx",
-               mapping.start, mapping.end, mapping.offset,
-							 mapping.perms, mapping.dev.c_str(), mapping.inode,
-							 mapping.path.c_str(),
-							 mapping.previous_end);
+        sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
+                 obj->name().c_str(), obj->load_addr(), obj->codeBase());
+        MemMapping& mapping = mem_maps_[obj->load_addr()];
+        sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+                 " Inode %lu, Path %s, previous_end %lx",
+                 mapping.start, mapping.end, mapping.offset,
+                 mapping.perms, mapping.dev.c_str(), mapping.inode,
+                 mapping.path.c_str(),
+                 mapping.previous_end);
 
-			FreeInterval* interval = NULL;
-			if (!get_closest_interval(mapping.start, &interval)) {
-				sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
-								 mapping.start, obj->name().c_str());
-				continue;
-			}
-			assert(interval);
-			size_t size = interval->size();
-			size_t ps = getpagesize();
+        FreeInterval* interval = NULL;
+        if (!get_closest_interval(mapping.start, &interval)) {
+          sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
+                   mapping.start, obj->name().c_str());
+          continue;
+        }
+        assert(interval);
+        size_t size = interval->size();
+        size_t ps = getpagesize();
 
-			sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
-							 "rounded size %ld", interval->start, interval->end,
-							 interval->size(), size);
+        sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
+                 "rounded size %ld", interval->start, interval->end,
+                 interval->size(), size);
 
-			size = (size <= 2147483646 ? size : 2147483646);
-      size = ((size + ps -1) & ~(ps - 1));
+        size = (size <= 2147483646 ? size : 2147483646);
+        size = ((size + ps -1) & ~(ps - 1));
 
-			dt::Address base = interval->end - size;
-			obj->init_memory_alloc(base, size);
+        dt::Address base = interval->end - size;
+        obj->init_memory_alloc(base, size);
+      }
     }
 
 		return mgr;
@@ -919,4 +820,20 @@ namespace sp {
 		}
 		return false;
 	} // get_closest_interval
+
+  void
+  SpParser::SetLibrariesToInstrument(const StringSet& libs) {
+    for (StringSet::iterator i = libs.begin(); i != libs.end(); i++)
+      binaries_to_inst_.insert(*i);
+  }
+
+  bool
+  SpParser::CanInstrument(string lib) {
+    for (StringSet::iterator i = binaries_to_inst_.begin();
+         i != binaries_to_inst_.end(); i++) {
+      if (lib.find(*i) != string::npos) return true;
+    }
+    return false;
+  }
+
 }

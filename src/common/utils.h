@@ -90,7 +90,7 @@ namespace sp {
   // Is current executable an illegal program in `illegal_prog_names`?
   // We use this, because we want to avoid instrumenting some programs, e.g.,
   // unix utilities used in self-propelled core
-  COMMON_EXPORT bool IsIllegalProgram(const StringSet& illegal_prog_names);
+  COMMON_EXPORT bool IsIllegalProgram();
 
   // Gets text content from a file. If file doesn't exist, return "".
   COMMON_EXPORT const char* GetFileText(const char* filename);
@@ -124,10 +124,27 @@ namespace sp {
   COMMON_EXPORT pe::CodeObject* DeserializeCodeObject(const char* dir,
                                                   const char* file);
 
-  // Lock / unlock
-  COMMON_EXPORT void InitLock(int* const lock);
-  COMMON_EXPORT void Lock(int* const lock);
-  COMMON_EXPORT void Unlock(int* const lock);
+  // Lock / unlock for multithreading
+  typedef void* SpTid;
+  enum {
+    SP_INITIAL_LOCK_TID = -129,
+    SP_LIVE_LOCK        = -1,
+    SP_DEAD_LOCK        = -2
+  };
+  typedef struct {
+    volatile int mutex;
+    SpTid tid;
+  } SpLock;
+  
+  COMMON_EXPORT SpTid GetThreadId();
+  COMMON_EXPORT int FreeLock(SpLock* const lock);
+  COMMON_EXPORT int InitLock(SpLock* const lock);
+  COMMON_EXPORT int Lock(SpLock* const lock);
+  COMMON_EXPORT int Unlock(SpLock* const lock);
+
+  // Shared memory
+  COMMON_EXPORT void* GetSharedMemory(int id,
+                                      size_t size);
 }
 
 #endif   // _SPUTILS_H_

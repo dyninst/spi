@@ -50,8 +50,8 @@ namespace sp {
 		// Save code that will be modified for a point
 		virtual bool save(SpPoint* pt) OVERRIDE {
       assert(pt);
-      assert(pt->get_block());
-      return pt->get_block()->save();
+      assert(pt->GetBlock());
+      return pt->GetBlock()->save();
     }
 
 		// How to install instrumentation?
@@ -66,15 +66,15 @@ namespace sp {
 	protected:
 		// Install the instrumentation
 		virtual bool install(SpPoint* pt) = 0;
-		virtual size_t est_blob_size(SpPoint* pt) = 0;
+		virtual size_t EstimateBlobSize(SpPoint* pt) = 0;
 
 		// The base size of generated binary code (excluding relocated insns)
 
 		// For relocating an insn
-		static size_t base_est_reloc_insn_size(SpPoint* pt);
+		static size_t BaseEstimateRelocInsnSize(SpPoint* pt);
 
 		// For relocating a block
-		static size_t base_est_reloc_blk_size(SpPoint* pt);
+		static size_t BaseEstimateRelocBlockSize(SpPoint* pt);
 	};
 
 

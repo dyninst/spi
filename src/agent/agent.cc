@@ -1,8 +1,39 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 #include <sys/resource.h>
 
+#include "agent/addr_space.h"
 #include "agent/agent.h"
 #include "agent/context.h"
-#include "agent/addr_space.h"
 #include "common/utils.h"
 #include "injector/injector.h"
 
@@ -11,14 +42,14 @@
 namespace sp {
 
 	// The only definition of global variables
-	SpContext*    g_context = NULL;
 	SpAddrSpace*  g_as = NULL;
+  SpContext*    g_context = NULL;
 	SpParser::ptr g_parser;
-	int g_propel_lock;
+	SpLock*       g_propel_lock = NULL;
 
 	// Constructor for SpAgent
 	SpAgent::ptr
-	SpAgent::create() {
+	SpAgent::Create() {
 
 		// Enable core dump.
 		if (getenv("SP_COREDUMP")) {
@@ -49,94 +80,96 @@ namespace sp {
 
 	// Configuration
 	void
-	SpAgent::set_parser(SpParser::ptr parser) {
+	SpAgent::SetParser(SpParser::ptr parser) {
 		parser_ = parser;
 	}
 
 	void
-	SpAgent::set_init_event(SpEvent::ptr e) {
+	SpAgent::SetInitEvent(SpEvent::ptr e) {
 		init_event_ = e;
 	}
 
 	void
-	SpAgent::set_fini_event(SpEvent::ptr e) {
+	SpAgent::SetFiniEvent(SpEvent::ptr e) {
 		init_event_ = e;
 	}
 
 	void
-	SpAgent::set_init_entry(string p) {
+	SpAgent::SetInitEntry(string p) {
 		init_entry_ = p;
 	}
 
 	void
-	SpAgent::set_init_exit(string p) {
+	SpAgent::SetInitExit(string p) {
 		init_exit_ = p;
 	}
 
 	void
-	SpAgent::set_init_propeller(SpPropeller::ptr p) {
+	SpAgent::SetInitPropeller(SpPropeller::ptr p) {
 		init_propeller_ = p;
 	}
 
 	void
-	SpAgent::set_parse_only(bool b) {
+	SpAgent::EnableParseOnly(bool b) {
 		parse_only_ = b;
 	}
 
 	void
-	SpAgent::set_directcall_only(bool b) {
+	SpAgent::EnableDirectcallOnly(bool b) {
 		directcall_only_ = b;
 	}
 
 	void
-	SpAgent::set_ipc(bool b) {
+	SpAgent::EnableIpc(bool b) {
 		allow_ipc_ = b;
 	}
 
 	void
-	SpAgent::set_trap_only(bool b) {
+	SpAgent::EnableTrapOnly(bool b) {
 		trap_only_ = b;
 	}
+
+  void
+  SpAgent::SetLibrariesToInstrument(const StringSet& libs) {
+    for (StringSet::iterator i = libs.begin(); i != libs.end(); i++)
+      libs_to_inst_.insert(*i);
+  }
 
 	// Here We Go! Self-propelling magic happens!
 
 	void
-	SpAgent::go() {
+	SpAgent::Go() {
 		sp_debug("==== Start Self-propelled instrumentation @ Process %d ====",
 						 getpid());
 
 		// XXX: ignore bash/lsof/Injector for now ...
-		StringSet illegal_exes;
-		illegal_exes.insert("lsof");
-		illegal_exes.insert("bash");
-		illegal_exes.insert("Injector");
-		illegal_exes.insert("sh");
-		illegal_exes.insert("ssh");
-		illegal_exes.insert("xauth");
-		illegal_exes.insert("tcsh");
-		illegal_exes.insert("scp");
-		illegal_exes.insert("cp");
-		illegal_exes.insert("netstat");
-
-		if (sp::IsIllegalProgram(illegal_exes)) {
-			sp_debug("ILLEGAL EXE - avoid instrumenting");
+		if (sp::IsIllegalProgram()) {
+			sp_debug("ILLEGAL EXE - avoid instrumenting %s", GetExeName());
 			return;
 		}
 
 		// Init lock
-		InitLock(&g_propel_lock);
+    // This variable will be freed in SpContext::~SpContext
+    g_propel_lock = new SpLock;
+		InitLock(g_propel_lock);
 
-		if (getenv("SP_DIRECTCALL_ONLY")) directcall_only_ = true;
-		if (getenv("SP_TRAP")) trap_only_ = true;
+    // For quick debugging
+		if (getenv("SP_DIRECTCALL_ONLY")) {
+      directcall_only_ = true;
+    }
+    
+		if (getenv("SP_TRAP")) {
+      trap_only_ = true;
+    }
 
 		// Sanity check. If not user-provided configuration, use default ones
 		if (!init_event_) {
 			sp_debug("INIT EVENT - Use default event");
-			init_event_ = SyncEvent::create();
+			init_event_ = SyncEvent::Create();
 		}
 		if (!fini_event_) {
 			sp_debug("FINI EVENT - Use default event");
-			fini_event_ = SpEvent::create();
+			fini_event_ = SpEvent::Create();
 		}
 		if (init_entry_.size() == 0) {
 			sp_debug("ENTRY_PAYLOAD - Use default payload entry calls");
@@ -156,14 +189,17 @@ namespace sp {
 		}
 
 		if (directcall_only_) {
-			sp_debug("DIRECT CALL ONLY - only instrument direct calls, ignoring indirect calls");
+			sp_debug("DIRECT CALL ONLY - only instrument direct calls,"
+               " ignoring indirect calls");
 		} else {
-			sp_debug("DIRECT/INDIRECT CALL - instrument both direct and indirect calls");
+			sp_debug("DIRECT/INDIRECT CALL - instrument both direct and"
+               " indirect calls");
 		}
 		if (allow_ipc_) {
 			sp_debug("MULTI PROCESS - support multiprocess instrumentation");
 		} else {
-			sp_debug("SINGLE PROCESS - only support single-process instrumentation");
+			sp_debug("SINGLE PROCESS - only support single-process "
+               "instrumentation");
 		}
 		if (trap_only_) {
 			sp_debug("TRAP ONLY - Only use trap-based instrumentation");
@@ -172,30 +208,37 @@ namespace sp {
 		}
 
 		// Set up globally unique parser
+    // The parser will be freed automatically, because it is a shared ptr
 		g_parser = parser_;
 		assert(g_parser);
-
+    g_parser->SetLibrariesToInstrument(libs_to_inst_);
+    
 		// Prepare context
+    // XXX: this never gets freed ... should free it when unloading
+    //      this shared agent library?
 		g_context = SpContext::create(init_propeller_,
 																	init_entry_,
 																	init_exit_,
 																	parser_);
 		assert(g_context && g_parser->mgr());
 
+    // Set up globally unique address space object
+    // This will be freed in SpContext::~SpContext
 		g_as = AS_CAST(g_parser->mgr()->as());
 		assert(g_as);
 
 		g_context->set_directcall_only(directcall_only_);
 		g_context->set_allow_ipc(allow_ipc_);
 
+    // We may stop here after parsing
 		if (parse_only_) {
 			sp_debug("PARSE ONLY - exit after parsing, without instrumentation");
 			return;
 		}
 
 		// Register Events
-		init_event_->register_event();
-		fini_event_->register_event();
+		init_event_->RegisterEvent();
+		fini_event_->RegisterEvent();
 	}
 
 }

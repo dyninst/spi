@@ -404,9 +404,9 @@ namespace sp {
     //      do bookkeeping correctly.
     if (c->injected) return true;
     sp_debug("NO INJECTED -- start injection");
-    SpInjector::ptr injector = SpInjector::create(c->remote_pid);
+    SpInjector::ptr injector = SpInjector::Create(c->remote_pid);
     string agent_name = g_parser->get_agent_name();
-    injector->inject(agent_name.c_str());
+    injector->Inject(agent_name.c_str());
     c->injected = true;
     return true;
   }

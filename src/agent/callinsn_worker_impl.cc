@@ -47,7 +47,7 @@ namespace sp {
     sp_debug("RELOC CALLINSN WORKER - runs");
 
 		assert(pt);
-		SpBlock* b = pt->get_block();
+		SpBlock* b = pt->GetBlock();
 		assert(b);
 
     // Check if we are able to overwrite the call insn w/ a short jmp,
@@ -82,8 +82,8 @@ namespace sp {
     // 3. is the relative address to snippet within 4-byte?
 		SpSnippet::ptr snip = pt->snip();
 		assert(snip);
-		size_t est_size = est_blob_size(pt);
-		dt::Address blob = snip->get_blob(est_size);
+		size_t est_size = EstimateBlobSize(pt);
+		dt::Address blob = snip->GetBlob(est_size);
 		assert(blob);
     long rel_addr = (long)blob - (long)call_insn_addr;
     if (!sp::IsDisp32(rel_addr)) {
@@ -103,7 +103,7 @@ namespace sp {
   bool
   RelocCallInsnWorker::install(SpPoint* pt) {
 		assert(pt);
-		SpBlock* b = pt->get_block();
+		SpBlock* b = pt->GetBlock();
 		assert(b);
 
     // Generate the snippet
@@ -114,8 +114,8 @@ namespace sp {
 		SpSnippet::ptr snip = pt->snip();
 		assert(snip);
 
-		size_t est_size = est_blob_size(pt);
-		char* blob = snip->build_blob(est_size);
+		size_t est_size = EstimateBlobSize(pt);
+		char* blob = snip->BuildBlob(est_size);
 		assert(blob);
     size_t blob_size = snip->size();
     if (!blob) {
@@ -139,7 +139,7 @@ namespace sp {
     sp_debug("}");
 
     // Build the jump instruction
-		SpObject* obj = pt->get_object();
+		SpObject* obj = pt->GetObject();
 		assert(obj);
 
     size_t insn_length = b->call_size();
@@ -154,14 +154,14 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (g_as->set_range_perm((dt::Address)call_addr, insn_length, perm)) {
+    if (g_as->SetCodePermission((dt::Address)call_addr, insn_length, perm)) {
       g_as->write(obj, (dt::Address)call_addr, (dt::Address)jump, 5);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
     }
 
     // Change the permission of snippet, so that it can be executed.
-    if (!g_as->set_range_perm((dt::Address)blob, blob_size, perm)) {
+    if (!g_as->SetSnippetPermission((dt::Address)blob, blob_size, perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
@@ -169,7 +169,7 @@ namespace sp {
     }
 
     // Restore the permission of memory mapping
-    if (!g_as->restore_range_perm((dt::Address)call_addr, insn_length)) {
+    if (!g_as->RestoreCodePermission((dt::Address)call_addr, insn_length)) {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
 

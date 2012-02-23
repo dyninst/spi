@@ -42,12 +42,14 @@ namespace sp {
 	public:
 	  RelocCallInsnWorker() : InstWorkerDelegate() {}
 
-		virtual bool run(SpPoint* pt);
-		virtual bool undo(SpPoint* pt);
-		virtual InstallMethod install_method() const { return SP_RELOC_INSN; }
+		virtual bool run(SpPoint* pt) OVERRIDE;
+		virtual bool undo(SpPoint* pt) OVERRIDE;
+		virtual InstallMethod install_method() const OVERRIDE {
+      return SP_RELOC_INSN;
+    }
 	protected:
-		virtual bool install(SpPoint* pt);
-		virtual size_t est_blob_size(SpPoint* pt);
+		virtual bool install(SpPoint* pt) OVERRIDE;
+		virtual size_t EstimateBlobSize(SpPoint* pt) OVERRIDE;
 	};
 }
 

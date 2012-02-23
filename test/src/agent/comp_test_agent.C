@@ -12,20 +12,19 @@ void test_entry(SpPoint* pt) {
 	// SpObject* obj = static_cast<SpObject*>(pt->block()->obj());
 	// sp_print("%s in %s", f->name().c_str(), obj->name().c_str());
 	sp_print("%s", f->name().c_str());
+	// sp_print("%s at %lx", f->name().c_str(), pt->block()->last());
+  
   sp::propel(pt);
 }
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  agent->set_init_entry("test_entry");
-	if (getenv("SP_DIRECTCALL_ONLY")) {
-		agent->set_directcall_only(true);
-	}
-	if (getenv("SP_TRAP")) {
-		agent->set_trap_only(true);
-	}
-  agent->go();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  StringSet libs_to_inst;
+  libs_to_inst.insert("libtest1.so");
+  agent->SetLibrariesToInstrument(libs_to_inst);
+  agent->SetInitEntry("test_entry");
+  agent->Go();
 }
 
 AGENT_FINI

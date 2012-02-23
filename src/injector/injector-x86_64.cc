@@ -1,9 +1,40 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 #include "injector/injector.h"
 
-using sp::SpInjector;
+namespace sp {
 
 // The code snippet to invoke do_dlopen
-static char do_dlopen_code[] = {
+static char kDlopenCode[] = {
   //0 , 1
   0x90, 0x90,                                         // nop, nop
   //         (OFF_ARGS)
@@ -18,7 +49,7 @@ static char do_dlopen_code[] = {
   0xCC
 };
 
-static char ijagent_code[] = {
+static char kIjagentCode[] = {
   //0 , 1
   0x90, 0x90,                                         // nop, nop
   //         (OFF_IJ)
@@ -39,45 +70,49 @@ enum {
   OFF_IJRET = 12
 };
 
-size_t SpInjector::get_code_tmpl_size() {
-  return sizeof(do_dlopen_code);
+size_t
+SpInjector::GetCodeTemplateSize() {
+  return sizeof(kDlopenCode);
 }
 
-char* SpInjector::get_code_tmpl(Dyninst::Address args_addr,
-																Dyninst::Address do_dlopen,
-																Dyninst::Address /*code_addr*/) {
-  long* p = (long*)&do_dlopen_code[OFF_DODLOPEN];
+char*
+SpInjector::GetCodeTemplate(Dyninst::Address args_addr,
+                            Dyninst::Address do_dlopen,
+                            Dyninst::Address /*code_addr*/) {
+  long* p = (long*)&kDlopenCode[OFF_DODLOPEN];
   *p = (long)do_dlopen;
-  p = (long*)&do_dlopen_code[OFF_ARGS];
+  p = (long*)&kDlopenCode[OFF_ARGS];
   *p = (long)args_addr;
-  return do_dlopen_code;
+  return kDlopenCode;
 }
 
-size_t SpInjector::get_ij_tmpl_size() {
-  return sizeof(ijagent_code);
+size_t SpInjector::GetIjTemplateSize() {
+  return sizeof(kIjagentCode);
 }
 
-char* SpInjector::get_ij_tmpl(Dyninst::Address ij_addr,
-															Dyninst::Address /*code_addr*/) {
-  long* p = (long*)&ijagent_code[OFF_IJ];
+char* SpInjector::GetIjTemplate(Dyninst::Address ij_addr,
+                                Dyninst::Address /*code_addr*/) {
+  long* p = (long*)&kIjagentCode[OFF_IJ];
   *p = (long)ij_addr;
-  return ijagent_code;
+  return kIjagentCode;
 }
 
-Dyninst::Address SpInjector::get_pc() {
+Dyninst::Address SpInjector::pc() {
   Dyninst::MachRegisterVal rip;
   thr_->getRegister(Dyninst::x86_64::rip, rip);
   return rip;
 }
 
-Dyninst::Address SpInjector::get_sp() {
+Dyninst::Address SpInjector::sp() {
   Dyninst::MachRegisterVal rsp;
   thr_->getRegister(Dyninst::x86_64::rsp, rsp);
   return rsp;
 }
 
-Dyninst::Address SpInjector::get_bp() {
+Dyninst::Address SpInjector::bp() {
   Dyninst::MachRegisterVal rbp;
   thr_->getRegister(Dyninst::x86_64::rbp, rbp);
   return rbp;
+}
+
 }

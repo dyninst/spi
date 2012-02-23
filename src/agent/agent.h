@@ -1,3 +1,37 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+
+// Agent is to manage Agent's configuration parameters
+
 #ifndef SP_AGENT_H_
 #define SP_AGENT_H_
  
@@ -8,48 +42,43 @@
 #include "agent/payload.h"
 #include "agent/propeller.h"
 
-
 namespace sp {
 
-// --------------------------------------------------------------------------
-// Agent is to manage Agent's configuration parameters, including:
-// - The event that causes the activation of instrumentation.
-//   - Default: the callees of current function
-// - The event that causes the deactivation of instrumentation.
-//   - Default: the exit of this process
-// - The initial user-defined payload code to execute when activation.
-//   - Default: print out the current function name
-// - The parser to parse CFG structures of current running process.
-//   - Default: runtime parsing
-// --------------------------------------------------------------------------
-	class SpAgent : public dyn_detail::boost::enable_shared_from_this<SpAgent> {
+	class SpAgent : public SHARED_THIS(SpAgent) {
 		friend class SpContext;
-  public:
-    typedef dyn_detail::boost::shared_ptr<SpAgent> ptr;
-    static ptr create();
+
+ public:
+    typedef SHARED_PTR(SpAgent) ptr;
+    
+    AGENT_EXPORT static ptr Create();
     virtual ~SpAgent();
 
-    void set_parser(SpParser::ptr);
-		SpParser::ptr parser() const { return parser_; }
+    // Getters
+		AGENT_EXPORT SpParser::ptr parser() const {
+      return parser_;
+    }
 
-    void set_init_event(SpEvent::ptr);
-    void set_fini_event(SpEvent::ptr);
-    void set_init_entry(string);
-    void set_init_exit(string);
-    void set_init_propeller(SpPropeller::ptr);
+    // Setters
+    AGENT_EXPORT void SetParser(SpParser::ptr);
+    AGENT_EXPORT void SetInitEvent(SpEvent::ptr);
+    AGENT_EXPORT void SetFiniEvent(SpEvent::ptr);
+    AGENT_EXPORT void SetInitEntry(string);
+    AGENT_EXPORT void SetInitExit(string);
+    AGENT_EXPORT void SetInitPropeller(SpPropeller::ptr);
+    AGENT_EXPORT void SetLibrariesToInstrument(const StringSet& libs);
+        
+    AGENT_EXPORT void EnableParseOnly(bool yes_or_no);
+    AGENT_EXPORT void EnableDirectcallOnly(bool yes_or_no);
+		AGENT_EXPORT void EnableTrapOnly(bool yes_or_no);
+    AGENT_EXPORT void EnableIpc(bool yes_or_no);
 
-    void set_parse_only(bool b);
-    void set_directcall_only(bool b);
-		void set_trap_only(bool b);
-    void set_ipc(bool b);
-
-    void go();
+    AGENT_EXPORT void Go();
 
   protected:
-    SpEvent::ptr init_event_;
-    SpEvent::ptr fini_event_;
-    SpParser::ptr parser_;
-    SpPropeller::ptr init_propeller_;
+    SpEvent::ptr      init_event_;
+    SpEvent::ptr      fini_event_;
+    SpParser::ptr     parser_;
+    SpPropeller::ptr  init_propeller_;
 
     string init_entry_;
     string init_exit_;
@@ -59,6 +88,8 @@ namespace sp {
     bool allow_ipc_;
 		bool trap_only_;
 
+    StringSet  libs_to_inst_;
+    
     SpAgent();
 	};
 

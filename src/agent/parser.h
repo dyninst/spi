@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+// Parser is to parse the CFG structures of the mutatee process.
+
 #ifndef SP_PARSER_H_
 #define SP_PARSER_H_
 
@@ -40,13 +73,9 @@ namespace sp {
 	} FreeInterval;
 	typedef std::list<FreeInterval> FreeIntervalList;
 
-	// -------------------------------------------------------------------
-	// Parser is to parse the CFG structures of the mutatee process.
-	// This is a default implementation, which parses binary during runtime.
-	// -------------------------------------------------------------------
 	class SpParser : public ph::CFGMaker {
   public:
-    typedef dyn_detail::boost::shared_ptr<SpParser> ptr;
+    typedef SHARED_PTR(SpParser) ptr;
 
     virtual ~SpParser();
     static ptr create();
@@ -54,6 +83,9 @@ namespace sp {
 		// The main parsing procedure
     virtual ph::PatchMgrPtr parse();
 
+    // Libraries to instrument
+    void SetLibrariesToInstrument(const StringSet& libs);
+    
 		// Get the PatchObject that represents the executable
     ph::PatchObject* exe_obj() const { return exe_obj_; }
 
@@ -83,13 +115,9 @@ namespace sp {
     // preloaded (false)
     bool injected() const { return injected_; }
 
-		// Check if the library is a dyninst library (lib name is w/o path)
-    bool is_dyninst_lib(string lib);
-
-		// Check if the library is a well known library (lib name is w/o
-		// path)
-    bool is_well_known_lib(string lib);
-
+    // Checks whether this library is okay to be instrumented
+    bool CanInstrument(string lib_full_path);
+    
 		ph::PatchMgrPtr mgr() const { return mgr_; }
 
 		MemMappings& mem_maps() { return mem_maps_; }
@@ -105,9 +133,8 @@ namespace sp {
     ph::PatchMgrPtr mgr_;
     ph::PatchObject* exe_obj_;
 
-    StringSet dyninst_libs_;
-    StringSet well_known_libs_;
-
+    StringSet binaries_to_inst_;
+        
     RealFuncMap real_func_map_;
 
     MemMappings mem_maps_;
@@ -115,8 +142,6 @@ namespace sp {
 
 		// Methods
     SpParser();
-    void init_dyninst_libs();
-		void init_well_known_libs();
 
     void update_mem_maps();
     void dump_mem_maps();

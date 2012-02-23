@@ -15,10 +15,10 @@ void test_entry(SpPoint* pt) {
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  agent->set_init_entry("test_entry");
-	agent->set_trap_only(true);
-  agent->go();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  agent->SetInitEntry("test_entry");
+	agent->EnableTrapOnly(true);
+  agent->Go();
 }
 
 AGENT_FINI

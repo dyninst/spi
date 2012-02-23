@@ -42,9 +42,9 @@
 #ifndef _SPINSTRUMENTER_H_
 #define _SPINSTRUMENTER_H_
 
-#include "common/common.h"
 #include "agent/point.h"
 #include "agent/snippet.h"
+#include "common/common.h"
 
 #include "patchAPI/h/Instrumenter.h"
 

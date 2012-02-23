@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
     sp_print("Injector [pid = %5d]: INJECTING - %s to pid=%d...",
              getpid(), lib_name, pid);
     sp_debug("========== Injector ==========");
-    SpInjector::ptr injector = SpInjector::create(pid);
+    SpInjector::ptr injector = SpInjector::Create(pid);
     system("/usr/sbin/lsof -i TCP > /tmp/lsofdump");
-    injector->inject(lib_name);
+    injector->Inject(lib_name);
   }
 
   // Networking mode: We inject to processes w/ known ip/port
@@ -52,8 +52,8 @@ int main(int argc, char *argv[]) {
       sp_print("Injector [pid = %d]: INJECTING - %s to port=%s / pid=%d ...",
                getpid(), lib_name, argv[4], pid);
       sp_debug("========== Injector ==========");
-      SpInjector::ptr injector = SpInjector::create(pid);
-      injector->inject(lib_name);
+      SpInjector::ptr injector = SpInjector::Create(pid);
+      injector->Inject(lib_name);
     }
   }
 

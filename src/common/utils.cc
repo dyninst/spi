@@ -29,11 +29,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+
 #include <arpa/inet.h>
 #include <linux/udp.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include <sys/dir.h>
+#include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 
@@ -292,7 +294,19 @@ namespace sp {
   // Is current executable an illegal program?
   // We use this, because we want to avoid instrumenting some programs, e.g.,
   // unix utilities used in self-propelled core
-  bool IsIllegalProgram(const StringSet& illegal_exes) {
+  bool IsIllegalProgram() {
+		StringSet illegal_exes;
+		illegal_exes.insert("lsof");
+		illegal_exes.insert("bash");
+		illegal_exes.insert("Injector");
+		illegal_exes.insert("sh");
+		illegal_exes.insert("ssh");
+		illegal_exes.insert("xauth");
+		illegal_exes.insert("tcsh");
+		illegal_exes.insert("scp");
+		illegal_exes.insert("cp");
+		illegal_exes.insert("netstat");
+    
     std::string proc_path = "";
     proc_path += "/proc/";
     proc_path += Dyninst::itos(getpid());
@@ -304,7 +318,7 @@ namespace sp {
 
     for (StringSet::iterator si = illegal_exes.begin();
          si != illegal_exes.end(); si++) {
-      sp_debug("comparing: %s", (*si).c_str());
+      // sp_debug("comparing: %s", (*si).c_str());
       if ((*si).compare(exe_name) == 0) return true;
     }
     return false;
@@ -478,19 +492,53 @@ namespace sp {
 
 
   // Lock / Unlock
-  void InitLock(int* const lock) {
-    *lock = 0;
+
+  SpTid
+  GetThreadId() {
+    return (SpTid)pthread_self();
   }
 
-  void Lock(int* const lock) {
-    while (__sync_lock_test_and_set(lock, 1)) {
-      while (*lock);
+  int
+  InitLock(SpLock* const lock) {
+    assert(lock);
+    sp_debug("INIT LOCK - mutex %d", lock->mutex);
+    lock->mutex = 0;
+    return 0;
+  }
+
+  // The implementation is from:
+  /* http://stackoverflow.com/questions/1383363/is-my-spin-lock-implem  \
+     entation-correct-and-optimal */
+
+  int Lock(SpLock* const lock) {
+    assert(lock);
+    while (__sync_lock_test_and_set(&lock->mutex, 1)) {
+      while (lock->mutex);
     }
+    return 0;
   }
 
-  void Unlock(int* const lock) {
+  int Unlock(SpLock* const lock) {
+    assert(lock);
+    sp_debug("UNLOCK - mutex %d", lock->mutex);
     __sync_synchronize();
-    *lock = 0;
+    lock->mutex = 0;
+    return 0;
   }
-}
 
+  // Get Shared library
+  void*
+  GetSharedMemory(int id, size_t size) {
+    int shmid;
+    void* shm;
+    if ((shmid = shmget(id, size, IPC_CREAT | 0666)) < 0) {
+      sp_perror("Failed to create a shared memory w/ %lu bytes w/ id %d",
+                (unsigned long)size, id);
+    }
+    if ((long)(shm = (void*)shmat(shmid, NULL, 0)) == (long)-1) {
+      sp_perror("Failed to get shared memory pointer");
+    }
+    return shm;
+  }
+
+}

@@ -1,3 +1,34 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 #include <sys/mman.h>
 
 #include "agent/addr_space.h"
@@ -15,7 +46,7 @@ namespace sp {
 
   // Standard PatchAPI stuff ...
   SpAddrSpace*
-  SpAddrSpace::create(ph::PatchObject* obj) {
+  SpAddrSpace::Create(ph::PatchObject* obj) {
     assert(obj);
     SpAddrSpace* ret = new SpAddrSpace;
     if (!ret) {
@@ -72,18 +103,17 @@ namespace sp {
     return true;
   }
 
-  // Set access permission to a memory area.
+  // Set access permission to a original code area.
   bool
-  SpAddrSpace::set_range_perm(dt::Address a,
-															size_t length,
-															int perm) {
+  SpAddrSpace::SetCodePermission(dt::Address a,
+                                 size_t length,
+                                 int perm) {
     bool ret = false;
+    sp_debug("SETTING CODE PERM - for [%lx ~ %lx]", a, a + length - 1);
 
-    // Check the mapped memory area.
+    // Checks the mapped memory area.
     // We change permission for the entire range that overlaps what we
 		// provide in the argument list.
-    // TODO (wenbin): safer to only change a minimal range of area's
-		//                permission ...
 		MemMappings& mem_maps = g_parser->mem_maps();
     for (MemMappings::iterator mi = mem_maps.begin();
          mi != mem_maps.end(); mi++) {
@@ -94,40 +124,57 @@ namespace sp {
       if ((a >= start && code_end < end) ||
           (a <= start && code_end >= start && code_end <= end) ||
           (a >= start && a < end && code_end >= end)) {
-#ifndef SP_RELEASE
+
         sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)",
 								 start, end, a, code_end);
-#endif
+
         if (mprotect((void*)start, end - start, perm) < 0) {
-          sp_print("MPROTECT - Failed to change memory access permission");
+          sp_debug("MPROTECT - FAILED TO change memory access"
+                   " perm for %lx in [%lx, %lx]", a, start, end);
           perror("mprotect");
           return false;
         } else {
+          sp_debug("MPROTECT - SUCCEED TO change memory access"
+                   " perm for %lx in [%lx, %lx]", a, start, end);
           ret = true;
         }
-      }
-    }
-
-    // Last resort to align the address ...
-    if (!ret) {
-      dt::Address aligned = a;
-      size_t pz = getpagesize();
-      aligned = (dt::Address)(((dt::Address) aligned + pz-1) & ~(pz-1));
-      if (mprotect((void*)aligned, length, perm) < 0) {
-        sp_print("MPROTECT - Failed to change memory access permission");
-        perror("mprotect");
-        return false;
-      } else {
-        ret = true;
       }
     }
 
     return ret;
   }
 
+
+  // Set access permission to snippet buffer area.
   bool
-  SpAddrSpace::restore_range_perm(dt::Address a,
-																	size_t length) {
+  SpAddrSpace::SetSnippetPermission(dt::Address a,
+                                    size_t length,
+                                    int perm) {
+    bool ret = false;
+    sp_debug("SETTING SNIPPET PERM - for [%lx ~ %lx]", a, a + length - 1);
+
+    dt::Address aligned = a;
+    size_t pz = getpagesize();
+    aligned = (dt::Address)(((dt::Address) aligned - pz-1) & ~(pz-1));
+    size_t len = length + pz + pz;
+    if (mprotect((void*)aligned, len, perm) < 0) {
+      sp_print("MPROTECT - Failed to change memory access permission");
+      perror("mprotect");
+      return false;
+    } else {
+      sp_debug("MPROTECT - SUCCEED TO change memory access"
+               " perm for %lx in [%lx, %lx]", a, aligned, aligned+len-1);
+      ret = true;
+    }
+
+    return ret;
+  }
+
+  // Restore original code's access permission
+  // XXX: is it really necessary? to be safe?
+  bool
+  SpAddrSpace::RestoreCodePermission(dt::Address a,
+                                     size_t length) {
     bool ret = false;
 		MemMappings& mem_maps = g_parser->mem_maps();
     for (MemMappings::iterator mi = mem_maps.begin();
@@ -149,11 +196,6 @@ namespace sp {
       }
     }
     return ret;
-  }
-
-  void SpAddrSpace::loadLibrary(ph::PatchObject* obj) {
-    loadObject(obj);
-    // pre_alloc_near(OBJ_CAST(obj));
   }
 
 }

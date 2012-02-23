@@ -38,11 +38,11 @@ void test_exit(SpPoint* pt) {
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  agent->set_init_entry("test_entry");
-  agent->set_init_exit("test_exit");
-  agent->set_ipc(true);
-  agent->go();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  agent->SetInitEntry("test_entry");
+  agent->SetInitExit("test_exit");
+  agent->EnableIpc(true);
+  agent->Go();
 }
 
 __attribute__((destructor))

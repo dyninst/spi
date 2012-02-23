@@ -57,7 +57,7 @@ namespace sp {
   bool
   SpringboardWorker::save(SpPoint* pt) {
     assert(pt);
-		SpBlock* b = pt->get_block();
+		SpBlock* b = pt->GetBlock();
 		assert(b);
 
 		sp_debug("SPRING WORKER - saves");
@@ -73,8 +73,8 @@ namespace sp {
 		assert(sblk);
 		ret = sblk->save();
 
-		assert(pt->get_block());
-		ret = (ret && pt->get_block()->save());
+		assert(pt->GetBlock());
+		ret = (ret && pt->GetBlock()->save());
 
 		return ret;
   }
@@ -82,7 +82,7 @@ namespace sp {
   bool
   SpringboardWorker::install(SpPoint* pt) {
 		assert(pt);
-		SpBlock* callblk = pt->get_block();
+		SpBlock* callblk = pt->GetBlock();
 		assert(callblk);
 
     SpSnippet::ptr snip = pt->snip();
@@ -112,19 +112,19 @@ namespace sp {
     sp_debug("}");
 
     // Build blob & change the permission of snippet
-		size_t est_size = est_blob_size(pt);
-    char* blob = snip->build_blob(est_size,
+		size_t est_size = EstimateBlobSize(pt);
+    char* blob = snip->BuildBlob(est_size,
 																	/*reloc=*/true);
 		if (!blob) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
 		}
-		SpObject* obj = callblk->get_object();
+		SpObject* obj = callblk->GetObject();
 		assert(obj);
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (!g_as->set_range_perm((dt::Address)blob, snip->size(), perm)) {
+    if (!g_as->SetSnippetPermission((dt::Address)blob, snip->size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
@@ -139,8 +139,8 @@ namespace sp {
 			sp_debug("FAILED TO RELOCATE SPRINGBOARD BLOCK");
 			return false;
 		}
-    obj = springblk->get_object();
-    if (!g_as->set_range_perm((dt::Address)spring,
+    obj = springblk->GetObject();
+    if (!g_as->SetSnippetPermission((dt::Address)spring,
 															snip->spring_size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for relocated spring blk at %lx", (dt::Address)spring);
@@ -165,14 +165,14 @@ namespace sp {
 
     // Second jump to relocated spring block
     char* addr = (char*)springblk->start();
-    if (g_as->set_range_perm((dt::Address)addr, springblk->size(), perm)) {
+    if (g_as->SetCodePermission((dt::Address)addr, springblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)springblk_insn, off);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
     }
 
     // Restore the permission of memory mapping
-    if (!g_as->restore_range_perm((dt::Address)addr, springblk->size())) {
+    if (!g_as->RestoreCodePermission((dt::Address)addr, springblk->size())) {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
 
@@ -184,14 +184,14 @@ namespace sp {
     callblk_insn[1] = (char)(springblk->start() + call_blk_jmp_trg
                              - ((long)addr + 2));
 
-    if (g_as->set_range_perm((dt::Address)addr, callblk->size(), perm)) {
+    if (g_as->SetCodePermission((dt::Address)addr, callblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)callblk_insn, 2);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
     }
 
     // Restore the permission of memory mapping
-    if (!g_as->restore_range_perm((dt::Address)addr, callblk->size())) {
+    if (!g_as->RestoreCodePermission((dt::Address)addr, callblk->size())) {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
 

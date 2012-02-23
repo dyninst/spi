@@ -21,9 +21,9 @@ namespace {
 	};
 
   TEST_F(AddressSpaceTest, malloc_free) {
-		sp::SpAgent::ptr agent = sp::SpAgent::create();
-		agent->set_parse_only(true);
-		agent->go();
+		sp::SpAgent::ptr agent = sp::SpAgent::Create();
+		agent->EnableParseOnly(true);
+		agent->Go();
 		sp::SpParser::ptr parser = agent->parser();
 		ph::PatchMgrPtr mgr = parser->mgr();
 		ph::AddrSpace* as = mgr->as();

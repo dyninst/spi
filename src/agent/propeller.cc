@@ -33,10 +33,8 @@ namespace sp {
 									ph::Point* pt) {
 		assert(func);
 
-#ifndef SP_RELEASE
     sp_debug("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
-#endif
 
     // 1. Find points according to type
     Points pts;
@@ -56,7 +54,7 @@ namespace sp {
     for (unsigned i = 0; i < pts.size(); i++) {
       SpPoint* pt = static_cast<SpPoint*>(pts[i]);
 			assert(pt);
-			SpBlock* blk = pt->get_block();
+			SpBlock* blk = pt->GetBlock();
 			assert(blk);
 
 			if (blk->isShared()) {
@@ -80,6 +78,7 @@ namespace sp {
                  blk->last(), (dt::Address)pt);
       }
 
+      sp_debug("PAYLOAD ENTRY - %lx", (long)entry);
       SpSnippet::ptr sp_snip = SpSnippet::create(callee,
                                                  pt,
 																								 entry,

@@ -41,18 +41,20 @@ namespace sp {
 	public:
     TrapWorker() : InstWorkerDelegate() {}
 
-		virtual bool run(SpPoint* pt);
-		virtual bool undo(SpPoint* pt);
-		virtual InstallMethod install_method() const { return SP_TRAP; }
+		virtual bool run(SpPoint* pt) OVERRIDE;
+		virtual bool undo(SpPoint* pt) OVERRIDE;
+		virtual InstallMethod install_method() const OVERRIDE {
+      return SP_TRAP;
+    }
 	private:
 		typedef std::map<dt::Address, SpSnippet::ptr> InstMap;
 		static InstMap inst_map_;
 
-		virtual bool install(SpPoint* pt);
-		virtual size_t est_blob_size(SpPoint* pt);
+		virtual bool install(SpPoint* pt) OVERRIDE;
+		virtual size_t EstimateBlobSize(SpPoint* pt) OVERRIDE;
 
 		// For trap handler
-		static void trap_handler(int sig, siginfo_t* info, void* c);
+		static void OnTrap(int sig, siginfo_t* info, void* c);
 
 	};
 

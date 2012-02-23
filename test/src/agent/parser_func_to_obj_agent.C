@@ -11,14 +11,14 @@ void test_entry(SpPoint* pt) {
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  agent->set_init_entry("test_entry");
-	agent->set_parse_only(true);
-  agent->go();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  agent->SetInitEntry("test_entry");
+	agent->EnableParseOnly(true);
+  agent->Go();
 
 	SpParser::ptr p = agent->parser();
 	PatchFunction* main_func = p->findFunction("main");
-	SpObject* obj = FUNC_CAST(main_func)->get_object();
+	SpObject* obj = FUNC_CAST(main_func)->GetObject();
 	if (obj) {
 		sp_print(obj->name().c_str());
 	} else {

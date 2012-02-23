@@ -1,28 +1,11 @@
 General:
 - [ ] Change to google's coding style
-- [ ] fix dependency problem for .h files
-- [ ] configure file
-     - interested shared libraries + exe
-
-Injector:
-- [X] debug the networking mode
-- [ ] avoid parsing entire dyninst stuffs
-- [ ] port to windows
+- [ ] a faster and robuster memory allocator
+- [ ] can determine what libraries to instrument, instead of what to avoid
+- [ ] findFunction(name, orig_addr, ...)
+- [ ] well test findFunction
+- [ ] well test memory allocator
 
 Agent:
-- [ ] test reloc_insn on x86-64
-- [ ] Should test on /bin/bash
-- [ ] Change before/after to entry/exit
-- [ ] A better memory manager to allocate blob
-- [ ] Handle function calls that cannot be parsed
-- [ ] Allow user to specify what libraries to skip parsing
-- [ ] port to windows 
 - [ ] uninstrument / unload agent.so
-- [ ] port to windows 
 
-
-Things to be in a configural file:
-- exes to bypass instrumentation
-- libraries to bypass parsing
-- functions to bypass instrumentation, as primitive
-- Injector's location

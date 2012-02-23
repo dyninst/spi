@@ -36,10 +36,7 @@ namespace sp {
     // should have a smarter memory allocator.
 		assert(g_as);
 		assert(pt);
-		/*
-    blob_ = (char*)g_as->malloc(pt->get_object(), BLOB_SIZE,
-                   pt->get_object()->load_addr());
-		*/
+    sp_debug("SNIPPET CONSTRUCTOR - payload entry %lx", (long)entry_);
   }
 
   // Destructor
@@ -58,14 +55,14 @@ namespace sp {
   // 8. Restore context;
   // 9. Jump back to ORIG_INSN_ADDR.
   char*
-  SpSnippet::build_blob(size_t est_size, // The estimate blob size
-												bool reloc) {    // Need to relocate a block?
+  SpSnippet::BuildBlob(const size_t est_size, // The estimate blob size
+                       const bool reloc) {    // Need to relocate a block?
 											
 
 		assert(point_);
 		if (!blob_) {
 			sp_debug("ALLOC BLOB - for size %ld", est_size);
-			blob_ = (char*)get_blob(est_size);
+			blob_ = (char*)GetBlob(est_size);
 			assert(blob_);
 		}
 
@@ -77,7 +74,7 @@ namespace sp {
       return blob_;
     }
 
-		SpBlock* b = point_->get_block();
+		SpBlock* b = point_->GetBlock();
 		assert(b);
 
 		sp_debug("RET_ADDR - is %lx for point %lx", ret_addr,
@@ -101,6 +98,7 @@ namespace sp {
     // 3. Call payload before function call
     long param_func = 0;
     long called_func = (long)entry_;
+    sp_debug("PAYLOAD ENTRY - at %lx", called_func);
 		assert(g_context);
     if (g_context->allow_ipc()) {
       param_func = (long)entry_;
@@ -222,7 +220,7 @@ namespace sp {
 
 		assert(point_);
     size_t min_springblk_size = jump_abs_size() * 2;
-		SpBlock* callblk = point_->get_block();
+		SpBlock* callblk = point_->GetBlock();
 
     // Short jump is 2 bytes
 		assert(callblk);
@@ -233,7 +231,7 @@ namespace sp {
 						 (long)min_springblk_size);
 
     // Find a nearby block
-		SpObject* obj = callblk->get_object();
+		SpObject* obj = callblk->GetObject();
 		assert(obj);
 
 		pe::CodeObject* co = obj->co();
@@ -306,7 +304,7 @@ namespace sp {
           }
 
           // For simplicity, we don't relocate used spring block
-          if (pb->is_spring()) {
+          if (pb->IsSpring()) {
 						sp_debug("SPRING BOARD, SKIPPED - we don't relocate second-hand"
 										 " spring board");
             span_addr = b->end();
@@ -314,7 +312,7 @@ namespace sp {
           }
 					sp_debug("GOT SPRING BOARD");
           spring_blk_ = pb;
-          pb->set_is_spring(true);
+          pb->SetIsSpring(true);
           done = true;
           break;
         } while ((long)span_addr < upper);
@@ -331,7 +329,7 @@ namespace sp {
 		assert(spring_blk);
 		dt::Address ret_addr = spring_blk->last();
 		assert(g_as);
-		SpObject* obj = point_->get_object();
+		SpObject* obj = point_->GetObject();
 		assert(obj);
     spring_ = (char*)g_as->malloc(obj,
 																	spring_blk->size() + jump_abs_size(),
@@ -354,18 +352,19 @@ namespace sp {
   }
 
   dt::Address
-	SpSnippet::get_blob(size_t estimate_size) {
+	SpSnippet::GetBlob(const size_t estimate_size) {
 		if (estimate_size == 0) {
 			// Possible to return NULL
 			return (dt::Address)blob_;
 		}
 
 		assert(point_);
-		SpObject* obj = point_->get_object();
+		SpObject* obj = point_->GetObject();
 		assert(obj);
 
 		// We may want to reallocate it, so free existing buffer first
 		if (blob_) {
+      sp_debug("REALLOC - for %lx", point_->block()->last());
 			g_as->free(obj, (dt::Address)blob_);
 		}
 

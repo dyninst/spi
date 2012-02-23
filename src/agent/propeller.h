@@ -7,9 +7,10 @@
 namespace sp {
 
   typedef std::vector<Dyninst::PatchAPI::Point*> Points;
-  class SpPropeller {
- public:
-    typedef dyn_detail::boost::shared_ptr<SpPropeller> ptr;
+  
+  class AGENT_EXPORT SpPropeller {
+  public:
+    typedef SHARED_PTR(SpPropeller) ptr;
     static ptr create();
     SpPropeller();
 		virtual ~SpPropeller() {}
@@ -19,7 +20,7 @@ namespace sp {
             PayloadFunc exit,
             ph::Point* pt = NULL);
 
- protected:
+  protected:
     virtual void next_points(ph::PatchFunction* func,
                              ph::PatchMgrPtr mgr,
                              Points& pts);

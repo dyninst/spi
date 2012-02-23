@@ -23,9 +23,7 @@ TEST_F(UtilsTest, get_file_text) {
 }
 
 TEST_F(UtilsTest, is_illegal_exe) {
-	StringSet illegal_exe;
-	illegal_exe.insert("utils_test");
-	EXPECT_TRUE(IsIllegalProgram(illegal_exe));
+	EXPECT_TRUE(!IsIllegalProgram());
 }
 
 TEST_F(UtilsTest, addr_to_pid_without_injector) {
@@ -56,7 +54,7 @@ TEST_F(UtilsTest, get_exe_name) {
 
 
 TEST_F(UtilsTest, lock_unlock) {
-	int lock1;
+	SpLock lock1;
   InitLock(&lock1);
 	Lock(&lock1);
 	Unlock(&lock1);

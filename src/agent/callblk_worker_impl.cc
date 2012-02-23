@@ -60,7 +60,7 @@ namespace sp {
   bool
   RelocCallBlockWorker::install(SpPoint* pt) {
 		assert(pt);
-		SpBlock* b = pt->get_block();
+		SpBlock* b = pt->GetBlock();
 		assert(b);
 
     dt::Address call_blk_addr = b->start();
@@ -68,8 +68,8 @@ namespace sp {
     // Try to install short jump
 		SpSnippet::ptr snip = pt->snip();
 		assert(snip);
-		size_t est_size = est_blob_size(pt);
-		dt::Address blob = snip->get_blob(est_size);
+		size_t est_size = EstimateBlobSize(pt);
+		dt::Address blob = snip->GetBlob(est_size);
 		assert(blob);
     long rel_addr = (long)blob - (long)call_blk_addr - 5;
     char insn[64];    // the jump instruction to overwrite call blk
@@ -83,7 +83,7 @@ namespace sp {
       long* lp = (long*)p;
       *lp = rel_addr;
 
-      return install_jump_to_block(pt, insn, 5);
+      return InstallJumpToBlock(pt, insn, 5);
     }
 
     // Try to install long jump
@@ -95,7 +95,7 @@ namespace sp {
       size_t insn_size = snip->emit_jump_abs((long)blob,
 																						 insn, 0, true);
 
-      return install_jump_to_block(pt, insn, insn_size);
+      return InstallJumpToBlock(pt, insn, insn_size);
     } else {
       sp_debug("CALL BLK TOO SMALL - %ld < %ld", b->size(),
 							 snip->jump_abs_size());
@@ -107,12 +107,13 @@ namespace sp {
     return false;
   }
 
-  bool RelocCallBlockWorker::install_jump_to_block(SpPoint* pt,
-                                                   char* jump_insn,
-                                                   size_t insn_size) {
+  bool
+  RelocCallBlockWorker::InstallJumpToBlock(SpPoint* pt,
+                                           char* jump_insn,
+                                           size_t insn_size) {
 
 		assert(pt);
-		SpBlock* b = pt->get_block();
+		SpBlock* b = pt->GetBlock();
 		assert(b);
 
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
@@ -125,20 +126,20 @@ namespace sp {
 		assert(snip);
 
     // Build blob & change the permission of snippet
-		size_t est_size = est_blob_size(pt);
-    char* blob = snip->build_blob(est_size,
+		size_t est_size = EstimateBlobSize(pt);
+    char* blob = snip->BuildBlob(est_size,
 																	/*reloc=*/true);
 		if (!blob) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
 		}
 
-		SpObject* obj = pt->get_object();
+		SpObject* obj = pt->GetObject();
 		assert(obj);
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (!g_as->set_range_perm((dt::Address)blob, snip->size(), perm)) {
+    if (!g_as->SetSnippetPermission((dt::Address)blob, snip->size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
@@ -149,14 +150,14 @@ namespace sp {
 		assert(addr);
 
     // Write a jump instruction to call block
-    if (g_as->set_range_perm((dt::Address)addr, insn_size, perm)) {
+    if (g_as->SetCodePermission((dt::Address)addr, insn_size, perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)jump_insn, insn_size);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
     }
 
     // Restore the permission of memory mapping
-    if (!g_as->restore_range_perm((dt::Address)addr, insn_size)) {
+    if (!g_as->RestoreCodePermission((dt::Address)addr, insn_size)) {
       sp_print("MPROTECT - Failed to restore memory access permission");
     }
 

@@ -48,17 +48,9 @@ void segv_handler(int num) {
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  sp::SpParser::ptr parser = sp::SpParser::create();
-  sp::SyncEvent::ptr event = sp::SyncEvent::create();
-
-  agent->set_parser(parser);
-  agent->set_init_entry("print_entry");
-	if (getenv("SP_TRAP")) {
-		agent->set_trap_only(true);
-	}
-  // agent->set_directcall_only(true);
-  agent->go();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  agent->SetInitEntry("print_entry");
+  agent->Go();
 }
 
 __attribute__((destructor))

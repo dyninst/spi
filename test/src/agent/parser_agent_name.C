@@ -11,10 +11,10 @@ void test_entry(SpPoint* pt) {
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  agent->set_init_entry("test_entry");
-	agent->set_parse_only(true);
-  agent->go();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  agent->SetInitEntry("test_entry");
+	agent->EnableParseOnly(true);
+  agent->Go();
 
 	SpParser::ptr p = agent->parser();
 	std::string name = p->get_agent_name();

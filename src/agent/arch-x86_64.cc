@@ -1,3 +1,34 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 #include <stack>
 
 #include "common/common.h"
@@ -25,9 +56,8 @@ namespace sp {
 	extern SpContext* g_context;
 	extern SpParser::ptr g_parser;
 
-  // -------------------------------------------------------------------
-  // Code Generation
-  // -------------------------------------------------------------------
+
+  // Code Generation stuffs
 
   // Save context before calling payload
   size_t
@@ -267,7 +297,8 @@ namespace sp {
       p += 4;
     }
 
-    // Case 2: we have to use indirect call, because the function is too far away.
+    // Case 2: we have to use indirect call, because the function is
+    // too far away.
     else {
       // Use %r15, because r15 is callee-saved
 
@@ -329,9 +360,8 @@ namespace sp {
     return (p - (buf + offset));
   }
 
-  // -------------------------------------------------------------------
-  // Miscellaneous
-  // -------------------------------------------------------------------
+
+  // Miscellaneous stuffs
 
   // Used in trap handler to decide the pc value right at the call
   dt::Address
@@ -650,11 +680,11 @@ namespace sp {
     // Deal with lea instruction
     if ((char)insn_buf[1] == (char)0x8d) {
       int* dis = get_disp(insn, insn_buf);
-#ifndef SP_RELEASE
+
 			sp_debug("LEA - orig-disp(%d), orig-insn-addr(%lx),"
 							 " orig-insn-size(%ld), abs-trg(%lx)",
 							 *dis, a, insn->size(), *dis+a+insn->size());
-#endif
+
       *l =*dis + a + insn->size();
     }
 
@@ -664,10 +694,9 @@ namespace sp {
 			e->apply(&visitor);
 			*l = visitor.imm();
 
-#ifndef SP_RELEASE
 			sp_debug("OTHER PC-INSN - orig-insn-size(%ld), abs-trg(%lx)",
 							 insn->size(), *l);
-#endif
+
 		}
     p += sizeof(*l);
 
@@ -734,11 +763,9 @@ namespace sp {
       long new_rip = (long)p;
       long long_new_dis = (old_rip - new_rip) + *dis_buf;
 
-#ifndef SP_RELEASE
       sp_debug("RELOC INSN - insn addr %lx, old_rip %lx, new_rip %lx,"
                " displacement %x", a, old_rip,new_rip, *dis_buf);
       sp_debug("RELOC INSN - new displacement %lx", long_new_dis);
-#endif
 
       if (sp::IsDisp32(long_new_dis)) {
         // Easy case: just modify the displacement
@@ -854,7 +881,7 @@ namespace sp {
 														size_t offset) {
 		assert(buf);
     char* p = buf + offset;
-		SpBlock* b = point_->get_block();
+		SpBlock* b = point_->GetBlock();
 		assert(b);
 		long src = b->last();
 
@@ -931,39 +958,39 @@ namespace sp {
     return get_saved_reg(Dyninst::x86_64::rax);
   }
 
-// ------------------------------------------------------------------- 
+
 // The estimate blob size for different instrumentation worker
-// -------------------------------------------------------------------
+
 	size_t
-	InstWorkerDelegate::base_est_reloc_insn_size(SpPoint* pt) {
+	InstWorkerDelegate::BaseEstimateRelocInsnSize(SpPoint* pt) {
 		return 100;
 	}
 
 	size_t
-	InstWorkerDelegate::base_est_reloc_blk_size(SpPoint* pt) {
+	InstWorkerDelegate::BaseEstimateRelocBlockSize(SpPoint* pt) {
 		assert(pt);
-		SpBlock* blk = pt->get_block();
+		SpBlock* blk = pt->GetBlock();
 		assert(blk);
-		return blk->size() + InstWorkerDelegate::base_est_reloc_insn_size(pt);
+		return blk->size() + InstWorkerDelegate::BaseEstimateRelocInsnSize(pt);
 	}
 
 	size_t
-	TrapWorker::est_blob_size(SpPoint* pt) {
-		return InstWorkerDelegate::base_est_reloc_insn_size(pt);
+	TrapWorker::EstimateBlobSize(SpPoint* pt) {
+		return InstWorkerDelegate::BaseEstimateRelocInsnSize(pt);
 	}
 
 	size_t
-	RelocCallInsnWorker::est_blob_size(SpPoint* pt) {
-		return InstWorkerDelegate::base_est_reloc_insn_size(pt);
+	RelocCallInsnWorker::EstimateBlobSize(SpPoint* pt) {
+		return InstWorkerDelegate::BaseEstimateRelocInsnSize(pt);
 	}
 
 	size_t
-	RelocCallBlockWorker::est_blob_size(SpPoint* pt) {
-		return InstWorkerDelegate::base_est_reloc_blk_size(pt);
+	RelocCallBlockWorker::EstimateBlobSize(SpPoint* pt) {
+		return InstWorkerDelegate::BaseEstimateRelocBlockSize(pt);
 	}
 
 	size_t
-	SpringboardWorker::est_blob_size(SpPoint* pt) {
-		return InstWorkerDelegate::base_est_reloc_blk_size(pt);
+	SpringboardWorker::EstimateBlobSize(SpPoint* pt) {
+		return InstWorkerDelegate::BaseEstimateRelocBlockSize(pt);
 	}
 }

@@ -52,14 +52,14 @@ namespace sp {
 
     // Install trap handler to the trap signal
     struct sigaction act;
-    act.sa_sigaction = TrapWorker::trap_handler;
+    act.sa_sigaction = TrapWorker::OnTrap;
     act.sa_flags = SA_SIGINFO;
     struct sigaction old_act;
     sigaction(SIGTRAP, &act, &old_act);
 
     // Call insn's addr
-		assert(pt->get_block());
-		dt::Address call_addr = pt->get_block()->last();
+		assert(pt->GetBlock());
+		dt::Address call_addr = pt->GetBlock()->last();
 
     // This mapping is used in trap handler
 		assert(pt->snip());
@@ -79,7 +79,7 @@ namespace sp {
 		assert(pt);
 		assert(pt->snip());
 
-		SpBlock* b = pt->get_block();
+		SpBlock* b = pt->GetBlock();
 		assert(b);
 		
     sp_debug("TRAP WORKER - installs");
@@ -94,8 +94,8 @@ namespace sp {
     char* call_addr = (char*)b->last();
 		assert(call_addr);
 
-		size_t est_size = est_blob_size(pt);
-		char* blob = pt->snip()->build_blob(est_size);
+		size_t est_size = EstimateBlobSize(pt);
+		char* blob = pt->snip()->BuildBlob(est_size);
     if (!blob) {
 			sp_debug("FAILED BLOB - failed to generate blob for call insn %lx",
 							 (unsigned long)call_addr);
@@ -107,11 +107,11 @@ namespace sp {
 
     // Overwrite int3 to the call site
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-		SpObject* obj = pt->get_object();
+		SpObject* obj = pt->GetObject();
 		assert(obj);
 		assert(g_as);
 
-    if (!g_as->set_range_perm((dt::Address)call_addr, call_size, perm)) {
+    if (!g_as->SetCodePermission((dt::Address)call_addr, call_size, perm)) {
       sp_debug("FAILED PERM - failed to change memory permission");
       return false;
     } else {
@@ -119,7 +119,7 @@ namespace sp {
     }
 
     // Restore the permission of memory mapping
-    if (!g_as->restore_range_perm((dt::Address)call_addr, call_size)) {
+    if (!g_as->RestoreCodePermission((dt::Address)call_addr, call_size)) {
 			sp_debug("FAILED RESTORE - failed to restore perm for call insn %lx",
 							 (unsigned long)call_addr);
       return false;
@@ -140,7 +140,7 @@ namespace sp {
   // We resort to trap to transfer control to patch area, when we are not
   // able to use jump-based implementation.
   void
-  TrapWorker::trap_handler(int sig, siginfo_t* info, void* c) {
+  TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
     dt::Address pc = SpSnippet::get_pre_signal_pc(c) - 1;
 		assert(pc);
 
@@ -153,7 +153,7 @@ namespace sp {
     SpSnippet::ptr sp_snip = inst_map[pc];
 		assert(sp_snip);
 
-    char* blob = (char*)sp_snip->get_blob();
+    char* blob = (char*)sp_snip->GetBlob();
 		assert(sp_snip);
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
@@ -161,7 +161,8 @@ namespace sp {
 
 		assert(g_as);
     // Change memory permission for the snippet
-    if (!g_as->set_range_perm((dt::Address)blob, sp_snip->size(), perm)) {
+    if (!g_as->SetSnippetPermission((dt::Address)blob,
+                                    sp_snip->size(), perm)) {
       // g_as->dump_mem_maps();
       sp_perror("FAILED PERM - failed to change memory permission for blob");
     }

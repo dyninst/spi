@@ -13,7 +13,7 @@ namespace sp {
   }
 
   void
-  SpEvent::register_event() {
+  SpEvent::RegisterEvent() {
   }
 
   // AsyncEvent
@@ -30,7 +30,7 @@ namespace sp {
   }
 
   void
-  AsyncEvent::register_event() {
+  AsyncEvent::RegisterEvent() {
     struct sigaction act;
     act.sa_sigaction = (event_handler_t)handler_;
     act.sa_flags = SA_SIGINFO;
@@ -45,12 +45,12 @@ namespace sp {
 
 
   void
-  SyncEvent::register_event() {
+  SyncEvent::RegisterEvent() {
 		bool fail_preload = false;
     if (!g_parser->injected()) {
-#ifndef SP_RELEASE
+
       sp_debug("PRELOAD - preload agent.so, and instrument main()");
-#endif
+
 			ph::PatchFunction* f = g_parser->findFunction("main");
 			if (f) {
         g_context->init_propeller()->go(f,

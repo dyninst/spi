@@ -1,5 +1,6 @@
 #include "injector/injector.h"
 
+#include "agent/addr_space.h"
 #include "agent/point.h"
 #include "agent/parser.h"
 #include "agent/propeller.h"
@@ -12,6 +13,8 @@
 namespace sp {
 
 	extern SpParser::ptr g_parser;
+  extern SpLock* g_propel_lock;
+  extern SpAddrSpace* g_as;
 
   SpContext::SpContext(SpPropeller::ptr p,
 											 SpParser::ptr parser) {
@@ -34,6 +37,7 @@ namespace sp {
                                    parser);
     assert(ret);
     ret->init_entry_ = (void*)g_parser->get_func_addr(init_entry);
+    assert(ret->init_entry_);
     ret->init_exit_ = (void*)g_parser->get_func_addr(init_exit);
     ret->init_entry_name_ = init_entry;
     ret->init_exit_name_ = init_exit;
@@ -85,6 +89,8 @@ namespace sp {
 
   SpContext::~SpContext() {
     delete ipc_mgr_;
+    delete g_propel_lock;
+    delete g_as;
   }
 
   void

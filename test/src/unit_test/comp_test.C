@@ -17,7 +17,7 @@ namespace {
     virtual void TearDown() {
 		}
 	};
-#if 0
+
   TEST_F(ComponentTest, direct_call_only) {
 		FILE* fp = popen("LD_PRELOAD=./directcall_test_agent.so ./indcall", "r");
 		char buf[1024];
@@ -105,7 +105,7 @@ namespace {
 
 		pclose(fp);
 	}
-#endif
+
 	// Multithreaded instrumentation
   TEST_F(ComponentTest, multithread) {
 		system("LD_PRELOAD=./comp_test_agent.so ./multithread");

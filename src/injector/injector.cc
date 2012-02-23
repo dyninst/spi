@@ -1,5 +1,35 @@
+/*
+ * Copyright (c) 1996-2011 Barton P. Miller
+ *
+ * We provide the Paradyn Parallel Performance Tools (below
+ * described as "Paradyn") on an AS IS basis, and do not warrant its
+ * validity or performance.  We reserve the right to update, modify,
+ * or discontinue this software at any time.  We shall have no
+ * obligation to supply such updates or modifications or any other
+ * form of support to you.
+ *
+ * By your use of Paradyn, you understand and agree that we (or any
+ * other person or entity with proprietary rights in Paradyn) are
+ * under no obligation to provide either maintenance services,
+ * update services, notices of latent defects, or correction of
+ * defects for Paradyn.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 #include <sys/stat.h>
-#include <sys/shm.h>
 #include <dlfcn.h>
 #include <signal.h>
 
@@ -16,7 +46,7 @@
 namespace sp {
 
 SpInjector::ptr
-SpInjector::create(dt::PID pid) {
+SpInjector::Create(dt::PID pid) {
   SpInjector::ptr ret = ptr(new SpInjector(pid));
   return ret;
 }
@@ -39,7 +69,7 @@ SpInjector::~SpInjector() {
 
 // Find do_dlopen
 Address
-SpInjector::find_func(char* func) {
+SpInjector::FindFunction(const char* func) {
   LibraryPool& libs = proc_->libraries();
 
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
@@ -88,7 +118,8 @@ on_event_signal(Event::const_ptr ev) {
 }
 
 // Check whether a library is loaded
-bool SpInjector::is_lib_loaded(const char* libname) {
+bool
+SpInjector::IsLibraryLoaded(const char* libname) {
   char* name_only = sp_filename(libname);
   sp_debug("CHECKING - checking whether %s is loaded ...",
            name_only);
@@ -150,7 +181,7 @@ typedef struct {
 // report or checking return value. In this case, why don't we have an easy and
 // uniformed way to pass argument and check return value?
 
-void SpInjector::inject(const char* lib_name) {
+void SpInjector::Inject(const char* lib_name) {
 
   // Verify the existence of lib_name
   char* abs_lib_name = realpath(lib_name, NULL);
@@ -158,35 +189,35 @@ void SpInjector::inject(const char* lib_name) {
     sp_perror("Injector [pid = %5d] - cannot locate library %s.",
 							getpid(), lib_name);
 
-  if (is_lib_loaded(sp_filename(abs_lib_name))) {
+  if (IsLibraryLoaded(sp_filename(abs_lib_name))) {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...",
 						 getpid(), sp_filename(lib_name));
 		return;
 	}
 
   // Step 1. Load libijagent.so
-  if (!is_lib_loaded(IJAGENT)) {
+  if (!IsLibraryLoaded(IJAGENT)) {
     // Verify the existence of libijagent.so
     std::string ijagent(IJAGENT);
     StringSet ijagent_paths;
-    if (!get_resolved_lib_path(ijagent, ijagent_paths))
+    if (!GetResolvedLibPath(ijagent, ijagent_paths))
       sp_perror("Injector [pid = %5d] - cannot find %s", getpid(), IJAGENT);
 
     // Inject libijagent.so
-    inject_internal((*ijagent_paths.begin()).c_str());
+    LoadIjagent((*ijagent_paths.begin()).c_str());
   }
 
   // Step 2. Load user-specified library
-  if (!is_lib_loaded(sp_filename(abs_lib_name))) {
+  if (!IsLibraryLoaded(sp_filename(abs_lib_name))) {
     // Setup shared memory, this is to pass arguments to call dlopen in
     // libijagent.so
-    IjMsg *shm = (IjMsg*)get_shm(IJMSG_ID, sizeof(IjMsg));
+    IjMsg *shm = (IjMsg*)GetSharedMemory(IJMSG_ID, sizeof(IjMsg));
     strcpy(shm->libname, abs_lib_name);
     shm->err[0] = '\0';
     shm->loaded = -1;
 
     // Invoke dlopen in libijagent.so
-    invoke_ijagent();
+    LoadUserLibrary();
 
     // Wait for dlopen to return
     int count = 0;
@@ -208,23 +239,24 @@ void SpInjector::inject(const char* lib_name) {
 }
 
 // Invoke ijagent function in libijagent.so, which in turn invokes dlopen
-void SpInjector::invoke_ijagent() {
+void
+SpInjector::LoadUserLibrary() {
   sp_debug("PAUSED - Process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d",
 							getpid(), pid_);
   }
-  update_frame();
-  Address ij_agent_addr = find_func((char*)"ij_agent");
+  UpdateFrameInfo();
+  Address ij_agent_addr = FindFunction("ij_agent");
   if (ij_agent_addr > 0) {
     sp_debug("FOUND - Address of ij_agent function at %lx", ij_agent_addr);
   }
   else {
     sp_perror("Injector [pid = %5d] - Failed to find ij_agent", getpid());
   }
-  size_t size = get_ij_tmpl_size();
+  size_t size = GetIjTemplateSize();
   Address code_addr = proc_->mallocMemory(size);
-  char* code = get_ij_tmpl(ij_agent_addr, code_addr);
+  char* code = GetIjTemplate(ij_agent_addr, code_addr);
   sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
            " at %lx of %lu bytes", code_addr, (unsigned long)size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
@@ -240,7 +272,8 @@ void SpInjector::invoke_ijagent() {
 }
 
 // Load a library by using do_dlopen
-void SpInjector::inject_internal(const char* lib_name) {
+void
+SpInjector::LoadIjagent(const char* lib_name) {
   // Make absolute path for this shared library
   char* libname = realpath(lib_name, NULL);
   if (!libname) {
@@ -252,12 +285,12 @@ void SpInjector::inject_internal(const char* lib_name) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d",
 							getpid(), pid_);
   }
-  update_frame();
+  UpdateFrameInfo();
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
 
   // Find do_dlopen function
-  Address do_dlopen_addr = find_func((char*)"do_dlopen");
+  Address do_dlopen_addr = FindFunction("do_dlopen");
   if (do_dlopen_addr > 0) {
     sp_debug("FOUND - Address of do_dlopen function at %lx", do_dlopen_addr);
   }
@@ -272,17 +305,17 @@ void SpInjector::inject_internal(const char* lib_name) {
   sp_debug("STORED - Library name \"%s\" in mutatee's heap at %lx",
            sp_filename(libname), lib_name_addr);
 
-  dlopen_args_t args;
-  Address args_addr = proc_->mallocMemory(sizeof(dlopen_args_t));
+  DlopenArg args;
+  Address args_addr = proc_->mallocMemory(sizeof(DlopenArg));
   args.libname = (char*)lib_name_addr;
   args.mode = RTLD_NOW | RTLD_GLOBAL;
   args.link_map = 0;
   proc_->writeMemory(args_addr, &args, sizeof(args));
   sp_debug("STORED - do_dlopen's argument in mutatee's heap at %lx", args_addr);
 
-  size_t size = get_code_tmpl_size();
+  size_t size = GetCodeTemplateSize();
   Address code_addr = proc_->mallocMemory(size);
-  char* code = get_code_tmpl(args_addr, do_dlopen_addr, code_addr);
+  char* code = GetCodeTemplate(args_addr, do_dlopen_addr, code_addr);
   sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
            " at %lx of %lu bytes", code_addr, (unsigned long)size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
@@ -303,8 +336,9 @@ void SpInjector::inject_internal(const char* lib_name) {
 }
 
 // This piece of code is borrowed from DyninstAPI_RT
-bool SpInjector::get_resolved_lib_path(const std::string &filename,
-																			 StringSet &paths) {
+bool
+SpInjector::GetResolvedLibPath(const std::string &filename,
+                               StringSet &paths) {
   char *libPathStr, *libPath;
   std::vector<std::string> libPaths;
   struct stat dummy;
@@ -397,23 +431,12 @@ bool SpInjector::get_resolved_lib_path(const std::string &filename,
   return ( 0 < paths.size() );
 }
 
-void* SpInjector::get_shm(int id, size_t size) {
-  int shmid;
-  void* shm;
-  if ((shmid = shmget(id, size, IPC_CREAT | 0666)) < 0) {
-    sp_perror("Injector [pid = %5d] - Failed to create a shared memory with size %lu bytes w/ id %d", getpid(), (unsigned long)size, id);
-  }
-  if ((long)(shm = (void*)shmat(shmid, NULL, 0)) == (long)-1) {
-    sp_perror("Injector [pid = %5d] - Failed to get shared memory pointer", getpid());
-  }
-  return shm;
-}
 
-void SpInjector::update_frame() {
-  IjMsg* shm = (IjMsg*)get_shm(IJMSG_ID, sizeof(IjMsg));
-  shm->pc = get_pc();
-  shm->sp = get_sp();
-  shm->bp = get_bp();
+void SpInjector::UpdateFrameInfo() {
+  IjMsg* shm = (IjMsg*)GetSharedMemory(IJMSG_ID, sizeof(IjMsg));
+  shm->pc = pc();
+  shm->sp = sp();
+  shm->bp = bp();
 }
 
 }
