@@ -15,6 +15,14 @@ GXX        = g++
 RM         = rm -f
 MKDIR      = mkdir -p
 
+VPATH       = $(AG_DIR) \
+              $(AG_DIR)/inst_workers \
+              $(AG_DIR)/ipc \
+              $(AG_DIR)/ipc/ipc_workers \
+              $(AG_DIR)/patchapi \
+              $(IJ_DIR) \
+              $(UTILS_DIR) \
+
 #======================================
 # Utils
 #======================================
@@ -22,10 +30,10 @@ MKDIR      = mkdir -p
 UTILS_SRCS    += $(UTILS_DIR)/utils.cc
 UTILS_OBJS    += $(addprefix $(OBJS_DIR)/, $(notdir $(UTILS_SRCS:%.cc=%.o)))
 
-$(UTILS_OBJS): $(OBJS_DIR)/%.o : $(UTILS_DIR)/%.cc
+$(UTILS_OBJS): $(OBJS_DIR)/%.o : %.cc
 	@echo Compiling $*.o
 	@$(MKDIR) $(OBJS_DIR)
-	@$(GCC) -c -o $@ $(COMMON_IFLAGS) $(COMMON_FLAGS) $(UTILS_DIR)/$*.cc
+	@$(GCC) -c -o $@ $(COMMON_IFLAGS) $(COMMON_FLAGS) $<
 
 #======================================
 # Injector
@@ -46,10 +54,10 @@ fi);
 
 include $(IJ_DEP)
 
-$(IJ_OBJS): $(OBJS_DIR)/%.o : $(IJ_DIR)/%.cc
+$(IJ_OBJS): $(OBJS_DIR)/%.o : %.cc
 	@echo Compiling $*.o
 	@$(MKDIR) $(OBJS_DIR)
-	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.cc
+	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $<
 
 #---------------- 
 # Injector Exe
@@ -65,10 +73,10 @@ fi);
 
 include $(IJMAIN_DEP)
 
-$(IJMAIN_OBJS): $(OBJS_DIR)/%.o : $(IJ_DIR)/%.cc
+$(IJMAIN_OBJS): $(OBJS_DIR)/%.o : %.cc
 	@echo Compiling $*.o
 	@$(MKDIR) $(OBJS_DIR)
-	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $(IJ_DIR)/$*.cc
+	@$(GXX) -c -o $@ $(IJ_IFLAGS) $(IJ_FLAGS) $<
 
 $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
@@ -92,12 +100,6 @@ $(IJAGENT): $(IJA_OBJS)
 #======================================
 # Agent
 #======================================
-VPATH       = $(AG_DIR) \
-              $(AG_DIR)/inst_workers \
-              $(AG_DIR)/ipc \
-              $(AG_DIR)/ipc/ipc_workers \
-              $(AG_DIR)/patchapi \
-
 AG_SRCS    += $(AG_DIR)/agent.cc \
               $(AG_DIR)/context.cc \
               $(AG_DIR)/event.cc \
@@ -189,6 +191,7 @@ clean_all:
 	@echo "Cleaning all ..."
 	@$(RM) -r $(INJECTOR) $(AGENT) $(IJAGENT) *.o *.so *.a $(OBJS_DIR)
 	@$(RM) $(IJ_DEP) $(IJMAIN_DEP) $(AG_DEP)
+	@$(RM) -r $(TEST_EXES_DIR)
 
 clean_test:
 	@echo "Cleaning tests ..."

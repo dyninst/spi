@@ -57,7 +57,7 @@ SpInjector::SpInjector(dt::PID pid)
   proc_ = Process::attachProcess(pid);
   if (!proc_) {
     sp_perror("Injector [pid = %5d] - Failed to attach to process %d.",
-							getpid(), pid);
+              getpid(), pid);
   }
   ThreadPool& thrs = proc_->threads();
   thr_ = thrs.getInitialThread();
@@ -80,7 +80,7 @@ SpInjector::FindFunction(const char* func) {
     std::vector <sb::Function *> funcs;
     if (!obj || !ret) {
       sp_perror("Injector [pid = %5d] - Failed to open %s",
-								getpid(), sp_filename(name.c_str()));
+                getpid(), sp_filename(name.c_str()));
     } else {
       obj->findFunctionsByName(funcs, func);
     }
@@ -102,7 +102,7 @@ on_event_lib(Event::const_ptr ev) {
   for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end(); i++) {
     Address loaded_addr = (*i)->getLoadAddress();
     sp_debug("LOADED - Library %s at %lx",
-						 sp_filename((*i)->getName().c_str()), loaded_addr);
+             sp_filename((*i)->getName().c_str()), loaded_addr);
   }
   return Process::cbThreadContinue;
 }
@@ -124,17 +124,17 @@ SpInjector::IsLibraryLoaded(const char* libname) {
   sp_debug("CHECKING - checking whether %s is loaded ...",
            name_only);
 
-	std::string proc_maps = "";
-	proc_maps += "/proc/";
-	proc_maps += dt::itos(pid_);
-	proc_maps += "/maps";
-	const char* content = sp::GetFileText(proc_maps.c_str());
-	if (strstr(content, name_only)) {
-		sp_debug("LOADED - %s is already loaded", name_only);
-		return true;
-	}
+  std::string proc_maps = "";
+  proc_maps += "/proc/";
+  proc_maps += dt::itos(pid_);
+  proc_maps += "/maps";
+  const char* content = sp::GetFileText(proc_maps.c_str());
+  if (strstr(content, name_only)) {
+    sp_debug("LOADED - %s is already loaded", name_only);
+    return true;
+  }
   sp_debug("NO LOADED - %s is not yet loaded", name_only);
-	return false;
+  return false;
 }
 
 typedef struct {
@@ -162,7 +162,7 @@ typedef struct {
 // Often times, do_dlopen causes injectee to crash, e.g., the library is not
 // found. On the other hand, dlopen is safe to use, which would not causes the
 // injectee process to crash.
-// 
+//
 // 2. To follow up question 1, since dlopen is safe to use, why don't we
 // directly call dlopen in step 1?
 //
@@ -172,7 +172,7 @@ typedef struct {
 // indirection is, we can use unsafe do_dlopen function to load a controlled
 // library libijagent.so, from libijagent.so, we use safe dlopen function to
 // load uncontrolled user-provided library.
-// 
+//
 // 3. Why we use IPC mechanism to pass parameters to ij_agent in libijagent.so?
 //
 // Answer: ij_agent is a function that calls dlopen. After dlopen is invoked, we
@@ -187,13 +187,13 @@ void SpInjector::Inject(const char* lib_name) {
   char* abs_lib_name = realpath(lib_name, NULL);
   if (!abs_lib_name)
     sp_perror("Injector [pid = %5d] - cannot locate library %s.",
-							getpid(), lib_name);
+              getpid(), lib_name);
 
   if (IsLibraryLoaded(sp_filename(abs_lib_name))) {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...",
-						 getpid(), sp_filename(lib_name));
-		return;
-	}
+             getpid(), sp_filename(lib_name));
+    return;
+  }
 
   // Step 1. Load libijagent.so
   if (!IsLibraryLoaded(IJAGENT)) {
@@ -233,7 +233,7 @@ void SpInjector::Inject(const char* lib_name) {
     else sp_print(shm->err);
   } else {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...",
-						 getpid(), sp_filename(lib_name));
+             getpid(), sp_filename(lib_name));
   }
   // proc_->detach();
 }
@@ -244,7 +244,7 @@ SpInjector::LoadUserLibrary() {
   sp_debug("PAUSED - Process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d",
-							getpid(), pid_);
+              getpid(), pid_);
   }
   UpdateFrameInfo();
   Address ij_agent_addr = FindFunction("ij_agent");
@@ -264,7 +264,7 @@ SpInjector::LoadUserLibrary() {
   sp_debug("POSTING - IRPC is on the way ...");
   if (!proc_->postIRPC(irpc)) {
     sp_perror("Injector [pid = %5d] - Failed to execute load-library code"
-							" in mutatee's address space", getpid());
+              " in mutatee's address space", getpid());
   }
   proc_->continueProc();
   Process::handleEvents(true);
@@ -277,13 +277,13 @@ SpInjector::LoadIjagent(const char* lib_name) {
   // Make absolute path for this shared library
   char* libname = realpath(lib_name, NULL);
   if (!libname) {
-		sp_perror("Injector [pid = %5d] - %s cannot be found",
-							getpid(), sp_filename(lib_name));
-	}
+    sp_perror("Injector [pid = %5d] - %s cannot be found",
+              getpid(), sp_filename(lib_name));
+  }
   sp_debug("PAUSED - Process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d",
-							getpid(), pid_);
+              getpid(), pid_);
   }
   UpdateFrameInfo();
   Process::registerEventCallback(EventType::Library, on_event_lib);
@@ -323,7 +323,7 @@ SpInjector::LoadIjagent(const char* lib_name) {
 
   if (!proc_->postIRPC(irpc)) {
     sp_perror("Injector [pid = %5d] - Failed to execute load-library code"
-							" in mutatee's address space", getpid());
+              " in mutatee's address space", getpid());
   }
   proc_->continueProc();
   Process::handleEvents(true);
@@ -397,10 +397,10 @@ SpInjector::GetResolvedLibPath(const std::string &filename,
   libPaths.push_back("/usr/lib64");
   libPaths.push_back("/lib");
   libPaths.push_back("/lib64");
-	std::string sp_path = getenv("SP_DIR");
-	sp_path += "/";
-	sp_path += getenv("PLATFORM");
-	libPaths.push_back(sp_path);
+  std::string sp_path = getenv("SP_DIR");
+  sp_path += "/";
+  sp_path += getenv("PLATFORM");
+  libPaths.push_back(sp_path);
   for (unsigned int i = 0; i < libPaths.size(); i++) {
     std::string str = libPaths[i] + "/" + filename;
     if (stat(str.c_str(), &dummy) == 0) {
@@ -417,7 +417,7 @@ SpInjector::GetResolvedLibPath(const std::string &filename,
     bool ret = sb::Symtab::openFile(obj, *j);
     if (ret) {
       if ((Address)obj->getAddressWidth() ==
-					(Address)proc_->llproc()->getAddressWidth()) {
+          (Address)proc_->llproc()->getAddressWidth()) {
         j++;
       } else {
         j = vpaths.erase(j);

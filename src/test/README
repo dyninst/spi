@@ -3,3 +3,4 @@ This directory contains files needed for testing
 - mutatee: simple mutatees written by us
 - external_mutatee: real world programs
 - agent: agent shared libraries for testing
+- systest: system test for the complete agent

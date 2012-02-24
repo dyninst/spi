@@ -29,6 +29,10 @@ class InjectorTest : public testing::Test {
 
 
 TEST_F(InjectorTest, pid_inject) {
+  dt::PID pid = 0;
+  const char* lib_name = "";
+  SpInjector::ptr injector = SpInjector::Create(pid);
+  injector->Inject(lib_name);
 }
 
 TEST_F(InjectorTest, pid_complex_agent_inject) {

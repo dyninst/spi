@@ -44,15 +44,15 @@
 
 namespace sp {
 
-	class SpInjector {
-  public:
+  class SpInjector {
+ public:
     typedef dyn_detail::boost::shared_ptr<SpInjector> ptr;
 
     INJECTOR_EXPORT static ptr Create(dt::PID pid);
     INJECTOR_EXPORT void Inject(const char* lib_name);
 
     ~SpInjector();
-  protected:
+ protected:
     // The argument type, passed to do_dlopen
     typedef struct {
       const char *libname;
@@ -104,7 +104,7 @@ namespace sp {
                           dt::Address do_dlopen,
                           dt::Address code_addr);
 
-	};
+  };
 
 }
 

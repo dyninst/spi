@@ -8,6 +8,7 @@
   - PLATFORM: if it runs on x86 64-bit linux, then put "x86_64-unknown-linux2.4"; if it runs on x86 32-bit linux, then put "i386-unknown-linux2.4".
   - LD_LIBRARY_PATH: place library paths for self-propelled instrumentation, dyninst, stackwalker, libelf, libdwarf, and libxml2
 3. Define the global environment variable SP_DIR to point to the spi installation directory
+  - DYNLINK: true for building shared library for agent, otherwise for building static library
 
 
 Environment variables related to self-propelled instrumentation:
@@ -29,3 +30,15 @@ Environment variables related to self-propelled instrumentation:
 Shared memory id used:
 1. 1986
 2. 1985
+
+Make arguments
+- For testing
+  - make unittest: build unittests
+  - make mutatee: build simple mutatees
+  - make external_mutatee: build real world mutatees
+  - make test: unittest + mutatee + external_mutatee
+
+- For main self propelled
+  - make injector_exe
+  - make agent_lib
+  - make / make all: injector_exe + agent_lib

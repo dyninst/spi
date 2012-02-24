@@ -50,7 +50,6 @@ IJA_LDFLAGS += -ldl -shared
 #=================================================
 
 AG_DIR      = $(SP_DIR)/src/agent
-VPATH      += $(AG_DIR)
 
 AG_FLAGS   += $(COMMON_FLAGS)
 AG_FLAGS   += -fPIC -Dos_linux -O0
@@ -70,3 +69,8 @@ AG_IFLAGS  += -I$(DYNINST_DIR)/parseAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/instructionAPI/h
 AG_IFLAGS  += -I$(DYNINST_DIR)/stackwalk/h
 
+#=================================================
+# For system tests
+#=================================================
+
+ST_DIR      = $(SP_DIR)/src/test/systest
