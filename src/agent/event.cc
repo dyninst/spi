@@ -97,7 +97,7 @@ namespace sp {
 
       // Instrument all functions in the call stack.
       FuncSet call_stack;
-      g_context->get_callstack(&call_stack);
+      g_context->GetCallStack(&call_stack);
       sp_debug("CALLSTACK - %lu calls in the call stack",
 							 (unsigned long)call_stack.size());
       for (FuncSet::iterator i = call_stack.begin(); 

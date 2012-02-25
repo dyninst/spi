@@ -68,7 +68,8 @@ namespace sp {
 		parser_ = SpParser::ptr();
 		init_event_ = SpEvent::ptr();
 		fini_event_ = SpEvent::ptr();
-
+    context_ = NULL;
+    
 		allow_ipc_ = false;
 		trap_only_ = false;
 		parse_only_ = false;
@@ -91,7 +92,7 @@ namespace sp {
 
 	void
 	SpAgent::SetFiniEvent(SpEvent::ptr e) {
-		init_event_ = e;
+		fini_event_ = e;
 	}
 
 	void
@@ -144,7 +145,7 @@ namespace sp {
 
 		// XXX: ignore bash/lsof/Injector for now ...
 		if (sp::IsIllegalProgram()) {
-			sp_debug("ILLEGAL EXE - avoid instrumenting %s", GetExeName());
+			sp_debug("ILLEGAL EXE - avoid instrumenting %s", GetExeName().c_str());
 			return;
 		}
 
@@ -213,22 +214,8 @@ namespace sp {
 		assert(g_parser);
     g_parser->SetLibrariesToInstrument(libs_to_inst_);
     
-		// Prepare context
-    // XXX: this never gets freed ... should free it when unloading
-    //      this shared agent library?
-		g_context = SpContext::create(init_propeller_,
-																	init_entry_,
-																	init_exit_,
-																	parser_);
-		assert(g_context && g_parser->mgr());
-
-    // Set up globally unique address space object
-    // This will be freed in SpContext::~SpContext
-		g_as = AS_CAST(g_parser->mgr()->as());
-		assert(g_as);
-
-		g_context->set_directcall_only(directcall_only_);
-		g_context->set_allow_ipc(allow_ipc_);
+    parser_->parse();
+    assert(g_parser->mgr());
 
     // We may stop here after parsing
 		if (parse_only_) {
@@ -236,6 +223,45 @@ namespace sp {
 			return;
 		}
 
+		// Prepare context
+    // XXX: this never gets freed ... should free it when unloading
+    //      this shared agent library?
+		g_context = SpContext::Create();
+    context_ = g_context;
+		assert(g_context);
+
+    // Set up globally unique address space object
+    // This will be freed in SpContext::~SpContext
+		g_as = AS_CAST(g_parser->mgr()->as());
+		assert(g_as);
+
+
+    // Copy agent's variables to context
+    g_context->SetInitPropeller(init_propeller_);
+    g_context->SetParser(parser_);
+    g_context->SetInitEntryName(init_entry_);
+    void* payload_entry = (void*)g_parser->get_func_addr(init_entry_);
+    assert(payload_entry);
+    g_context->SetInitEntry(payload_entry);
+    if (init_exit_.size() > 0) {
+      g_context->SetInitExitName(init_exit_);
+      void* payload_exit = (void*)g_parser->get_func_addr(init_exit_);
+      assert(payload_exit);
+      g_context->SetInitExit(payload_exit);
+    }
+		g_context->EnableDirectcallOnly(directcall_only_);
+		g_context->EnableIpc(allow_ipc_);
+    if (allow_ipc_) {
+      // SpIpcMgr will be deleted in the destructor of SpContext
+      g_context->SetIpcMgr(new SpIpcMgr());
+      void* wrapper_entry = (void*)g_parser->get_func_addr("wrapper_entry");
+      assert(wrapper_entry);
+			g_context->SetWrapperEntry(wrapper_entry);
+      void* wrapper_exit = (void*)g_parser->get_func_addr("wrapper_exit");
+      assert(wrapper_exit);
+			g_context->SetWrapperExit(wrapper_exit);
+    }
+    
 		// Register Events
 		init_event_->RegisterEvent();
 		fini_event_->RegisterEvent();

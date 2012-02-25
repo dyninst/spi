@@ -34,7 +34,7 @@
 
 #ifndef SP_AGENT_H_
 #define SP_AGENT_H_
- 
+
 #include "common/common.h"
 
 #include "agent/parser.h"
@@ -44,19 +44,14 @@
 
 namespace sp {
 
-	class SpAgent : public SHARED_THIS(SpAgent) {
-		friend class SpContext;
+  class SpAgent : public SHARED_THIS(SpAgent) {
+    friend class SpContext;
 
  public:
     typedef SHARED_PTR(SpAgent) ptr;
-    
+
     AGENT_EXPORT static ptr Create();
     virtual ~SpAgent();
-
-    // Getters
-		AGENT_EXPORT SpParser::ptr parser() const {
-      return parser_;
-    }
 
     // Setters
     AGENT_EXPORT void SetParser(SpParser::ptr);
@@ -66,11 +61,52 @@ namespace sp {
     AGENT_EXPORT void SetInitExit(string);
     AGENT_EXPORT void SetInitPropeller(SpPropeller::ptr);
     AGENT_EXPORT void SetLibrariesToInstrument(const StringSet& libs);
-        
+
     AGENT_EXPORT void EnableParseOnly(bool yes_or_no);
     AGENT_EXPORT void EnableDirectcallOnly(bool yes_or_no);
-		AGENT_EXPORT void EnableTrapOnly(bool yes_or_no);
+    AGENT_EXPORT void EnableTrapOnly(bool yes_or_no);
     AGENT_EXPORT void EnableIpc(bool yes_or_no);
+
+    // Getters
+    AGENT_EXPORT SpParser::ptr parser() const {
+      return parser_;
+    }
+    AGENT_EXPORT SpEvent::ptr init_event() const {
+      return init_event_;
+    }
+    AGENT_EXPORT SpEvent::ptr fini_event() const {
+      return fini_event_;
+    }
+    AGENT_EXPORT std::string init_entry() const {
+      return init_entry_;
+    }
+    AGENT_EXPORT std::string init_exit() const {
+      return init_exit_;
+    }
+    AGENT_EXPORT SpPropeller::ptr init_propeller() const {
+      return init_propeller_;
+    }
+    AGENT_EXPORT const StringSet& libraries_to_instrument() const {
+      return libs_to_inst_;
+    }
+
+    AGENT_EXPORT bool IsParseOnlyEnabled() const {
+      return parse_only_;
+    }
+    AGENT_EXPORT bool IsDirectcallOnlyEnabled() const {
+      return directcall_only_;
+    }
+    AGENT_EXPORT bool IsTrapOnlyEnabled() const {
+      return trap_only_;
+    }
+    AGENT_EXPORT bool IsIpcEnabled() const {
+      return allow_ipc_;
+    }
+
+    AGENT_EXPORT SpContext* context() const {
+      return context_;
+    }
+    
 
     AGENT_EXPORT void Go();
 
@@ -79,19 +115,20 @@ namespace sp {
     SpEvent::ptr      fini_event_;
     SpParser::ptr     parser_;
     SpPropeller::ptr  init_propeller_;
-
+    SpContext*        context_;
+    
     string init_entry_;
     string init_exit_;
 
     bool parse_only_;
     bool directcall_only_;
     bool allow_ipc_;
-		bool trap_only_;
+    bool trap_only_;
 
     StringSet  libs_to_inst_;
-    
+
     SpAgent();
-	};
+  };
 
 }
 

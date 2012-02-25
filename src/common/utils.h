@@ -93,10 +93,10 @@ namespace sp {
   COMMON_EXPORT bool IsIllegalProgram();
 
   // Gets text content from a file. If file doesn't exist, return "".
-  COMMON_EXPORT const char* GetFileText(const char* filename);
+  COMMON_EXPORT std::string GetFileText(const char* filename);
 
   // Gets full path of the executable file
-  COMMON_EXPORT const char* GetExeName();
+  COMMON_EXPORT std::string GetExeName();
 
   // IPC stuffs
   COMMON_EXPORT bool IsPipe(const int fd);

@@ -88,7 +88,7 @@ namespace sp {
 
 		// If we just want to instrument direct call, then we skip parsing
 		// indirect calls
-		if (g_context->directcall_only()) parse_indirect = false;
+		if (g_context->IsDirectcallOnlyEnabled()) parse_indirect = false;
 
     SpFunction* f = g_parser->callee(pt, parse_indirect);
 

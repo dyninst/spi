@@ -1,4 +1,5 @@
 *.so
 *.o
 ._*
+*DEPENDS
 external_mutatee

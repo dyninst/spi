@@ -41,4 +41,13 @@ Make arguments
 - For main self propelled
   - make injector_exe
   - make agent_lib
-  - make / make all: injector_exe + agent_lib
+  - make spi: agent_lib + injector_exe
+
+- For everything
+  - make / make all: spi + test
+
+- For cleaning
+  - make clean_test: clean test stuffs
+  - make clean: only clean core self-propelled stuffs
+  - make clean_all: clean everything
+  - make clean_objs: clean core self-propelled objs

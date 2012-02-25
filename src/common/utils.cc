@@ -221,6 +221,7 @@ namespace sp {
       sp_perror("ERROR: cannot access /proc");
     }
     while ((de = readdir(dir)) != 0) {
+
       if (isdigit(de->d_name[0])) {
         pid = strtol(de->d_name, &ep, 10);
         if (ep == 0 || *ep != 0 || pid < 0) {
@@ -312,8 +313,8 @@ namespace sp {
     proc_path += Dyninst::itos(getpid());
     proc_path += "/cmdline";
 
-    const char* content = GetFileText(proc_path.c_str());
-    char* exe_name = sp_filename(content);
+    std::string content = GetFileText(proc_path.c_str());
+    char* exe_name = sp_filename(content.c_str());
     sp_debug("exe: %s", exe_name);
 
     for (StringSet::iterator si = illegal_exes.begin();
@@ -325,13 +326,13 @@ namespace sp {
   }
 
   // Gets current process's executable's full path name
-  const char* GetExeName() {
+  std::string GetExeName() {
     std::string proc_path = "";
     proc_path += "/proc/";
     proc_path += Dyninst::itos(getpid());
     proc_path += "/cmdline";
 
-    const char* content = GetFileText(proc_path.c_str());
+    std::string content = GetFileText(proc_path.c_str());
 
     // The format for /proc/pid/cmdline is:
     // full_path_of_exe\0arg1\0arg2\0 ...
@@ -340,13 +341,13 @@ namespace sp {
   }
 
   // Gets text content from a file. If file doesn't exist, return "".
-  const char* GetFileText(const char* filename) {
+  std::string GetFileText(const char* filename) {
     std::ifstream infile(filename);
     if (infile) {
       std::string fileData((std::istreambuf_iterator<char>(infile)),
                             std::istreambuf_iterator<char>());
       infile.close();
-      return fileData.c_str();
+      return fileData;
     } else {
       return "";
     }

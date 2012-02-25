@@ -47,35 +47,23 @@ namespace sp {
   extern SpLock* g_propel_lock;
   extern SpAddrSpace* g_as;
 
-  SpContext::SpContext(SpPropeller::ptr p,
-											 SpParser::ptr parser) {
-    init_propeller_ = p;
-    parser_ = parser;
-    ipc_mgr_ = NULL;
-    directcall_only_ = false;
-    allow_ipc_ = false;
+  SpContext::SpContext() :
+      init_entry_(NULL),
+      init_exit_(NULL),
+      wrapper_entry_(NULL),
+      wrapper_exit_(NULL),
+      ipc_mgr_(NULL),
+      parser_(SpParser::ptr()),
+      init_propeller_(SpPropeller::ptr()),
+      allow_ipc_(false),
+      directcall_only_(false) {
 
-    // Parsing the entire code
-    parser_->parse();
   }
 
   SpContext*
-  SpContext::create(SpPropeller::ptr propeller,
-                    string init_entry,
-                    string init_exit,
-                    SpParser::ptr parser) {
-    SpContext* ret = new SpContext(propeller,
-                                   parser);
+  SpContext::Create() {
+    SpContext* ret = new SpContext();
     assert(ret);
-    ret->init_entry_ = (void*)g_parser->get_func_addr(init_entry);
-    assert(ret->init_entry_);
-    ret->init_exit_ = (void*)g_parser->get_func_addr(init_exit);
-    ret->init_entry_name_ = init_entry;
-    ret->init_exit_name_ = init_exit;
-    ret->wrapper_entry_ =
-			(void*)parser->get_func_addr("wrapper_entry");
-    ret->wrapper_exit_ =
-			(void*)parser->get_func_addr("wrapper_exit");
     return ret;
   }
 
@@ -85,7 +73,7 @@ namespace sp {
   //  1. it should be resovled by the parser.
   //  2. it should not be from some well known system libraries
   void
-  SpContext::get_callstack(FuncSet* call_stack) {
+  SpContext::GetCallStack(FuncSet* call_stack) {
     long pc, sp, bp;
     parser_->get_frame(&pc, &sp, &bp);
     sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
@@ -105,16 +93,12 @@ namespace sp {
 			// ph::PatchFunction* func = parser_->findFunction(ra);
 			ph::PatchFunction* func = parser_->findFunction(s.c_str());
       if (!func) {
-#ifndef SP_RELEASE
         sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());
-#endif
         continue;
       }
 
       // Step 2: add this function
-#ifndef SP_RELEASE
       sp_debug("FOUND - Function %s is in the call stack", s.c_str());
-#endif
       call_stack->insert(func);
     }
   }
@@ -124,13 +108,4 @@ namespace sp {
     delete g_propel_lock;
     delete g_as;
   }
-
-  void
-  SpContext::set_allow_ipc(bool b) {
-    allow_ipc_ = b;
-    if (b && !ipc_mgr_) {
-      ipc_mgr_ = new SpIpcMgr();
-    }
-  }
-
 }

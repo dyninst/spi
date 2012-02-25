@@ -46,7 +46,13 @@
 #include "agent/snippet.h"
 #include "injector/injector.h"
 
-#define AGENT_INIT __attribute__((constructor))
+#define THIS_IS_AGENT  \
+  int self_propelled_instrumentation_agent_library = 19861985; 
+
+#define AGENT_INIT \
+  THIS_IS_AGENT \
+  __attribute__((constructor))
+
 #define AGENT_FINI __attribute__((destructor))
 
 #endif  // _SPINC_H_

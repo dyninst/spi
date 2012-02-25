@@ -1,4 +1,4 @@
-snippet-x86_64.o: ../src/agent/snippet-x86_64.cc \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/snippet-x86_64.o: ../src/agent/snippet-x86_64.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -240,7 +240,7 @@ snippet-x86_64.o: ../src/agent/snippet-x86_64.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/instructionAPI/h/Visitor.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/instructionAPI/h/Immediate.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/instructionAPI/h/BinaryFunction.h
-agent.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/agent.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/agent.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/agent.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -482,7 +482,7 @@ agent.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/Instrumenter.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/Command.h
-context.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/context.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/injector/injector.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/proccontrol/h/Process.h \
@@ -728,7 +728,7 @@ context.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/dyn_regs.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/dynutil/h/Annotatable.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/stackwalk/h/walker.h
-event.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/event.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/event.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/event.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/propeller.h \
@@ -956,7 +956,7 @@ event.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/channel.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/ipc_worker_delegate.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h
-parser.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/parser.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/parser.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/instructionAPI/h/BinaryFunction.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/instructionAPI/h/Expression.h \
@@ -1210,7 +1210,7 @@ parser.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/proccontrol/h/EventType.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h
-payload.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/payload.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/payload.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -1440,7 +1440,7 @@ payload.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/point.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/snippet.h
-propeller.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/propeller.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/propeller.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -1675,7 +1675,7 @@ propeller.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/Instrumenter.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/Command.h
-trap_worker_impl.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/trap_worker_impl.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/inst_workers/trap_worker_impl.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -1912,7 +1912,7 @@ trap_worker_impl.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/parser.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h
-callinsn_worker_impl.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/callinsn_worker_impl.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/inst_workers/callinsn_worker_impl.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -2149,7 +2149,7 @@ callinsn_worker_impl.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h
-callblk_worker_impl.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/callblk_worker_impl.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/inst_workers/callblk_worker_impl.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -2386,7 +2386,7 @@ callblk_worker_impl.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h
-spring_worker_impl.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/spring_worker_impl.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/inst_workers/spring_worker_impl.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -2623,7 +2623,7 @@ spring_worker_impl.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/AddrSpace.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h
-ipc_mgr.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/ipc_mgr.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_mgr.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -2865,7 +2865,7 @@ ipc_mgr.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/proccontrol/h/EventType.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h
-ipc_worker_delegate.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/ipc_worker_delegate.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/ipc_worker_delegate.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -3105,7 +3105,7 @@ ipc_worker_delegate.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/proccontrol/h/EventType.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h
-pipe_worker_impl.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/pipe_worker_impl.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/pipe_worker_impl.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -3342,7 +3342,7 @@ pipe_worker_impl.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/proccontrol/h/EventType.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h
-tcp_worker_impl.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/tcp_worker_impl.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/tcp_worker_impl.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -3572,7 +3572,7 @@ tcp_worker_impl.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/tcp_worker_impl.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/ipc_worker_delegate.h
-udp_worker_impl.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/udp_worker_impl.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/udp_worker_impl.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -3803,7 +3803,7 @@ udp_worker_impl.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_mgr.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/udp_worker_impl.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/ipc/ipc_workers/ipc_worker_delegate.h
-addr_space.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/addr_space.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/addr_space.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/parser.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -4022,7 +4022,7 @@ addr_space.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h
-cfg.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/cfg.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/cfg.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/cfg.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/parseAPI/h/CFG.h \
@@ -4237,7 +4237,7 @@ cfg.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h
-instrumenter.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/instrumenter.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/instrumenter.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -4483,7 +4483,7 @@ instrumenter.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/utils.h
-maker.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/maker.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/maker.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/cfg.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/parseAPI/h/CFG.h \
@@ -4703,7 +4703,7 @@ maker.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/payload.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/cfg.h
-object.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/object.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -4915,7 +4915,7 @@ object.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchObject.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/Point.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/Snippet.h
-point.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/point.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/point.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/object.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \
@@ -5134,7 +5134,7 @@ point.o:  \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/patchapi/cfg.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/parseAPI/h/CFG.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/patchAPI/h/PatchCFG.h
-snippet.o:  \
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/objs/snippet.o:  \
  /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/snippet.cc \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/agent/context.h \
   /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/src/common/common.h \

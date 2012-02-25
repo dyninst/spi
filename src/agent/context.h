@@ -29,6 +29,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+// This provides the "context" for self propelled instrumentation.
+// Essentially, it contains a copy of variables set in SpAgent.
+// SpAgent instance would be gone immediately in the agent shared library.
+// However, this SpContext instance will remain during the life time of
+// self-propelled instrumentation.
+
 #ifndef SP_CONTEXT_H_
 #define SP_CONTEXT_H_
 
@@ -44,33 +50,45 @@ namespace sp {
 typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;
 
 class SpContext {
+  friend class SpAgent;
   public:
-    static SpContext* create(SpPropeller::ptr p,
-                             string,
-                             string,
-                             SpParser::ptr);
+    static SpContext* Create();
     ~SpContext();
 
-    string init_entry_name() const { return init_entry_name_; }
-    string init_exit_name() const { return init_exit_name_; }
+    // Getters
+    string init_entry_name() const {
+      return init_entry_name_;
+    }
+    string init_exit_name() const {
+      return init_exit_name_;
+    }
+    PayloadFunc init_entry() const {
+      return init_entry_;
+    }
+    PayloadFunc init_exit() const {
+      return init_exit_;
+    }
+    PayloadFunc wrapper_entry() const {
+      return wrapper_entry_;
+    }
+    PayloadFunc wrapper_exit() const {
+      return wrapper_exit_;
+    }
+    SpIpcMgr* ipc_mgr() const {
+      return ipc_mgr_;
+    }
+    SpPropeller::ptr init_propeller() const {
+      return init_propeller_;
+    }
 
-    PayloadFunc init_entry() const { return init_entry_; }
-    PayloadFunc init_exit() const { return init_exit_; }
+    bool IsDirectcallOnlyEnabled() const {
+      return directcall_only_;
+    }
+    bool IsIpcEnabled() const {
+      return allow_ipc_;
+    }
 
-    PayloadFunc wrapper_entry() const {return wrapper_entry_;}
-    PayloadFunc wrapper_exit() const {return wrapper_exit_;}
-
-    SpIpcMgr* ipc_mgr() const { return ipc_mgr_; }
-    SpPropeller::ptr   init_propeller() const { return init_propeller_; }
-
-    void get_callstack(FuncSet* func_set);
-
-		// Controlling Instrumentation
-    void set_directcall_only(bool b) { directcall_only_ = b; }
-    bool directcall_only() const { return directcall_only_; }
-
-    bool allow_ipc() const { return allow_ipc_; }
-    void set_allow_ipc(bool b);
+    void GetCallStack(FuncSet* func_set);
 
   protected:
 
@@ -90,7 +108,59 @@ class SpContext {
     bool allow_ipc_;
     bool directcall_only_;
 
-    SpContext(SpPropeller::ptr, SpParser::ptr);
+    SpContext();
+
+    // Setters, we only allow SpAgent to use these setters
+    
+    void EnableDirectcallOnly(bool b) {
+      directcall_only_ = b;
+    }
+
+    void EnableIpc(bool b) {
+      allow_ipc_ = b;
+    }
+
+    void SetInitEntryName(std::string name) {
+      init_entry_name_ = name;
+    }
+    
+    void SetInitExitName(std::string name) {
+      init_exit_name_ = name;
+    }
+
+    void SetParser(SpParser::ptr p) {
+      parser_ = p;
+    }
+
+    void SetInitPropeller(SpPropeller::ptr p) {
+      init_propeller_ = p;
+    }
+    
+    void SetInitEntry(PayloadFunc f) {
+      assert(f);
+      init_entry_ = f;
+    }
+    
+    void SetInitExit(PayloadFunc f) {
+      assert(f);
+      init_exit_ = f;
+    }
+    
+    void SetWrapperEntry(PayloadFunc f) {
+      wrapper_entry_ = f;
+    }
+    
+    void SetWrapperExit(PayloadFunc f) {
+      wrapper_exit_ = f;
+    }
+    
+    void SetIpcMgr(SpIpcMgr* mgr) {
+      ipc_mgr_ = mgr;
+    }
+    
+    void init_propeller(SpPropeller::ptr p) {
+      init_propeller_ = p;
+    }
 };
 
 

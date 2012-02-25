@@ -128,7 +128,7 @@ SpInjector::IsLibraryLoaded(const char* libname) {
   proc_maps += "/proc/";
   proc_maps += dt::itos(pid_);
   proc_maps += "/maps";
-  const char* content = sp::GetFileText(proc_maps.c_str());
+  const char* content = sp::GetFileText(proc_maps.c_str()).c_str();
   if (strstr(content, name_only)) {
     sp_debug("LOADED - %s is already loaded", name_only);
     return true;

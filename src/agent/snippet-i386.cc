@@ -32,7 +32,7 @@
 #include "agent/context.h"
 #include "agent/event.h"
 #include "agent/parser.h"
-#include "agent/point.h"
+#include "agent/patchapi/point.h"
 #include "agent/snippet.h"
 #include "common/utils.h"
 

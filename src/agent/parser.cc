@@ -52,9 +52,6 @@
 #include "injector/injector.h"
 
 
-// Magic number to identify agent library
-// ( make the name long enough ... )
-int self_propelled_instrumentation_agent_library = 19861985;
 
 namespace sp {
 
@@ -69,7 +66,7 @@ namespace sp {
     // init_well_known_libs();
     // init_dyninst_libs();
 
-    binaries_to_inst_.insert(sp_filename(GetExeName()));
+    binaries_to_inst_.insert(sp_filename(GetExeName().c_str()));
   }
 
   // Clean up memory buffers for ParseAPI stuffs
@@ -111,7 +108,9 @@ namespace sp {
 		if (!al) {
 			sp_perror("FAILED TO GET RUNTIME SYMTABS");
 		}
-    assert(agent_name_.size() > 0);
+    if (agent_name_.size() == 0) {
+      agent_name_ = "libagent.so";
+    }
     binaries_to_inst_.insert(agent_name_);
 
 		// Step 2: Create patchapi objects
@@ -609,6 +608,7 @@ namespace sp {
 			Symbols syms;
 			if (sym->findSymbol(syms, magic_var) && syms.size() > 0) {
 				agent_name_ = sym->name();
+        sp_debug("AGENT NAME - %s", agent_name_.c_str());
 			}
 
 			// Deduplicate symtabs
@@ -666,7 +666,7 @@ namespace sp {
 				 oi != patch_objs.end(); oi++) {
 			SpObject* obj = OBJ_CAST(*oi);
 			assert(obj);
-			char* s1 = sp_filename(sp::GetExeName());
+			char* s1 = sp_filename(sp::GetExeName().c_str());
 			char* s2 = sp_filename(obj->name().c_str());
 			// sp_debug("PARSE EXE - s1=%s, s2 =%s", s1, s2);
 			if (strcmp(s1, s2) == 0) {

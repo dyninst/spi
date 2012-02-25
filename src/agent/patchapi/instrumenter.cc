@@ -129,7 +129,7 @@ namespace sp {
 
       // If we only want to instrument direct call, and this point is a
 			// indirect call point, then skip it
-      if (spt && !spt->getCallee() && g_context->directcall_only()) {
+      if (spt && !spt->getCallee() && g_context->IsDirectcallOnlyEnabled()) {
         sp_debug("INDIRECT CALL - skip");
         continue;
       }
