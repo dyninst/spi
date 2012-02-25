@@ -65,20 +65,7 @@ namespace sp {
 											dt::Address near) {
 		SpObject* o = OBJ_CAST(obj);
 		assert(o);
-
-		// Allocate a nearby buffer
-		dt::Address buf = o->get_freebuf(size);
-		if (buf) {
-			sp_debug("SUCCESSFUL TO GET A CLOSE BUFFER to %lx - %lx allocaed",
-							 near, buf);
-			return buf;
-		}
-
-		// If the above effort fails, we resort to malloc
-    buf = (dt::Address)::malloc(size);
-		assert(buf);
-		sp_debug("FAILED TO GET A CLOSE BUFFER %lx - %lx malloced", near, buf);
-    return buf;
+		return o->AllocateBuffer(size);
   }
 
   // Copy a buffer to another buffer.
@@ -94,69 +81,28 @@ namespace sp {
   bool
   SpAddrSpace::free(ph::PatchObject* obj,
 										dt::Address orig) {
-		SpObject* o = static_cast<SpObject*>(obj);
+		SpObject* o = OBJ_CAST(obj);
 		assert(o);
-		if (!o->put_freebuf(orig)) {
-			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", orig);
-			::free((void*)orig);
-		}
-    return true;
-  }
-
-  // Set access permission to a original code area.
-  bool
-  SpAddrSpace::SetCodePermission(dt::Address a,
-                                 size_t length,
-                                 int perm) {
-    bool ret = false;
-    sp_debug("SETTING CODE PERM - for [%lx ~ %lx]", a, a + length - 1);
-
-    // Checks the mapped memory area.
-    // We change permission for the entire range that overlaps what we
-		// provide in the argument list.
-		MemMappings& mem_maps = g_parser->mem_maps();
-    for (MemMappings::iterator mi = mem_maps.begin();
-         mi != mem_maps.end(); mi++) {
-      dt::Address start = mi->first;
-      MemMapping& mm = mi->second;
-      dt::Address end = mm.end;
-      dt::Address code_end = a + length;
-      if ((a >= start && code_end < end) ||
-          (a <= start && code_end >= start && code_end <= end) ||
-          (a >= start && a < end && code_end >= end)) {
-
-        sp_debug("PERM - [%lx, %lx) overlaps (%lx, %lx)",
-								 start, end, a, code_end);
-
-        if (mprotect((void*)start, end - start, perm) < 0) {
-          sp_debug("MPROTECT - FAILED TO change memory access"
-                   " perm for %lx in [%lx, %lx]", a, start, end);
-          perror("mprotect");
-          return false;
-        } else {
-          sp_debug("MPROTECT - SUCCEED TO change memory access"
-                   " perm for %lx in [%lx, %lx]", a, start, end);
-          ret = true;
-        }
-      }
-    }
-
-    return ret;
+		return o->FreeBuffer(orig);
   }
 
 
-  // Set access permission to snippet buffer area.
+  // Set access permission to memory area.
   bool
-  SpAddrSpace::SetSnippetPermission(dt::Address a,
+  SpAddrSpace::SetMemoryPermission(dt::Address a,
                                     size_t length,
                                     int perm) {
     bool ret = false;
-    sp_debug("SETTING SNIPPET PERM - for [%lx ~ %lx]", a, a + length - 1);
+    sp_debug("SETTING MEMORY PERM - for [%lx ~ %lx] of %ld bytes",
+             (long)a, (long)(a + length - 1), (long)length);
 
     dt::Address aligned = a;
     size_t pz = getpagesize();
     aligned = (dt::Address)(((dt::Address) aligned - pz-1) & ~(pz-1));
-    size_t len = length + pz + pz;
+    // size_t len = length + pz + pz;
+    size_t len = length + (a - aligned); 
+    sp_debug("TRY mprotect - for [%lx ~ %lx] of %ld bytes",
+             (long)aligned, (long)(aligned + len - 1), (long)len);
     if (mprotect((void*)aligned, len, perm) < 0) {
       sp_print("MPROTECT - Failed to change memory access permission");
       perror("mprotect");
@@ -167,34 +113,6 @@ namespace sp {
       ret = true;
     }
 
-    return ret;
-  }
-
-  // Restore original code's access permission
-  // XXX: is it really necessary? to be safe?
-  bool
-  SpAddrSpace::RestoreCodePermission(dt::Address a,
-                                     size_t length) {
-    bool ret = false;
-		MemMappings& mem_maps = g_parser->mem_maps();
-    for (MemMappings::iterator mi = mem_maps.begin();
-         mi != mem_maps.end(); mi++) {
-      dt::Address start = mi->first;
-      MemMapping& mm = mi->second;
-      dt::Address end = mm.end;
-      dt::Address code_end = a + length;
-      if ((a >= start && code_end < end) ||
-          (a <= start && code_end >= start && code_end <= end) ||
-          (a >= start && a < end && code_end >= end)) {
-
-        if (mprotect((void*)start, end - start, mem_maps[start].perms) < 0) {
-          sp_print("MPROTECT - Failed to change memory access permission");
-          return false;
-        } else {
-          ret = true;
-        }
-      }
-    }
     return ret;
   }
 

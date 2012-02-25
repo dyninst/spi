@@ -37,7 +37,7 @@
 
 namespace sp {
   extern SpContext* g_context;
-	extern SpParser::ptr g_parser;
+  extern SpParser::ptr g_parser;
 
   // Default Event -- dumb event, does nothing
   SpEvent::SpEvent() {
@@ -77,20 +77,20 @@ namespace sp {
 
   void
   SyncEvent::RegisterEvent() {
-		bool fail_preload = false;
+    bool fail_preload = false;
     if (!g_parser->injected()) {
 
       sp_debug("PRELOAD - preload agent.so, and instrument main()");
 
-			ph::PatchFunction* f = g_parser->findFunction("main");
-			if (f) {
+      ph::PatchFunction* f = g_parser->FindFunction("main");
+      if (f) {
         g_context->init_propeller()->go(f,
-																				g_context->init_entry(),
-																				g_context->init_exit());
-			} else {
-				sp_debug("FAIL PRELOAD - try injection ...");
-				fail_preload = true;
-			}
+                                        g_context->init_entry(),
+                                        g_context->init_exit());
+      } else {
+        sp_debug("FAIL PRELOAD - try injection ...");
+        fail_preload = true;
+      }
     } // LD_PRELOAD mode
 
     if (g_parser->injected() || fail_preload) {
@@ -99,14 +99,14 @@ namespace sp {
       FuncSet call_stack;
       g_context->GetCallStack(&call_stack);
       sp_debug("CALLSTACK - %lu calls in the call stack",
-							 (unsigned long)call_stack.size());
+               (unsigned long)call_stack.size());
       for (FuncSet::iterator i = call_stack.begin(); 
-					 i != call_stack.end(); i++) {
-				ph::PatchFunction* f = *i;
+           i != call_stack.end(); i++) {
+        ph::PatchFunction* f = *i;
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
-				// We instrument all functions along the call stack, until main
+        // We instrument all functions along the call stack, until main
         if (f->name().compare("main") == 0) {
           break;
         }

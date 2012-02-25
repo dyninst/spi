@@ -74,7 +74,10 @@ namespace sp {
     dt::Address load_addr() const { return load_addr_; }
 
 		// Get this object's name
-		std::string name();
+		std::string name() const {
+      assert(symtab_);
+      return symtab_->name();
+    }
 
 		// Get this object's associated symtab
 		sb::Symtab* symtab() const { return symtab_; }
@@ -89,10 +92,10 @@ namespace sp {
 		FreeBufs big_freebufs_;    // Big buffers
 		BufTypeMap alloc_bufs_;    // To facilitate future deallocation
 
-		void init_memory_alloc(dt::Address base,
-													 size_t size);
-		dt::Address get_freebuf(size_t size);
-		bool put_freebuf(dt::Address buf);
+		void InitMemoryAlloc(dt::Address base,
+												 size_t size);
+		dt::Address AllocateBuffer(size_t size);
+		bool FreeBuffer(dt::Address buf);
 };
 
 }

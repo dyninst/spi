@@ -78,49 +78,61 @@ namespace sp {
     typedef SHARED_PTR(SpParser) ptr;
 
     virtual ~SpParser();
-    static ptr create();
+    static ptr Create();
 
 		// The main parsing procedure
-    virtual ph::PatchMgrPtr parse();
+    virtual ph::PatchMgrPtr Parse();
 
     // Libraries to instrument
     void SetLibrariesToInstrument(const StringSet& libs);
+    bool CanInstrument(string lib_full_path);
     
-		// Get the PatchObject that represents the executable
-    ph::PatchObject* exe_obj() const { return exe_obj_; }
-
-		// Get the agent library's name
-    string get_agent_name();
+    ph::PatchObject* exe_obj() const {
+      return exe_obj_;
+    }
+    string agent_name() const {
+      return agent_name_;
+    }
 
 		// Get register values to form a stack frame
-    void get_frame(long* pc, long* sp, long* bp);
+    void GetFrame(long* pc,
+                  long* sp,
+                  long* bp);
 
-		// Find function by absolute address
-    ph::PatchFunction* findFunction(dt::Address addr);
-
-		// Find function by its name
-    ph::PatchFunction* findFunction(string name, bool allow_plt=false);
-
-		// Get callee from a call point
-    SpFunction* callee(SpPoint* pt,
-											 bool     parse_indirect = false);
-
-		// Get function absolute address from function name
-    dt::Address get_func_addr(string name);
+    ph::PatchFunction* FindFunction(dt::Address absolute_addr);
+    ph::PatchFunction* FindFunction(string func_name_without_path,
+                                    bool allow_plt=false);
+    SpFunction* callee(SpPoint* point,
+											 bool parse_indirect = false);
+    dt::Address GetFuncAddrFromName(string func_name_without_path);
 
 		// Dump instructions from a buffer
-    string dump_insn(void* addr, size_t size);
+    string DumpInsns(void* addr,
+                     size_t size);
 
 		// Check if this agent library is injected (true) or is
     // preloaded (false)
-    bool injected() const { return injected_; }
+    bool injected() const {
+      return injected_;
+    }
 
-    // Checks whether this library is okay to be instrumented
-    bool CanInstrument(string lib_full_path);
-    
-		ph::PatchMgrPtr mgr() const { return mgr_; }
+		ph::PatchMgrPtr mgr() const {
+      return mgr_;
+    }
 
-		MemMappings& mem_maps() { return mem_maps_; }
+    // All about memory allocation
+    void UpdateMemoryMappings();
+    void UpdateFreeIntervals();
+    void DumpMemoryMappings();
+    void DumpFreeIntervals();
+		bool GetClosestInterval(dt::Address addr,
+										        FreeInterval** interval);
+		const MemMappings& mem_maps() {
+      return mem_maps_;
+    }
+		const FreeIntervalList& free_intervals() {
+      return free_intervals_;
+    }
 
   protected:
 		// Is this agent library injected (true) or preloaded (false)?
@@ -132,40 +144,32 @@ namespace sp {
 
     ph::PatchMgrPtr mgr_;
     ph::PatchObject* exe_obj_;
-
     StringSet binaries_to_inst_;
-        
     RealFuncMap real_func_map_;
-
     MemMappings mem_maps_;
 		FreeIntervalList free_intervals_;
 
 		// Methods
     SpParser();
 
-    void update_mem_maps();
-    void dump_mem_maps();
-    void dump_free_intervals();
-		bool get_closest_interval(dt::Address addr,
-															FreeInterval** interval);
 
 		// All about parsing
-		sb::AddressLookup* get_runtime_symtabs(SymtabSet& symtabs);
+		sb::AddressLookup* GetRuntimeSymtabs(SymtabSet& symtabs);
 
-		bool create_patchobjs(SymtabSet& symtabs,
-													sb::AddressLookup* al,
-													PatchObjects& patch_objs);
+		bool CreatePatchobjs(SymtabSet& symtabs,
+												sb::AddressLookup* al,
+												PatchObjects& patch_objs);
 
-		SpObject* create_object(sb::Symtab* symtab,
-														dt::Address load_addr);
-		SpObject* create_object_from_runtime(sb::Symtab* symtab,
+		SpObject* CreateObject(sb::Symtab* symtab,
+													dt::Address load_addr);
+		SpObject* CreateObjectFromRuntime(sb::Symtab* symtab,
 																				 dt::Address load_addr);
-		SpObject* create_object_from_file(sb::Symtab* symtab,
+		SpObject* CreateObjectFromFile(sb::Symtab* symtab,
 																			dt::Address load_addr);
 
-		SpObject* get_exe_from_procfs(PatchObjects& patch_objs);
+		SpObject* GetExeFromProcfs(PatchObjects& patch_objs);
 
-		ph::PatchMgrPtr create_mgr(PatchObjects& patch_objs);
+		ph::PatchMgrPtr CreateMgr(PatchObjects& patch_objs);
 
 	};
 

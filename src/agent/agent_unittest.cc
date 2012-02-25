@@ -9,15 +9,15 @@ namespace {
 class AgentTest : public testing::Test {
   public:
   AgentTest() {
-	}
+  }
 
   protected:
 
   virtual void SetUp() {
-	}
+  }
 
-	virtual void TearDown() {
-	}
+  virtual void TearDown() {
+  }
 };
 
 
@@ -43,7 +43,7 @@ TEST_F(AgentTest, customized_setting) {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
   ASSERT_TRUE(agent);
 
-  sp::SpParser::ptr parser = sp::SpParser::create();
+  sp::SpParser::ptr parser = sp::SpParser::Create();
   ASSERT_TRUE(parser);
 
   sp::SpEvent::ptr init_event = sp::AsyncEvent::Create();
@@ -52,9 +52,9 @@ TEST_F(AgentTest, customized_setting) {
   sp::SpEvent::ptr fini_event = sp::SyncEvent::Create();
   ASSERT_TRUE(fini_event);
 
-  sp::SpPropeller::ptr propeller = sp::SpPropeller::create();
+  sp::SpPropeller::ptr propeller = sp::SpPropeller::Create();
   ASSERT_TRUE(propeller);
-  
+
   agent->SetParser(parser);
   agent->SetInitEvent(init_event);
   agent->SetFiniEvent(fini_event);

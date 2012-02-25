@@ -134,7 +134,7 @@ namespace sp {
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx for %s- {",
              (unsigned long)b->size(), (unsigned long)call_addr,
              pt->callee()->name().c_str());
-    sp_debug("%s", g_parser->dump_insn((void*)b->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
     sp_debug("}");
 
@@ -154,31 +154,26 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (g_as->SetCodePermission((dt::Address)call_addr, insn_length, perm)) {
+    if (g_as->SetMemoryPermission((dt::Address)call_addr, insn_length, perm)) {
       g_as->write(obj, (dt::Address)call_addr, (dt::Address)jump, 5);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
     }
 
     // Change the permission of snippet, so that it can be executed.
-    if (!g_as->SetSnippetPermission((dt::Address)blob, blob_size, perm)) {
+    if (!g_as->SetMemoryPermission((dt::Address)blob, blob_size, perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
       exit(0);
     }
-
-    // Restore the permission of memory mapping
-    if (!g_as->RestoreCodePermission((dt::Address)call_addr, insn_length)) {
-      sp_print("MPROTECT - Failed to restore memory access permission");
-    }
-
+    
 		assert(pt->callee());
 
     sp_debug("AFTER INSTALL (%lu bytes) for point %lx for %s- {",
              b->size(), b->last(),
              pt->callee()->name().c_str());
-    sp_debug("%s", g_parser->dump_insn((void*)b->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
     sp_debug("}");
 

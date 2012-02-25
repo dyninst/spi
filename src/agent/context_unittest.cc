@@ -9,15 +9,15 @@ namespace {
 class ContextTest : public testing::Test {
   public:
   ContextTest() {
-	}
+  }
 
   protected:
 
   virtual void SetUp() {
-	}
+  }
 
-	virtual void TearDown() {
-	}
+  virtual void TearDown() {
+  }
 };
 
 TEST_F(ContextTest, default_setting) {
@@ -42,16 +42,16 @@ TEST_F(ContextTest, default_setting) {
 TEST_F(ContextTest, customized_setting) {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
   ASSERT_TRUE(agent);
-  
+
   MockEvent::ptr event = MockEvent::Create();
   agent->SetInitEvent(event);
 
-  sp::SpParser::ptr parser = sp::SpParser::create();
+  sp::SpParser::ptr parser = sp::SpParser::Create();
   ASSERT_TRUE(parser);
 
-  sp::SpPropeller::ptr propeller = sp::SpPropeller::create();
+  sp::SpPropeller::ptr propeller = sp::SpPropeller::Create();
   ASSERT_TRUE(propeller);
-  
+
   agent->SetParser(parser);
   agent->SetInitEntry("wrapper_entry");
   agent->SetInitExit("wrapper_exit");

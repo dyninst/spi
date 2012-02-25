@@ -36,13 +36,8 @@
 
 namespace sp {
 
-  // Get the object's name
-  std::string SpObject::name() {
-		assert(symtab_);
-    return symtab_->name();
-  }
-
-	void SpObject::init_memory_alloc(dt::Address base, size_t size) {
+	void SpObject::InitMemoryAlloc(dt::Address base,
+                                 size_t size) {
 		sp_debug("INIT MEMORY ALLOC - base %lx, size %ld",
              (long)base, (long)size);
 
@@ -140,7 +135,7 @@ namespace sp {
 	}
 
 	dt::Address
-	SpObject::get_freebuf(size_t size) {
+	SpObject::AllocateBuffer(size_t size) {
 		dt::Address ret = 0;
 
 		if (small_freebufs_.list.size() > 0 &&
@@ -148,6 +143,7 @@ namespace sp {
 			ret = small_freebufs_.list.front() + small_freebufs_.base;
 			alloc_bufs_[ret] = SMALL_BUF;
 			small_freebufs_.list.pop_front();
+      return ret;
 		}
 
 		if (mid_freebufs_.list.size() > 0 &&
@@ -155,6 +151,7 @@ namespace sp {
 			ret =	mid_freebufs_.list.front() + mid_freebufs_.base;
 			alloc_bufs_[ret] = MID_BUF;
 			mid_freebufs_.list.pop_front();
+      return ret;
 		}
 
 		if (big_freebufs_.list.size() > 0 &&
@@ -162,14 +159,21 @@ namespace sp {
 			ret =	big_freebufs_.list.front() + big_freebufs_.base;
 			alloc_bufs_[ret] = BIG_BUF;
 			big_freebufs_.list.pop_front();
+      return ret;
 		}
 
-		return ret;
+    ret = (dt::Address)::malloc(size);
+		sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+    return ret;
 	}
 
 	bool
-	SpObject::put_freebuf(dt::Address buf) {
-		if (alloc_bufs_.find(buf) == alloc_bufs_.end()) return false;
+	SpObject::FreeBuffer(dt::Address buf) {
+		if (alloc_bufs_.find(buf) == alloc_bufs_.end()) {
+			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
+			::free((void*)buf);
+      return false;
+    }
 
 		BufType type = alloc_bufs_[buf];
 		switch (type) {

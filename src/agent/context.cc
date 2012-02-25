@@ -43,7 +43,7 @@
 
 namespace sp {
 
-	extern SpParser::ptr g_parser;
+  extern SpParser::ptr g_parser;
   extern SpLock* g_propel_lock;
   extern SpAddrSpace* g_as;
 
@@ -75,14 +75,14 @@ namespace sp {
   void
   SpContext::GetCallStack(FuncSet* call_stack) {
     long pc, sp, bp;
-    parser_->get_frame(&pc, &sp, &bp);
+    parser_->GetFrame(&pc, &sp, &bp);
     sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
     std::vector<sk::Frame> stackwalk;
-		sk::Walker *walker = sk::Walker::newWalker();
-		sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker);
+    sk::Walker *walker = sk::Walker::newWalker();
+    sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker);
     walker->walkStackFromFrame(stackwalk, *f);
 
-		sp_debug("WALKED STACK - %ld function calls found",
+    sp_debug("WALKED STACK - %ld function calls found",
              (long)stackwalk.size());
     for (unsigned i=0; i<stackwalk.size(); i++) {
       string s;
@@ -90,8 +90,8 @@ namespace sp {
       // dt::Address ra = (dt::Address)stackwalk[i].getRA();
 
       // Step 1: if the function can be resolved
-			// ph::PatchFunction* func = parser_->findFunction(ra);
-			ph::PatchFunction* func = parser_->findFunction(s.c_str());
+      // ph::PatchFunction* func = parser_->findFunction(ra);
+      ph::PatchFunction* func = parser_->FindFunction(s.c_str());
       if (!func) {
         sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());
         continue;

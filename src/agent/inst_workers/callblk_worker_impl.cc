@@ -118,7 +118,7 @@ namespace sp {
 
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
              b->size(), b->last());
-    sp_debug("%s", g_parser->dump_insn((void*)b->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
     sp_debug("}");
 
@@ -139,7 +139,7 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (!g_as->SetSnippetPermission((dt::Address)blob, snip->size(), perm)) {
+    if (!g_as->SetMemoryPermission((dt::Address)blob, snip->size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
@@ -150,15 +150,10 @@ namespace sp {
 		assert(addr);
 
     // Write a jump instruction to call block
-    if (g_as->SetCodePermission((dt::Address)addr, insn_size, perm)) {
+    if (g_as->SetMemoryPermission((dt::Address)addr, insn_size, perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)jump_insn, insn_size);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
-    }
-
-    // Restore the permission of memory mapping
-    if (!g_as->RestoreCodePermission((dt::Address)addr, insn_size)) {
-      sp_print("MPROTECT - Failed to restore memory access permission");
     }
 
     sp_debug("USE BLK-RELOC - piont %lx is instrumented using call"
@@ -166,7 +161,7 @@ namespace sp {
 
     sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
              b->size(), b->last());
-    sp_debug("%s", g_parser->dump_insn((void*)b->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
     sp_debug("}");
 

@@ -14,15 +14,15 @@ namespace {
 class SnippetTest : public testing::Test {
   public:
   SnippetTest() {
-	}
+  }
 
   protected:
 
   virtual void SetUp() {
-	}
+  }
 
-	virtual void TearDown() {
-	}
+  virtual void TearDown() {
+  }
 };
 
 

@@ -896,11 +896,11 @@ namespace sp {
 
 		sp_debug("EMIT_CALL_ORIG - for call insn at %lx", src);
     sp_debug("BEFORE RELOC - %s",
-						 g_parser->dump_insn((void*)insn->ptr(),
+						 g_parser->DumpInsns((void*)insn->ptr(),
 															 insn->size()).c_str());
 		if (use_pc) sp_debug("PC-REL CALL");
 		size_t insn_size = reloc_insn_internal(src, insn, opSet, use_pc, p);
-    sp_debug("AFTER RELOC %s", g_parser->dump_insn((void*)p,
+    sp_debug("AFTER RELOC %s", g_parser->DumpInsns((void*)p,
 																									 insn_size).c_str());
 		return insn_size;
   }

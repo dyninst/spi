@@ -90,7 +90,7 @@ namespace sp {
 
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
              callblk->size(), callblk->last());
-    sp_debug("%s", g_parser->dump_insn((void*)callblk->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)callblk->start(),
                                      callblk->size()).c_str());
     sp_debug("}");
 
@@ -107,7 +107,7 @@ namespace sp {
 
     sp_debug("BEFORE INSTALL SPRING BLK (%lu bytes) for point %lx - {",
              springblk->size(), callblk->last());
-    sp_debug("%s", g_parser->dump_insn((void*)springblk->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)springblk->start(),
                                      springblk->size()).c_str());
     sp_debug("}");
 
@@ -124,7 +124,7 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (!g_as->SetSnippetPermission((dt::Address)blob, snip->size(), perm)) {
+    if (!g_as->SetMemoryPermission((dt::Address)blob, snip->size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
@@ -140,7 +140,7 @@ namespace sp {
 			return false;
 		}
     obj = springblk->GetObject();
-    if (!g_as->SetSnippetPermission((dt::Address)spring,
+    if (!g_as->SetMemoryPermission((dt::Address)spring,
 															snip->spring_size(), perm)) {
       sp_print("MPROTECT - Failed to change memory access permission"
                " for relocated spring blk at %lx", (dt::Address)spring);
@@ -165,15 +165,10 @@ namespace sp {
 
     // Second jump to relocated spring block
     char* addr = (char*)springblk->start();
-    if (g_as->SetCodePermission((dt::Address)addr, springblk->size(), perm)) {
+    if (g_as->SetMemoryPermission((dt::Address)addr, springblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)springblk_insn, off);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
-    }
-
-    // Restore the permission of memory mapping
-    if (!g_as->RestoreCodePermission((dt::Address)addr, springblk->size())) {
-      sp_print("MPROTECT - Failed to restore memory access permission");
     }
 
     // Handle call block
@@ -184,26 +179,21 @@ namespace sp {
     callblk_insn[1] = (char)(springblk->start() + call_blk_jmp_trg
                              - ((long)addr + 2));
 
-    if (g_as->SetCodePermission((dt::Address)addr, callblk->size(), perm)) {
+    if (g_as->SetMemoryPermission((dt::Address)addr, callblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)callblk_insn, 2);
     } else {
       sp_print("MPROTECT - Failed to change memory access permission");
     }
 
-    // Restore the permission of memory mapping
-    if (!g_as->RestoreCodePermission((dt::Address)addr, callblk->size())) {
-      sp_print("MPROTECT - Failed to restore memory access permission");
-    }
-
     sp_debug("AFTER INSTALL CALL BLK (%lu bytes) for point %lx - {",
              callblk->size(), callblk->last());
-    sp_debug("%s", g_parser->dump_insn((void*)callblk->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)callblk->start(),
                                      callblk->size()).c_str());
     sp_debug("}");
 
     sp_debug("AFTER INSTALL SPRING BLK (%lu bytes) for point %lx - {",
              springblk->size(), callblk->last());
-    sp_debug("%s", g_parser->dump_insn((void*)springblk->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)springblk->start(),
                                      springblk->size()).c_str());
     sp_debug("}");
 

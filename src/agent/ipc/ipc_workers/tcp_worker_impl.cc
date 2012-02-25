@@ -132,12 +132,12 @@ namespace sp {
     if (agent_path == NULL) {
       assert(g_context);
       assert(g_parser);
-      assert(g_parser->get_agent_name().size() > 0);
+      assert(g_parser->agent_name().size() > 0);
       default_agent_path += getenv("SP_DIR");
       default_agent_path += "/";
       default_agent_path += getenv("PLATFORM");
       default_agent_path += "/";
-      default_agent_path += sp_filename((char*)g_parser->get_agent_name().c_str());
+      default_agent_path += sp_filename((char*)g_parser->agent_name().c_str());
       agent_path = (char*)default_agent_path.c_str();
     }
     if (injector_path == NULL) {

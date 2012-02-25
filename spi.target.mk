@@ -123,7 +123,6 @@ AG_SRCS    += $(AG_DIR)/agent.cc \
               $(AG_DIR)/patchapi/cfg.cc \
               $(AG_DIR)/patchapi/instrumenter.cc \
               $(AG_DIR)/patchapi/maker.cc \
-              $(AG_DIR)/patchapi/object.cc \
               $(AG_DIR)/patchapi/point.cc \
               $(AG_DIR)/snippet.cc \
 

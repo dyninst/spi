@@ -87,7 +87,7 @@ namespace sp {
     sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
              (unsigned long)b->size(),
 						 (unsigned long)b->last());
-    sp_debug("%s", g_parser->dump_insn((void*)b->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
     sp_debug("}");
 
@@ -111,24 +111,17 @@ namespace sp {
 		assert(obj);
 		assert(g_as);
 
-    if (!g_as->SetCodePermission((dt::Address)call_addr, call_size, perm)) {
+    if (!g_as->SetMemoryPermission((dt::Address)call_addr, call_size, perm)) {
       sp_debug("FAILED PERM - failed to change memory permission");
       return false;
     } else {
       g_as->write(obj, (dt::Address)call_addr, (dt::Address)&int3, 1);
     }
 
-    // Restore the permission of memory mapping
-    if (!g_as->RestoreCodePermission((dt::Address)call_addr, call_size)) {
-			sp_debug("FAILED RESTORE - failed to restore perm for call insn %lx",
-							 (unsigned long)call_addr);
-      return false;
-    }
-
     sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
              (unsigned long)b->size(),
 						 (unsigned long)b->last());
-    sp_debug("%s", g_parser->dump_insn((void*)b->start(),
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->last() - b->start() +1).c_str());
     sp_debug("}");
 
@@ -161,7 +154,7 @@ namespace sp {
 
 		assert(g_as);
     // Change memory permission for the snippet
-    if (!g_as->SetSnippetPermission((dt::Address)blob,
+    if (!g_as->SetMemoryPermission((dt::Address)blob,
                                     sp_snip->size(), perm)) {
       // g_as->dump_mem_maps();
       sp_perror("FAILED PERM - failed to change memory permission for blob");

@@ -182,11 +182,11 @@ namespace sp {
 		}
 		if (!parser_) {
 			sp_debug("PARSER - Use default parser");
-			parser_ = SpParser::create();
+			parser_ = SpParser::Create();
 		}
 		if (!init_propeller_) {
 			sp_debug("PROPELLER - Use default propeller");
-			init_propeller_ = SpPropeller::create();
+			init_propeller_ = SpPropeller::Create();
 		}
 
 		if (directcall_only_) {
@@ -214,7 +214,7 @@ namespace sp {
 		assert(g_parser);
     g_parser->SetLibrariesToInstrument(libs_to_inst_);
     
-    parser_->parse();
+    parser_->Parse();
     assert(g_parser->mgr());
 
     // We may stop here after parsing
@@ -240,12 +240,12 @@ namespace sp {
     g_context->SetInitPropeller(init_propeller_);
     g_context->SetParser(parser_);
     g_context->SetInitEntryName(init_entry_);
-    void* payload_entry = (void*)g_parser->get_func_addr(init_entry_);
+    void* payload_entry = (void*)g_parser->GetFuncAddrFromName(init_entry_);
     assert(payload_entry);
     g_context->SetInitEntry(payload_entry);
     if (init_exit_.size() > 0) {
       g_context->SetInitExitName(init_exit_);
-      void* payload_exit = (void*)g_parser->get_func_addr(init_exit_);
+      void* payload_exit = (void*)g_parser->GetFuncAddrFromName(init_exit_);
       assert(payload_exit);
       g_context->SetInitExit(payload_exit);
     }
@@ -254,10 +254,10 @@ namespace sp {
     if (allow_ipc_) {
       // SpIpcMgr will be deleted in the destructor of SpContext
       g_context->SetIpcMgr(new SpIpcMgr());
-      void* wrapper_entry = (void*)g_parser->get_func_addr("wrapper_entry");
+      void* wrapper_entry = (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
       assert(wrapper_entry);
 			g_context->SetWrapperEntry(wrapper_entry);
-      void* wrapper_exit = (void*)g_parser->get_func_addr("wrapper_exit");
+      void* wrapper_exit = (void*)g_parser->GetFuncAddrFromName("wrapper_exit");
       assert(wrapper_exit);
 			g_context->SetWrapperExit(wrapper_exit);
     }

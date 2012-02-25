@@ -101,7 +101,7 @@ namespace sp {
     if (c->injected) return true;
     sp_debug("NO INJECTED -- start injection");
     SpInjector::ptr injector = SpInjector::Create(c->remote_pid);
-    string agent_name = g_parser->get_agent_name();
+    string agent_name = g_parser->agent_name();
     injector->Inject(agent_name.c_str());
     c->injected = true;
     return true;

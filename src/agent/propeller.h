@@ -42,7 +42,7 @@ namespace sp {
   class AGENT_EXPORT SpPropeller {
   public:
     typedef SHARED_PTR(SpPropeller) ptr;
-    static ptr create();
+    static ptr Create();
     SpPropeller();
 		virtual ~SpPropeller() {}
 

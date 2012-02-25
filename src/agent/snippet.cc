@@ -211,7 +211,7 @@ namespace sp {
 			sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx - {",
 							 (unsigned long)blob_size_, b->last());
 		}
-    sp_debug("%s", g_parser->dump_insn((void*)blob_,
+    sp_debug("%s", g_parser->DumpInsns((void*)blob_,
 																			 blob_size_).c_str());
     sp_debug("}");
 
@@ -379,7 +379,7 @@ namespace sp {
 		assert(point_->block());
     sp_debug("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {",
 						 (unsigned long)spring_size_, point_->block()->last());
-    sp_debug("%s", g_parser->dump_insn((void*)spring_, spring_size_).c_str());
+    sp_debug("%s", g_parser->DumpInsns((void*)spring_, spring_size_).c_str());
     sp_debug("}");
 
     return spring_;

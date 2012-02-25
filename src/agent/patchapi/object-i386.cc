@@ -29,45 +29,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-// This implements the PatchAPI::AddrSpace, which provides memory
-// allocation routines, and other methods to manipulate address space
+#include <sys/mman.h>
 
-#ifndef _SPADDRSPACE_H_
-#define _SPADDRSPACE_H_
-
-#include "patchAPI/h/AddrSpace.h"
-
+#include "agent/patchapi/object.h"
 #include "common/common.h"
 
 namespace sp {
-class SpObject;
-class SpAddrSpace : public ph::AddrSpace {
-   friend class SpInstrumenter;
-  public:
-    static SpAddrSpace* Create(ph::PatchObject*);
 
-    // Implement memory allocation stuffs
-    virtual dt::Address malloc(ph::PatchObject* obj,
-                               size_t size,
-                               dt::Address near) OVERRIDE;
-
-    virtual bool write(ph::PatchObject* obj,
-                       dt::Address to,
-                       dt::Address from,
-                       size_t size) OVERRIDE;
-
-    virtual bool free(ph::PatchObject* obj,
-                      dt::Address orig) OVERRIDE;
+	void SpObject::InitMemoryAlloc(dt::Address base,
+                                 size_t size) {
     
-    // Changes snippet buffer's access permission
-    bool SetMemoryPermission(dt::Address addr,
-                              size_t length,
-                              int perm);
+	}
 
-  protected:
-    SpAddrSpace();
-};
+	dt::Address
+	SpObject::AllocateBuffer(size_t size) {
+    return (dt::Address)::malloc(size);
+	}
 
+	bool
+	SpObject::FreeBuffer(dt::Address buf) {
+    ::free((void*)buf);
+		return false;
+	}
 }
-
-#endif /* _SPADDRSPACE_H_ */
