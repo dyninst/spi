@@ -98,14 +98,22 @@ namespace sp {
 
     dt::Address aligned = a;
     size_t pz = getpagesize();
-    aligned = (dt::Address)(((dt::Address) aligned - pz-1) & ~(pz-1));
-    // size_t len = length + pz + pz;
+    if (a > pz) {
+      sp_debug("PAGE SIZE SMALLER - pagesize %lx, address %lx", pz, a);
+      aligned = (dt::Address)(((dt::Address) aligned - pz-1) & ~(pz-1));
+    } else if (a % pz == 0) {
+      aligned = a;
+    } else {
+      sp_debug("PAGE SIZE LARGER - pagesize %lx, address %lx", pz, a);
+      aligned = 0;
+    }
+
     size_t len = length + (a - aligned); 
     sp_debug("TRY mprotect - for [%lx ~ %lx] of %ld bytes",
              (long)aligned, (long)(aligned + len - 1), (long)len);
     if (mprotect((void*)aligned, len, perm) < 0) {
-      sp_print("MPROTECT - Failed to change memory access permission");
-      perror("mprotect");
+      sp_debug("MPROTECT - Failed to change memory access permission");
+      // perror("mprotect");
       return false;
     } else {
       sp_debug("MPROTECT - SUCCEED TO change memory access"
@@ -116,4 +124,11 @@ namespace sp {
     return ret;
   }
 
+  void
+  SpAddrSpace::InitMemoryAllocator() {
+    UpdateMemoryMappings();
+    UpdateFreeIntervals();
+    DumpMemoryMappings();
+    DumpFreeIntervals();
+  }
 }

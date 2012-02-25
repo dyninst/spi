@@ -40,10 +40,31 @@
 #include "common/common.h"
 
 namespace sp {
-class SpObject;
-class SpAddrSpace : public ph::AddrSpace {
-   friend class SpInstrumenter;
-  public:
+  class SpObject;
+
+	typedef struct {
+		dt::Address previous_end;  // previous object's end addr
+		dt::Address start;
+		dt::Address end;
+		dt::Address offset;
+    std::string dev;
+		unsigned long inode;
+		int perms;
+		string path;
+	} MemMapping;
+  typedef std::map<dt::Address, MemMapping> MemMappings;
+
+	typedef struct {
+		dt::Address start;
+		dt::Address end;
+		dt::Address size() { return (end - start); }
+		bool used;
+	} FreeInterval;
+	typedef std::list<FreeInterval> FreeIntervalList;
+
+  class SpAddrSpace : public ph::AddrSpace {
+    friend class SpInstrumenter;
+    public:
     static SpAddrSpace* Create(ph::PatchObject*);
 
     // Implement memory allocation stuffs
@@ -61,12 +82,32 @@ class SpAddrSpace : public ph::AddrSpace {
     
     // Changes snippet buffer's access permission
     bool SetMemoryPermission(dt::Address addr,
-                              size_t length,
-                              int perm);
+                             size_t length,
+                             int perm);
 
-  protected:
+    void InitMemoryAllocator();
+    protected:
+
+    MemMappings mem_maps_;
+		FreeIntervalList free_intervals_;
+
     SpAddrSpace();
-};
+
+    // All about memory allocation
+    void UpdateMemoryMappings();
+    void UpdateFreeIntervals();
+    void DumpMemoryMappings();
+    void DumpFreeIntervals();
+		bool GetClosestInterval(dt::Address addr,
+										        FreeInterval** interval);
+		const MemMappings& mem_maps() {
+      return mem_maps_;
+    }
+		const FreeIntervalList& free_intervals() {
+      return free_intervals_;
+    }
+    
+  };
 
 }
 

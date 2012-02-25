@@ -1,7 +1,7 @@
 IJ_SRCS       =  ../src/injector/injector-i386.cc \
 
 AG_SRCS       = ../src/agent/snippet-i386.cc \
-                ../src/agent/parser-i386.cc \
+                ../src/agent/patchapi/addr_space-i386.cc \
                 ../src/agent/patchapi/object-i386.cc \
 
 UTILS_SRCS    = 

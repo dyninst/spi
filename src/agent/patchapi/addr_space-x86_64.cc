@@ -30,13 +30,14 @@
  */
 
 #include <sys/mman.h>
-#include "agent/parser.h"
+#include "agent/patchapi/addr_space.h"
+#include "agent/patchapi/object.h"
 
 namespace sp {
 
 // Parse /proc/pid/maps file to build memory mappings
 void
-SpParser::UpdateMemoryMappings() {
+SpAddrSpace::UpdateMemoryMappings() {
 
   char maps_file[256];
   sprintf(maps_file, "/proc/%d/maps", getpid());
@@ -126,7 +127,7 @@ SpParser::UpdateMemoryMappings() {
 }
 
 void
-SpParser::DumpMemoryMappings() {
+SpAddrSpace::DumpMemoryMappings() {
 
   sp_debug("MMAPS - %lu memory mappings",
            (unsigned long)mem_maps_.size());
@@ -145,17 +146,77 @@ SpParser::DumpMemoryMappings() {
 }
 
 void
-SpParser::UpdateFreeIntervals() {
-  
+SpAddrSpace::UpdateFreeIntervals() {
+  for (ph::AddrSpace::ObjMap::iterator i = obj_map_.begin();
+       i != obj_map_.end(); i++) {
+    if (getenv("SP_LIBC_MALLOC")) {
+      continue;
+    }
+
+    SpObject* obj = static_cast<SpObject*>(i->second);
+    assert(obj);
+
+    // Bind preallocated close free buffers to each object
+
+    sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
+             obj->name().c_str(), obj->load_addr(), obj->codeBase());
+    MemMapping& mapping = mem_maps_[obj->load_addr()];
+    sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+             " Inode %lu, Path %s, previous_end %lx",
+             mapping.start, mapping.end, mapping.offset,
+             mapping.perms, mapping.dev.c_str(), mapping.inode,
+             mapping.path.c_str(),
+             mapping.previous_end);
+
+    FreeInterval* interval = NULL;
+    if (!GetClosestInterval(mapping.start, &interval)) {
+      sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
+               mapping.start, obj->name().c_str());
+      continue;
+    }
+    assert(interval);
+    size_t size = interval->size();
+    size_t ps = getpagesize();
+
+    sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
+             "rounded size %ld", (long)interval->start,
+             (long)interval->end, (long)interval->size(), (long)size);
+
+    size = (size <= 2147483646 ? size : 2147483646);
+    size = ((size + ps -1) & ~(ps - 1));
+
+    dt::Address base = interval->end - size;
+    obj->InitMemoryAlloc(base, size);
+  }
 }
 
 void
-SpParser::DumpFreeIntervals() {
+SpAddrSpace::DumpFreeIntervals() {
   for (FreeIntervalList::iterator i = free_intervals_.begin();
        i != free_intervals_.end(); i++) {
     sp_debug("FREE INTERVAL - [%lx ~ %lx], used %d",
              (*i).start, (*i).end, (*i).used);
   }
+}
+
+bool
+SpAddrSpace::GetClosestInterval(dt::Address addr,
+                                FreeInterval** interval) {
+  FreeInterval* previous = NULL;
+  for (FreeIntervalList::iterator i = free_intervals_.begin();
+       i != free_intervals_.end(); i++) {
+    if ((*i).start > addr) {
+      previous = &(*i);
+      continue;
+    } else {
+      if (!previous) return false;
+      if (previous->used) continue;
+      *interval = previous;
+      (*interval)->used = true;
+      return true;
+    }
+  }
+  return false;
 }
 
 }

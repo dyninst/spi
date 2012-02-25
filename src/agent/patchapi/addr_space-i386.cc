@@ -30,24 +30,30 @@
  */
 
 
-#include "agent/parser.h"
+#include "agent/patchapi/addr_space.h"
 
 namespace sp {
 
 void
-SpParser::UpdateMemoryMappings() {
+SpAddrSpace::UpdateMemoryMappings() {
 }
 
 void
-SpParser::DumpMemoryMappings() {
+SpAddrSpace::DumpMemoryMappings() {
 }
 
 void
-SpParser::UpdateFreeIntervals() {
+SpAddrSpace::UpdateFreeIntervals() {
 }
 
 void
-SpParser::DumpFreeIntervals() {
+SpAddrSpace::DumpFreeIntervals() {
+}
+
+bool
+SpAddrSpace::GetClosestInterval(dt::Address addr,
+                                FreeInterval** interval) {
+  return false;
 }
 
 }

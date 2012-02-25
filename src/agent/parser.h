@@ -53,27 +53,7 @@ namespace sp {
   typedef std::vector<ph::PatchObject*> PatchObjects;
   typedef std::map<std::string, ph::PatchFunction*> RealFuncMap;
   
-	typedef struct {
-		dt::Address previous_end;  // previous object's end addr
-		dt::Address start;
-		dt::Address end;
-		dt::Address offset;
-    std::string dev;
-		unsigned long inode;
-		int perms;
-		string path;
-	} MemMapping;
-  typedef std::map<dt::Address, MemMapping> MemMappings;
-
-	typedef struct {
-		dt::Address start;
-		dt::Address end;
-		dt::Address size() { return (end - start); }
-		bool used;
-	} FreeInterval;
-	typedef std::list<FreeInterval> FreeIntervalList;
-
-	class AGENT_EXPORT SpParser : public ph::CFGMaker {
+	class AGENT_EXPORT SpParser {
   public:
     typedef SHARED_PTR(SpParser) ptr;
 
@@ -120,20 +100,6 @@ namespace sp {
       return mgr_;
     }
 
-    // All about memory allocation
-    void UpdateMemoryMappings();
-    void UpdateFreeIntervals();
-    void DumpMemoryMappings();
-    void DumpFreeIntervals();
-		bool GetClosestInterval(dt::Address addr,
-										        FreeInterval** interval);
-		const MemMappings& mem_maps() {
-      return mem_maps_;
-    }
-		const FreeIntervalList& free_intervals() {
-      return free_intervals_;
-    }
-
   protected:
 		// Is this agent library injected (true) or preloaded (false)?
     bool injected_;
@@ -146,8 +112,6 @@ namespace sp {
     ph::PatchObject* exe_obj_;
     StringSet binaries_to_inst_;
     RealFuncMap real_func_map_;
-    MemMappings mem_maps_;
-		FreeIntervalList free_intervals_;
 
 		// Methods
     SpParser();

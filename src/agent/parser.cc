@@ -61,9 +61,6 @@ extern SpParser::ptr g_parser;
 SpParser::SpParser()
     : injected_(false), exe_obj_(NULL) {
 
-  UpdateMemoryMappings();
-  UpdateFreeIntervals();
-
   binaries_to_inst_.insert(sp_filename(GetExeName().c_str()));
 }
 
@@ -573,52 +570,18 @@ SpParser::CreateMgr(PatchObjects& patch_objs) {
                                              inst,
                                              new SpPointMaker);
   assert(mgr);
-  DumpMemoryMappings();
-  DumpFreeIntervals();
+
+  // Load each parsed objects into address space
   for (PatchObjects::iterator i = patch_objs.begin();
        i != patch_objs.end(); i++) {
     if (*i != exe_obj_) {
       as->loadObject(*i);
     }
-
-    if (!getenv("SP_LIBC_MALLOC")) {
-      SpObject* obj = static_cast<SpObject*>(*i);
-      assert(obj);
-
-      // Bind preallocated close free buffers to each object
-
-      sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
-               obj->name().c_str(), obj->load_addr(), obj->codeBase());
-      MemMapping& mapping = mem_maps_[obj->load_addr()];
-      sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
-               " Inode %lu, Path %s, previous_end %lx",
-               mapping.start, mapping.end, mapping.offset,
-               mapping.perms, mapping.dev.c_str(), mapping.inode,
-               mapping.path.c_str(),
-               mapping.previous_end);
-
-      FreeInterval* interval = NULL;
-      if (!GetClosestInterval(mapping.start, &interval)) {
-        sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
-                 mapping.start, obj->name().c_str());
-        continue;
-      }
-      assert(interval);
-      size_t size = interval->size();
-      size_t ps = getpagesize();
-
-      sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
-               "rounded size %ld", (long)interval->start,
-               (long)interval->end, (long)interval->size(), (long)size);
-
-      size = (size <= 2147483646 ? size : 2147483646);
-      size = ((size + ps -1) & ~(ps - 1));
-
-      dt::Address base = interval->end - size;
-      obj->InitMemoryAlloc(base, size);
-    }
   }
 
+  // Initialize memory allocator
+  as->InitMemoryAllocator();
+  
   return mgr;
 }
 
@@ -704,25 +667,6 @@ SpParser::CreateObjectFromFile(sb::Symtab* sym,
 }
 
 
-bool
-SpParser::GetClosestInterval(dt::Address addr,
-                             FreeInterval** interval) {
-  FreeInterval* previous = NULL;
-  for (FreeIntervalList::iterator i = free_intervals_.begin();
-       i != free_intervals_.end(); i++) {
-    if ((*i).end <= addr) {
-      previous = &(*i);
-      continue;
-    } else {
-      if (!previous) return false;
-      if (previous->used) return false;
-      *interval = previous;
-      (*interval)->used = true;
-      return true;
-    }
-  }
-  return false;
-} // get_closest_interval
 
 void
 SpParser::SetLibrariesToInstrument(const StringSet& libs) {
