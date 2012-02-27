@@ -109,22 +109,22 @@ namespace sp {
 
     virtual ~SpPoint() { }
 
-    void set_tailcall(bool b) { tail_call_ = b; }
+    void SetIsTailcall(bool b) { tail_call_ = b; }
     bool tailcall() { return tail_call_; }
 
     SpFunction* callee() const { return callee_; }
-    void set_callee(SpFunction* f) { callee_ = f; }
+    void SetCallee(SpFunction* f) { callee_ = f; }
 
+    void SetSnip(SpSnippet::ptr s) { spsnip_ = s;}
     SpSnippet::ptr snip() const { return spsnip_;}
-    void set_snip(SpSnippet::ptr s) { spsnip_ = s;}
 
+    void SetInstallMethod(InstallMethod i) { install_method_ = i; }
     InstallMethod install_method() const { return install_method_; }
-    void set_install_method(InstallMethod i) { install_method_ = i; }
 
-    void set_channel(sp::SpChannel* c) { channel_ = c; }
+    void SetChannel(sp::SpChannel* c) { channel_ = c; }
     SpChannel* channel() const { return channel_; }
 
-		void set_ret_addr(dt::Address a) { ret_addr_ = a; }
+		void SetRetAddr(dt::Address a) { ret_addr_ = a; }
 		dt::Address ret_addr() const { return ret_addr_; }
 
 		// For convenience ...

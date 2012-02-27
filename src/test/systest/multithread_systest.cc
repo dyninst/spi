@@ -27,7 +27,17 @@ class MultithreadTest : public testing::Test {
 };
 
 
-TEST_F(MultithreadTest, pid_inject) {
+TEST_F(MultithreadTest, simple) {
+  std::string cmd;
+  cmd = "LD_LIBRARY_PATH=test_mutatee:$LD_LIBRARY_PATH ";
+  cmd += "LD_PRELOAD=test_agent/print_test_agent.so ";
+	cmd += "test_mutatee/multithread.exe";
+	FILE* fp = popen(cmd.c_str(), "r");
+	char buf[1024];
+	while (fgets(buf, 1024, fp) != NULL) {
+    fprintf(stderr, "%s", buf);
+  }
+  pclose(fp);
 }
 
 }

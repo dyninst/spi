@@ -157,13 +157,13 @@ namespace sp {
     if (g_as->SetMemoryPermission((dt::Address)call_addr, insn_length, perm)) {
       g_as->write(obj, (dt::Address)call_addr, (dt::Address)jump, 5);
     } else {
-      sp_print("MPROTECT - Failed to change memory access permission");
+      sp_debug("MPROTECT - Failed to change memory access permission");
       return false;
     }
 
     // Change the permission of snippet, so that it can be executed.
     if (!g_as->SetMemoryPermission((dt::Address)blob, blob_size, perm)) {
-      sp_print("MPROTECT - Failed to change memory access permission"
+      sp_debug("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       g_as->free(obj, (dt::Address)blob);
       return false;

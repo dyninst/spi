@@ -46,4 +46,19 @@ TEST_F(CoreUtilsTest, ls) {
 	EXPECT_STREQ(last_, "exit\n");
 }
 
+TEST_F(CoreUtilsTest, df) {
+  run("test_agent/print_test_agent.so", "test_mutatee/df.exe");
+	EXPECT_STREQ(last_, "exit\n");
+}
+
+TEST_F(CoreUtilsTest, od) {
+  run("test_agent/print_test_agent.so", "test_mutatee/od.exe test_mutatee/od.exe");
+	EXPECT_STREQ(last_, "exit\n");
+}
+
+TEST_F(CoreUtilsTest, sort) {
+  run("test_agent/print_test_agent.so", "test_mutatee/sort.exe test_mutatee/od.exe");
+	EXPECT_STREQ(last_, "exit\n");
+}
+
 }

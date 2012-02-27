@@ -79,7 +79,7 @@ namespace sp {
 		const double mid_buf_num_ratio = 0.15;
 		size_t mid_buf_total_size_limit =
 			(size_t)(mid_buf_num_ratio * size);
-		const size_t mid_buf_size = 256;
+		const size_t mid_buf_size = 512;
 
 		const size_t big_buf_size = 4096;
 
@@ -162,8 +162,12 @@ namespace sp {
       return ret;
 		}
 
-    ret = (dt::Address)::malloc(size);
-		sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+    // ret = (dt::Address)::malloc(size);
+    if (::posix_memalign((void**)&ret, getpagesize(), size) == 0) {
+      sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+      return ret;
+    }
+    sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
     return ret;
 	}
 

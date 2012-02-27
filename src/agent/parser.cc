@@ -204,6 +204,8 @@ ph::PatchFunction*
 SpParser::FindFunction(string name, bool allow_plt) {
   sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
   if (real_func_map_.find(name) != real_func_map_.end()) {
+    sp_debug("GOT FROM CACHE - %s",
+             real_func_map_[name]->name().c_str());
     return real_func_map_[name];
   }
   assert(mgr_);
@@ -383,7 +385,7 @@ SpParser::callee(SpPoint* pt,
 
     SpFunction* sfunc = FUNC_CAST(f);
     assert(sfunc);
-    pt->set_callee(sfunc);
+    pt->SetCallee(sfunc);
     return sfunc;
   }
   else if (pt->callee()) {
@@ -421,7 +423,7 @@ SpParser::callee(SpPoint* pt,
                  sfunc->name().c_str(),
                  sfunc->GetObject()->name().c_str());
 
-        pt->set_callee(sfunc);
+        pt->SetCallee(sfunc);
         return sfunc;
       }
     }

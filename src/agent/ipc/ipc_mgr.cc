@@ -277,7 +277,7 @@ namespace sp {
         // Enable tracing for remote process
         if (callee(pt)->name().compare("connect") != 0)
           worker->set_start_tracing(1, c);
-        pt->set_channel(c);
+        pt->SetChannel(c);
       }
       return true;
     }
@@ -290,7 +290,7 @@ namespace sp {
       if (!worker) return false;
       SpChannel* c = worker->get_channel(fd, SP_READ);
       if (c) {
-        pt->set_channel(c);
+        pt->SetChannel(c);
       }
     }
     return true;

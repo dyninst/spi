@@ -117,7 +117,7 @@ namespace sp {
       ph::Snippet<SpSnippet::ptr>::Ptr snip =
         ph::Snippet<SpSnippet::ptr>::create(sp_snip);
       assert(sp_snip && snip);
-      pt->set_snip(sp_snip);
+      pt->SetSnip(sp_snip);
       patcher.add(ph::PushBackCommand::create(pt, snip));
     }
     bool ret = patcher.commit();

@@ -83,7 +83,10 @@ UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(AG_DIR)/agent_unittest.cc \
             $(AG_DIR)/context_unittest.cc \
             $(AG_DIR)/parser_unittest.cc \
-            $(ST_DIR)/coreutils_systest.cc
+            $(ST_DIR)/coreutils_systest.cc \
+            $(ST_DIR)/chrome_systest.cc \
+            $(ST_DIR)/gcc_systest.cc \
+            $(ST_DIR)/multithread_systest.cc
 
 UT_OBJS   = $(addprefix $(TEST_OBJS_DIR)/, $(notdir $(UT_SRCS:%.cc=%.o)))
 UT_EXES   = $(addprefix $(TEST_EXES_DIR)/, $(notdir $(UT_OBJS:%.o=%.exe)))
@@ -168,6 +171,7 @@ external_mutatees:
 # Test agents
 #==========================================================
 TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
+           $(TG_DIR)/chrome_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
            $(TG_DIR)/print_test_agent.cc
 

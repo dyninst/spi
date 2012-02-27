@@ -147,10 +147,10 @@ namespace sp {
 				if (getenv("SP_NO_TAILCALL"))	{
 					continue;
 				}
-        spt->set_tailcall(true);
-        spt->set_ret_addr(0);
+        spt->SetIsTailcall(true);
+        spt->SetRetAddr(0);
       } else {
-        spt->set_ret_addr(blk->end());
+        spt->SetRetAddr(blk->end());
       }
 
       // Otherwise, apply workers one by one in order
@@ -167,7 +167,7 @@ namespace sp {
 					sp_debug("SAVE SUCCESSFULLY");
 					if (worker->run(spt)) {
 						blk->SetInstrumented(true);
-						spt->set_install_method(worker->install_method());
+						spt->SetInstallMethod(worker->install_method());
 						++success_count;
 						break; // escape the worker loop
 					} else {

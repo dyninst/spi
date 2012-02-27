@@ -140,7 +140,7 @@ namespace sp {
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
     if (!g_as->SetMemoryPermission((dt::Address)blob, snip->size(), perm)) {
-      sp_print("MPROTECT - Failed to change memory access permission"
+      sp_debug("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
       exit(0);
@@ -153,7 +153,7 @@ namespace sp {
     if (g_as->SetMemoryPermission((dt::Address)addr, insn_size, perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)jump_insn, insn_size);
     } else {
-      sp_print("MPROTECT - Failed to change memory access permission");
+      sp_debug("MPROTECT - Failed to change memory access permission");
     }
 
     sp_debug("USE BLK-RELOC - piont %lx is instrumented using call"

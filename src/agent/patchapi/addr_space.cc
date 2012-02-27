@@ -100,11 +100,12 @@ namespace sp {
     size_t pz = getpagesize();
     if (a > pz) {
       sp_debug("PAGE SIZE SMALLER - pagesize %lx, address %lx", pz, a);
-      aligned = (dt::Address)(((dt::Address) aligned - pz-1) & ~(pz-1));
+      aligned = (dt::Address)(((dt::Address) aligned) & ~(pz-1));
     } else if (a % pz == 0) {
       aligned = a;
     } else {
       sp_debug("PAGE SIZE LARGER - pagesize %lx, address %lx", pz, a);
+      assert(0 && "LARGE PAGE SIZE?");
       aligned = 0;
     }
 

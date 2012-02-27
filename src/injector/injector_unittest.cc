@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 #include "SpInc.h"
+#include "common/common_unittest.h"
 
 using namespace sp;
 using namespace std;
@@ -25,6 +26,8 @@ class InjectorTest : public testing::Test {
 	string injector_path_;
 
   virtual void SetUp() {
+    SetTimeout();
+    
 		// Start a tcp_server via popen
     char mutatee[1024];
     snprintf(mutatee, 1024,
@@ -38,8 +41,8 @@ class InjectorTest : public testing::Test {
 			sp_perror("Failed to start tcp_server");
 		}
 
-    char buf[256];
-    ASSERT_TRUE(fgets(buf, 256, server_));
+    // char buf[256];
+    // ASSERT_TRUE(fgets(buf, 256, server_));
    
 		// Get the tcp_server's pid
 		PidSet pid_set;
