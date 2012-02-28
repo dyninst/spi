@@ -99,12 +99,14 @@ namespace sp {
     dt::Address aligned = a;
     size_t pz = getpagesize();
     if (a > pz) {
-      sp_debug("PAGE SIZE SMALLER - pagesize %lx, address %lx", pz, a);
+      sp_debug("PAGE SIZE SMALLER - pagesize %lx, address %lx",
+               (long)pz, (long)a);
       aligned = (dt::Address)(((dt::Address) aligned) & ~(pz-1));
     } else if (a % pz == 0) {
       aligned = a;
     } else {
-      sp_debug("PAGE SIZE LARGER - pagesize %lx, address %lx", pz, a);
+      sp_debug("PAGE SIZE LARGER - pagesize %lx, address %lx",
+               (long)pz, (long)a);
       assert(0 && "LARGE PAGE SIZE?");
       aligned = 0;
     }

@@ -78,7 +78,7 @@ namespace sp {
     // spring block size
     size_t spring_size() const {return spring_size_; }
 
-    dt::Address get_saved_reg(dt::MachRegister reg);
+    dt::Address GetSavedReg(dt::MachRegister reg);
     long get_ret_val();
     void* pop_argument(ArgumentHandle* h, size_t size);
 
@@ -110,6 +110,21 @@ namespace sp {
     char* spring_;
     size_t spring_size_;
     SpBlock* spring_blk_;
+
+    // Handle saved registers
+    typedef std::map<dt::MachRegister, int> SavedRegMap;
+    SavedRegMap saved_reg_map_;
+    
+    void InitSavedRegMap();
+    
+    inline dt::Address
+    RegVal(long offset) {
+      return *(long*)(saved_context_loc_ + offset);
+    }
+    
+    bool
+    GetRegInternal(dt::MachRegister reg,
+                   dt::Address* out);
 
     // A bunch of code generation interfaces
     size_t emit_save(char* buf, size_t offset);

@@ -64,8 +64,6 @@ namespace sp {
   // Is 8-bit displacement?
   COMMON_EXPORT bool IsDisp8(const long disp);
 
-  COMMON_EXPORT bool IsPcRegister(const dt::MachRegister reg);
-
   COMMON_EXPORT ino_t GetInodeFromFileDesc(const int fd);
 
   // Is this process using this inode?

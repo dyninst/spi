@@ -87,10 +87,8 @@ namespace sp {
     for (unsigned i=0; i<stackwalk.size(); i++) {
       string s;
       stackwalk[i].getName(s);
-      // dt::Address ra = (dt::Address)stackwalk[i].getRA();
 
       // Step 1: if the function can be resolved
-      // ph::PatchFunction* func = parser_->findFunction(ra);
       ph::PatchFunction* func = parser_->FindFunction(s.c_str());
       if (!func) {
         sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());

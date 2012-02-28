@@ -521,7 +521,7 @@ namespace sp {
 
   int Unlock(SpLock* const lock) {
     assert(lock);
-    sp_debug("UNLOCK - mutex %d", lock->mutex);
+    // sp_debug("UNLOCK - mutex %d", lock->mutex);
     __sync_synchronize();
     lock->mutex = 0;
     return 0;

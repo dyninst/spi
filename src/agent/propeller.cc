@@ -75,7 +75,8 @@ namespace sp {
     if (pt) {
       cur_func = func;
     } else {
-      cur_func = g_parser->FindFunction(func->name());
+      cur_func = g_parser->FindFunction(func->name(),
+                                        func->addr());
     }
 
     next_points(cur_func, mgr, pts);

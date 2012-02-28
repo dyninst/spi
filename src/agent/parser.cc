@@ -201,7 +201,7 @@ SpParser::GetFuncAddrFromName(string name) {
 // If allow_plt = true, then we may return a plt entry;
 // otherwise, we strictly skip plt entries.
 ph::PatchFunction*
-SpParser::FindFunction(string name, bool allow_plt) {
+SpParser::FindFunction(string name, dt::Address addr) {
   sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
   if (real_func_map_.find(name) != real_func_map_.end()) {
     sp_debug("GOT FROM CACHE - %s",
@@ -234,7 +234,7 @@ SpParser::FindFunction(string name, bool allow_plt) {
 
       if ((*fit)->name().compare(name) == 0) {
         sb::Region* region = sym->findEnclosingRegion((*fit)->addr());
-        if (!allow_plt && region &&
+        if ( region &&
             (region->getRegionName().compare(".plt") == 0)) {
 
           sp_debug("A PLT, SKIP - %s at %lx", name.c_str(),
@@ -242,10 +242,14 @@ SpParser::FindFunction(string name, bool allow_plt) {
           continue;
         }
         ph::PatchFunction* found = obj->getFunc(*fit);
-        if (real_func_map_.find(name) == real_func_map_.end())
+        if (real_func_map_.find(name) == real_func_map_.end()) {
           real_func_map_[name] = found;
+        }
         sp_debug("GOT %s in OBJECT - %s", name.c_str(),
                  sym->name().c_str());
+        if (!addr && found->addr() == addr) {
+          return found;
+        }
         func_set.insert(found);
       }
     } // For each function
@@ -288,15 +292,16 @@ SpParser::DumpInsns(void* addr, size_t size) {
 class SpVisitor : public in::Visitor {
  public:
   SpVisitor(sp::SpPoint* pt)
-      : Visitor(), call_addr_(0), pt_(pt), use_pc_(false) { }
+      : Visitor(), call_addr_(0), pt_(pt) { }
   virtual void visit(in::RegisterAST* r) {
-    if (IsPcRegister(r->getID())) {
-      use_pc_ = true;
+    if (r->getID().isPC()) {
       call_addr_ = pt_->block()->end();
       // call_addr_ = pt_->block()->last();
     } else {
       // Non-pc case, x86-32 always goes this way
-      dt::Address rval = pt_->snip()->get_saved_reg(r->getID());
+      dt::Address rval = pt_->snip()->GetSavedReg(r->getID());
+      sp_debug("GOT NON-PC REG - %s = %lx",
+               r->getID().name().c_str(), rval);
       call_addr_ = rval;
     }
 
@@ -348,6 +353,8 @@ class SpVisitor : public in::Visitor {
   virtual void visit(in::Dereference* d) {
     dt::Address* addr = (dt::Address*)stack_.top();
     stack_.pop();
+    sp_debug("SP_VISITOR - dereferencing %lx => ? ",
+             (dt::Address)addr);
     call_addr_ = *addr;
     sp_debug("SP_VISITOR - dereference %lx => %lx ",
              (dt::Address)addr, call_addr_);
@@ -357,14 +364,11 @@ class SpVisitor : public in::Visitor {
   dt::Address call_addr() const {
     return call_addr_;
   }
-  bool use_pc() const {
-    return use_pc_;
-  }
+
  private:
   std::stack<dt::Address> stack_;
   dt::Address call_addr_;
   sp::SpPoint* pt_;
-  bool use_pc_;
 };
 
 // TODO (wenbin): is it okay to cache indirect callee?
@@ -380,7 +384,8 @@ SpParser::callee(SpPoint* pt,
   ph::PatchFunction* f = pt->getCallee();
   if (f) {
 
-    ph::PatchFunction* tmp_f = g_parser->FindFunction(f->name());
+    ph::PatchFunction* tmp_f = g_parser->FindFunction(f->name(),
+                                                      f->addr());
     if (tmp_f && tmp_f != f)  f = tmp_f;
 
     SpFunction* sfunc = FUNC_CAST(f);
@@ -415,6 +420,7 @@ SpParser::callee(SpPoint* pt,
       SpVisitor visitor(pt);
       trg->apply(&visitor);
       call_addr = visitor.call_addr();
+      sp_debug("GOT CALL_ADDR - %lx", call_addr);
       f = FindFunction(call_addr);
       if (f) {
         SpFunction* sfunc = FUNC_CAST(f);

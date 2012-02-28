@@ -162,7 +162,7 @@ namespace sp {
     sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
              b->size(), b->last());
     sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
-																			 b->size()).c_str());
+																			 insn_size).c_str());
     sp_debug("}");
 
     return true;

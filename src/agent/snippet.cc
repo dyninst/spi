@@ -71,6 +71,7 @@ namespace sp {
 		assert(g_as);
 		assert(pt);
     sp_debug("SNIPPET CONSTRUCTOR - payload entry %lx", (long)entry_);
+    InitSavedRegMap();
   }
 
   // Destructor
@@ -408,7 +409,44 @@ namespace sp {
 		return (dt::Address)blob_;
 	}
 
-void abc() {
-}
+  bool
+  SpSnippet::GetRegInternal(dt::MachRegister reg,
+                            dt::Address* out) {
+
+    if (saved_reg_map_.find(reg) == saved_reg_map_.end()) {
+      return false;
+    }
+    
+    int offset = saved_reg_map_[reg];
+    *out = RegVal(offset);
+
+    sp_debug("ORIG VAL - %s = %lx, size: %ld",
+             reg.name().c_str(), *out, (long)reg.size());
+    switch(reg.size()) {
+      case 8:
+        // Just return!
+        break;
+      case 4:
+        *out = (0x00000000ffffffff & *out);
+        break;
+      case 2:
+        // *out = (0x000000000000ffff & *out);
+        break;
+      case 1:
+        if (reg.name().find('h') != std::string::npos) {
+          *out = ((0x000000000000ff00 & *out) >> 8);
+        } else {
+          // *out = (0x00000000000000ff & *out);
+        }
+        break;
+      default:
+        return false;
+    }
+
+    sp_debug("NEW VAL - %s = %lx",
+             reg.name().c_str(), *out);
+      
+    return true;
+  }
 
 }

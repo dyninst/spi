@@ -81,7 +81,7 @@ namespace sp {
 
     ph::PatchFunction* FindFunction(dt::Address absolute_addr);
     ph::PatchFunction* FindFunction(string func_name_without_path,
-                                    bool allow_plt=false);
+                                    dt::Address addr = 0);
     SpFunction* callee(SpPoint* point,
 											 bool parse_indirect = false);
     dt::Address GetFuncAddrFromName(string func_name_without_path);

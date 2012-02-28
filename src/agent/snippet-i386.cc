@@ -293,7 +293,7 @@ namespace sp {
 
   // Get the saved register, for resolving indirect call
   dt::Address
-  SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
+  SpSnippet::GetSavedReg(Dyninst::MachRegister reg) {
 
     // Pushed Left to right in order:
     // Push(EAX); Push(ECX); Push(EDX); Push(EBX); Push(Temp); Push(EBP); Push(ESI); Push(EDI);
@@ -306,30 +306,22 @@ namespace sp {
 #define ECX  24
 #define EAX  28
 
-#define reg_val(i) (*(long*)(saved_context_loc_+(i)))
     /*
       for (int i = 0; i < 32; i+=4) {
       sp_debug("i: %d, EDI: %lx", i, reg_val(i));
       }
     */
-    using namespace Dyninst::x86;
-    if (reg == edi) return reg_val(EDI);
-    if (reg == esi) return reg_val(ESI);
-    if (reg == ebp) return reg_val(EBP);
-    if (reg == esp) return reg_val(ESP);
-    if (reg == ebx) return reg_val(EBX);
-    if (reg == edx) return reg_val(EDX);
-    if (reg == ecx) return reg_val(ECX);
-    if (reg == eax) return reg_val(EAX);
+    namespace d32 = Dyninst::x86;
 
+    dt::Address out = 0;
+    if (GetRegInternal(reg,
+                       &out)) {
+      sp_debug("GOT REG - %s = %lx", reg.name().c_str(), out);
+      return out;
+    }
+
+    sp_debug("NOT FOUND - %s", reg.name().c_str());
     return 0;
-  }
-
-  // Is this register EIP?
-  bool
-  IsPcRegister(Dyninst::MachRegister r) {
-    if (r == Dyninst::x86::eip) return true;
-    return false;
   }
 
 
@@ -353,7 +345,39 @@ namespace sp {
   // Get return value of a function call
   long
   SpSnippet::get_ret_val() {
-    return get_saved_reg(Dyninst::x86::eax);
+    return GetSavedReg(Dyninst::x86::eax);
   }
 
+  void
+  SpSnippet::InitSavedRegMap() {
+    namespace d32 = Dyninst::x86;
+
+    saved_reg_map_[d32::eax] = EAX;
+    saved_reg_map_[d32::ah] = EAX;
+    saved_reg_map_[d32::al] = EAX;
+
+    saved_reg_map_[d32::ebx] = EBX;
+    saved_reg_map_[d32::bh] = EBX;
+    saved_reg_map_[d32::bl] = EBX;
+
+    saved_reg_map_[d32::ecx] = ECX;
+    saved_reg_map_[d32::ch] = ECX;
+    saved_reg_map_[d32::cl] = ECX;
+
+    saved_reg_map_[d32::edx] = EDX;
+    saved_reg_map_[d32::dh] = EDX;
+    saved_reg_map_[d32::dl] = EDX;
+
+    saved_reg_map_[d32::ebp] = EBP;
+    saved_reg_map_[d32::bp] = EBP;
+
+    saved_reg_map_[d32::esp] = ESP;
+    saved_reg_map_[d32::sp] = ESP;
+
+    saved_reg_map_[d32::esi] = ESI;
+    saved_reg_map_[d32::si] = ESI;
+
+    saved_reg_map_[d32::edi] = EDI;
+    saved_reg_map_[d32::di] = EDI;
+  }
 }

@@ -375,9 +375,10 @@ namespace sp {
     return pc;
   }
 
+
   // Get the saved register, for resolving indirect call
   dt::Address
-  SpSnippet::get_saved_reg(Dyninst::MachRegister reg) {
+  SpSnippet::GetSavedReg(dt::MachRegister reg) {
 
 #define RAX (0)
 #define R9 (8)
@@ -397,52 +398,34 @@ namespace sp {
 #define R15 (-56)
 #define RBP (-64)
 
-#define reg_val(i) (*(long*)(saved_context_loc_+(long)(i)))
 
     /*
       for (int i = -64; i < 48; i++) {
       sp_debug("DUMP SAVED REGS: %lx", reg_val((i*8)));
       }
     */
-    using namespace Dyninst::x86_64;
+    dt::Address out = 0;
+    if (GetRegInternal(reg, &out)) {
+      sp_debug("GOT REG - %s = %lx", reg.name().c_str(), out);
+      return out;
+    }
 
-    if (reg == rax) return reg_val(RAX);
-    if (reg == rbx) return reg_val(RBX);
-    if (reg == rcx) return reg_val(RCX);
-    if (reg == rdx) return reg_val(RDX);
-    if (reg == rsi) return reg_val(RSI);
-    if (reg == rdi) return reg_val(RDI);
-    if (reg == r8) return reg_val(R8);
-    if (reg == r9) return reg_val(R9);
-    if (reg == r10) return reg_val(R10);
-    if (reg == r11) return reg_val(R11);
-    if (reg == r12) return reg_val(R12);
-    if (reg == r13) return reg_val(R13);
-    if (reg == r14) return reg_val(R14);
-    if (reg == r15) return reg_val(R15);
-    if (reg == rsp) return (saved_context_loc_+RSP);
-    //if (reg == rsp) return reg_val(RSP);
-    if (reg == rbp) return reg_val(RBP);
+    // RSP should be handled with special care, because we don't really
+    // save %rsp in the stack
+    namespace d64 = Dyninst::x86_64;
 
-    if (reg == eax) return reg_val(RAX);
-    if (reg == ebx) return reg_val(RBX);
-    if (reg == ecx) return reg_val(RCX);
-    if (reg == edx) return reg_val(RDX);
-    if (reg == esi) return reg_val(RSI);
-    if (reg == edi) return reg_val(RDI);
-    if (reg == esp) return (saved_context_loc_+RSP);
-    //if (reg == esp) return reg_val(RSP);
-    if (reg == ebp) return reg_val(RBP);
+    if (reg == d64::rsp ||
+        reg == d64::esp ||
+        reg == d64::sp ||
+        reg == d64::spl) {
 
+      return (saved_context_loc_+RSP);
+    }
+
+    sp_debug("NOT FOUND - %s", reg.name().c_str());
     return 0;
   }
 
-  // Is this register RIP?
-  bool
-  IsPcRegister(Dyninst::MachRegister r) {
-    if (r == Dyninst::x86_64::rip) return true;
-    return false;
-  }
 
   class RelocVisitor : public in::Visitor {
   public:
@@ -451,7 +434,7 @@ namespace sp {
     virtual void visit(in::RegisterAST* r) {
       // sp_debug("USE REG");
 			assert(r);
-      if (IsPcRegister(r->getID())) {
+      if (r->getID().isPC()) {
         use_pc_ = true;
       }
     }
@@ -531,7 +514,7 @@ namespace sp {
     virtual void visit(in::RegisterAST* r) {
 			assert(r);
       // value in RIP is a_
-			if (IsPcRegister(r->getID())) {
+			if (r->getID().isPC()) {
 				imm_ = a_;
 				stack_.push(imm_);
 				sp_debug("EMU VISITOR - pc %lx", a_);
@@ -915,22 +898,22 @@ namespace sp {
       dt::Address a = 0;
       switch(h->num) {
       case 0:
-        a = get_saved_reg(rdi);
+        a = GetSavedReg(rdi);
         break;
       case 1:
-        a = get_saved_reg(rsi);
+        a = GetSavedReg(rsi);
         break;
       case 2:
-        a = get_saved_reg(rdx);
+        a = GetSavedReg(rdx);
         break;
       case 3:
-        a = get_saved_reg(rcx);
+        a = GetSavedReg(rcx);
         break;
       case 4:
-        a = get_saved_reg(r8);
+        a = GetSavedReg(r8);
         break;
       case 5:
-        a = get_saved_reg(r9);
+        a = GetSavedReg(r9);
         break;
       default:
         assert(0);
@@ -950,6 +933,91 @@ namespace sp {
   // Get return value of a function call
   long
   SpSnippet::get_ret_val() {
-    return get_saved_reg(Dyninst::x86_64::rax);
+    return GetSavedReg(Dyninst::x86_64::rax);
   }
+
+  void
+  SpSnippet::InitSavedRegMap() {
+    namespace d64 = Dyninst::x86_64;
+
+    saved_reg_map_[d64::rax] = RAX;
+    saved_reg_map_[d64::eax] = RAX;
+    saved_reg_map_[d64::ax] = RAX;
+    saved_reg_map_[d64::ah] = RAX;
+    saved_reg_map_[d64::al] = RAX;
+
+    saved_reg_map_[d64::rbx] = RBX;
+    saved_reg_map_[d64::ebx] = RBX;
+    saved_reg_map_[d64::bx] = RBX;
+    saved_reg_map_[d64::bh] = RBX;
+    saved_reg_map_[d64::bl] = RBX;
+
+    saved_reg_map_[d64::rcx] = RCX;
+    saved_reg_map_[d64::ecx] = RCX;
+    saved_reg_map_[d64::cx] = RCX;
+    saved_reg_map_[d64::ch] = RCX;
+    saved_reg_map_[d64::cl] = RCX;
+
+    saved_reg_map_[d64::rdx] = RDX;
+    saved_reg_map_[d64::edx] = RDX;
+    saved_reg_map_[d64::dx] = RDX;
+    saved_reg_map_[d64::dh] = RDX;
+    saved_reg_map_[d64::dl] = RDX;
+
+    saved_reg_map_[d64::rsi] = RSI;
+    saved_reg_map_[d64::esi] = RSI;
+    saved_reg_map_[d64::si] = RSI;
+    saved_reg_map_[d64::sil] = RSI;
+
+    saved_reg_map_[d64::rdi] = RDI;
+    saved_reg_map_[d64::edi] = RDI;
+    saved_reg_map_[d64::di] = RDI;
+    saved_reg_map_[d64::dil] = RDI;
+
+    saved_reg_map_[d64::rbp] = RBP;
+    saved_reg_map_[d64::ebp] = RBP;
+    saved_reg_map_[d64::bp] = RBP;
+    saved_reg_map_[d64::bpl] = RBP;
+
+    saved_reg_map_[d64::r8] = R8;
+    saved_reg_map_[d64::r8d] = R8;
+    saved_reg_map_[d64::r8w] = R8;
+    saved_reg_map_[d64::r8b] = R8;
+
+    saved_reg_map_[d64::r9] = R9;
+    saved_reg_map_[d64::r9d] = R9;
+    saved_reg_map_[d64::r9w] = R9;
+    saved_reg_map_[d64::r9b] = R9;
+
+    saved_reg_map_[d64::r10] = R10;
+    saved_reg_map_[d64::r10d] = R10;
+    saved_reg_map_[d64::r10w] = R10;
+    saved_reg_map_[d64::r10b] = R10;
+
+    saved_reg_map_[d64::r11] = R11;
+    saved_reg_map_[d64::r11d] = R11;
+    saved_reg_map_[d64::r11w] = R11;
+    saved_reg_map_[d64::r11b] = R11;
+
+    saved_reg_map_[d64::r12] = R12;
+    saved_reg_map_[d64::r12d] = R12;
+    saved_reg_map_[d64::r12w] = R12;
+    saved_reg_map_[d64::r12b] = R12;
+
+    saved_reg_map_[d64::r13] = R13;
+    saved_reg_map_[d64::r13d] = R13;
+    saved_reg_map_[d64::r13w] = R13;
+    saved_reg_map_[d64::r13b] = R13;
+
+    saved_reg_map_[d64::r14] = R14;
+    saved_reg_map_[d64::r14d] = R14;
+    saved_reg_map_[d64::r14w] = R14;
+    saved_reg_map_[d64::r14b] = R14;
+
+    saved_reg_map_[d64::r15] = R15;
+    saved_reg_map_[d64::r15d] = R15;
+    saved_reg_map_[d64::r15w] = R15;
+    saved_reg_map_[d64::r15b] = R15;
+  }
+
 }
