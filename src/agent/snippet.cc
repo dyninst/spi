@@ -118,11 +118,13 @@ namespace sp {
     // 1. Relocate call block, if it's indirect call
     if (reloc) {
 			sp_debug("RELOC BLOCK");
+      /*
 			if (b->size() >= BLK_LIMIT) {
 				sp_debug("NO SUFFICIENT SPACE - for BLOB (%lu >= %lu)",
 								 b->size(), (unsigned long)BLK_LIMIT);
 				return NULL;
 			}
+      */
       blob_size_ += reloc_block(b, blob_, blob_size_);
     }
 

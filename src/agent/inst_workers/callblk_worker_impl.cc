@@ -127,8 +127,10 @@ namespace sp {
 
     // Build blob & change the permission of snippet
 		size_t est_size = EstimateBlobSize(pt);
+    sp_debug("EST SIZE RELOC BLK - %ld / block size %ld",
+             (long)est_size, b->size());
     char* blob = snip->BuildBlob(est_size,
-																	/*reloc=*/true);
+																/*reloc=*/true);
 		if (!blob) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
