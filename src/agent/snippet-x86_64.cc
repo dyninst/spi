@@ -261,7 +261,9 @@ namespace sp {
     // push imm16
     // ret
     for (int i = 3; i >= 0; i--) {
-      short word = static_cast<unsigned short>((imm >> (16 * i)) & 0xffff);
+      short word =
+          static_cast<unsigned short>((imm >> (16 * i)) & 0xffff);
+      
       *p++ = 0x66; // operand size override
       *p++ = 0x68; // push immediate (16-bits b/c of prefix)
       *(short *)p = word;

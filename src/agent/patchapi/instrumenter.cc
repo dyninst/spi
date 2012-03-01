@@ -115,13 +115,15 @@ namespace sp {
     // Do all callees in a function in a batch
     for (CommandList::iterator c = user_commands_.begin();
          c != user_commands_.end(); c++) {
-			ph::PushBackCommand* command = static_cast<ph::PushBackCommand*>(*c);
+			ph::PushBackCommand* command =
+          static_cast<ph::PushBackCommand*>(*c);
+      
       if (!command) {
 				sp_debug("BAD COMMAND - skip");
 				continue;
 			}
 
-      SpPoint* spt = static_cast<SpPoint*>(command->instance()->point());
+      SpPoint* spt = PT_CAST(command->instance()->point());
 			assert(spt);
 			SpBlock* blk = spt->GetBlock();
 			assert(blk);
@@ -129,7 +131,9 @@ namespace sp {
 
       // If we only want to instrument direct call, and this point is a
 			// indirect call point, then skip it
-      if (spt && !spt->getCallee() && g_context->IsDirectcallOnlyEnabled()) {
+      if (spt &&
+          !spt->getCallee() &&
+          g_context->IsDirectcallOnlyEnabled()) {
         sp_debug("INDIRECT CALL - skip");
         continue;
       }
@@ -154,8 +158,6 @@ namespace sp {
       }
 
       // Otherwise, apply workers one by one in order
-      // If trap only, we only apply the last worker -- trap worker
-
       for (size_t i = 0; i < workers_.size(); i++) {
         InstWorkerDelegate* worker = workers_[i];
 				assert(worker);

@@ -99,7 +99,7 @@ callee(SpPoint* pt) {
 void*
 pop_argument(SpPoint* pt, ArgumentHandle* h, size_t size) {
 
-  void* arg = static_cast<SpPoint*>(pt)->snip()->pop_argument(h, size);
+  void* arg = PT_CAST(pt)->snip()->pop_argument(h, size);
 
   return arg;
 }
@@ -109,13 +109,19 @@ void
 propel(SpPoint* pt) {
 
   int result = Lock(g_propel_lock);
+  
   if (result == SP_DEAD_LOCK) {
-    sp_print("DEAD LOCK - skip instrumentation for %s at %lx",
-             pt->getCallee()->name().c_str(), pt->block()->last());
+    sp_print("DEAD LOCK - skip instrumentation for insn %lx",
+             pt->block()->last());
     Unlock(g_propel_lock);
     return;
   }
 
+  if (!pt->getCallee()) {
+    Unlock(g_propel_lock);
+    return;
+  }
+  
   SpFunction* f = callee(pt);
   if (!f) {
     sp_debug("NOT VALID FUNC - stop propagation");

@@ -84,7 +84,7 @@ namespace sp {
     // 2. Start instrumentation
     ph::Patcher patcher(mgr);
     for (unsigned i = 0; i < pts.size(); i++) {
-      SpPoint* pt = static_cast<SpPoint*>(pts[i]);
+      SpPoint* pt = PT_CAST(pts[i]);
       assert(pt);
       SpBlock* blk = pt->GetBlock();
       assert(blk);

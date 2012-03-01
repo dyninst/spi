@@ -51,6 +51,13 @@ void segv_handler(int num) {
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
+
+  StringSet libs_to_inst;
+  libs_to_inst.insert("libmpc.so");
+  libs_to_inst.insert("libmpfr.so");
+  libs_to_inst.insert("libgmp.so");
+  agent->SetLibrariesToInstrument(libs_to_inst);
+  
   agent->SetInitEntry("print_entry");
   agent->Go();
 }

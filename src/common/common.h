@@ -121,6 +121,7 @@ namespace in = Dyninst::InstructionAPI;
 #define BLK_CAST(b) static_cast<SpBlock*>(b)
 #define OBJ_CAST(o) static_cast<SpObject*>(o)
 #define AS_CAST(a) static_cast<SpAddrSpace*>(a)
+#define PT_CAST(a) static_cast<SpPoint*>(a)
 
 #define SHARED_THIS(c) dyn_detail::boost::enable_shared_from_this<c>
 #define SHARED_PTR(c) dyn_detail::boost::shared_ptr<c>

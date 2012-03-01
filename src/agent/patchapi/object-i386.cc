@@ -43,7 +43,11 @@ namespace sp {
 
 	dt::Address
 	SpObject::AllocateBuffer(size_t size) {
-    return (dt::Address)::malloc(size);
+    dt::Address ret = 0;
+    if (::posix_memalign((void**)&ret, getpagesize(), size) == 0) {
+      sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+    }
+    return ret;
 	}
 
 	bool

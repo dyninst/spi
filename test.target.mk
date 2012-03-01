@@ -172,6 +172,7 @@ external_mutatees:
 #==========================================================
 TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
            $(TG_DIR)/chrome_test_agent.cc \
+           $(TG_DIR)/gcc_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
            $(TG_DIR)/print_test_agent.cc
 

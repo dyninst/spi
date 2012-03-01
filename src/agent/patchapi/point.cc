@@ -35,11 +35,11 @@
 namespace sp {
 
 	SpBlock* SpPoint::GetBlock() const {
-		return static_cast<SpBlock*>(block());
+		return BLK_CAST(block());
 	}
 
 	SpObject* SpPoint::GetObject() const {
-		return static_cast<SpObject*>(obj());
+		return OBJ_CAST(obj());
 	}
 
 }

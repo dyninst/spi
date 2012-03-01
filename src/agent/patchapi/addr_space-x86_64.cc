@@ -153,7 +153,7 @@ SpAddrSpace::UpdateFreeIntervals() {
       continue;
     }
 
-    SpObject* obj = static_cast<SpObject*>(i->second);
+    SpObject* obj = OBJ_CAST(i->second);
     assert(obj);
 
     // Bind preallocated close free buffers to each object

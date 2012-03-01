@@ -429,7 +429,7 @@ namespace sp {
         // Just return!
         break;
       case 4:
-        *out = (0x00000000ffffffff & *out);
+        // *out = (0x00000000ffffffff & *out);
         break;
       case 2:
         // *out = (0x000000000000ffff & *out);

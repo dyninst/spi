@@ -143,6 +143,9 @@ namespace sp {
   // Shared memory
   COMMON_EXPORT void* GetSharedMemory(int id,
                                       size_t size);
+
+  // For debugging
+  COMMON_EXPORT void SetSegfaultSignal();
 }
 
 #endif   // _SPUTILS_H_

@@ -139,7 +139,7 @@ SpParser::FindFunction(dt::Address addr) {
   ph::AddrSpace* as = mgr_->as();
   for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
        ci != as->objMap().end(); ci++) {
-    SpObject* obj = static_cast<SpObject*>(ci->second);
+    SpObject* obj = OBJ_CAST(ci->second);
 
     pe::CodeObject* co = obj->co();
     pe::CodeSource* cs = co->cs();
@@ -247,9 +247,10 @@ SpParser::FindFunction(string name, dt::Address addr) {
         }
         sp_debug("GOT %s in OBJECT - %s", name.c_str(),
                  sym->name().c_str());
+
         if (!addr && found->addr() == addr) {
           return found;
-        }
+          }
         func_set.insert(found);
       }
     } // For each function

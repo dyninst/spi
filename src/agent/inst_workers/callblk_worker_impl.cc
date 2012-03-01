@@ -74,6 +74,11 @@ namespace sp {
     long rel_addr = (long)blob - (long)call_blk_addr - 5;
     char insn[64];    // the jump instruction to overwrite call blk
 
+    if (b->size() < 5) {
+      sp_debug("CALL BLK TOO SMALL - skip this worker");
+      return false;
+    }
+    
     if (sp::IsDisp32(rel_addr)) {
       sp_debug("4-byte DISP - install a short jump");
 

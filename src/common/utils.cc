@@ -31,9 +31,11 @@
 
 
 #include <arpa/inet.h>
+#include <execinfo.h>
 #include <linux/udp.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include <signal.h>
 #include <sys/dir.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
@@ -542,4 +544,20 @@ namespace sp {
     return shm;
   }
 
+  // For debugging
+  static void
+  sigseghandler(int signo) {
+    sp_print("******************SIGSEGV*************************");
+
+    void* array[10];
+    size_t size;
+    size = backtrace(array, 10);
+    backtrace_symbols_fd(array, size, 2);
+    exit(0);
+  }
+
+  void
+  SetSegfaultSignal() {
+    signal(SIGSEGV, sigseghandler);
+  }
 }
