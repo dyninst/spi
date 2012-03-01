@@ -77,12 +77,12 @@ default_exit(sp::SpPoint* pt) {
 namespace sp {
 extern SpContext* g_context;
 extern SpParser::ptr g_parser;
-extern SpLock* g_propel_lock;
+
+SpLock g_propel_lock;
 
 // Get callee from a PreCall point
-SpFunction*
-callee(SpPoint* pt) {
-
+static SpFunction*
+CalleeNolock(SpPoint* pt) {
 
   bool parse_indirect = true;
 
@@ -93,6 +93,24 @@ callee(SpPoint* pt) {
   SpFunction* f = g_parser->callee(pt, parse_indirect);
 
   return f;
+}
+
+SpFunction*
+callee(SpPoint* pt) {
+  int result = Lock(&g_propel_lock);
+  SpFunction* ret = NULL;
+  
+  if (result == SP_DEAD_LOCK) {
+    sp_print("DEAD LOCK - skip instrumentation for insn %lx",
+             pt->block()->last());
+    goto CALLEE_EXIT;
+  }
+
+  ret = CalleeNolock(pt);
+  
+CALLEE_EXIT:  
+  Unlock(&g_propel_lock);
+  return ret;
 }
 
 // Pop up an argument of a function call
@@ -108,34 +126,28 @@ pop_argument(SpPoint* pt, ArgumentHandle* h, size_t size) {
 void
 propel(SpPoint* pt) {
 
-  int result = Lock(g_propel_lock);
+  int result = Lock(&g_propel_lock);
+  sp::SpPropeller::ptr p = sp::SpPropeller::ptr();
+  SpFunction* f = NULL;
   
   if (result == SP_DEAD_LOCK) {
     sp_print("DEAD LOCK - skip instrumentation for insn %lx",
              pt->block()->last());
-    Unlock(g_propel_lock);
-    return;
+    goto PROPEL_EXIT;
   }
 
-  if (!pt->getCallee()) {
-    Unlock(g_propel_lock);
-    return;
-  }
-  
-  SpFunction* f = callee(pt);
+  f = CalleeNolock(pt);
   if (!f) {
     sp_debug("NOT VALID FUNC - stop propagation");
-    Unlock(g_propel_lock);
-    return;
+    goto PROPEL_EXIT;
   }
 
   // Skip if we have already propagated from this point
   if (f->propagated()) {
-    Unlock(g_propel_lock);
-    return;
+    goto PROPEL_EXIT;
   }
 
-  sp::SpPropeller::ptr p = g_context->init_propeller();
+  p = g_context->init_propeller();
   assert(p);
 
   p->go(f,
@@ -144,7 +156,8 @@ propel(SpPoint* pt) {
         pt);
   f->SetPropagated(true);
 
-  Unlock(g_propel_lock);
+PROPEL_EXIT:
+  Unlock(&g_propel_lock);
 }
 
 ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}

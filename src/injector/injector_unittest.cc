@@ -11,6 +11,18 @@ using namespace std;
 
 namespace {
 
+// Alarm to exist unit test
+void
+alarm_handler(int signum) {
+  FAIL() << "Failed due to timeout\n";
+}
+
+inline void
+SetTimeout() {
+  signal(SIGALRM, alarm_handler);
+  alarm(360);
+}
+
 class InjectorTest : public testing::Test {
   public:
   InjectorTest(): pid_(0), server_(NULL) {

@@ -20,6 +20,8 @@ MUTATEE_EXES_DIR = $(SP_DIR)/$(PLATFORM)/test_mutatee
 TAGENT_OBJS_DIR = $(SP_DIR)/$(PLATFORM)/test_agent/objs
 TAGENT_EXES_DIR = $(SP_DIR)/$(PLATFORM)/test_agent
 
+TEST_DATA_DIR = $(SP_DIR)/$(PLATFORM)/test_data 
+
 #==========================================================
 # Google mock and Google test stuffs
 #==========================================================

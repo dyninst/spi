@@ -45,9 +45,10 @@ namespace sp {
 	SpAddrSpace*  g_as = NULL;
   SpContext*    g_context = NULL;
 	SpParser::ptr g_parser;
-	SpLock*       g_propel_lock = NULL;
 
-	// Constructor for SpAgent
+  extern SpLock g_propel_lock;
+
+  // Constructor for SpAgent
 	SpAgent::ptr
 	SpAgent::Create() {
 
@@ -150,9 +151,7 @@ namespace sp {
 		}
 
 		// Init lock
-    // This variable will be freed in SpContext::~SpContext
-    g_propel_lock = new SpLock;
-		InitLock(g_propel_lock);
+		InitLock(&g_propel_lock);
 
     // For quick debugging
 		if (getenv("SP_DIRECTCALL_ONLY")) {

@@ -204,12 +204,14 @@ clean_all:
 	@$(RM) -r $(TEST_EXES_DIR) $(UT_ONESTOP_EXE)
 	@$(RM) -r $(MUTATEE_EXES_DIR)
 	@$(RM) -r $(TAGENT_EXES_DIR)
+	@$(RM) -r $(TEST_DATA_DIR)
 
 clean_test:
 	@echo "Cleaning tests ..."
 	@$(RM) -r $(TEST_EXES_DIR) $(UT_ONESTOP_EXE)
 	@$(RM) -r $(MUTATEE_EXES_DIR)
 	@$(RM) -r $(TAGENT_EXES_DIR)
+	@$(RM) -r $(TEST_DATA_DIR)
 
 msg: agent_lib injector_exe
 	@echo ""
