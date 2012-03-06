@@ -8,7 +8,7 @@ using namespace sp;
 
 void test_entry(SpPoint* pt) {
 
-	PatchFunction* f = callee(pt);
+PatchFunction* f = Callee(pt);
   if (!f) return;
 	sp_print("%s", f->name().c_str());
   /*
@@ -17,7 +17,7 @@ void test_entry(SpPoint* pt) {
            pt->block()->last());
   SetSegfaultSignal();
   */
-  sp::propel(pt);
+  sp::Propel(pt);
 }
 
 AGENT_INIT

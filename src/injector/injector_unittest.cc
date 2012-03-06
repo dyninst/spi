@@ -55,7 +55,6 @@ class InjectorTest : public testing::Test {
 
     // char buf[256];
     // ASSERT_TRUE(fgets(buf, 256, server_));
-   
 		// Get the tcp_server's pid
 		PidSet pid_set;
 		GetPidsFromFileDesc(fileno(server_), pid_set);

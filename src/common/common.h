@@ -55,7 +55,7 @@ const int kLenStringBuffer = 255;
 #define sp_print(...) do {\
   fprintf(stdout, __VA_ARGS__); \
   fprintf(stdout, "\n"); \
-  fflush(stderr); \
+  fflush(stdout); \
 } while(0)
 
 #define sp_debug(...) do { \

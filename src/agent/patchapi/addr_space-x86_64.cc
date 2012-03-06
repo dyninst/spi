@@ -156,6 +156,43 @@ SpAddrSpace::UpdateFreeIntervals() {
     SpObject* obj = OBJ_CAST(i->second);
     assert(obj);
 
+    // Re-arrange free buffers. Some rules:
+    // - Reduce each "hole" between two mapped objects to less than 1.5GB
+    // - Each interval should have size smaller than 500MB
+
+    FreeIntervalList tmp_list;
+    std::copy(free_intervals_.begin(), free_intervals_.end(),
+              back_inserter(tmp_list));
+    free_intervals_.clear();
+    const size_t max_interval_size = (const size_t)1024*1024*512;
+    const size_t max_mapped_area_size = (const size_t)1024*1024*(1024+512);
+    for (FreeIntervalList::iterator fi = tmp_list.begin();
+         fi != tmp_list.end(); fi++) {
+      if ((*fi).size() > max_mapped_area_size) {
+        (*fi).start = (*fi).end - max_mapped_area_size;
+      }
+    }
+    
+    for (FreeIntervalList::iterator fi = tmp_list.begin();
+         fi != tmp_list.end(); fi++) {
+      dt::Address new_start = (*fi).start;
+      dt::Address new_end = new_start + max_interval_size;
+      
+      do {
+        FreeInterval new_interval;
+        new_interval.used = false;
+        new_interval.start = new_start;
+        new_interval.end = new_end;
+        if (new_start + max_interval_size > (*fi).end) {
+          new_interval.end = (*fi).end;
+        }
+        free_intervals_.push_back(new_interval);
+        new_start += max_interval_size;
+        new_end += max_interval_size;
+      } while(new_start < (*fi).end);
+    }
+
+    
     // Bind preallocated close free buffers to each object
 
     sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
@@ -194,23 +231,30 @@ void
 SpAddrSpace::DumpFreeIntervals() {
   for (FreeIntervalList::iterator i = free_intervals_.begin();
        i != free_intervals_.end(); i++) {
-    sp_debug("FREE INTERVAL - [%lx ~ %lx], used %d",
-             (*i).start, (*i).end, (*i).used);
+    sp_debug("FREE INTERVAL - [%lx ~ %lx], used %d, size: %ld MB",
+             (*i).start, (*i).end, (*i).used, (*i).size()/1024/1024);
   }
 }
 
 bool
 SpAddrSpace::GetClosestInterval(dt::Address addr,
                                 FreeInterval** interval) {
-  FreeInterval* previous = NULL;
+  const size_t distance = (const size_t)(1024*1024*(1024+512));
+  
   for (FreeIntervalList::iterator i = free_intervals_.begin();
        i != free_intervals_.end(); i++) {
+    FreeInterval* previous = &(*i);
+
+    // Bind a free interval before this object, and the distance should
+    // be shorter than 1.5GB
+    sp_debug("GET CLOSEST INTERVAL - free interval [%lx, %lx], size %ld",
+             (*i).start, (*i).end, (*i).size());
     if ((*i).start > addr) {
-      previous = &(*i);
       continue;
     } else {
       if (!previous) return false;
       if (previous->used) continue;
+      if ((addr - (*i).start) > distance) continue;
       *interval = previous;
       (*interval)->used = true;
       return true;

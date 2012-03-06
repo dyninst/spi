@@ -163,10 +163,13 @@ namespace sp {
 		}
 
     // ret = (dt::Address)::malloc(size);
-    if (::posix_memalign((void**)&ret, getpagesize(), size) == 0) {
-      sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
-      return ret;
+    if (!getenv("SPI_NO_LIBC_MALLOC")) {
+      if (::posix_memalign((void**)&ret, getpagesize(), size) == 0) {
+        sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+        return ret;
+      }
     }
+
     sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
     return ret;
 	}
@@ -175,7 +178,9 @@ namespace sp {
 	SpObject::FreeBuffer(dt::Address buf) {
 		if (alloc_bufs_.find(buf) == alloc_bufs_.end()) {
 			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
-			::free((void*)buf);
+      if (!getenv("SPI_NO_LIBC_MALLOC")) {
+        ::free((void*)buf);
+      }
       return false;
     }
 

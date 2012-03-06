@@ -892,8 +892,8 @@ namespace sp {
 
   // Get argument of a function call
   void*
-  SpSnippet::pop_argument(ArgumentHandle* h,
-													size_t size) {
+  SpSnippet::PopArgument(ArgumentHandle* h,
+                         size_t size) {
 		assert(h);
     using namespace Dyninst::x86_64;
     if (h->num < 6) {
@@ -934,7 +934,7 @@ namespace sp {
 
   // Get return value of a function call
   long
-  SpSnippet::get_ret_val() {
+  SpSnippet::GetRetVal() {
     return GetSavedReg(Dyninst::x86_64::rax);
   }
 

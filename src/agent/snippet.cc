@@ -252,7 +252,7 @@ namespace sp {
   // We iterate through all CodeRegions, and get then narrow down the search
   // space in one, two, or up to three CodeRegions.
 	SpBlock*
-  SpSnippet::spring_blk() {
+  SpSnippet::FindSpringboard() {
     if (spring_blk_) return spring_blk_;
 
 		assert(point_);
@@ -362,7 +362,7 @@ namespace sp {
 
   // Build the spring block
   char*
-  SpSnippet::spring(SpBlock* spring_blk) {
+  SpSnippet::RelocateSpring(SpBlock* spring_blk) {
 		assert(spring_blk);
 		dt::Address ret_addr = spring_blk->last();
 		assert(g_as);

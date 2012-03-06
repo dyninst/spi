@@ -87,7 +87,9 @@ namespace sp {
 		assert(blob);
     long rel_addr = (long)blob - (long)call_insn_addr;
     if (!sp::IsDisp32(rel_addr)) {
-      sp_debug("NOT 4-byte DISP - try other workers");
+      sp_debug("NOT 4-byte DISP - blob=%lx, call_insn=%lx, delta=%ld,"
+               " try other workers", (long)blob, (long)call_insn_addr,
+               rel_addr);
       return false;
     }
 
@@ -117,7 +119,7 @@ namespace sp {
 		size_t est_size = EstimateBlobSize(pt);
 		char* blob = snip->BuildBlob(est_size);
 		assert(blob);
-    size_t blob_size = snip->size();
+    size_t blob_size = snip->GetBlobSize();
     if (!blob) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;

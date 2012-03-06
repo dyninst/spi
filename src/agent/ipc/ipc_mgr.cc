@@ -78,18 +78,18 @@ namespace sp {
   void
   SpIpcMgr::get_write_param(SpPoint* pt, int* fd_out, void** buf_out,
                             char* c_out, size_t* size_out, sockaddr** sa_out) {
-    ph::PatchFunction* f = sp::callee(pt);
+    ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return;
 
     ArgumentHandle h;
     if (f->name().compare("write") == 0 ||
         f->name().compare("send") == 0) {
 
-      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
-      void** buf = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+      void** buf = (void**)sp::PopArgument(pt, &h, sizeof(void*));
       if (buf_out) *buf_out = *buf;
-      size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
       if (size_out) *size_out = *size;
 
       /*
@@ -108,36 +108,36 @@ namespace sp {
     }
 
     if (f->name().compare("connect") == 0) {
-      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
-      sockaddr** sa = (sockaddr**)sp::pop_argument(pt, &h, sizeof(sockaddr*));
+      sockaddr** sa = (sockaddr**)sp::PopArgument(pt, &h, sizeof(sockaddr*));
       // sockaddr* sa_tmp = (sockaddr*)malloc(sizeof(sockaddr));
       // memcpy(sa_tmp, *sa, sizeof(sockaddr));
       if (sa_out) *sa_out = *sa;
     }
 
     if (f->name().compare("fputs") == 0) {
-      char** str = (char**)sp::pop_argument(pt, &h, sizeof(char*));
+      char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
       if (buf_out) *buf_out = (void*)*str;
-      FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
 
     if (f->name().compare("fputc") == 0) {
-      char* c = (char*)sp::pop_argument(pt, &h, sizeof(char));
+      char* c = (char*)sp::PopArgument(pt, &h, sizeof(char));
       if (c_out) *c_out = *c;
-      FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if (fd_out) *fd_out = fileno(*fp);
     }
 
     if (f->name().compare("fwrite_unlocked") == 0 ||
         f->name().compare("fwrite") == 0) {
-      void** ptr = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+      void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
       if (buf_out) *buf_out = (void*)*ptr;
-      size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
-      size_t* n = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+      size_t* n = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
       if (size_out) *size_out = (*size) * (*n);
-      FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
   }
@@ -150,47 +150,47 @@ namespace sp {
   void
   SpIpcMgr::get_read_param(SpPoint* pt, int* fd_out, void** buf_out,
                            size_t* size_out) {
-    ph::PatchFunction* f = sp::callee(pt);
+    ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return;
 
     ArgumentHandle h;
     if (f->name().compare("read") == 0 ||
         f->name().compare("recv") == 0) {
-      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
-      void** buf = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+      void** buf = (void**)sp::PopArgument(pt, &h, sizeof(void*));
       if (buf_out) *buf_out = *buf;
-      size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
       if (size_out) *size_out = *size;
     }
 
     if (f->name().compare("fgets") == 0) {
-      char** str = (char**)sp::pop_argument(pt, &h, sizeof(char*));
+      char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
       if (buf_out) *buf_out = (void*)*str;
-      int* size = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      int* size = (int*)sp::PopArgument(pt, &h, sizeof(int));
       if (size_out) *size_out = *size;
-      FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
 
     if (f->name().compare("fgetc") == 0) {
-      FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
 
     if (f->name().compare("fread_unlocked") == 0 ||
         f->name().compare("fread") == 0) {
-      void** ptr = (void**)sp::pop_argument(pt, &h, sizeof(void*));
+      void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
       if (buf_out) *buf_out = (void*)*ptr;
-      size_t* size = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
-      size_t* n = (size_t*)sp::pop_argument(pt, &h, sizeof(size_t));
+      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+      size_t* n = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
       if (size_out) *size_out = (*size) * (*n);
-      FILE** fp = (FILE**)sp::pop_argument(pt, &h, sizeof(FILE*));
+      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
 
     if (f->name().compare("accept") == 0) {
-      int* fd = (int*)sp::pop_argument(pt, &h, sizeof(int));
+      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
     }
 
@@ -249,7 +249,7 @@ namespace sp {
   // entry-payload function.
   bool
   SpIpcMgr::before_entry(SpPoint* pt) {
-    ph::PatchFunction* f = sp::callee(pt);
+    ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 
     sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
@@ -275,7 +275,7 @@ namespace sp {
         worker->inject(c);
 
         // Enable tracing for remote process
-        if (callee(pt)->name().compare("connect") != 0)
+        if (Callee(pt)->name().compare("connect") != 0)
           worker->set_start_tracing(1, c);
         pt->SetChannel(c);
       }
@@ -300,13 +300,13 @@ namespace sp {
   // exit-payload function.
   bool
   SpIpcMgr::before_exit(SpPoint* pt) {
-    ph::PatchFunction* f = sp::callee(pt);
+    ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 
     // Detect fork for pipe
     sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
     if (ipc_mgr->is_fork(f->name().c_str())) {
-      long pid = sp::retval(pt);
+      long pid = sp::ReturnValue(pt);
       // Receiver
       if (pid == 0) {
         ipc_mgr->pipe_worker()->set_start_tracing(0);
@@ -314,7 +314,7 @@ namespace sp {
     }
     // Detect popen for pipe
     else if (ipc_mgr->is_popen(f->name().c_str())) {
-      FILE* fp = (FILE*)sp::retval(pt);
+      FILE* fp = (FILE*)sp::ReturnValue(pt);
       int fd = fileno(fp);
       // XXX: magic?? This is a very artificial way to wait for fork done
       sleep(2);

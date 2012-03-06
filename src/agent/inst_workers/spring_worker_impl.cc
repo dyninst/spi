@@ -64,7 +64,7 @@ namespace sp {
 		bool ret = false;
 
 		assert(pt->snip());
-		ph::PatchBlock* springblk = pt->snip()->spring_blk();
+		ph::PatchBlock* springblk = pt->snip()->FindSpringboard();
     if (!springblk) {
       sp_debug("NO SPRING BOARD - cannot find suitable spring board");
       return false;
@@ -99,7 +99,7 @@ namespace sp {
     // - close enough to short jump from call block
     // if we cannot find one available spring block, just use trap or
     // ignore this call
-		SpBlock* springblk = snip->spring_blk();
+		SpBlock* springblk = snip->FindSpringboard();
     if (!springblk) {
 			sp_debug("FAILED TO GET A SPRINGBOARD BLOCK");
 			return false;
@@ -124,7 +124,9 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (!g_as->SetMemoryPermission((dt::Address)blob, snip->size(), perm)) {
+    if (!g_as->SetMemoryPermission((dt::Address)blob,
+                                   snip->GetBlobSize(),
+                                   perm)) {
       sp_debug("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
@@ -134,14 +136,15 @@ namespace sp {
 
     // Relocate spring block & change the permission of the relocated
     // spring block
-    char* spring = snip->spring(springblk);
+    char* spring = snip->RelocateSpring(springblk);
 		if (!spring) {
 			sp_debug("FAILED TO RELOCATE SPRINGBOARD BLOCK");
 			return false;
 		}
     obj = springblk->GetObject();
     if (!g_as->SetMemoryPermission((dt::Address)spring,
-															snip->spring_size(), perm)) {
+                                   snip->GetRelocSpringSize(),
+                                   perm)) {
       sp_debug("MPROTECT - Failed to change memory access permission"
                " for relocated spring blk at %lx", (dt::Address)spring);
       // g_as->dump_mem_maps();

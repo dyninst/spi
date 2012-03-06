@@ -344,7 +344,7 @@ namespace sp {
 
   // Get return value of a function call
   long
-  SpSnippet::get_ret_val() {
+  SpSnippet::GetRetVal() {
     return GetSavedReg(Dyninst::x86::eax);
   }
 

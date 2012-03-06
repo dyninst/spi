@@ -54,31 +54,60 @@ wrapper_exit(sp::SpPoint* pt, sp::PayloadFunc_t exit) {
 // Default payload functions
 void
 default_entry(sp::SpPoint* pt) {
-  ph::PatchFunction* f = sp::callee(pt);
+  ph::PatchFunction* f = sp::Callee(pt);
   if (!f) return;
 
   string callee_name = f->name();
   sp_print("Enter %s", callee_name.c_str());
 
-  sp::propel(pt);
+  sp::Propel(pt);
 }
 
 void
 default_exit(sp::SpPoint* pt) {
-  ph::PatchFunction* f = sp::callee(pt);
+  ph::PatchFunction* f = sp::Callee(pt);
   if (!f) return;
 
   string callee_name = f->name();
   sp_print("Leave %s", callee_name.c_str());
 }
 
+// Wrappers for locking
+#define SP_LOCK(func) do {                            \
+    int result = Lock(&g_propel_lock);                \
+    if (result == SP_DEAD_LOCK) {                     \
+      sp_print("DEAD LOCK - skip #func");  \
+      goto func##_EXIT;                               \
+    }                                                 \
+  } while (0)
+
+#define SP_UNLOCK(func) do {                    \
+ func##_EXIT:                                   \
+    Unlock(&g_propel_lock);                     \
+  } while (0)
 
 // Utilities that payload writers can use in their payload functions
+
 namespace sp {
+
 extern SpContext* g_context;
 extern SpParser::ptr g_parser;
 
 SpLock g_propel_lock;
+
+// Argument handle
+ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}
+
+char*
+ArgumentHandle::insert_buf(size_t s) {
+  char* b = new char[s];
+  bufs.push_back(b);
+  return b;
+}
+
+ArgumentHandle::~ArgumentHandle() {
+  for (unsigned i = 0; i < bufs.size(); i++) delete bufs[i];
+}
 
 // Get callee from a PreCall point
 static SpFunction*
@@ -96,46 +125,23 @@ CalleeNolock(SpPoint* pt) {
 }
 
 SpFunction*
-callee(SpPoint* pt) {
-  int result = Lock(&g_propel_lock);
+Callee(SpPoint* pt) {
   SpFunction* ret = NULL;
-  
-  if (result == SP_DEAD_LOCK) {
-    sp_print("DEAD LOCK - skip instrumentation for insn %lx",
-             pt->block()->last());
-    goto CALLEE_EXIT;
-  }
-
+  SP_LOCK(CALLEE);
   ret = CalleeNolock(pt);
-  
-CALLEE_EXIT:  
-  Unlock(&g_propel_lock);
+  SP_UNLOCK(CALLEE);
   return ret;
 }
 
-// Pop up an argument of a function call
-void*
-pop_argument(SpPoint* pt, ArgumentHandle* h, size_t size) {
-
-  void* arg = PT_CAST(pt)->snip()->pop_argument(h, size);
-
-  return arg;
-}
 
 // Propel instrumentation to next points of the point `pt`
 void
-propel(SpPoint* pt) {
+Propel(SpPoint* pt) {
 
-  int result = Lock(&g_propel_lock);
   sp::SpPropeller::ptr p = sp::SpPropeller::ptr();
   SpFunction* f = NULL;
-  
-  if (result == SP_DEAD_LOCK) {
-    sp_print("DEAD LOCK - skip instrumentation for insn %lx",
-             pt->block()->last());
-    goto PROPEL_EXIT;
-  }
 
+  SP_LOCK(PROPEL);
   f = CalleeNolock(pt);
   if (!f) {
     sp_debug("NOT VALID FUNC - stop propagation");
@@ -155,57 +161,77 @@ propel(SpPoint* pt) {
         g_context->init_exit(),
         pt);
   f->SetPropagated(true);
-
-PROPEL_EXIT:
-  Unlock(&g_propel_lock);
+  SP_UNLOCK(PROPEL);
 }
 
-ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}
-
-char*
-ArgumentHandle::insert_buf(size_t s) {
-  char* b = new char[s];
-  bufs.push_back(b);
-  return b;
+// Get arguments
+void*
+PopArgument(SpPoint* pt, ArgumentHandle* h, size_t size) {
+  void* arg = NULL;
+  SP_LOCK(POPARG);
+  arg = PT_CAST(pt)->snip()->PopArgument(h, size);
+  SP_UNLOCK(POPARG);
+  return arg;
 }
 
-ArgumentHandle::~ArgumentHandle() {
-  for (unsigned i = 0; i < bufs.size(); i++) delete bufs[i];
-}
-
+// Get return value
 long
-retval(sp::SpPoint* pt) {
-  long ret = pt->snip()->get_ret_val();
+ReturnValue(sp::SpPoint* pt) {
+  long ret = -1;
+  SP_LOCK(RETVAL);
+  ret = pt->snip()->GetRetVal();
+  SP_UNLOCK(RETVAL);
   return ret;
 }
 
 // Implicitly call start_tracing()
 bool
-is_ipc_write(SpPoint* pt) {
-  SpChannel* c = pt->channel();
-  bool ret = (c && c->rw == SP_WRITE);
+IsIpcWrite(SpPoint* pt) {
+  SpChannel* c = NULL;
+  bool ret = false;
+  SP_LOCK(ISIPCWRITE);
+  c = pt->channel();
+  ret = (c && c->rw == SP_WRITE);
+  SP_UNLOCK(ISIPCWRITE);
   return ret;
 }
 
 // Implicitly call start_tracing()
+static char StartTracingNolock(int fd);
+
 bool
-is_ipc_read(SpPoint* pt) {
-  SpChannel* c = pt->channel();
+IsIpcRead(SpPoint* pt) {
+  SpChannel* c = NULL;
+  bool ret = false;
+  SP_LOCK(ISIPCREAD);
+  c = pt->channel();
 
-  if (callee(pt)->name().compare("accept") != 0)
-    return (c && c->rw == SP_READ && start_tracing(c->fd));
+  if (CalleeNolock(pt)->name().compare("accept") != 0)
+    return (c && c->rw == SP_READ && StartTracingNolock(c->fd));
 
-  bool ret = (c && c->rw == SP_READ);
+  ret = (c && c->rw == SP_READ);
+  SP_UNLOCK(ISIPCREAD);
+
+  return ret;
+}
+
+// Allow to run user-provided trace code?
+static char
+StartTracingNolock(int fd) {
+
+  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
+  char ret = ipc_mgr->start_tracing(fd);
 
   return ret;
 }
 
 char
-start_tracing(int fd) {
+StartTracing(int fd) {
 
-  sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
-  char ret = ipc_mgr->start_tracing(fd);
-
+  char ret = 0;
+  SP_LOCK(STARTTRACING);
+  ret = StartTracingNolock(fd);
+  SP_UNLOCK(STARTTRACING);
   return ret;
 }
 

@@ -214,12 +214,14 @@ SpParser::FindFunction(string name, dt::Address addr) {
   for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
+    assert(obj);
     pe::CodeObject* co = obj->co();
+    assert(co);
     sb::Symtab* sym = obj->symtab();
+    assert(sym);
     if (!sym) {
       sp_perror("Failed to get Symtab object");
     }
-
     sp_debug("IN OBJECT - %s", sym->name().c_str());
 
     if (!CanInstrument(sp_filename(sym->name().c_str()))) {
@@ -242,16 +244,17 @@ SpParser::FindFunction(string name, dt::Address addr) {
           continue;
         }
         ph::PatchFunction* found = obj->getFunc(*fit);
+        assert(found);
         if (real_func_map_.find(name) == real_func_map_.end()) {
           real_func_map_[name] = found;
         }
         sp_debug("GOT %s in OBJECT - %s", name.c_str(),
                  sym->name().c_str());
 
-        if (!addr && found->addr() == addr) {
+        if (!addr && found && found->addr() == addr) {
           return found;
-          }
-        func_set.insert(found);
+        }
+        if (found) func_set.insert(found);
       }
     } // For each function
   } // For each object

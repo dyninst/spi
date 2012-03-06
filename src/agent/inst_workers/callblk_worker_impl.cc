@@ -146,7 +146,9 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (!g_as->SetMemoryPermission((dt::Address)blob, snip->size(), perm)) {
+    if (!g_as->SetMemoryPermission((dt::Address)blob,
+                                   snip->GetBlobSize(),
+                                   perm)) {
       sp_debug("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();

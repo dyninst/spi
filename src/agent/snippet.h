@@ -68,19 +68,16 @@ namespace sp {
     // Return the pointer to blob, and fill the blob
     char* BuildBlob(const size_t est_size,
                     const bool reloc = false);
+    size_t GetBlobSize() const { return blob_size_; }
 
-    // Return the pointer to spring, and fill in spring
-    char* spring(SpBlock* spring_blk);
-
-    // blob size
-    size_t size() const { return blob_size_; }
-
-    // spring block size
-    size_t spring_size() const {return spring_size_; }
+    // Springboard stuffs
+    SpBlock* FindSpringboard();
+    char* RelocateSpring(SpBlock* spring_blk);
+    size_t GetRelocSpringSize() const {return spring_size_; }
 
     dt::Address GetSavedReg(dt::MachRegister reg);
-    long get_ret_val();
-    void* pop_argument(ArgumentHandle* h, size_t size);
+    long GetRetVal();
+    void* PopArgument(ArgumentHandle* h, size_t size);
 
     // Some getters
     PayloadFunc entry() const { return entry_; }
@@ -89,8 +86,6 @@ namespace sp {
     SpFunction* func() const { return func_; }
 
     // Find and return a spring block; if not found, return NULL
-    SpBlock* spring_blk();
-
     static dt::Address get_pre_signal_pc(void* context);
     static dt::Address set_pc(dt::Address pc, void* context);
     static size_t jump_abs_size();

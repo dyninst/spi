@@ -63,21 +63,21 @@ namespace sp {
   // ------------------------
 
   // Only used in before_payload
-  AGENT_EXPORT void propel(SpPoint* pt_);
-  AGENT_EXPORT void* pop_argument(SpPoint* pt,
-                                  ArgumentHandle* h,
-                                  size_t size);
+  AGENT_EXPORT void Propel(SpPoint* pt_);
+  AGENT_EXPORT void* PopArgument(SpPoint* pt,
+                                 ArgumentHandle* h,
+                                 size_t size);
 
-	// Implicitly call start_tracing()
-  AGENT_EXPORT bool is_ipc_write(SpPoint*); 
-  AGENT_EXPORT bool is_ipc_read(SpPoint*); 
+	// Implicitly call StartTracing()
+  AGENT_EXPORT bool IsIpcWrite(SpPoint*); 
+  AGENT_EXPORT bool IsIpcRead(SpPoint*); 
 
   // Only used in after_payload
-  AGENT_EXPORT long retval(SpPoint* pt);
+  AGENT_EXPORT long ReturnValue(SpPoint* pt);
 
   // Used in both payloads
-  AGENT_EXPORT SpFunction* callee(SpPoint* pt_);
-  AGENT_EXPORT char start_tracing(int fd);
+  AGENT_EXPORT SpFunction* Callee(SpPoint* pt_);
+  AGENT_EXPORT char StartTracing(int fd);
 
 }
 

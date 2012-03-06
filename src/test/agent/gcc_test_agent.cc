@@ -39,7 +39,7 @@ void print_entry(SpPoint* pt) {
   default:
     break;
   }
-  sp::propel(pt);
+  sp::Propel(pt);
 }
 
 void print_after(Point* pt) {

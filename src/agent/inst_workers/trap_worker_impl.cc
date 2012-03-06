@@ -155,7 +155,8 @@ namespace sp {
 		assert(g_as);
     // Change memory permission for the snippet
     if (!g_as->SetMemoryPermission((dt::Address)blob,
-                                    sp_snip->size(), perm)) {
+                                   sp_snip->GetBlobSize(),
+                                   perm)) {
       // g_as->dump_mem_maps();
       sp_perror("FAILED PERM - failed to change memory permission for blob");
     }
