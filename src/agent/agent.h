@@ -62,6 +62,13 @@ namespace sp {
     AGENT_EXPORT void SetInitPropeller(SpPropeller::ptr);
     AGENT_EXPORT void SetLibrariesToInstrument(const StringSet& libs);
 
+    // Note: We can only bypass instrumenting direct function calls that
+    // are specified by this function. For indirect function calls, we
+    // still install instrumentation on them (relocate call insn, or call
+    // block. However, for indirect function calls, we can skip propagate
+    // instrumentation to their callees.
+    AGENT_EXPORT void SetFuncsNotToInstrument(const StringSet& funcs);
+
     AGENT_EXPORT void EnableParseOnly(bool yes_or_no);
     AGENT_EXPORT void EnableDirectcallOnly(bool yes_or_no);
     AGENT_EXPORT void EnableTrapOnly(bool yes_or_no);
@@ -88,6 +95,9 @@ namespace sp {
     }
     AGENT_EXPORT const StringSet& libraries_to_instrument() const {
       return libs_to_inst_;
+    }
+    AGENT_EXPORT const StringSet& funcs_not_to_instrument() const {
+      return funcs_not_to_inst_;
     }
 
     AGENT_EXPORT bool IsParseOnlyEnabled() const {
@@ -126,6 +136,7 @@ namespace sp {
     bool trap_only_;
 
     StringSet  libs_to_inst_;
+    StringSet  funcs_not_to_inst_;
 
     SpAgent();
   };

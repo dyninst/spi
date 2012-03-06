@@ -176,7 +176,8 @@ TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
            $(TG_DIR)/chrome_test_agent.cc \
            $(TG_DIR)/gcc_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
-           $(TG_DIR)/print_test_agent.cc
+           $(TG_DIR)/print_test_agent.cc \
+           $(TG_DIR)/multithread_test_agent.cc \
 
 TG_OBJS  = $(addprefix $(TAGENT_OBJS_DIR)/, $(notdir $(TG_SRCS:%.cc=%.o)))
 TG_SO    = $(addprefix $(TAGENT_EXES_DIR)/, $(notdir $(TG_SRCS:%.cc=%.so)))

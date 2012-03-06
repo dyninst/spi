@@ -73,12 +73,13 @@ default_exit(sp::SpPoint* pt) {
 }
 
 // Wrappers for locking
-#define SP_LOCK(func) do {                            \
-    int result = Lock(&g_propel_lock);                \
-    if (result == SP_DEAD_LOCK) {                     \
-      sp_print("DEAD LOCK - skip #func");  \
-      goto func##_EXIT;                               \
-    }                                                 \
+#define SP_LOCK(func) do {                              \
+    int result = Lock(&g_propel_lock);                  \
+    if (result == SP_DEAD_LOCK) {                       \
+      sp_print("DEAD LOCK - skip #func for point %lx",  \
+               pt->block()->last());                    \
+      goto func##_EXIT;                                 \
+    }                                                   \
   } while (0)
 
 #define SP_UNLOCK(func) do {                    \
@@ -226,12 +227,29 @@ StartTracingNolock(int fd) {
 }
 
 char
-StartTracing(int fd) {
+StartTracing(SpPoint* pt,
+             int fd) {
 
   char ret = 0;
   SP_LOCK(STARTTRACING);
   ret = StartTracingNolock(fd);
   SP_UNLOCK(STARTTRACING);
+  return ret;
+}
+
+bool
+IsInstrumentable(SpPoint* pt) {
+  assert(g_parser);
+  bool ret = true;
+  SpFunction* func = NULL;
+  SP_LOCK(ISINSTRUMENTABLE);
+  func = CalleeNolock(pt);
+  if (!func) {
+    ret = false;
+  } else if (!g_parser->CanInstrumentFunc(func->name())) {
+    ret = false;
+  }
+  SP_UNLOCK(ISINSTRUMENTABLE);
   return ret;
 }
 

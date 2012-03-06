@@ -79,6 +79,8 @@ namespace sp {
                                         func->addr());
     }
 
+    if (!cur_func) return false;
+    
     next_points(cur_func, mgr, pts);
 
     // 2. Start instrumentation
@@ -101,6 +103,10 @@ namespace sp {
       SpFunction* callee = g_parser->callee(pt);
 
       if (callee) {
+        if (!g_parser->CanInstrumentFunc(callee->name())) {
+          sp_debug("SKIP NOT-INST FUNC - %s", callee->name().c_str());
+          continue;
+        }
         sp_debug("POINT - instrumenting direct call at %lx to "
                  "function %s (%lx) for point %lx",
                  blk->last(), callee->name().c_str(),

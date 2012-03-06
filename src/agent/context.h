@@ -47,7 +47,6 @@
 #include "agent/ipc/ipc_mgr.h"
 
 namespace sp {
-typedef std::set<Dyninst::PatchAPI::PatchFunction*> FuncSet;
 
 class SpContext {
   friend class SpAgent;

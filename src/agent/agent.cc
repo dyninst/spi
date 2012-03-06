@@ -137,6 +137,12 @@ namespace sp {
       libs_to_inst_.insert(*i);
   }
 
+  void
+  SpAgent::SetFuncsNotToInstrument(const StringSet& funcs) {
+    for (StringSet::iterator i = funcs.begin(); i != funcs.end(); i++)
+      funcs_not_to_inst_.insert(*i);
+  }
+
 	// Here We Go! Self-propelling magic happens!
 
 	void
@@ -212,6 +218,7 @@ namespace sp {
 		g_parser = parser_;
 		assert(g_parser);
     g_parser->SetLibrariesToInstrument(libs_to_inst_);
+    g_parser->SetFuncsNotToInstrument(funcs_not_to_inst_);
     
     parser_->Parse();
     assert(g_parser->mgr());
@@ -239,12 +246,14 @@ namespace sp {
     g_context->SetInitPropeller(init_propeller_);
     g_context->SetParser(parser_);
     g_context->SetInitEntryName(init_entry_);
-    void* payload_entry = (void*)g_parser->GetFuncAddrFromName(init_entry_);
+    void* payload_entry =
+        (void*)g_parser->GetFuncAddrFromName(init_entry_);
     assert(payload_entry);
     g_context->SetInitEntry(payload_entry);
     if (init_exit_.size() > 0) {
       g_context->SetInitExitName(init_exit_);
-      void* payload_exit = (void*)g_parser->GetFuncAddrFromName(init_exit_);
+      void* payload_exit =
+          (void*)g_parser->GetFuncAddrFromName(init_exit_);
       assert(payload_exit);
       g_context->SetInitExit(payload_exit);
     }
@@ -253,10 +262,12 @@ namespace sp {
     if (allow_ipc_) {
       // SpIpcMgr will be deleted in the destructor of SpContext
       g_context->SetIpcMgr(new SpIpcMgr());
-      void* wrapper_entry = (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
+      void* wrapper_entry =
+          (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
       assert(wrapper_entry);
 			g_context->SetWrapperEntry(wrapper_entry);
-      void* wrapper_exit = (void*)g_parser->GetFuncAddrFromName("wrapper_exit");
+      void* wrapper_exit =
+          (void*)g_parser->GetFuncAddrFromName("wrapper_exit");
       assert(wrapper_exit);
 			g_context->SetWrapperExit(wrapper_exit);
     }

@@ -71,6 +71,11 @@ TEST_F(AgentTest, customized_setting) {
   libs_to_inst.insert("libtest1.so");
   agent->SetLibrariesToInstrument(libs_to_inst);
 
+  sp::StringSet funcs_not_to_inst;
+  funcs_not_to_inst.insert("std::");
+  funcs_not_to_inst.insert("gcc::");
+  agent->SetFuncsNotToInstrument(funcs_not_to_inst);
+  
   agent->Go();
 
   EXPECT_TRUE(agent->parser() == parser);
@@ -85,7 +90,11 @@ TEST_F(AgentTest, customized_setting) {
   EXPECT_TRUE(agent->IsTrapOnlyEnabled());
   EXPECT_TRUE(agent->IsIpcEnabled());
 
-  EXPECT_TRUE(agent->libraries_to_instrument().size() == 1);
+  EXPECT_TRUE(parser->CanInstrumentLib("libtest1.so"));
+  EXPECT_FALSE(parser->CanInstrumentLib("libtest2.so"));
+  EXPECT_FALSE(parser->CanInstrumentFunc("std::string"));
+  EXPECT_FALSE(parser->CanInstrumentFunc("gcc::abc"));
+  EXPECT_TRUE(parser->CanInstrumentFunc("strlen"));
 }
 
 

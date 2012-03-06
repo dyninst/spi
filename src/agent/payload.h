@@ -76,9 +76,10 @@ namespace sp {
   AGENT_EXPORT long ReturnValue(SpPoint* pt);
 
   // Used in both payloads
-  AGENT_EXPORT SpFunction* Callee(SpPoint* pt_);
-  AGENT_EXPORT char StartTracing(int fd);
-
+  AGENT_EXPORT SpFunction* Callee(SpPoint* pt);
+  AGENT_EXPORT char StartTracing(SpPoint* pt,
+                                 int fd);
+  AGENT_EXPORT bool IsInstrumentable(SpPoint* pt);
 }
 
 #endif /* SP_PAYLOAD_H_ */

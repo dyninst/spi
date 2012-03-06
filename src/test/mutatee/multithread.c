@@ -30,7 +30,7 @@ typedef void* (*func_t)();
 
 int main (int argc, char *argv[]) {
 	pthread_t t[10];
-  t1_func(0);
+  // t1_func(0);
   
   int i;
   for (i = 0; i < 10; i++) {

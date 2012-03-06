@@ -51,54 +51,67 @@ namespace sp {
   typedef std::vector<pe::CodeSource*> CodeSources;
 	typedef std::vector<sb::Symbol*> Symbols;
   typedef std::vector<ph::PatchObject*> PatchObjects;
-  typedef std::map<std::string, ph::PatchFunction*> RealFuncMap;
+  typedef std::map<std::string, SpFunction*> RealFuncMap;
+  typedef std::set<sp::SpFunction*> FuncSet;
   
-	class AGENT_EXPORT SpParser {
+	class  SpParser {
   public:
     typedef SHARED_PTR(SpParser) ptr;
+    AGENT_EXPORT static ptr Create();
 
     virtual ~SpParser();
-    static ptr Create();
 
 		// The main parsing procedure
-    virtual ph::PatchMgrPtr Parse();
+    AGENT_EXPORT virtual ph::PatchMgrPtr
+        Parse();
 
-    // Libraries to instrument
-    void SetLibrariesToInstrument(const StringSet& libs);
-    bool CanInstrument(string lib_full_path);
-    
-    ph::PatchObject* exe_obj() const {
+    // Control what to instrument, what not to
+    AGENT_EXPORT void
+        SetLibrariesToInstrument(const StringSet& libs);
+    AGENT_EXPORT bool
+        CanInstrumentLib(const string& lib_full_path);
+    AGENT_EXPORT void
+        SetFuncsNotToInstrument(const StringSet& funcs);
+    AGENT_EXPORT bool
+        CanInstrumentFunc(const string& func_full_name);
+
+    // Getters
+    AGENT_EXPORT SpObject* exe_obj() const {
       return exe_obj_;
     }
-    string agent_name() const {
+    AGENT_EXPORT string agent_name() const {
       return agent_name_;
     }
-
-		// Get register values to form a stack frame
-    void GetFrame(long* pc,
-                  long* sp,
-                  long* bp);
-
-    ph::PatchFunction* FindFunction(dt::Address absolute_addr);
-    ph::PatchFunction* FindFunction(string func_name_without_path,
-                                    dt::Address addr = 0);
-    SpFunction* callee(SpPoint* point,
-											 bool parse_indirect = false);
-    dt::Address GetFuncAddrFromName(string func_name_without_path);
-
-		// Dump instructions from a buffer
-    string DumpInsns(void* addr,
-                     size_t size);
+		AGENT_EXPORT ph::PatchMgrPtr mgr() const {
+      return mgr_;
+    }
 
 		// Check if this agent library is injected (true) or is
     // preloaded (false)
-    bool injected() const {
+    AGENT_EXPORT bool injected() const {
       return injected_;
     }
 
-		ph::PatchMgrPtr mgr() const {
-      return mgr_;
-    }
+		// Get register values to form a stack frame
+    AGENT_EXPORT void GetFrame(long* pc,
+                               long* sp,
+                               long* bp);
+
+    AGENT_EXPORT SpFunction*
+        FindFunction(dt::Address absolute_addr);
+    AGENT_EXPORT SpFunction*
+        FindFunction(string func_name_without_path,
+                     dt::Address addr = 0);
+    AGENT_EXPORT SpFunction*
+        callee(SpPoint* point,
+               bool parse_indirect = false);
+    AGENT_EXPORT dt::Address
+        GetFuncAddrFromName(string func_name_without_path);
+
+		// Dump instructions from a buffer
+    AGENT_EXPORT string
+        DumpInsns(void* addr,
+                  size_t size);
 
   protected:
 		// Is this agent library injected (true) or preloaded (false)?
@@ -109,13 +122,12 @@ namespace sp {
     CodeObjects code_objs_;
 
     ph::PatchMgrPtr mgr_;
-    ph::PatchObject* exe_obj_;
+    SpObject* exe_obj_;
     StringSet binaries_to_inst_;
+    StringSet funcs_not_to_inst_;
     RealFuncMap real_func_map_;
 
-		// Methods
     SpParser();
-
 
 		// All about parsing
 		sb::AddressLookup* GetRuntimeSymtabs(SymtabSet& symtabs);
@@ -135,6 +147,10 @@ namespace sp {
 
 		ph::PatchMgrPtr CreateMgr(PatchObjects& patch_objs);
 
+    bool GetFuncsByName(sp::SpObject* obj,
+                        std::string name,
+                        dt::Address addr,
+                        sp::FuncSet* func_set);
 	};
 
 }

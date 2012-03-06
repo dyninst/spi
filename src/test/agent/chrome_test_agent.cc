@@ -12,39 +12,29 @@ void test_entry(SpPoint* pt) {
 
   Lock(&g_lock);
 	PatchFunction* f = Callee(pt);
-  StringSet ss;
-  
-  if (!f) {
-    goto PAYLOAD_EXIT;
-  }
-
-  if (getenv("SP_SKIP")) {
-  ss.insert("new(");
-  ss.insert("delete(");
-  ss.insert("std::allocator");
-  ss.insert("std::");
-  ss.insert("__gnu_cxx::");
-  // ss.insert("CommandLine::InitFromArgv");
-  }
-
-  for (StringSet::iterator i = ss.begin(); i != ss.end(); i++) {
-    if (f->name().find(*i) != std::string::npos) {
-      // sp_print("In %s, skipped", f->name().c_str());
-      goto PAYLOAD_EXIT;
-    }
-  }
+  if (!f) return;
 
 	sp_print("%s, tid=%ld", f->name().c_str(), (long)GetThreadId());
   sp::Propel(pt);
-PAYLOAD_EXIT:
+
   Unlock(&g_lock);
-  return;
 }
 
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
   InitLock(&g_lock);
+
+  StringSet ss;
+  ss.insert("new(");
+  ss.insert("delete(");
+  ss.insert("std::allocator");
+  ss.insert("std::");
+  ss.insert("__gnu_cxx::");
+  ss.insert("CommandLine::InitFromArgv");
+  ss.insert("tc_");
+  
+  agent->SetFuncsNotToInstrument(ss);
   agent->SetInitEntry("test_entry");
   agent->Go();
 }
