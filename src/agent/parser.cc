@@ -29,13 +29,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <dirent.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-#include <dirent.h>
+#include <ucontext.h>
 #include <stack>
 
 #include "instructionAPI/h/BinaryFunction.h"
 #include "instructionAPI/h/Immediate.h"
+#include "instructionAPI/h/Register.h"
 #include "instructionAPI/h/Visitor.h"
 #include "patchAPI/h/PatchMgr.h"
 #include "symtabAPI/h/AddrLookup.h"
@@ -62,6 +64,7 @@ SpParser::SpParser()
     : injected_(false), exe_obj_(NULL) {
 
   binaries_to_inst_.insert(sp_filename(GetExeName().c_str()));
+  binaries_to_inst_.insert("libagent.so");
 }
 
 // Clean up memory buffers for ParseAPI stuffs
@@ -320,8 +323,12 @@ SpParser::DumpInsns(void* addr,
 // To calculate absolute address for indirect function call
 class SpVisitor : public in::Visitor {
  public:
-  SpVisitor(sp::SpPoint* pt)
-      : Visitor(), call_addr_(0), pt_(pt) { }
+  SpVisitor(sp::SpPoint* pt,
+            dt::Address seg_val)
+      : Visitor(),
+        call_addr_(0),
+        pt_(pt),
+        seg_val_(seg_val) { }
   virtual void visit(in::RegisterAST* r) {
     if (r->getID().isPC()) {
       call_addr_ = pt_->block()->end();
@@ -380,7 +387,7 @@ class SpVisitor : public in::Visitor {
     stack_.push(call_addr_);
   }
   virtual void visit(in::Dereference* d) {
-    dt::Address* addr = (dt::Address*)stack_.top();
+    dt::Address* addr = (dt::Address*)(stack_.top() + seg_val_);
     stack_.pop();
     sp_debug("SP_VISITOR - dereferencing %lx => ? ",
              (dt::Address)addr);
@@ -398,6 +405,7 @@ class SpVisitor : public in::Visitor {
   std::stack<dt::Address> stack_;
   dt::Address call_addr_;
   sp::SpPoint* pt_;
+  dt::Address seg_val_;
 };
 
 // TODO (wenbin): is it okay to cache indirect callee?
@@ -448,9 +456,25 @@ SpParser::callee(SpPoint* pt,
     in::Expression::Ptr trg = insn->getControlFlowTarget();
     dt::Address call_addr = 0;
     if (trg) {
-      SpVisitor visitor(pt);
+      std::set<in::RegisterAST::Ptr> regs;
+      insn->getReadSet(regs);
+      dt::Address segment_reg_val = 0;
+      for (std::set<in::RegisterAST::Ptr>::iterator j = regs.begin();
+           j != regs.end(); j++) {
+        if ((*j)->getID().name().find("::fs") != std::string::npos) {
+          ucontext_t context;
+          if (getcontext(&context) == 0) {
+            segment_reg_val = SpSnippet::GetFs(&context);
+            break;
+          }
+        }
+      } // For all read registers
+      sp_debug("FS: %lx", segment_reg_val);
+      
+      SpVisitor visitor(pt, segment_reg_val);
       trg->apply(&visitor);
       call_addr = visitor.call_addr();
+      
       sp_debug("GOT CALL_ADDR - %lx", call_addr);
       f = FindFunction(call_addr);
       if (f) {

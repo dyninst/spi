@@ -69,10 +69,11 @@ namespace sp {
     // instrumentation to their callees.
     AGENT_EXPORT void SetFuncsNotToInstrument(const StringSet& funcs);
 
-    AGENT_EXPORT void EnableParseOnly(bool yes_or_no);
-    AGENT_EXPORT void EnableDirectcallOnly(bool yes_or_no);
-    AGENT_EXPORT void EnableTrapOnly(bool yes_or_no);
-    AGENT_EXPORT void EnableIpc(bool yes_or_no);
+    AGENT_EXPORT void EnableParseOnly(const bool yes_or_no);
+    AGENT_EXPORT void EnableDirectcallOnly(const bool yes_or_no);
+    AGENT_EXPORT void EnableTrapOnly(const bool yes_or_no);
+    AGENT_EXPORT void EnableIpc(const bool yes_or_no);
+    AGENT_EXPORT void EnableMultithread(const bool yes_or_no);
 
     // Getters
     AGENT_EXPORT SpParser::ptr parser() const {
@@ -112,6 +113,9 @@ namespace sp {
     AGENT_EXPORT bool IsIpcEnabled() const {
       return allow_ipc_;
     }
+    AGENT_EXPORT bool IsMultithreadEnabled() const {
+      return allow_multithread_;
+    }
 
     AGENT_EXPORT SpContext* context() const {
       return context_;
@@ -134,7 +138,8 @@ namespace sp {
     bool directcall_only_;
     bool allow_ipc_;
     bool trap_only_;
-
+    bool allow_multithread_;
+        
     StringSet  libs_to_inst_;
     StringSet  funcs_not_to_inst_;
 

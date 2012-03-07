@@ -87,6 +87,7 @@ namespace sp {
 
     // Find and return a spring block; if not found, return NULL
     static dt::Address get_pre_signal_pc(void* context);
+    static dt::Address GetFs(void* context);
     static dt::Address set_pc(dt::Address pc, void* context);
     static size_t jump_abs_size();
 

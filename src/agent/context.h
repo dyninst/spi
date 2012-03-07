@@ -86,6 +86,9 @@ class SpContext {
     bool IsIpcEnabled() const {
       return allow_ipc_;
     }
+    bool IsMultithreadEnabled() const {
+      return allow_multithread_;
+    }
 
     void GetCallStack(FuncSet* func_set);
 
@@ -105,6 +108,7 @@ class SpContext {
     SpPropeller::ptr init_propeller_;
 
     bool allow_ipc_;
+    bool allow_multithread_;
     bool directcall_only_;
 
     SpContext();
@@ -117,6 +121,10 @@ class SpContext {
 
     void EnableIpc(bool b) {
       allow_ipc_ = b;
+    }
+
+    void EnableMultithread(bool b) {
+      allow_multithread_ = b;
     }
 
     void SetInitEntryName(std::string name) {

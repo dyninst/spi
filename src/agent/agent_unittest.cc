@@ -37,6 +37,7 @@ TEST_F(AgentTest, default_setting) {
   EXPECT_FALSE(agent->IsDirectcallOnlyEnabled());
   EXPECT_FALSE(agent->IsTrapOnlyEnabled());
   EXPECT_FALSE(agent->IsIpcEnabled());
+  EXPECT_FALSE(agent->IsMultithreadEnabled());
 }
 
 TEST_F(AgentTest, customized_setting) {
@@ -66,6 +67,7 @@ TEST_F(AgentTest, customized_setting) {
   agent->EnableDirectcallOnly(true);
   agent->EnableTrapOnly(true);
   agent->EnableIpc(true);
+  agent->EnableMultithread(true);
 
   sp::StringSet libs_to_inst;
   libs_to_inst.insert("libtest1.so");
@@ -89,6 +91,7 @@ TEST_F(AgentTest, customized_setting) {
   EXPECT_TRUE(agent->IsDirectcallOnlyEnabled());
   EXPECT_TRUE(agent->IsTrapOnlyEnabled());
   EXPECT_TRUE(agent->IsIpcEnabled());
+  EXPECT_FALSE(agent->IsMultithreadEnabled());
 
   EXPECT_TRUE(parser->CanInstrumentLib("libtest1.so"));
   EXPECT_FALSE(parser->CanInstrumentLib("libtest2.so"));

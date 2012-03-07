@@ -104,13 +104,11 @@ namespace sp {
 		// 0 is returned.
     char start_tracing(int fd);
 
-		// Payload functions wrappers, which will be called before user-specified
-		// entry-payload function.
-    static bool before_entry(SpPoint*);
+		// Will be called before user-specified entry-payload function.
+    static bool BeforeEntry(SpPoint*);
 
-		// Payload functions wrappers, which will be called before user-specified
-		// exit-payload function.
-    static bool before_exit(SpPoint*);
+		// Will be called before user-specified exit-payload function.
+    static bool BeforeExit(SpPoint*);
 
 		// Get workers
     SpPipeWorker* pipe_worker() const { return pipe_worker_; }

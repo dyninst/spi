@@ -245,10 +245,9 @@ namespace sp {
     }
   }
 
-  // Payload functions wrappers, which will be called before user-specified
-  // entry-payload function.
+  // Will be called before user-specified entry-payload function.
   bool
-  SpIpcMgr::before_entry(SpPoint* pt) {
+  SpIpcMgr::BeforeEntry(SpPoint* pt) {
     ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 
@@ -296,10 +295,9 @@ namespace sp {
     return true;
   }
 
-  // Payload functions wrappers, which will be called before user-specified
-  // exit-payload function.
+  // Will be called before user-specified exit-payload function.
   bool
-  SpIpcMgr::before_exit(SpPoint* pt) {
+  SpIpcMgr::BeforeExit(SpPoint* pt) {
     ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 

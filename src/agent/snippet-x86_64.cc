@@ -1022,4 +1022,15 @@ namespace sp {
     saved_reg_map_[d64::r15b] = R15;
   }
 
+  dt::Address
+  SpSnippet::GetFs(void* context) {
+		assert(context);
+    ucontext_t* ctx = ((ucontext_t*)context);
+    assert(ctx);
+    // REG_CSGSFS
+    int index = REG_CSGSFS;
+    sp_debug("REG_CSGSFS=%lx", ctx->uc_mcontext.gregs[index]);
+    return ((ctx->uc_mcontext.gregs[index] >> 32) & 0xffff);
+  }
+
 }

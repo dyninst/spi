@@ -56,6 +56,7 @@ namespace sp {
       parser_(SpParser::ptr()),
       init_propeller_(SpPropeller::ptr()),
       allow_ipc_(false),
+      allow_multithread_(false),
       directcall_only_(false) {
 
   }

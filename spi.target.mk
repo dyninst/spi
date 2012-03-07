@@ -125,6 +125,7 @@ AG_SRCS    += $(AG_DIR)/agent.cc \
               $(AG_DIR)/patchapi/maker.cc \
               $(AG_DIR)/patchapi/point.cc \
               $(AG_DIR)/snippet.cc \
+              $(AG_DIR)/thread_mgr.cc \
 
 AG_OBJS  = $(addprefix $(OBJS_DIR)/, $(notdir $(AG_SRCS:%.cc=%.o)))
 

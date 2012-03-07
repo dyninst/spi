@@ -137,7 +137,8 @@ namespace sp {
     long called_func = (long)entry_;
     sp_debug("PAYLOAD ENTRY - at %lx", called_func);
 		assert(g_context);
-    if (g_context->IsIpcEnabled()) {
+    if (g_context->IsIpcEnabled() ||
+        g_context->IsMultithreadEnabled()) {
       param_func = (long)entry_;
       called_func = (long)g_context->wrapper_entry();
     }

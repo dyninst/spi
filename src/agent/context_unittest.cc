@@ -35,6 +35,7 @@ TEST_F(ContextTest, default_setting) {
   EXPECT_TRUE(agent->context()->init_propeller() == agent->init_propeller());
   EXPECT_FALSE(agent->context()->IsDirectcallOnlyEnabled());
   EXPECT_FALSE(agent->context()->IsIpcEnabled());
+  EXPECT_FALSE(agent->context()->IsMultithreadEnabled());
   EXPECT_TRUE(agent->context()->init_entry_name().size() > 0);
   EXPECT_TRUE(agent->context()->init_exit_name().size() == 0);
 }
@@ -59,6 +60,7 @@ TEST_F(ContextTest, customized_setting) {
 
   agent->EnableDirectcallOnly(true);
   agent->EnableIpc(true);
+  agent->EnableMultithread(true);
 
   agent->Go();
 
@@ -70,6 +72,7 @@ TEST_F(ContextTest, customized_setting) {
   EXPECT_TRUE(agent->context()->init_propeller() == propeller);
   EXPECT_TRUE(agent->context()->IsDirectcallOnlyEnabled());
   EXPECT_TRUE(agent->context()->IsIpcEnabled());
+  EXPECT_TRUE(agent->context()->IsMultithreadEnabled());
   EXPECT_TRUE(agent->context()->init_entry_name().size() > 0);
   EXPECT_TRUE(agent->context()->init_exit_name().size() > 0);
 

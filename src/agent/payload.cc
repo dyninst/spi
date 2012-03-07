@@ -33,20 +33,41 @@
 #include "agent/patchapi/cfg.h"
 #include "agent/patchapi/point.h"
 #include "agent/payload.h"
+#include "agent/thread_mgr.h"
 #include "common/utils.h"
 
+namespace sp {
+extern SpContext* g_context;
+extern SpParser::ptr g_parser;
+}
 
 // The two wrappers are used only in IPC mode
 void
-wrapper_entry(sp::SpPoint* pt, sp::PayloadFunc_t entry) {
-  if (!sp::SpIpcMgr::before_entry(pt)) return;
+wrapper_entry(sp::SpPoint* pt,
+              sp::PayloadFunc_t entry) {
+  assert(sp::g_context);
+
+  // Handle IPC stuffs
+  if (sp::g_context->IsIpcEnabled()) {
+    if (!sp::SpIpcMgr::BeforeEntry(pt)) {
+      return;
+    }
+  }
+
+  // Handle multihread stuffs
+  if (sp::g_context->IsMultithreadEnabled()) {
+    if (!sp::SpThreadMgr::BeforeEntry(pt)) {
+      return;
+    }
+  }
   entry(pt);
 }
 
 
 void
-wrapper_exit(sp::SpPoint* pt, sp::PayloadFunc_t exit) {
-  if (!sp::SpIpcMgr::before_exit(pt)) return;
+wrapper_exit(sp::SpPoint* pt,
+             sp::PayloadFunc_t exit) {
+  if (!sp::SpIpcMgr::BeforeExit(pt)) return;
   exit(pt);
 }
 
@@ -72,27 +93,11 @@ default_exit(sp::SpPoint* pt) {
   sp_print("Leave %s", callee_name.c_str());
 }
 
-// Wrappers for locking
-#define SP_LOCK(func) do {                              \
-    int result = Lock(&g_propel_lock);                  \
-    if (result == SP_DEAD_LOCK) {                       \
-      sp_print("DEAD LOCK - skip #func for point %lx",  \
-               pt->block()->last());                    \
-      goto func##_EXIT;                                 \
-    }                                                   \
-  } while (0)
-
-#define SP_UNLOCK(func) do {                    \
- func##_EXIT:                                   \
-    Unlock(&g_propel_lock);                     \
-  } while (0)
 
 // Utilities that payload writers can use in their payload functions
 
 namespace sp {
 
-extern SpContext* g_context;
-extern SpParser::ptr g_parser;
 
 SpLock g_propel_lock;
 

@@ -72,6 +72,7 @@ namespace sp {
     context_ = NULL;
     
 		allow_ipc_ = false;
+		allow_multithread_ = false;
 		trap_only_ = false;
 		parse_only_ = false;
 		directcall_only_ = false;
@@ -112,22 +113,27 @@ namespace sp {
 	}
 
 	void
-	SpAgent::EnableParseOnly(bool b) {
+	SpAgent::EnableParseOnly(const bool b) {
 		parse_only_ = b;
 	}
 
 	void
-	SpAgent::EnableDirectcallOnly(bool b) {
+	SpAgent::EnableDirectcallOnly(const bool b) {
 		directcall_only_ = b;
 	}
 
 	void
-	SpAgent::EnableIpc(bool b) {
+	SpAgent::EnableIpc(const bool b) {
 		allow_ipc_ = b;
 	}
 
 	void
-	SpAgent::EnableTrapOnly(bool b) {
+	SpAgent::EnableMultithread(const bool b) {
+		allow_multithread_ = b;
+	}
+
+	void
+	SpAgent::EnableTrapOnly(const bool b) {
 		trap_only_ = b;
 	}
 
@@ -259,9 +265,12 @@ namespace sp {
     }
 		g_context->EnableDirectcallOnly(directcall_only_);
 		g_context->EnableIpc(allow_ipc_);
+		g_context->EnableMultithread(allow_multithread_);
     if (allow_ipc_) {
       // SpIpcMgr will be deleted in the destructor of SpContext
       g_context->SetIpcMgr(new SpIpcMgr());
+    }
+    if (allow_ipc_ || allow_multithread_) {
       void* wrapper_entry =
           (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
       assert(wrapper_entry);
@@ -271,7 +280,6 @@ namespace sp {
       assert(wrapper_exit);
 			g_context->SetWrapperExit(wrapper_exit);
     }
-    
 		// Register Events
 		init_event_->RegisterEvent();
 		fini_event_->RegisterEvent();

@@ -35,6 +35,21 @@
 #include "agent/patchapi/cfg.h"
 #include "common/common.h"
 
+// Wrappers for locking
+#define SP_LOCK(func) do {                              \
+    int result = Lock(&g_propel_lock);                  \
+    if (result == SP_DEAD_LOCK) {                       \
+      sp_print("DEAD LOCK - skip #func for point %lx",  \
+               pt->block()->last());                    \
+      goto func##_EXIT;                                 \
+    }                                                   \
+  } while (0)
+
+#define SP_UNLOCK(func) do {                    \
+ func##_EXIT:                                   \
+    Unlock(&g_propel_lock);                     \
+  } while (0)
+
 namespace sp {
   class SpContext;
   class SpPoint;

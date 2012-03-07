@@ -22,6 +22,9 @@ void MyAgent() {
   libs_to_inst.insert("libtest1.so");
   libs_to_inst.insert("libpthread");
   agent->SetLibrariesToInstrument(libs_to_inst);
+  if (getenv("SP_MT")) {
+    agent->EnableMultithread(true);
+  }
   agent->SetInitEntry("test_entry");
   agent->Go();
 }
