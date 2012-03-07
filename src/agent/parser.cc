@@ -456,9 +456,10 @@ SpParser::callee(SpPoint* pt,
     in::Expression::Ptr trg = insn->getControlFlowTarget();
     dt::Address call_addr = 0;
     if (trg) {
+      dt::Address segment_reg_val = 0;
+      /*
       std::set<in::RegisterAST::Ptr> regs;
       insn->getReadSet(regs);
-      dt::Address segment_reg_val = 0;
       for (std::set<in::RegisterAST::Ptr>::iterator j = regs.begin();
            j != regs.end(); j++) {
         if ((*j)->getID().name().find("::fs") != std::string::npos) {
@@ -470,7 +471,7 @@ SpParser::callee(SpPoint* pt,
         }
       } // For all read registers
       sp_debug("FS: %lx", segment_reg_val);
-      
+*/      
       SpVisitor visitor(pt, segment_reg_val);
       trg->apply(&visitor);
       call_addr = visitor.call_addr();

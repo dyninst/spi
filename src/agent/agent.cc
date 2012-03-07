@@ -271,6 +271,7 @@ namespace sp {
       g_context->SetIpcMgr(new SpIpcMgr());
     }
     if (allow_ipc_ || allow_multithread_) {
+      sp_debug("ALLOW IPC OR MULTITHREADED");
       void* wrapper_entry =
           (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
       assert(wrapper_entry);

@@ -41,7 +41,7 @@ extern SpContext* g_context;
 extern SpParser* g_parser;
 extern SpLock g_propel_lock;
 
-typedef int (*CloneCallback)(void*);
+typedef int (*ThreadFunc)(void*);
 
 bool
 SpThreadMgr::BeforeEntry(SpPoint* pt) {
@@ -58,26 +58,30 @@ SpThreadMgr::BeforeEntry(SpPoint* pt) {
     return false;
   }
 
-  if (func->name().compare("__clone") == 0) {
+  if (func->name().compare("pthread_create") == 0) {
     ArgumentHandle handle;
-    CloneCallback* callback =
-        (CloneCallback*)pt->snip()->PopArgument(&handle,
-                                                sizeof(CloneCallback));
-    SpFunction* callback_func =
-        g_parser->FindFunction((dt::Address)*callback);
-    if (!callback_func) {
+    pt->snip()->PopArgument(&handle, sizeof(void*));
+    pt->snip()->PopArgument(&handle, sizeof(void*));
+    ThreadFunc* thread_func =
+        (ThreadFunc*)pt->snip()->PopArgument(&handle,
+                                             sizeof(ThreadFunc));
+    SpFunction* tfunc =
+        g_parser->FindFunction((dt::Address)*thread_func);
+    if (!tfunc) {
       goto THREADMGR_BEFOREENTRY_EXIT;
       return false;
     }
-    sp_print("GOT CALLBACK - %s at %lx", callback_func->name().c_str(),
-             (long)*callback);
+    sp_debug("GOT CALLBACK - %s at %lx", tfunc->name().c_str(),
+             (long)*thread_func);
 
     sp::SpPropeller::ptr p =   p = g_context->init_propeller();
-    p->go(callback_func,
+    assert(p);
+    sp_debug("GET PROPELLER");
+    p->go(tfunc,
           g_context->init_entry(),
           g_context->init_exit(),
           NULL);
-    callback_func->SetPropagated(true);
+    tfunc->SetPropagated(true);
   }
   SP_UNLOCK(THREADMGR_BEFOREENTRY);
   return true;
