@@ -43,7 +43,7 @@ namespace sp {
 
   // Global variables
   extern SpContext* g_context;
-	extern SpParser::ptr g_parser;
+  extern SpParser::ptr g_parser;
 
   // Get channel from fd
   // If channel doesn't exist, construct one

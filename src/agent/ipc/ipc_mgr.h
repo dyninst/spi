@@ -41,17 +41,17 @@
 
 namespace sp {
 
-	// Forword declarations
-	class SpPoint;
-	class SpIpcWorker;
-	class SpPipeWorker;
-	class SpUdpWorker;
-	class SpTcpWorker;
+  // Forword declarations
+  class SpPoint;
+  class SpIpcWorker;
+  class SpPipeWorker;
+  class SpUdpWorker;
+  class SpTcpWorker;
 
 
   // IPC Manager, which is an all-in-one manager for inter-process support.
 
-	class SpIpcMgr {
+  class SpIpcMgr {
   public:
     SpIpcMgr();
     ~SpIpcMgr();
@@ -62,17 +62,17 @@ namespace sp {
     SpChannel* get_channel(int fd,
                            ChannelRW rw);
 
-		// Get a worker according to the file descriptor.
-		// Return the worker if the file descriptor is for supported IPC;
+    // Get a worker according to the file descriptor.
+    // Return the worker if the file descriptor is for supported IPC;
     // otherwise, return NULL.
     SpIpcWorkerDelegate* get_worker(int fd);
 
-		// Get parameters from "write" functions.
-		// Input Param : pt -- the call point from which we get the function
-		// Output Param: fd_out -- file descriptor, if it is NULL, then skip it
-		// Output Param: buf_out -- the buffer to write, if NULL, then skip it
-		// Output Param: c_out -- the character to write, if NULL, then skip it
-		// Output Param: size_out -- the size of the buffer, if NULL, then skip it
+    // Get parameters from "write" functions.
+    // Input Param : pt -- the call point from which we get the function
+    // Output Param: fd_out -- file descriptor, if it is NULL, then skip it
+    // Output Param: buf_out -- the buffer to write, if NULL, then skip it
+    // Output Param: c_out -- the character to write, if NULL, then skip it
+    // Output Param: size_out -- the size of the buffer, if NULL, then skip it
     // Output Param: sa -- sockaddr for connect(), if NULL, then skip it
     void get_write_param(SpPoint* pt,
                          int* fd_out,
@@ -81,36 +81,36 @@ namespace sp {
                          size_t* size_out,
                          sockaddr** sa_out);
 
-		// Get parameters from "read" functions.
-		// Input Param : pt -- the call point from which we get the function
-		// Output Param: fd_out -- file descriptor, if it is NULL, then skip it
-		// Output Param: buf_out -- the buffer to write, if NULL, then skip it
-		// Output Param: size_out -- the size of the buffer, if NULL, then skip it
+    // Get parameters from "read" functions.
+    // Input Param : pt -- the call point from which we get the function
+    // Output Param: fd_out -- file descriptor, if it is NULL, then skip it
+    // Output Param: buf_out -- the buffer to write, if NULL, then skip it
+    // Output Param: size_out -- the size of the buffer, if NULL, then skip it
     void get_read_param(SpPoint* pt,
                         int* fd_out,
                         void** buf_out,
                         size_t* size_out);
 
 
-		// See if the function is a fork
+    // See if the function is a fork
     bool is_fork(const char* f);
 
-		// See if the function is a popen
+    // See if the function is a popen
     bool is_popen(const char* f);
 
-		// See if current process is allowed to execute the payload code
-		// This is used in the user-defined payload function.
-		// Return 1 if it is allowed to execute payload code (for tracing); otherwise,
-		// 0 is returned.
+    // See if current process is allowed to execute the payload code
+    // This is used in the user-defined payload function.
+    // Return 1 if it is allowed to execute payload code (for tracing); otherwise,
+    // 0 is returned.
     char start_tracing(int fd);
 
-		// Will be called before user-specified entry-payload function.
+    // Will be called before user-specified entry-payload function.
     static bool BeforeEntry(SpPoint*);
 
-		// Will be called before user-specified exit-payload function.
+    // Will be called before user-specified exit-payload function.
     static bool BeforeExit(SpPoint*);
 
-		// Get workers
+    // Get workers
     SpPipeWorker* pipe_worker() const { return pipe_worker_; }
     SpTcpWorker* tcp_worker() const { return tcp_worker_; }
     SpUdpWorker* udp_worker() const { return udp_worker_; }
@@ -122,10 +122,10 @@ namespace sp {
     SpTcpWorker* tcp_worker_;
     SpUdpWorker* udp_worker_;
 
-		// For the ease of iterating all workers
+    // For the ease of iterating all workers
     typedef std::set<SpIpcWorkerDelegate*> WorkerSet;
     WorkerSet worker_set_;
-	};
+  };
 
 
 }

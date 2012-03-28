@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void foo() {
+  printf("default\n");
+}
+
 void foo1() {
 	printf("foo1?\n");
 }
@@ -15,6 +19,7 @@ void* t1_func(void* id) {
 	switch (tid) {
 	case 1:	foo1(); break;
 	case 2:	foo2(); break;
+  default: foo(); break;
 	}
 }
 
@@ -23,20 +28,30 @@ void* t2_func(void* id) {
 	switch (tid) {
 		case 1: foo1(); break;
     case 2: foo2(); break;
+    default: foo(); break;
 	}
 }
 
 typedef void* (*func_t)();
 
 int main (int argc, char *argv[]) {
-	pthread_t t[10];
-  // t1_func(0);
+  /*
+  pthread_t t[2];
+  pthread_create(&t[0], NULL, t1_func, (void*)1);
+  pthread_create(&t[1], NULL, t1_func, (void*)2);
+  pthread_join(t[0], NULL);
+  pthread_join(t[1], NULL);
+  */
   
-  int i;
+	pthread_t t[20];
+  
+  long i;
   for (i = 0; i < 10; i++) {
     pthread_create(&t[i], NULL, t1_func, (void*)i);
+    pthread_create(&t[10+i], NULL, t2_func, (void*)i);
   }
   for (i = 0; i < 10; i++) {
     pthread_join(t[i], NULL);
+    pthread_join(t[10+i], NULL);
   }
 }   

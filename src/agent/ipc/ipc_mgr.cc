@@ -46,7 +46,7 @@ namespace sp {
 
   // Global variables
   extern SpContext* g_context;
-	extern SpParser::ptr g_parser;
+  extern SpParser::ptr g_parser;
 
   // Instantiate workers for different IPC mechanisms.
   SpIpcMgr::SpIpcMgr() {

@@ -40,13 +40,13 @@
 
 namespace sp {
 
-	class SpFunction;
+  class SpFunction;
 
 
-	class SpSnippet {
-		friend class SpInstrumenter;
-		friend class RelocCallBlockWorker;
-		friend class SpringboardWorker;
+  class SpSnippet {
+    friend class SpInstrumenter;
+    friend class RelocCallBlockWorker;
+    friend class SpringboardWorker;
   public:
     typedef SHARED_PTR(SpSnippet) ptr;
     static ptr create(SpFunction* f,
@@ -58,11 +58,11 @@ namespace sp {
     SpSnippet(SpFunction* f,
               SpPoint* pt,
               PayloadFunc entry,
-							PayloadFunc exit);
+              PayloadFunc exit);
     ~SpSnippet();
 
     // Return the pointer to blob, but blob is empty
-		// If estimate_size is non-zero, we (re)allocate blob
+    // If estimate_size is non-zero, we (re)allocate blob
     dt::Address GetBlob(const size_t estimate_size = 0);
 
     // Return the pointer to blob, and fill the blob
@@ -110,14 +110,14 @@ namespace sp {
     // Handle saved registers
     typedef std::map<dt::MachRegister, int> SavedRegMap;
     SavedRegMap saved_reg_map_;
-    
+
     void InitSavedRegMap();
-    
+
     inline dt::Address
     RegVal(long offset) {
       return *(long*)(saved_context_loc_ + offset);
     }
-    
+
     bool
     GetRegInternal(dt::MachRegister reg,
                    dt::Address* out);
@@ -141,7 +141,7 @@ namespace sp {
                       dt::Address last,
                       char* buf);
 
-	};
+  };
 
 }
 

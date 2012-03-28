@@ -5,6 +5,7 @@ General:
 - [ ] findFunction(name, orig_addr, ...)
 - [ ] well test findFunction
 - [ ] well test memory allocator
+- [ ] Use gstack to get function call stack
 
 Agent:
 - [ ] uninstrument / unload agent.so

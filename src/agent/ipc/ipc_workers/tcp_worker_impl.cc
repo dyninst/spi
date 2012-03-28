@@ -39,7 +39,7 @@ namespace sp {
 
   // Global variables
   extern SpContext* g_context;
-	extern SpParser::ptr g_parser;
+  extern SpParser::ptr g_parser;
 
   SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
     // sp_debug("TCP WORKER - created for pid=%d", getpid());

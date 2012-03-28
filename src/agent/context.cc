@@ -73,6 +73,7 @@ namespace sp {
   // requirements:
   //  1. it should be resovled by the parser.
   //  2. it should not be from some well known system libraries
+  // TODO (wenbin): use gstack to avoid the stackwalker bug on 32-bit x86
   void
   SpContext::GetCallStack(FuncSet* call_stack) {
     long pc, sp, bp;

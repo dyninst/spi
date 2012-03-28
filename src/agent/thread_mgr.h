@@ -39,7 +39,7 @@
 
 namespace sp {
   class SpPoint;
-  
+
   class SpThreadMgr {
     public:
       static bool BeforeEntry(SpPoint*);

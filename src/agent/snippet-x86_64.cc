@@ -48,8 +48,8 @@
 
 namespace sp {
 
-	extern SpContext* g_context;
-	extern SpParser::ptr g_parser;
+  extern SpContext* g_context;
+  extern SpParser::ptr g_parser;
 
 
   // Code Generation stuffs
@@ -57,14 +57,14 @@ namespace sp {
   // Save context before calling payload
   size_t
   SpSnippet::emit_save(char* buf,
-											 size_t offset) {
-		assert(buf);
+                       size_t offset) {
+    assert(buf);
     char* p = buf + offset;
 
-		bool indirect = false;
-		if (!func_) {
-			indirect = true;
-		}
+    bool indirect = false;
+    if (!func_) {
+      indirect = true;
+    }
 
     // Saved for direct/indirect call
     *p++ = 0x57; // push rdi
@@ -105,14 +105,14 @@ namespace sp {
   // Restore context after calling payload
   size_t
   SpSnippet::emit_restore(char* buf,
-													size_t offset) {
-		assert(buf);
+                          size_t offset) {
+    assert(buf);
     char* p = buf + offset;
 
-		bool indirect = false;
-		if (!func_) {
-			indirect = true;
-		}
+    bool indirect = false;
+    if (!func_) {
+      indirect = true;
+    }
 
     // Restored for indirect call
     if (indirect) {
@@ -151,8 +151,8 @@ namespace sp {
   // 2. Get argument of callees in payload function
   size_t
   SpSnippet::emit_save_sp(char* buf,
-													size_t offset) {
-		assert(buf);
+                          size_t offset) {
+    assert(buf);
     char* p = buf + offset;
 
     // mov loc, %rax
@@ -174,8 +174,8 @@ namespace sp {
   // For debugging, cause segment fault
   size_t
   SpSnippet::emit_fault(char* buf,
-												size_t offset) {
-		assert(buf);
+                        size_t offset) {
+    assert(buf);
     char* p = buf + offset;
 
     // mov $0, 0
@@ -197,9 +197,9 @@ namespace sp {
   // Move imm64 to %rdi
   static size_t
   emit_mov_imm64_rdi(long imm,
-										 char* buf,
-										 size_t offset) {
-		assert(buf);
+                     char* buf,
+                     size_t offset) {
+    assert(buf);
     char* p = buf + offset;
     // mov imm, %rdi
     *p = (char)0x48; p++;
@@ -211,9 +211,9 @@ namespace sp {
   // Move imm64 to %rsi
   static size_t
   emit_mov_imm64_rsi(long imm,
-										 char* buf,
-										 size_t offset) {
-		assert(buf);
+                     char* buf,
+                     size_t offset) {
+    assert(buf);
     char* p = buf + offset;
     // mov imm, %rsi
     *p = (char)0x48; p++;
@@ -227,10 +227,10 @@ namespace sp {
   // If payload == 0, then we are dealing with single-process only
   size_t
   SpSnippet::emit_pass_param(long point,
-														 long payload,
-														 char* buf,
+                             long payload,
+                             char* buf,
                              size_t offset) {
-		assert(buf);
+    assert(buf);
     char* p = buf + offset;
     size_t insnsize = 0;
 
@@ -250,9 +250,9 @@ namespace sp {
   // Emulate to push an imm64 in stack
   static size_t
   emit_push_imm64(long imm,
-									char* buf,
-									size_t offset) {
-		assert(buf);
+                  char* buf,
+                  size_t offset) {
+    assert(buf);
     char* p = buf + offset;
 
     // push imm16
@@ -263,7 +263,7 @@ namespace sp {
     for (int i = 3; i >= 0; i--) {
       short word =
           static_cast<unsigned short>((imm >> (16 * i)) & 0xffff);
-      
+
       *p++ = 0x66; // operand size override
       *p++ = 0x68; // push immediate (16-bits b/c of prefix)
       *(short *)p = word;
@@ -276,10 +276,10 @@ namespace sp {
   // Assumption: for 5-byte relative call instruction only
   size_t
   SpSnippet::emit_call_abs(long callee,
-													 char* buf,
-													 size_t offset,
-													 bool) {
-		assert(buf);
+                           char* buf,
+                           size_t offset,
+                           bool) {
+    assert(buf);
     char* p = buf + offset;
 
     // Case 1: we are lucky to use relative call instruction.
@@ -326,10 +326,10 @@ namespace sp {
   // Jump to target address `trg`.
   size_t
   SpSnippet::emit_jump_abs(long trg,
-													 char* buf,
-													 size_t offset,
-													 bool abs) {
-		assert(buf);
+                           char* buf,
+                           size_t offset,
+                           bool abs) {
+    assert(buf);
     char* p = buf + offset;
     size_t insnsize = 0;
 
@@ -363,7 +363,7 @@ namespace sp {
   // Used in trap handler to decide the pc value right at the call
   dt::Address
   SpSnippet::get_pre_signal_pc(void* context) {
-		assert(context);
+    assert(context);
     ucontext_t* ctx = (ucontext_t*)context;
     return ctx->uc_mcontext.gregs[REG_RIP];
   }
@@ -371,7 +371,7 @@ namespace sp {
   // Used in trap handler to jump to snippet
   dt::Address
   SpSnippet::set_pc(dt::Address pc, void* context) {
-		assert(context);
+    assert(context);
     ucontext_t* ctx = (ucontext_t*)context;
     ctx->uc_mcontext.gregs[REG_RIP] = pc;
     return pc;
@@ -432,10 +432,10 @@ namespace sp {
   class RelocVisitor : public in::Visitor {
   public:
     RelocVisitor(SpParser::ptr p)
-			: in::Visitor(), p_(p), use_pc_(false) {}
+      : in::Visitor(), p_(p), use_pc_(false) {}
     virtual void visit(in::RegisterAST* r) {
       // sp_debug("USE REG");
-			assert(r);
+      assert(r);
       if (r->getID().isPC()) {
         use_pc_ = true;
       }
@@ -483,8 +483,8 @@ namespace sp {
   // Get the displacement in an instruction
   static int*
   get_disp(in::Instruction::Ptr insn, char* insn_buf) {
-		assert(insn);
-		assert(insn_buf);
+    assert(insn);
+    assert(insn_buf);
     int* disp = NULL;
 
     int disp_offset = 0;
@@ -514,16 +514,16 @@ namespace sp {
     EmuVisitor(dt::Address a)
       : Visitor(), imm_(0), a_(a) { }
     virtual void visit(in::RegisterAST* r) {
-			assert(r);
+      assert(r);
       // value in RIP is a_
-			if (r->getID().isPC()) {
-				imm_ = a_;
-				stack_.push(imm_);
-				sp_debug("EMU VISITOR - pc %lx", a_);
-			}
+      if (r->getID().isPC()) {
+        imm_ = a_;
+        stack_.push(imm_);
+        sp_debug("EMU VISITOR - pc %lx", a_);
+      }
     }
     virtual void visit(in::BinaryFunction* b) {
-			assert(b);
+      assert(b);
       dt::Address i1 = stack_.top();
       stack_.pop();
       dt::Address i2 = stack_.top();
@@ -531,18 +531,18 @@ namespace sp {
 
       if (b->isAdd()) {
         imm_ = i1 + i2;
-				sp_debug("EMU VISITOR - %lx + %lx = %lx", i1, i2, imm_);
+        sp_debug("EMU VISITOR - %lx + %lx = %lx", i1, i2, imm_);
       } else if (b->isMultiply()) {
         imm_ = i1 * i2;
-				sp_debug("EMU VISITOR - %lx * %lx = %lx", i1, i2, imm_);
+        sp_debug("EMU VISITOR - %lx * %lx = %lx", i1, i2, imm_);
       } else {
         assert(0);
       }
       stack_.push(imm_);
     }
     virtual void visit(in::Immediate* i) {
-			assert(i);
-			in::Result res = i->eval();
+      assert(i);
+      in::Result res = i->eval();
       switch (res.size()) {
       case 1: {
         imm_ =res.val.u8val;
@@ -561,7 +561,7 @@ namespace sp {
         break;
       }
       }
-			sp_debug("EMU VISITOR - IMM %lx", imm_);
+      sp_debug("EMU VISITOR - IMM %lx", imm_);
       stack_.push(imm_);
     }
     virtual void visit(in::Dereference* d) {
@@ -596,14 +596,14 @@ namespace sp {
 
   static size_t
   emulate_pcsen(in::Instruction::Ptr insn,
-								in::Expression::Ptr e,
+                in::Expression::Ptr e,
                 dt::Address a,
-								char* buf) {
-		assert(insn);
-		assert(buf);
+                char* buf) {
+    assert(insn);
+    assert(buf);
     char* p = buf;
     char* insn_buf = (char*)insn->ptr();
-		assert(insn_buf);
+    assert(insn_buf);
 
     // Step 1: see if %r8 is used, so get register first
 
@@ -661,23 +661,23 @@ namespace sp {
     if ((char)insn_buf[1] == (char)0x8d) {
       int* dis = get_disp(insn, insn_buf);
 
-			sp_debug("LEA - orig-disp(%d), orig-insn-addr(%lx),"
-							 " orig-insn-size(%ld), abs-trg(%lx)",
-							 *dis, a, insn->size(), *dis+a+insn->size());
+      sp_debug("LEA - orig-disp(%d), orig-insn-addr(%lx),"
+               " orig-insn-size(%ld), abs-trg(%lx)",
+               *dis, a, insn->size(), *dis+a+insn->size());
 
       *l =*dis + a + insn->size();
     }
 
-		// Deal with non-lea instruction
-		else {
-			EmuVisitor visitor(a+insn->size());
-			e->apply(&visitor);
-			*l = visitor.imm();
+    // Deal with non-lea instruction
+    else {
+      EmuVisitor visitor(a+insn->size());
+      e->apply(&visitor);
+      *l = visitor.imm();
 
-			sp_debug("OTHER PC-INSN - orig-insn-size(%ld), abs-trg(%lx)",
-							 insn->size(), *l);
+      sp_debug("OTHER PC-INSN - orig-insn-size(%ld), abs-trg(%lx)",
+               insn->size(), *l);
 
-		}
+    }
     p += sizeof(*l);
 
     // Set rex
@@ -728,12 +728,12 @@ namespace sp {
 
   static size_t
   reloc_insn_internal(dt::Address a,
-											in::Instruction::Ptr insn,
+                      in::Instruction::Ptr insn,
                       std::set<in::Expression::Ptr>& exp,
                       bool use_pc,
-											char* p) {
-		assert(insn);
-		assert(p);
+                      char* p) {
+    assert(insn);
+    assert(p);
     if (use_pc) {
       // Deal with PC-sensitive instruction
       char insn_buf[20];
@@ -766,21 +766,21 @@ namespace sp {
 
   // Relocate an ordinary instruction
   //
-	// The rule: 
+  // The rule:
   // 1. We skip the last insn in the block, which would be a call
-	//    insn, and we'll do it later.
+  //    insn, and we'll do it later.
   // 2. For non-lea insn, we rely on memory read/write operands to
-	//    determine wheheter it is pc-relative insn
-	// 3. For lea insn, we use readSet/writeSet to determine if it is
+  //    determine wheheter it is pc-relative insn
+  // 3. For lea insn, we use readSet/writeSet to determine if it is
   //    a pc-relative insn
 
   size_t
   SpSnippet::reloc_insn(dt::Address src_insn,
-												in::Instruction::Ptr insn,
+                        in::Instruction::Ptr insn,
                         dt::Address last,
-												char* buf) {
-		assert(insn);
-		assert(buf);
+                        char* buf) {
+    assert(insn);
+    assert(buf);
     // We don't handle last instruction for now
     if (src_insn == last) {  return 0;  }
 
@@ -788,59 +788,59 @@ namespace sp {
     set<in::Expression::Ptr> opSet;
     bool use_pc = false;
 
-		// Non-lea
-		char* insn_buf = (char*)insn->ptr();
-		assert(insn_buf);
-		if ((char)insn_buf[1] != (char)0x8d) {
-			if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
-			else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
+    // Non-lea
+    char* insn_buf = (char*)insn->ptr();
+    assert(insn_buf);
+    if ((char)insn_buf[1] != (char)0x8d) {
+      if (insn->readsMemory()) insn->getMemoryReadOperands(opSet);
+      else if (insn->writesMemory()) insn->getMemoryWriteOperands(opSet);
 
-			for (set<in::Expression::Ptr>::iterator i = opSet.begin();
-					 i != opSet.end(); i++) {
-				RelocVisitor visitor(g_parser);
-				(*i)->apply(&visitor);
-				use_pc = visitor.use_pc();
-			}
-		}
-		// lea instruction
-		else {
-			set<in::RegisterAST::Ptr> pcExp;
+      for (set<in::Expression::Ptr>::iterator i = opSet.begin();
+           i != opSet.end(); i++) {
+        RelocVisitor visitor(g_parser);
+        (*i)->apply(&visitor);
+        use_pc = visitor.use_pc();
+      }
+    }
+    // lea instruction
+    else {
+      set<in::RegisterAST::Ptr> pcExp;
 
-			bool read_use_pc = false;
-			insn->getReadSet(pcExp);
-			for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
-					 i != pcExp.end(); i++) {
-				RelocVisitor visitor(g_parser);
-				(*i)->apply(&visitor);
-				read_use_pc = visitor.use_pc();
-				if (read_use_pc) {
-					opSet.insert(*i);
-					break;
-				}
-			}
+      bool read_use_pc = false;
+      insn->getReadSet(pcExp);
+      for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
+           i != pcExp.end(); i++) {
+        RelocVisitor visitor(g_parser);
+        (*i)->apply(&visitor);
+        read_use_pc = visitor.use_pc();
+        if (read_use_pc) {
+          opSet.insert(*i);
+          break;
+        }
+      }
 
-			bool write_use_pc = false;
-			insn->getWriteSet(pcExp);
-			for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
-					 i != pcExp.end(); i++) {
-				RelocVisitor visitor(g_parser);
-				(*i)->apply(&visitor);
-				write_use_pc = visitor.use_pc();
-				if (write_use_pc) {
-					opSet.insert(*i);
-					break;
-				}
-			}
+      bool write_use_pc = false;
+      insn->getWriteSet(pcExp);
+      for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
+           i != pcExp.end(); i++) {
+        RelocVisitor visitor(g_parser);
+        (*i)->apply(&visitor);
+        write_use_pc = visitor.use_pc();
+        if (write_use_pc) {
+          opSet.insert(*i);
+          break;
+        }
+      }
 
-			use_pc = (read_use_pc || write_use_pc);
-		}
+      use_pc = (read_use_pc || write_use_pc);
+    }
 
-		if (use_pc) {
-			assert(opSet.size() == 1);
-			sp_debug("USE_PC - at %lx", src_insn);
-		} else {
-			sp_debug("NOT_USE PC - at %lx", src_insn);
-		}
+    if (use_pc) {
+      assert(opSet.size() == 1);
+      sp_debug("USE_PC - at %lx", src_insn);
+    } else {
+      sp_debug("NOT_USE PC - at %lx", src_insn);
+    }
 
     // Here we go!
     return reloc_insn_internal(src_insn, insn, opSet, use_pc, buf);
@@ -858,43 +858,43 @@ namespace sp {
   // This is used in deadling with indirect call
   size_t
   SpSnippet::emit_call_orig(char* buf,
-														size_t offset) {
-		assert(buf);
+                            size_t offset) {
+    assert(buf);
     char* p = buf + offset;
-		SpBlock* b = point_->GetBlock();
-		assert(b);
-		long src = b->last();
+    SpBlock* b = point_->GetBlock();
+    assert(b);
+    long src = b->last();
 
-		in::Instruction::Ptr insn = b->orig_call_insn();
-		assert(insn);
+    in::Instruction::Ptr insn = b->orig_call_insn();
+    assert(insn);
     set<in::Expression::Ptr> opSet;
     bool use_pc = false;
 
     // Check whether the call instruction uses RIP
     RelocVisitor visitor(g_parser);
-		in::Expression::Ptr trg = insn->getControlFlowTarget();
+    in::Expression::Ptr trg = insn->getControlFlowTarget();
     if (trg) {
       trg->apply(&visitor);
       use_pc = visitor.use_pc();
       opSet.insert(trg);
     }
 
-		sp_debug("EMIT_CALL_ORIG - for call insn at %lx", src);
+    sp_debug("EMIT_CALL_ORIG - for call insn at %lx", src);
     sp_debug("BEFORE RELOC - %s",
-						 g_parser->DumpInsns((void*)insn->ptr(),
-															 insn->size()).c_str());
-		if (use_pc) sp_debug("PC-REL CALL");
-		size_t insn_size = reloc_insn_internal(src, insn, opSet, use_pc, p);
+             g_parser->DumpInsns((void*)insn->ptr(),
+                               insn->size()).c_str());
+    if (use_pc) sp_debug("PC-REL CALL");
+    size_t insn_size = reloc_insn_internal(src, insn, opSet, use_pc, p);
     sp_debug("AFTER RELOC %s", g_parser->DumpInsns((void*)p,
-																									 insn_size).c_str());
-		return insn_size;
+                                                   insn_size).c_str());
+    return insn_size;
   }
 
   // Get argument of a function call
   void*
   SpSnippet::PopArgument(ArgumentHandle* h,
                          size_t size) {
-		assert(h);
+    assert(h);
     using namespace Dyninst::x86_64;
     if (h->num < 6) {
       dt::Address a = 0;
@@ -1024,7 +1024,7 @@ namespace sp {
 
   dt::Address
   SpSnippet::GetFs(void* context) {
-		assert(context);
+    assert(context);
     ucontext_t* ctx = ((ucontext_t*)context);
     assert(ctx);
     // REG_CSGSFS

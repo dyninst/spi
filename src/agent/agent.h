@@ -120,7 +120,7 @@ namespace sp {
     AGENT_EXPORT SpContext* context() const {
       return context_;
     }
-    
+
 
     AGENT_EXPORT void Go();
 
@@ -130,7 +130,7 @@ namespace sp {
     SpParser::ptr     parser_;
     SpPropeller::ptr  init_propeller_;
     SpContext*        context_;
-    
+
     string init_entry_;
     string init_exit_;
 
@@ -139,7 +139,7 @@ namespace sp {
     bool allow_ipc_;
     bool trap_only_;
     bool allow_multithread_;
-        
+
     StringSet  libs_to_inst_;
     StringSet  funcs_not_to_inst_;
 

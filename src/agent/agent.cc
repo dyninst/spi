@@ -41,101 +41,101 @@
 
 namespace sp {
 
-	// The only definition of global variables
-	SpAddrSpace*  g_as = NULL;
+  // The only definition of global variables
+  SpAddrSpace*  g_as = NULL;
   SpContext*    g_context = NULL;
-	SpParser::ptr g_parser;
+  SpParser::ptr g_parser;
 
   extern SpLock g_propel_lock;
 
   // Constructor for SpAgent
-	SpAgent::ptr
-	SpAgent::Create() {
+  SpAgent::ptr
+  SpAgent::Create() {
 
-		// Enable core dump.
-		if (getenv("SP_COREDUMP")) {
-			struct rlimit core_limit;
-			core_limit.rlim_cur = RLIM_INFINITY;
-			core_limit.rlim_max = RLIM_INFINITY;
-			if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
-				sp_perror("ERROR: failed to setup core dump ability\n");
-			}
-		}
-		return ptr(new SpAgent());
-	}
+    // Enable core dump.
+    if (getenv("SP_COREDUMP")) {
+      struct rlimit core_limit;
+      core_limit.rlim_cur = RLIM_INFINITY;
+      core_limit.rlim_max = RLIM_INFINITY;
+      if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
+        sp_perror("ERROR: failed to setup core dump ability\n");
+      }
+    }
+    return ptr(new SpAgent());
+  }
 
-	SpAgent::SpAgent() {
+  SpAgent::SpAgent() {
 
-		parser_ = SpParser::ptr();
-		init_event_ = SpEvent::ptr();
-		fini_event_ = SpEvent::ptr();
+    parser_ = SpParser::ptr();
+    init_event_ = SpEvent::ptr();
+    fini_event_ = SpEvent::ptr();
     context_ = NULL;
-    
-		allow_ipc_ = false;
-		allow_multithread_ = false;
-		trap_only_ = false;
-		parse_only_ = false;
-		directcall_only_ = false;
-	}
 
-	SpAgent::~SpAgent() {
-	}
+    allow_ipc_ = false;
+    allow_multithread_ = false;
+    trap_only_ = false;
+    parse_only_ = false;
+    directcall_only_ = false;
+  }
 
-	// Configuration
-	void
-	SpAgent::SetParser(SpParser::ptr parser) {
-		parser_ = parser;
-	}
+  SpAgent::~SpAgent() {
+  }
 
-	void
-	SpAgent::SetInitEvent(SpEvent::ptr e) {
-		init_event_ = e;
-	}
+  // Configuration
+  void
+  SpAgent::SetParser(SpParser::ptr parser) {
+    parser_ = parser;
+  }
 
-	void
-	SpAgent::SetFiniEvent(SpEvent::ptr e) {
-		fini_event_ = e;
-	}
+  void
+  SpAgent::SetInitEvent(SpEvent::ptr e) {
+    init_event_ = e;
+  }
 
-	void
-	SpAgent::SetInitEntry(string p) {
-		init_entry_ = p;
-	}
+  void
+  SpAgent::SetFiniEvent(SpEvent::ptr e) {
+    fini_event_ = e;
+  }
 
-	void
-	SpAgent::SetInitExit(string p) {
-		init_exit_ = p;
-	}
+  void
+  SpAgent::SetInitEntry(string p) {
+    init_entry_ = p;
+  }
 
-	void
-	SpAgent::SetInitPropeller(SpPropeller::ptr p) {
-		init_propeller_ = p;
-	}
+  void
+  SpAgent::SetInitExit(string p) {
+    init_exit_ = p;
+  }
 
-	void
-	SpAgent::EnableParseOnly(const bool b) {
-		parse_only_ = b;
-	}
+  void
+  SpAgent::SetInitPropeller(SpPropeller::ptr p) {
+    init_propeller_ = p;
+  }
 
-	void
-	SpAgent::EnableDirectcallOnly(const bool b) {
-		directcall_only_ = b;
-	}
+  void
+  SpAgent::EnableParseOnly(const bool b) {
+    parse_only_ = b;
+  }
 
-	void
-	SpAgent::EnableIpc(const bool b) {
-		allow_ipc_ = b;
-	}
+  void
+  SpAgent::EnableDirectcallOnly(const bool b) {
+    directcall_only_ = b;
+  }
 
-	void
-	SpAgent::EnableMultithread(const bool b) {
-		allow_multithread_ = b;
-	}
+  void
+  SpAgent::EnableIpc(const bool b) {
+    allow_ipc_ = b;
+  }
 
-	void
-	SpAgent::EnableTrapOnly(const bool b) {
-		trap_only_ = b;
-	}
+  void
+  SpAgent::EnableMultithread(const bool b) {
+    allow_multithread_ = b;
+  }
+
+  void
+  SpAgent::EnableTrapOnly(const bool b) {
+    trap_only_ = b;
+  }
 
   void
   SpAgent::SetLibrariesToInstrument(const StringSet& libs) {
@@ -149,103 +149,103 @@ namespace sp {
       funcs_not_to_inst_.insert(*i);
   }
 
-	// Here We Go! Self-propelling magic happens!
+  // Here We Go! Self-propelling magic happens!
 
-	void
-	SpAgent::Go() {
-		sp_debug("==== Start Self-propelled instrumentation @ Process %d ====",
-						 getpid());
+  void
+  SpAgent::Go() {
+    sp_debug("==== Start Self-propelled instrumentation @ Process %d ====",
+             getpid());
 
-		// XXX: ignore bash/lsof/Injector for now ...
-		if (sp::IsIllegalProgram()) {
-			sp_debug("ILLEGAL EXE - avoid instrumenting %s", GetExeName().c_str());
-			return;
-		}
+    // XXX: ignore bash/lsof/Injector for now ...
+    if (sp::IsIllegalProgram()) {
+      sp_debug("ILLEGAL EXE - avoid instrumenting %s", GetExeName().c_str());
+      return;
+    }
 
-		// Init lock
-		InitLock(&g_propel_lock);
+    // Init lock
+    InitLock(&g_propel_lock);
 
     // For quick debugging
-		if (getenv("SP_DIRECTCALL_ONLY")) {
+    if (getenv("SP_DIRECTCALL_ONLY")) {
       directcall_only_ = true;
     }
-    
-		if (getenv("SP_TRAP")) {
+
+    if (getenv("SP_TRAP")) {
       trap_only_ = true;
     }
 
-		// Sanity check. If not user-provided configuration, use default ones
-		if (!init_event_) {
-			sp_debug("INIT EVENT - Use default event");
-			init_event_ = SyncEvent::Create();
-		}
-		if (!fini_event_) {
-			sp_debug("FINI EVENT - Use default event");
-			fini_event_ = SpEvent::Create();
-		}
-		if (init_entry_.size() == 0) {
-			sp_debug("ENTRY_PAYLOAD - Use default payload entry calls");
-			init_entry_ = "default_entry";
-		}
-		if (init_exit_.size() == 0) {
-			sp_debug("EXIT_PAYLOAD - No payload exit calls");
-			init_exit_ = "";
-		}
-		if (!parser_) {
-			sp_debug("PARSER - Use default parser");
-			parser_ = SpParser::Create();
-		}
-		if (!init_propeller_) {
-			sp_debug("PROPELLER - Use default propeller");
-			init_propeller_ = SpPropeller::Create();
-		}
+    // Sanity check. If not user-provided configuration, use default ones
+    if (!init_event_) {
+      sp_debug("INIT EVENT - Use default event");
+      init_event_ = SyncEvent::Create();
+    }
+    if (!fini_event_) {
+      sp_debug("FINI EVENT - Use default event");
+      fini_event_ = SpEvent::Create();
+    }
+    if (init_entry_.size() == 0) {
+      sp_debug("ENTRY_PAYLOAD - Use default payload entry calls");
+      init_entry_ = "default_entry";
+    }
+    if (init_exit_.size() == 0) {
+      sp_debug("EXIT_PAYLOAD - No payload exit calls");
+      init_exit_ = "";
+    }
+    if (!parser_) {
+      sp_debug("PARSER - Use default parser");
+      parser_ = SpParser::Create();
+    }
+    if (!init_propeller_) {
+      sp_debug("PROPELLER - Use default propeller");
+      init_propeller_ = SpPropeller::Create();
+    }
 
-		if (directcall_only_) {
-			sp_debug("DIRECT CALL ONLY - only instrument direct calls,"
+    if (directcall_only_) {
+      sp_debug("DIRECT CALL ONLY - only instrument direct calls,"
                " ignoring indirect calls");
-		} else {
-			sp_debug("DIRECT/INDIRECT CALL - instrument both direct and"
+    } else {
+      sp_debug("DIRECT/INDIRECT CALL - instrument both direct and"
                " indirect calls");
-		}
-		if (allow_ipc_) {
-			sp_debug("MULTI PROCESS - support multiprocess instrumentation");
-		} else {
-			sp_debug("SINGLE PROCESS - only support single-process "
+    }
+    if (allow_ipc_) {
+      sp_debug("MULTI PROCESS - support multiprocess instrumentation");
+    } else {
+      sp_debug("SINGLE PROCESS - only support single-process "
                "instrumentation");
-		}
-		if (trap_only_) {
-			sp_debug("TRAP ONLY - Only use trap-based instrumentation");
-		} else {
-			sp_debug("JUMP + TRAP - Use jump and trap for instrumentation");
-		}
+    }
+    if (trap_only_) {
+      sp_debug("TRAP ONLY - Only use trap-based instrumentation");
+    } else {
+      sp_debug("JUMP + TRAP - Use jump and trap for instrumentation");
+    }
 
-		// Set up globally unique parser
+    // Set up globally unique parser
     // The parser will be freed automatically, because it is a shared ptr
-		g_parser = parser_;
-		assert(g_parser);
+    g_parser = parser_;
+    assert(g_parser);
     g_parser->SetLibrariesToInstrument(libs_to_inst_);
     g_parser->SetFuncsNotToInstrument(funcs_not_to_inst_);
-    
+
     parser_->Parse();
     assert(g_parser->mgr());
 
     // We may stop here after parsing
-		if (parse_only_) {
-			sp_debug("PARSE ONLY - exit after parsing, without instrumentation");
-			return;
-		}
+    if (parse_only_) {
+      sp_debug("PARSE ONLY - exit after parsing, without instrumentation");
+      return;
+    }
 
-		// Prepare context
+    // Prepare context
     // XXX: this never gets freed ... should free it when unloading
     //      this shared agent library?
-		g_context = SpContext::Create();
+    g_context = SpContext::Create();
     context_ = g_context;
-		assert(g_context);
+    assert(g_context);
 
     // Set up globally unique address space object
     // This will be freed in SpContext::~SpContext
-		g_as = AS_CAST(g_parser->mgr()->as());
-		assert(g_as);
+    g_as = AS_CAST(g_parser->mgr()->as());
+    assert(g_as);
 
 
     // Copy agent's variables to context
@@ -263,9 +263,9 @@ namespace sp {
       assert(payload_exit);
       g_context->SetInitExit(payload_exit);
     }
-		g_context->EnableDirectcallOnly(directcall_only_);
-		g_context->EnableIpc(allow_ipc_);
-		g_context->EnableMultithread(allow_multithread_);
+    g_context->EnableDirectcallOnly(directcall_only_);
+    g_context->EnableIpc(allow_ipc_);
+    g_context->EnableMultithread(allow_multithread_);
     if (allow_ipc_) {
       // SpIpcMgr will be deleted in the destructor of SpContext
       g_context->SetIpcMgr(new SpIpcMgr());
@@ -275,15 +275,15 @@ namespace sp {
       void* wrapper_entry =
           (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
       assert(wrapper_entry);
-			g_context->SetWrapperEntry(wrapper_entry);
+      g_context->SetWrapperEntry(wrapper_entry);
       void* wrapper_exit =
           (void*)g_parser->GetFuncAddrFromName("wrapper_exit");
       assert(wrapper_exit);
-			g_context->SetWrapperExit(wrapper_exit);
+      g_context->SetWrapperExit(wrapper_exit);
     }
-		// Register Events
-		init_event_->RegisterEvent();
-		fini_event_->RegisterEvent();
-	}
+    // Register Events
+    init_event_->RegisterEvent();
+    fini_event_->RegisterEvent();
+  }
 
 }

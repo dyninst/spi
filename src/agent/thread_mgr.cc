@@ -47,17 +47,21 @@ bool
 SpThreadMgr::BeforeEntry(SpPoint* pt) {
   assert(g_context);
   assert(g_parser);
-  
+
   SpFunction* func = NULL;
+  bool ret = true;
   
   SP_LOCK(THREADMGR_BEFOREENTRY);
   sp_debug("THREAD MGR BeforeEntry");
   func = pt->callee();
   if (!func) {
+    sp_debug("CANNOT FIND CALLEE FOR %lx", pt->block()->last());
+    ret = false;
     goto THREADMGR_BEFOREENTRY_EXIT;
-    return false;
   }
 
+  // Get the thread routine when encountering pthread_create()
+  // by looking at the second argument (from left to right)
   if (func->name().compare("pthread_create") == 0) {
     ArgumentHandle handle;
     pt->snip()->PopArgument(&handle, sizeof(void*));
@@ -65,16 +69,19 @@ SpThreadMgr::BeforeEntry(SpPoint* pt) {
     ThreadFunc* thread_func =
         (ThreadFunc*)pt->snip()->PopArgument(&handle,
                                              sizeof(ThreadFunc));
+
     SpFunction* tfunc =
         g_parser->FindFunction((dt::Address)*thread_func);
     if (!tfunc) {
+      sp_debug("CANNOT FIND FUNCTION FOR %lx", (dt::Address)*thread_func);
+      ret = false;
       goto THREADMGR_BEFOREENTRY_EXIT;
-      return false;
     }
     sp_debug("GOT CALLBACK - %s at %lx", tfunc->name().c_str(),
              (long)*thread_func);
 
-    sp::SpPropeller::ptr p =   p = g_context->init_propeller();
+    // Start propagating instrumentation to thread routine
+    sp::SpPropeller::ptr p = g_context->init_propeller();
     assert(p);
     sp_debug("GET PROPELLER");
     p->go(tfunc,
@@ -83,8 +90,10 @@ SpThreadMgr::BeforeEntry(SpPoint* pt) {
           NULL);
     tfunc->SetPropagated(true);
   }
+
+  // THREADMGR_BEFOREENTRY_EXIT:  
   SP_UNLOCK(THREADMGR_BEFOREENTRY);
-  return true;
+  return ret;
 }
 
 }

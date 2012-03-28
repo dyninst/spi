@@ -46,7 +46,7 @@ typedef enum {
   SP_UNKNOWN = 0,
   SP_PIPE = 1,
   SP_TCP = 2,
-  SP_UDP = 3 
+  SP_UDP = 3
 } ChannelType;
 
 typedef enum {
@@ -59,7 +59,7 @@ typedef enum {
 struct SpChannel {
   SpChannel() :
   type(SP_UNKNOWN), injected(false), local_pid(-1), remote_pid(-1),
-		remote_injected(false), inode(-1), fd(-1), rw(SP_WRITE) {}
+    remote_injected(false), inode(-1), fd(-1), rw(SP_WRITE) {}
 
   ChannelType type;      // Channel type
   bool injected;         // Already injected?
@@ -74,7 +74,7 @@ struct SpChannel {
 
 
 // Assume only two parties are involved in a pipe, which is not true in real
-// world. For instance, named pipe would have multiple processes involved. 
+// world. For instance, named pipe would have multiple processes involved.
 // Need to consider it later.
 
 struct PipeChannel : public SpChannel {
@@ -85,12 +85,12 @@ struct PipeChannel : public SpChannel {
 struct TcpChannel : public SpChannel {
   TcpChannel() :
   SpChannel() {}
-	sockaddr_storage local;
-	sockaddr_storage remote;
+  sockaddr_storage local;
+  sockaddr_storage remote;
 };
 
 struct UdpChannel : public SpChannel {
-	/*
+  /*
   UdpChannel() :
   SpChannel(), local_ip(0), local_port(0), remote_ip(0), remote_port(0) {}
 
@@ -98,7 +98,7 @@ struct UdpChannel : public SpChannel {
   uint16_t local_port;
   in_addr_t remote_ip;
   uint16_t remote_port;
-	*/
+  */
 };
 
 }

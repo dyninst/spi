@@ -38,13 +38,13 @@
 namespace sp {
 
   typedef std::vector<Dyninst::PatchAPI::Point*> Points;
-  
+
   class AGENT_EXPORT SpPropeller {
   public:
     typedef SHARED_PTR(SpPropeller) ptr;
     static ptr Create();
     SpPropeller();
-		virtual ~SpPropeller() {}
+    virtual ~SpPropeller() {}
 
     bool go(ph::PatchFunction* func,
             PayloadFunc entry,

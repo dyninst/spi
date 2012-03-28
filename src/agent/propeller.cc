@@ -80,7 +80,7 @@ namespace sp {
     }
 
     if (!cur_func) return false;
-    
+
     next_points(cur_func, mgr, pts);
 
     // 2. Start instrumentation
@@ -91,12 +91,18 @@ namespace sp {
       SpBlock* blk = pt->GetBlock();
       assert(blk);
 
+      if (blk->instrumented()) {
+        continue;
+      }
+      
+      /*
       if (blk->isShared()) {
         if (blk->instrumented()) {
           continue;
         }
       }
-
+      */
+      
       // It's possible that callee will be NULL, which is an indirect call.
       // In this case, we'll parse it later during runtime.
 

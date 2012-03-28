@@ -40,7 +40,7 @@ namespace sp {
 
   // Global variables
   extern SpContext* g_context;
-	extern SpParser::ptr g_parser;
+  extern SpParser::ptr g_parser;
 
   // For pipe's start_tracing() implementation (we use shared memory here).
 #define TRACING_ID 1987

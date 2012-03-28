@@ -42,26 +42,26 @@
 
 namespace sp {
 
-	class SpPoint;
-	class SpObject;
-	class SpFunction;
+  class SpPoint;
+  class SpObject;
+  class SpFunction;
 
   typedef std::set<sb::Symtab*> SymtabSet;
   typedef std::vector<pe::CodeObject*> CodeObjects;
   typedef std::vector<pe::CodeSource*> CodeSources;
-	typedef std::vector<sb::Symbol*> Symbols;
+  typedef std::vector<sb::Symbol*> Symbols;
   typedef std::vector<ph::PatchObject*> PatchObjects;
   typedef std::map<std::string, SpFunction*> RealFuncMap;
   typedef std::set<sp::SpFunction*> FuncSet;
-  
-	class  SpParser {
+
+  class  SpParser {
   public:
     typedef SHARED_PTR(SpParser) ptr;
     AGENT_EXPORT static ptr Create();
 
     virtual ~SpParser();
 
-		// The main parsing procedure
+    // The main parsing procedure
     AGENT_EXPORT virtual ph::PatchMgrPtr
         Parse();
 
@@ -82,17 +82,17 @@ namespace sp {
     AGENT_EXPORT string agent_name() const {
       return agent_name_;
     }
-		AGENT_EXPORT ph::PatchMgrPtr mgr() const {
+    AGENT_EXPORT ph::PatchMgrPtr mgr() const {
       return mgr_;
     }
 
-		// Check if this agent library is injected (true) or is
+    // Check if this agent library is injected (true) or is
     // preloaded (false)
     AGENT_EXPORT bool injected() const {
       return injected_;
     }
 
-		// Get register values to form a stack frame
+    // Get register values to form a stack frame
     AGENT_EXPORT void GetFrame(long* pc,
                                long* sp,
                                long* bp);
@@ -108,13 +108,13 @@ namespace sp {
     AGENT_EXPORT dt::Address
         GetFuncAddrFromName(string func_name_without_path);
 
-		// Dump instructions from a buffer
+    // Dump instructions from a buffer
     AGENT_EXPORT string
         DumpInsns(void* addr,
                   size_t size);
 
   protected:
-		// Is this agent library injected (true) or preloaded (false)?
+    // Is this agent library injected (true) or preloaded (false)?
     bool injected_;
     string agent_name_;
 
@@ -129,29 +129,29 @@ namespace sp {
 
     SpParser();
 
-		// All about parsing
-		sb::AddressLookup* GetRuntimeSymtabs(SymtabSet& symtabs);
+    // All about parsing
+    sb::AddressLookup* GetRuntimeSymtabs(SymtabSet& symtabs);
 
-		bool CreatePatchobjs(SymtabSet& symtabs,
-												sb::AddressLookup* al,
-												PatchObjects& patch_objs);
+    bool CreatePatchobjs(SymtabSet& symtabs,
+                        sb::AddressLookup* al,
+                        PatchObjects& patch_objs);
 
-		SpObject* CreateObject(sb::Symtab* symtab,
-													dt::Address load_addr);
-		SpObject* CreateObjectFromRuntime(sb::Symtab* symtab,
-																				 dt::Address load_addr);
-		SpObject* CreateObjectFromFile(sb::Symtab* symtab,
-																			dt::Address load_addr);
+    SpObject* CreateObject(sb::Symtab* symtab,
+                          dt::Address load_addr);
+    SpObject* CreateObjectFromRuntime(sb::Symtab* symtab,
+                                         dt::Address load_addr);
+    SpObject* CreateObjectFromFile(sb::Symtab* symtab,
+                                      dt::Address load_addr);
 
-		SpObject* GetExeFromProcfs(PatchObjects& patch_objs);
+    SpObject* GetExeFromProcfs(PatchObjects& patch_objs);
 
-		ph::PatchMgrPtr CreateMgr(PatchObjects& patch_objs);
+    ph::PatchMgrPtr CreateMgr(PatchObjects& patch_objs);
 
     bool GetFuncsByName(sp::SpObject* obj,
                         std::string name,
                         dt::Address addr,
                         sp::FuncSet* func_set);
-	};
+  };
 
 }
 
