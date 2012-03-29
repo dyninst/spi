@@ -6,7 +6,8 @@
 using namespace sp;
 using namespace std;
 
-// For testing SpObject
+// For testing SpObject --
+// mainly for allocating a close buffer near the object
 
 namespace {
 
@@ -14,6 +15,9 @@ namespace {
 class ObjectTest : public testing::Test {
   public:
   ObjectTest() {
+    // Load a bunch of shared libraries
+
+    // Parse the all binrary objects
 	}
 
   protected:
@@ -25,8 +29,12 @@ class ObjectTest : public testing::Test {
 	}
 };
 
+// The simplest allocation and deallocation
+TEST_F(ObjectTest, simple_alloc_free) {
+}
 
-TEST_F(ObjectTest, pid_inject) {
+// See what happens when we use up all free buffers
+TEST_F(ObjectTest, extreme_test) {
 }
 
 }

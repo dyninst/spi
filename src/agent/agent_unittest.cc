@@ -1,4 +1,4 @@
-#include "common/common_unittest.h"
+#include "test/common/common_unittest.h"
 
 // For testing SpAgent
 // Mainly test setters and getters

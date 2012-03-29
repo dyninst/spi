@@ -76,7 +76,7 @@ namespace sp {
         CanInstrumentFunc(const string& func_full_name);
 
     // Getters
-    AGENT_EXPORT SpObject* exe_obj() const {
+    AGENT_EXPORT SpObject* exe() const {
       return exe_obj_;
     }
     AGENT_EXPORT string agent_name() const {

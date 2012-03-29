@@ -147,54 +147,57 @@ SpAddrSpace::DumpMemoryMappings() {
 
 void
 SpAddrSpace::UpdateFreeIntervals() {
+
+  if (getenv("SP_LIBC_MALLOC")) {
+    return;
+  }
+
+  // TODO (wenbin): get rid of the last free interval, and use it to 
+  // allocate far-away-buffer
+
+  
+  // Re-arrange free buffers. Some rules:
+  // - Reduce each "hole" between two mapped objects to less than 1.5GB
+  // - Each interval should have size smaller than 500MB
+
+  FreeIntervalList tmp_list;
+  std::copy(free_intervals_.begin(), free_intervals_.end(),
+            back_inserter(tmp_list));
+  free_intervals_.clear();
+  const size_t max_interval_size = (const size_t)1024*1024*512;
+  const size_t max_mapped_area_size = (const size_t)1024*1024*(1024+512);
+  for (FreeIntervalList::iterator fi = tmp_list.begin();
+       fi != tmp_list.end(); fi++) {
+    if ((*fi).size() > max_mapped_area_size) {
+      (*fi).start = (*fi).end - max_mapped_area_size;
+    }
+  }
+    
+  for (FreeIntervalList::iterator fi = tmp_list.begin();
+       fi != tmp_list.end(); fi++) {
+    dt::Address new_start = (*fi).start;
+    dt::Address new_end = new_start + max_interval_size;
+      
+    do {
+      FreeInterval new_interval;
+      new_interval.used = false;
+      new_interval.start = new_start;
+      new_interval.end = new_end;
+      if (new_start + max_interval_size > (*fi).end) {
+        new_interval.end = (*fi).end;
+      }
+      free_intervals_.push_back(new_interval);
+      new_start += max_interval_size;
+      new_end += max_interval_size;
+    } while(new_start < (*fi).end);
+  }
+
+  // Bind preallocated close free buffers to each object
   for (ph::AddrSpace::ObjMap::iterator i = obj_map_.begin();
        i != obj_map_.end(); i++) {
-    if (getenv("SP_LIBC_MALLOC")) {
-      continue;
-    }
 
     SpObject* obj = OBJ_CAST(i->second);
     assert(obj);
-
-    // Re-arrange free buffers. Some rules:
-    // - Reduce each "hole" between two mapped objects to less than 1.5GB
-    // - Each interval should have size smaller than 500MB
-
-    FreeIntervalList tmp_list;
-    std::copy(free_intervals_.begin(), free_intervals_.end(),
-              back_inserter(tmp_list));
-    free_intervals_.clear();
-    const size_t max_interval_size = (const size_t)1024*1024*512;
-    const size_t max_mapped_area_size = (const size_t)1024*1024*(1024+512);
-    for (FreeIntervalList::iterator fi = tmp_list.begin();
-         fi != tmp_list.end(); fi++) {
-      if ((*fi).size() > max_mapped_area_size) {
-        (*fi).start = (*fi).end - max_mapped_area_size;
-      }
-    }
-    
-    for (FreeIntervalList::iterator fi = tmp_list.begin();
-         fi != tmp_list.end(); fi++) {
-      dt::Address new_start = (*fi).start;
-      dt::Address new_end = new_start + max_interval_size;
-      
-      do {
-        FreeInterval new_interval;
-        new_interval.used = false;
-        new_interval.start = new_start;
-        new_interval.end = new_end;
-        if (new_start + max_interval_size > (*fi).end) {
-          new_interval.end = (*fi).end;
-        }
-        free_intervals_.push_back(new_interval);
-        new_start += max_interval_size;
-        new_end += max_interval_size;
-      } while(new_start < (*fi).end);
-    }
-
-    
-    // Bind preallocated close free buffers to each object
-
     sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
              obj->name().c_str(), obj->load_addr(), obj->codeBase());
     MemMapping& mapping = mem_maps_[obj->load_addr()];

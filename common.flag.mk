@@ -76,3 +76,4 @@ ST_DIR      = $(SP_DIR)/src/test/systest
 ML_DIR      = $(SP_DIR)/src/test/mutatee/lib
 ME_DIR      = $(SP_DIR)/src/test/mutatee
 TG_DIR      = $(SP_DIR)/src/test/agent
+TC_DIR      = $(SP_DIR)/src/test/common

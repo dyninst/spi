@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 
 #include "SpInc.h"
-#include "common/common_unittest.h"
+#include "test/common/common_unittest.h"
 
 using namespace sp;
 using namespace std;

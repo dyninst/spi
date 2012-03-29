@@ -39,6 +39,7 @@
 #include "agent/event.h"
 #include "agent/parser.h"
 #include "agent/payload.h"
+#include "agent/patchapi/addr_space.h"
 #include "agent/patchapi/cfg.h"
 #include "agent/patchapi/object.h"
 #include "agent/patchapi/point.h"

@@ -79,9 +79,12 @@ UT_LDFLAGS  += $(AG_LDFLAGS)
 UT_LDFLAGS  += libagent.a
 endif
 
-VPATH    += $(ST_DIR)
+VPATH    += $(ST_DIR) \
+            $(TC_DIR) \
+            $(AG_DIR)/patchapi
 
 UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
+            $(AG_DIR)/patchapi/addr_space_unittest.cc \
             $(AG_DIR)/agent_unittest.cc \
             $(AG_DIR)/context_unittest.cc \
             $(AG_DIR)/parser_unittest.cc \
@@ -91,7 +94,8 @@ UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(ST_DIR)/multithread_systest.cc
 
 UT_OBJS   = $(addprefix $(TEST_OBJS_DIR)/, $(notdir $(UT_SRCS:%.cc=%.o)))
-UT_EXES   = $(addprefix $(TEST_EXES_DIR)/, $(notdir $(UT_OBJS:%.o=%.exe)))
+UT_OBJS  += $(TEST_OBJS_DIR)/common_unittest.o
+UT_EXES   = $(addprefix $(TEST_EXES_DIR)/, $(notdir $(UT_SRCS:%.cc=%.exe)))
 
 UT_ONESTOP_EXE = $(SP_DIR)/$(PLATFORM)/all_tests
 
@@ -102,9 +106,9 @@ $(UT_OBJS): $(TEST_OBJS_DIR)/%.o : %.cc
 	@$(MKDIR) $(TEST_OBJS_DIR)
 	@$(GXX) -c -o $@ $< $(UT_FLAGS)
 
-$(UT_EXES): $(TEST_EXES_DIR)/%.exe : $(TEST_OBJS_DIR)/%.o $(GMOCK_MAIN)  $(AGENT)
+$(UT_EXES): $(TEST_EXES_DIR)/%.exe : $(TEST_OBJS_DIR)/%.o $(GMOCK_MAIN)  $(AGENT) $(TEST_OBJS_DIR)/common_unittest.o
 	@echo Linking $*.exe
-	@$(GXX) -o $@ $< $(GMOCK_MAIN) $(UT_LDFLAGS)
+	@$(GXX) -o $@ $< $(TEST_OBJS_DIR)/common_unittest.o $(GMOCK_MAIN) $(UT_LDFLAGS)
 
 $(UT_ONESTOP_EXE): $(UT_OBJS) $(GMOCK_MAIN) $(AGENT)
 	@echo Linking $(notdir $(UT_ONESTOP_EXE))
