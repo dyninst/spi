@@ -152,9 +152,6 @@ SpAddrSpace::UpdateFreeIntervals() {
     return;
   }
 
-  // TODO (wenbin): get rid of the last free interval, and use it to 
-  // allocate far-away-buffer
-
   
   // Re-arrange free buffers. Some rules:
   // - Reduce each "hole" between two mapped objects to less than 1.5GB

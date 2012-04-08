@@ -164,14 +164,29 @@ namespace sp {
 
     // ret = (dt::Address)::malloc(size);
     if (!getenv("SPI_NO_LIBC_MALLOC")) {
+      /*
       if (::posix_memalign((void**)&ret, getpagesize(), size) == 0) {
         sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+        return ret;
+      }
+      */
+      void* m = MAP_FAILED;
+      m = mmap((void*)0,
+               size,
+               PROT_WRITE | PROT_READ | PROT_EXEC,
+               MAP_PRIVATE | MAP_ANONYMOUS,
+               -1,
+               0);
+      ret = (dt::Address)m;
+      if (m != MAP_FAILED) {
+        buf_size_map_[ret] = size;
+        sp_debug("FAILED TO GET A CLOSE BUFFER - %lx mmaped", ret);
         return ret;
       }
     }
 
     sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
-    return ret;
+    return 0;
 	}
 
 	bool
@@ -179,7 +194,10 @@ namespace sp {
 		if (alloc_bufs_.find(buf) == alloc_bufs_.end()) {
 			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
       if (!getenv("SPI_NO_LIBC_MALLOC")) {
+        /*
         ::free((void*)buf);
+        */
+        munmap((void*)buf, buf_size_map_[buf]);
       }
       return false;
     }

@@ -91,7 +91,9 @@ namespace sp {
 		FreeBufs mid_freebufs_;    // Midium buffers
 		FreeBufs big_freebufs_;    // Big buffers
 		BufTypeMap alloc_bufs_;    // To facilitate future deallocation
-
+    typedef std::map<dt::Address, size_t> BufSizeMap;  // For the mmap-ed
+    BufSizeMap buf_size_map_;
+        
 		void InitMemoryAlloc(dt::Address base,
 												 size_t size);
 		dt::Address AllocateBuffer(size_t size);

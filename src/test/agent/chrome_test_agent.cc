@@ -10,14 +10,11 @@ SpLock g_lock;
 void test_entry(SpPoint* pt) {
   //  SetSegfaultSignal();
 
-  Lock(&g_lock);
 	PatchFunction* f = Callee(pt);
   if (!f) return;
 
-	sp_print("%s, tid=%ld", f->name().c_str(), (long)GetThreadId());
+	sp_print("%s @ pid = %d", f->name().c_str(), getpid());
   sp::Propel(pt);
-
-  Unlock(&g_lock);
 }
 
 AGENT_INIT
@@ -36,6 +33,7 @@ void MyAgent() {
   
   agent->SetFuncsNotToInstrument(ss);
   agent->SetInitEntry("test_entry");
+  agent->EnableIPC(true);
   agent->Go();
 }
 

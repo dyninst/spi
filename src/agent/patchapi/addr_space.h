@@ -90,7 +90,7 @@ namespace sp {
 
     MemMappings mem_maps_;
 		FreeIntervalList free_intervals_;
-
+        
     SpAddrSpace();
 
     // All about memory allocation
