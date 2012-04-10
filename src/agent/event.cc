@@ -29,6 +29,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <iterator>
+
 #include "agent/event.h"
 #include "agent/context.h"
 #include "agent/parser.h"
@@ -113,4 +115,34 @@ namespace sp {
       } // Call stack
     } // Injection mode
   }
-}
+
+
+  // Pre-instrument curtain functions
+  FuncEvent::FuncEvent(StringSet& funcs) {
+    std::copy(funcs.begin(), funcs.end(),
+              std::inserter(func_names_, func_names_.begin()));
+  }
+
+  void
+  FuncEvent::RegisterEvent() {
+    SetSegfaultSignal();
+
+    for (StringSet::iterator i = func_names_.begin();
+         i != func_names_.end(); i++) {
+      // sp_print("%s", (*i).c_str());
+      sp::SpFunction* f = g_parser->FindFunction(*i);
+      if (f) funcs_.insert(f);
+    }
+
+    for (FuncSet::iterator i = funcs_.begin(); 
+           i != funcs_.end(); i++) {
+        ph::PatchFunction* f = *i;
+        sp_print("PRE-INST FUNC - %s", f->name().c_str());
+        g_context->init_propeller()->go(f,
+                                        g_context->init_entry(),
+                                        g_context->init_exit());
+    }
+  }
+
+
+} // namespace

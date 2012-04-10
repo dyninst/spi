@@ -6,10 +6,15 @@
 using namespace sp;
 using namespace std;
 
-// For testing SpEvent
+namespace base {
+
+void foo() {
+  printf("I'm foo!\n");
+}
+
+}
 
 namespace {
-
 
 class EventTest : public testing::Test {
   public:
@@ -26,7 +31,16 @@ class EventTest : public testing::Test {
 };
 
 
-TEST_F(EventTest, pid_inject) {
+TEST_F(EventTest, func_event) {
+
+  StringSet preinst_funcs;
+  preinst_funcs.insert("base::foo");
+  preinst_funcs.insert("main");
+  
+  FuncEvent::ptr event = FuncEvent::Create(preinst_funcs);
+  SpAgent::ptr agent = SpAgent::Create();
+  agent->SetInitEvent(event);
+  agent->Go();
 }
 
 }

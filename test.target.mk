@@ -86,6 +86,7 @@ VPATH    += $(ST_DIR) \
 UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(AG_DIR)/patchapi/addr_space_unittest.cc \
             $(AG_DIR)/agent_unittest.cc \
+            $(AG_DIR)/event_unittest.cc \
             $(AG_DIR)/context_unittest.cc \
             $(AG_DIR)/parser_unittest.cc \
             $(ST_DIR)/coreutils_systest.cc \

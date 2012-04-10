@@ -83,7 +83,23 @@ class SyncEvent : public SpEvent {
     std::string func_name_;
 };
 
+
+// Pre-instrument curtain functions
+class FuncEvent : public SpEvent {
+  public:
+    typedef SHARED_PTR(FuncEvent) ptr;
+    typedef std::set<sp::SpFunction*> FuncSet;
+    typedef std::set<std::string> StringSet;
+
+    static ptr Create(StringSet& funcs) {
+      return ptr(new FuncEvent(funcs));
+    }
+    virtual void RegisterEvent() OVERRIDE;
+  protected:
+    FuncEvent(StringSet&);
+    StringSet func_names_;
+    FuncSet funcs_;
+};
+
 }
-
-
 #endif /* SP_EVENT_H_ */
