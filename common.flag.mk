@@ -21,6 +21,8 @@ COMMON_LDFLAGS   += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
 COMMON_LDFLAGS   += -lpcontrol
 COMMON_LDFLAGS   += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
 COMMON_LDFLAGS   += -lsymtabAPI
+COMMON_LDFLAGS   += -L$(DYNINST_DIR)/common/$(PLATFORM)
+COMMON_LDFLAGS   += -lcommon
 
 UTILS_DIR         = $(SP_DIR)/src/common
 
@@ -61,6 +63,8 @@ AG_LDFLAGS  += -L$(DYNINST_DIR)/parseAPI/$(PLATFORM)
 AG_LDFLAGS  += -lparseAPI
 AG_LDFLAGS  += -L$(DYNINST_DIR)/patchAPI/$(PLATFORM)
 AG_LDFLAGS  += -lpatchAPI
+AG_LDFLAGS  += -L$(DYNINST_DIR)/instructionAPI/$(PLATFORM)
+AG_LDFLAGS  += -linstructionAPI
 
 AG_IFLAGS  += $(COMMON_IFLAGS)
 AG_IFLAGS  += $(IJ_IFLAGS)

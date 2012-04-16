@@ -32,10 +32,12 @@
 
 #include <arpa/inet.h>
 #include <execinfo.h>
+#include <libgen.h>
 #include <linux/udp.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/dir.h>
 #include <sys/shm.h>
 #include <sys/stat.h>

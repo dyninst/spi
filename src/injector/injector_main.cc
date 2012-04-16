@@ -1,3 +1,6 @@
+#include <libgen.h>
+#include <stdio.h>
+
 #include "common/utils.h"
 
 #include "injector/injector.h"

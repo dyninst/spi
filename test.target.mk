@@ -72,6 +72,8 @@ UT_FLAGS   = $(AG_IFLAGS) $(AG_FLAGS) $(CPPFLAGS)
 UT_LDFLAGS = -lpthread
 
 ifeq ($(DYNLINK), true)
+UT_LDFLAGS += $(AG_LDFLAGS)
+UT_LDFLAGS += $(IJ_LDFLAGS)
 UT_LDFLAGS  += -L$(SP_DIR)/$(PLATFORM)
 UT_LDFLAGS  += -lagent
 else
