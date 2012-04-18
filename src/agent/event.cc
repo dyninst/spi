@@ -130,6 +130,7 @@ namespace sp {
     for (StringSet::iterator i = func_names_.begin();
          i != func_names_.end(); i++) {
       // sp_print("%s", (*i).c_str());
+      // TODO: should use FindFunction for pretty name
       sp::SpFunction* f = g_parser->FindFunction(*i);
       if (f) funcs_.insert(f);
     }

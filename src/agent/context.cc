@@ -91,6 +91,7 @@ namespace sp {
       stackwalk[i].getName(s);
 
       // Step 1: if the function can be resolved
+      // TODO: should use FindFunction for pretty name
       SpFunction* func = parser_->FindFunction(s.c_str());
       if (!func) {
         sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());

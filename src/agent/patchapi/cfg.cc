@@ -45,10 +45,47 @@ namespace sp {
     assert(sym);
     dt::Address offset = function()->addr();
     std::vector<sb::Symbol*>* symbols = sym->findSymbolByOffset(offset);
+    if (!symbols) {
+      sb::Region* reg;
+      if ((reg = sym->findEnclosingRegion(offset))) {
+        if (reg->getRegionName().compare(".plt") == 0) {
+          return name();
+        }
+      }
+    }
     if (!symbols || symbols->size() == 0) {
       return "";
     }
     return (*symbols)[0]->getMangledName();
+  }
+
+  std::string SpFunction::GetPrettyName() {
+    sb::Symtab* sym = GetObject()->symtab();
+    assert(sym);
+    dt::Address offset = function()->addr();
+    /*
+    sp_print("In %s, codeBase %lx, load_addr %lx, offset: %lx",
+             sym->name().c_str(),
+             GetObject()->codeBase(),
+             GetObject()->load_addr(),
+             offset);
+    */
+    std::vector<sb::Symbol*>* symbols = sym->findSymbolByOffset(offset);
+
+    if (!symbols) {
+      sb::Region* reg;
+      if ((reg = sym->findEnclosingRegion(offset))) {
+        if (reg->getRegionName().compare(".plt") == 0) {
+          return name();
+        }
+      }
+    }
+
+    if (!symbols || symbols->size() == 0) {
+      return "";
+    }
+
+    return (*symbols)[0]->getPrettyName();
   }
 
 // SpBlock

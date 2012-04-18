@@ -128,7 +128,7 @@ namespace sp {
     SpObject* exe_obj_;
     StringSet binaries_to_inst_;
     StringSet funcs_not_to_inst_;
-    RealFuncMap real_func_map_;
+    RealFuncMap mangled_func_map_;
 
     SpParser();
 

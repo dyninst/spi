@@ -8,15 +8,12 @@ using namespace sp;
 
 void test_entry(SpPoint* pt) {
 
-PatchFunction* f = Callee(pt);
+  SpFunction* f = Callee(pt);
   if (!f) return;
-	sp_print("%s", f->name().c_str());
-  /*
-	sp_print("%s - insn at %lx",
-           f->name().c_str(),
-           pt->block()->last());
-  SetSegfaultSignal();
-  */
+  //sp_print("%s", f->GetPrettyName().c_str());
+  //sp_print("%s", f->name().c_str());
+  sp_print("%s", f->GetMangledName().c_str());
+
   sp::Propel(pt);
 }
 

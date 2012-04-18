@@ -136,6 +136,7 @@ SpParser::Parse() {
 }
 
 // Find the function that contains addr
+// TODO: double check whether it works on shared library
 SpFunction*
 SpParser::FindFunction(dt::Address addr) {
   sp_debug("FIND FUNC BY ADDR - for call insn %lx", addr);
@@ -144,16 +145,21 @@ SpParser::FindFunction(dt::Address addr) {
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
 
+    dt::Address offset = addr - obj->codeBase();
+    
     pe::CodeObject* co = obj->co();
     pe::CodeSource* cs = co->cs();
 
     set<pe::CodeRegion *> match;
     set<pe::Block *> blocks;
-    int cnt = cs->findRegions(addr, match);
+    // int cnt = cs->findRegions(addr, match);
+    int cnt = cs->findRegions(offset, match);
+
     if(cnt != 1)
       continue;
     else if(cnt == 1) {
-      co->findBlocks(*match.begin(), addr, blocks);
+      // co->findBlocks(*match.begin(), addr, blocks);
+      co->findBlocks(*match.begin(), offset, blocks);
 
       sp_debug("%ld blocks found", (long)blocks.size());
       if (blocks.size() == 1) {
@@ -211,10 +217,10 @@ SpParser::FindFunction(string name) {
   sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
 
   // A quick return, if this function is in the cache
-  if (real_func_map_.find(name) != real_func_map_.end()) {
+  if (mangled_func_map_.find(name) != mangled_func_map_.end()) {
     sp_debug("GOT FROM CACHE - %s",
-             real_func_map_[name]->name().c_str());
-    return real_func_map_[name];
+             mangled_func_map_[name]->name().c_str());
+    return mangled_func_map_[name];
   }
 
   // Iterate through each object to look for this function
@@ -224,7 +230,7 @@ SpParser::FindFunction(string name) {
   for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
-    // Side effect: func_set will be clear and add the only one function
+
     if (GetFuncsByName(obj, name, true, &func_set)) {
       assert(func_set.size() == 1);
       break;
@@ -233,14 +239,12 @@ SpParser::FindFunction(string name) {
 
   // We skip the case multiple functions have the same name
   if (func_set.size() == 1) {
-    real_func_map_[name] = *func_set.begin();
+    mangled_func_map_[name] = *func_set.begin();
     sp_debug("FOUND - %s in object %s", name.c_str(),
              FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
     return *func_set.begin();
-  } else if (func_set.size() > 1) {
-    sp_debug("MULTIPLE FOUND, SKIP - %s in object %s", name.c_str(),
-             FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
   }
+
   sp_debug("NO FOUND - %s", name.c_str());
   return NULL;
 }
@@ -771,8 +775,42 @@ SpParser::CanInstrumentFunc(const std::string& func) {
 }
 
 bool
-SpParser::FindFunction(string func_name_without_path,
+SpParser::FindFunction(string name,
                        FuncSet* found_funcs) {
+  if (name.length() == 0) {
+    return false;
+  }
+  
+  sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
+
+  // A quick return, if this function is in the cache
+  /*
+  if (mangled_func_map_.find(name) != mangled_func_map_.end()) {
+    sp_debug("GOT FROM CACHE - %s",
+             mangled_func_map_[name]->name().c_str());
+    return mangled_func_map_[name];
+  }
+  */
+
+  // Iterate through each object to look for this function
+  assert(mgr_);
+  ph::AddrSpace* as = mgr_->as();
+  FuncSet func_set;
+  for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
+       ci != as->objMap().end(); ci++) {
+    SpObject* obj = OBJ_CAST(ci->second);
+
+    if (GetFuncsByName(obj, name, false, &func_set)) {
+      break;
+    }
+  }
+
+  if (func_set.size() == 0) {
+    return false;
+  }
+
+  std::copy(func_set.begin(), func_set.end(), inserter(*found_funcs, found_funcs->begin()));
+  assert(found_funcs->size() > 0);
   return true;
 }
 

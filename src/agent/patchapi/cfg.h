@@ -65,6 +65,7 @@ namespace sp {
 		bool propagated() const { return propagated_; }
 		void SetPropagated(bool b) { propagated_ = b; }
     std::string GetMangledName();
+    std::string GetPrettyName();
     
 	protected:
 		bool propagated_;
