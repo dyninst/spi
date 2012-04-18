@@ -1,7 +1,7 @@
 (If you use build_sp.sh to build self-propelled instrumentation package, then ignore the instructions below.)
  
 
-1. Copy example-make.config to be "make.config".
+1. Copy example-make.config to be "config.mk".
 2. Edit make.config to define each macro variable.
   - DYNINST_DIR: absolute path of Dyninst, which contains directories like dyninstAPI, parseAPI, ...
   - SP_DIR: absolute path of this package (the output of `pwd`), because this file is also used by Makefile, I don't put `pwd` in it.

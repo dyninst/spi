@@ -46,7 +46,7 @@ namespace sp {
     SpPropeller();
     virtual ~SpPropeller() {}
 
-    bool go(ph::PatchFunction* func,
+    bool go(SpFunction* func,
             PayloadFunc entry,
             PayloadFunc exit,
             ph::Point* pt = NULL);

@@ -64,7 +64,8 @@ namespace sp {
 		// Has instrumentation been propagated to callees of this function?
 		bool propagated() const { return propagated_; }
 		void SetPropagated(bool b) { propagated_ = b; }
-
+    std::string GetMangledName();
+    
 	protected:
 		bool propagated_;
 	};

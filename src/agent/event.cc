@@ -84,7 +84,7 @@ namespace sp {
 
       sp_debug("PRELOAD - preload agent.so, and instrument main()");
 
-      ph::PatchFunction* f = g_parser->FindFunction("main");
+      SpFunction* f = g_parser->FindFunction("main");
       if (f) {
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
@@ -104,7 +104,7 @@ namespace sp {
                (unsigned long)call_stack.size());
       for (FuncSet::iterator i = call_stack.begin(); 
            i != call_stack.end(); i++) {
-        ph::PatchFunction* f = *i;
+        SpFunction* f = *i;
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
@@ -136,7 +136,7 @@ namespace sp {
 
     for (FuncSet::iterator i = funcs_.begin(); 
            i != funcs_.end(); i++) {
-        ph::PatchFunction* f = *i;
+        SpFunction* f = *i;
         sp_print("PRE-INST FUNC - %s", f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),

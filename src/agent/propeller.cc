@@ -58,7 +58,7 @@ namespace sp {
   // However, users can inherit SpPropeller and implement their own
   // next_points().
   bool
-  SpPropeller::go(ph::PatchFunction* func,
+  SpPropeller::go(SpFunction* func,
                   PayloadFunc entry,
                   PayloadFunc exit,
                   ph::Point* pt) {
@@ -75,8 +75,7 @@ namespace sp {
     if (pt) {
       cur_func = func;
     } else {
-      cur_func = g_parser->FindFunction(func->name(),
-                                        func->addr());
+      cur_func = g_parser->FindFunction(func->GetMangledName());
     }
 
     if (!cur_func) return false;

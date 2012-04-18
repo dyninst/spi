@@ -203,8 +203,11 @@ SpParser::GetFuncAddrFromName(string name) {
 // Find function by name.
 
 SpFunction*
-SpParser::FindFunction(string name,
-                       dt::Address addr) {
+SpParser::FindFunction(string name) {
+  if (name.length() == 0) {
+    return NULL;
+  }
+  
   sp_debug("LOOKING FOR FUNC - looking for %s", name.c_str());
 
   // A quick return, if this function is in the cache
@@ -222,7 +225,7 @@ SpParser::FindFunction(string name,
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
     // Side effect: func_set will be clear and add the only one function
-    if (GetFuncsByName(obj, name, addr, &func_set)) {
+    if (GetFuncsByName(obj, name, true, &func_set)) {
       assert(func_set.size() == 1);
       break;
     }
@@ -234,6 +237,9 @@ SpParser::FindFunction(string name,
     sp_debug("FOUND - %s in object %s", name.c_str(),
              FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
     return *func_set.begin();
+  } else if (func_set.size() > 1) {
+    sp_debug("MULTIPLE FOUND, SKIP - %s in object %s", name.c_str(),
+             FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
   }
   sp_debug("NO FOUND - %s", name.c_str());
   return NULL;
@@ -242,11 +248,12 @@ SpParser::FindFunction(string name,
 bool
 SpParser::GetFuncsByName(sp::SpObject* obj,
                          std::string name,
-                         dt::Address addr,
+                         bool mangled,
                          sp::FuncSet* func_set) {
   assert(obj);
   assert(func_set);
-  sp_debug("IN OBJECT - %s", obj->name().c_str());
+  sp_debug("IN OBJECT - %s in %s?",
+           name.c_str(), obj->name().c_str());
 
   if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
     sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
@@ -262,33 +269,38 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   pe::CodeObject::funclist& all = co->funcs();
   for (pe::CodeObject::funclist::iterator fit = all.begin();
        fit != all.end(); fit++) {
+
+    // Get or create a PatchFunction instance
+    SpFunction* found = FUNC_CAST(obj->getFunc(*fit));
+
     // Skip unmatched function
-    if ((*fit)->name().compare(name) != 0) {
+    
+    if (!found ||
+        found->GetMangledName().length() == 0 ||
+        found->GetMangledName().compare(name) != 0) {
       continue;
     }
-
+    
     // Skip .plt functions
     sb::Region* region = sym->findEnclosingRegion((*fit)->addr());
     assert(region);
     if (region->getRegionName().compare(".plt") == 0) {
       sp_debug("A PLT, SKIP - %s at %lx", name.c_str(),
-               (*fit)->addr());
+               (*fit)->addr() - obj->load_addr());
       continue;
     }
 
-    // Get or create a PatchFunction instance
-    SpFunction* found = FUNC_CAST(obj->getFunc(*fit));
-
-    sp_debug("GOT %s in OBJECT - %s", name.c_str(), sym->name().c_str());
+    
+    sp_debug("GOT %s in OBJECT - %s at %lx",
+             name.c_str(), sym->name().c_str(),
+             found->addr() - obj->load_addr());
 
     // Quick return, if this found function is not a plt, and it has the
     // same address as we specified
-    if (!addr && found && found->addr() == addr) {
+    if (found) {
       func_set->clear();
       func_set->insert(found);
       return true;
-    } else if (found) {
-      func_set->insert(found);
     }
 
   } // For each function
@@ -424,8 +436,7 @@ SpParser::callee(SpPoint* pt,
   SpFunction* f = FUNC_CAST(pt->getCallee());
   if (f) {
 
-    SpFunction* tmp_f = g_parser->FindFunction(f->name(),
-                                               f->addr());
+    SpFunction* tmp_f = g_parser->FindFunction(f->GetMangledName());
     if (tmp_f && tmp_f != f) {
       f = tmp_f;
     }
@@ -706,7 +717,8 @@ SpParser::CreateObjectFromRuntime(sb::Symtab* sym,
 
   dt::Address real_load_addr =
       load_addr ? load_addr : scs->loadAddress();
-
+  // sp_print("load_addr: %lx, scs->loadAddress: %lx", load_addr,
+  //         scs->loadAddress());
   SpObject* obj =  new sp::SpObject(co,
                                     load_addr,
                                     new SpCFGMaker,
@@ -755,6 +767,12 @@ SpParser::CanInstrumentFunc(const std::string& func) {
        i != funcs_not_to_inst_.end(); i++) {
     if (func.find(*i) != string::npos) return false;
   }
+  return true;
+}
+
+bool
+SpParser::FindFunction(string func_name_without_path,
+                       FuncSet* found_funcs) {
   return true;
 }
 

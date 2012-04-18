@@ -40,6 +40,16 @@ namespace sp {
     return OBJ_CAST(obj());
 	}
 
+  std::string SpFunction::GetMangledName() {
+    sb::Symtab* sym = GetObject()->symtab();
+    assert(sym);
+    dt::Address offset = function()->addr();
+    std::vector<sb::Symbol*>* symbols = sym->findSymbolByOffset(offset);
+    if (!symbols || symbols->size() == 0) {
+      return "";
+    }
+    return (*symbols)[0]->getMangledName();
+  }
 
 // SpBlock
 

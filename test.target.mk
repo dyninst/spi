@@ -93,6 +93,7 @@ UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(AG_DIR)/parser_unittest.cc \
             $(ST_DIR)/coreutils_systest.cc \
             $(ST_DIR)/chrome_systest.cc \
+            $(ST_DIR)/cpp_systest.cc \
             $(ST_DIR)/gcc_systest.cc \
             $(ST_DIR)/multithread_systest.cc
 
@@ -149,15 +150,20 @@ MUTATEE_SRCS  = $(ME_DIR)/tcp_client.c \
                 $(ME_DIR)/multithread.c \
                 $(ME_DIR)/stripped.c \
 
-MUTATEE_OBJS  = $(addprefix $(MUTATEE_OBJS_DIR)/, $(notdir $(MUTATEE_SRCS:%.c=%.o)))
-MUTATEE_EXES  = $(addprefix $(MUTATEE_EXES_DIR)/, $(notdir $(MUTATEE_SRCS:%.c=%.exe)))
+MUTATEE_CPP_SRCS  = $(ME_DIR)/cpp_prog.cc \
+
+MUTATEE_OBJS      = $(addprefix $(MUTATEE_OBJS_DIR)/, $(notdir $(MUTATEE_SRCS:%.c=%.o)))
+MUTATEE_EXES      = $(addprefix $(MUTATEE_EXES_DIR)/, $(notdir $(MUTATEE_SRCS:%.c=%.exe)))
+
+MUTATEE_CPP_OBJS  = $(addprefix $(MUTATEE_OBJS_DIR)/, $(notdir $(MUTATEE_CPP_SRCS:%.cc=%.o)))
+MUTATEE_CPP_EXES  = $(addprefix $(MUTATEE_EXES_DIR)/, $(notdir $(MUTATEE_CPP_SRCS:%.cc=%.exe)))
 
 MUTATEE_LDFLAGS    = $(notdir $(MUTATEE_LIB_SO:$(MUTATEE_EXES_DIR)/lib%.so=-l%))
 MUTATEE_FLAGS      += -g -fPIC
 MUTATEE_LDFLAGS    += -lpthread
 MUTATEE_LDFLAGS    += -L$(MUTATEE_EXES_DIR)
 
-mutatee_exes: $(MUTATEE_EXES)
+mutatee_exes: $(MUTATEE_EXES) $(MUTATEE_CPP_EXES)
 
 $(MUTATEE_OBJS): $(MUTATEE_OBJS_DIR)/%.o : $(ME_DIR)/%.c
 	@echo "Compiling $*.o"
@@ -167,6 +173,16 @@ $(MUTATEE_OBJS): $(MUTATEE_OBJS_DIR)/%.o : $(ME_DIR)/%.c
 $(MUTATEE_EXES): $(MUTATEE_EXES_DIR)/%.exe : $(MUTATEE_OBJS_DIR)/%.o
 	@echo "Linking $*.exe"
 	@gcc -o $@ $< $(MUTATEE_LDFLAGS)
+
+$(MUTATEE_CPP_OBJS): $(MUTATEE_OBJS_DIR)/%.o : $(ME_DIR)/%.cc
+	@echo "Compiling $*.o"
+	@$(MKDIR) $(MUTATEE_OBJS_DIR)
+	@g++ -o $@ $< $(MUTATEE_IFLAGS) $(MUTATEE_FLAGS) -c
+
+
+$(MUTATEE_CPP_EXES): $(MUTATEE_EXES_DIR)/%.exe : $(MUTATEE_OBJS_DIR)/%.o
+	@echo "Linking $*.exe"
+	@g++ -o $@ $< $(MUTATEE_LDFLAGS)
 
 mutatees: mutatee_libs mutatee_exes
 
@@ -184,6 +200,7 @@ TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
            $(TG_DIR)/gcc_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
            $(TG_DIR)/print_test_agent.cc \
+           $(TG_DIR)/condor_test_agent.cc \
            $(TG_DIR)/multithread_test_agent.cc \
 
 TG_OBJS  = $(addprefix $(TAGENT_OBJS_DIR)/, $(notdir $(TG_SRCS:%.cc=%.o)))

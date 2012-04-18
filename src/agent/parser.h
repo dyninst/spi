@@ -100,8 +100,11 @@ namespace sp {
     AGENT_EXPORT SpFunction*
         FindFunction(dt::Address absolute_addr);
     AGENT_EXPORT SpFunction*
+        FindFunction(string func_name_without_path);
+    AGENT_EXPORT bool
         FindFunction(string func_name_without_path,
-                     dt::Address addr = 0);
+                     FuncSet* found_funcs);
+
     AGENT_EXPORT SpFunction*
         callee(SpPoint* point,
                bool parse_indirect = false);
@@ -149,8 +152,9 @@ namespace sp {
 
     bool GetFuncsByName(sp::SpObject* obj,
                         std::string name,
-                        dt::Address addr,
+                        bool mangled,
                         sp::FuncSet* func_set);
+
   };
 
 }
