@@ -1,12 +1,10 @@
-General:
-- [ ] Change to google's coding style
-- [ ] a faster and robuster memory allocator
-- [ ] can determine what libraries to instrument, instead of what to avoid
-- [ ] findFunction(name, orig_addr, ...)
+- [ ] cache not-found functions in findFunction(mangled)
+- [ ] cache not-found functions in findFunction(address)
+- [ ] cache not-found functions in findFunction(demangled)
+- [ ] cache found functions in findFunction(address)
+- [ ] cache not-found functions in findFunction(demangled)
 - [ ] well test findFunction
-- [ ] well test memory allocator
-- [ ] Use gstack to get function call stack
-
-Agent:
-- [ ] uninstrument / unload agent.so
-
+- [ ] figure out why the function in condor_submit fails
+- [X] figure out why gcc instrumentation fails
+- [ ] make payload_exit work again
+- [ ] Use gstack to get function call stack on 32-bit
