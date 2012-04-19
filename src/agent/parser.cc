@@ -230,11 +230,13 @@ SpParser::FindFunction(string name) {
   for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
-
+    GetFuncsByName(obj, name, true, &func_set);
+    /*
     if (GetFuncsByName(obj, name, true, &func_set)) {
       assert(func_set.size() == 1);
       break;
     }
+    */
   }
 
   // We skip the case multiple functions have the same name
@@ -302,12 +304,13 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
     // Quick return, if this found function is not a plt, and it has the
     // same address as we specified
     if (found) {
-      func_set->clear();
+      // func_set->clear();
       func_set->insert(found);
-      return true;
+      // return true;
     }
 
   } // For each function
+  if (func_set->size() == 1) return true;
   return false;
 }
 
