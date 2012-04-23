@@ -51,9 +51,14 @@ namespace sp {
   typedef std::vector<pe::CodeSource*> CodeSources;
   typedef std::vector<sb::Symbol*> Symbols;
   typedef std::vector<ph::PatchObject*> PatchObjects;
-  typedef std::map<std::string, SpFunction*> RealFuncMap;
-  typedef std::set<sp::SpFunction*> FuncSet;
 
+  typedef std::set<sp::SpFunction*> FuncSet;
+  typedef std::map<std::string, SpFunction*> MangledFuncMap;
+  typedef std::map<dt::Address, SpFunction*> AddrFuncMap;
+  typedef std::map<std::string, FuncSet> DemangledFuncsMap;
+
+  typedef std::set<dt::Address> AddrSet;
+  
   class  SpParser {
   public:
     typedef SHARED_PTR(SpParser) ptr;
@@ -128,8 +133,15 @@ namespace sp {
     SpObject* exe_obj_;
     StringSet binaries_to_inst_;
     StringSet funcs_not_to_inst_;
-    RealFuncMap mangled_func_map_;
 
+    AddrFuncMap addr_func_map_;
+    MangledFuncMap mangled_func_map_;
+    DemangledFuncsMap demangled_func_map_;
+
+    AddrSet addr_func_not_found_;
+    StringSet mangled_func_not_found_;
+    StringSet demangled_func_not_found_;
+    
     SpParser();
 
     // All about parsing

@@ -91,7 +91,7 @@ TEST_F(AgentTest, customized_setting) {
   EXPECT_TRUE(agent->IsDirectcallOnlyEnabled());
   EXPECT_TRUE(agent->IsTrapOnlyEnabled());
   EXPECT_TRUE(agent->IsIpcEnabled());
-  EXPECT_FALSE(agent->IsMultithreadEnabled());
+  EXPECT_TRUE(agent->IsMultithreadEnabled());
 
   EXPECT_TRUE(parser->CanInstrumentLib("libtest1.so"));
   EXPECT_FALSE(parser->CanInstrumentLib("libtest2.so"));
