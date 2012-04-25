@@ -489,7 +489,8 @@ SpParser::callee(SpPoint* pt,
   assert(pt);
 
   // 0. Check the cache
-  // TODO: Should always re-parse indirect call
+
+  // Proved found
   if (pt->callee()) {
     return pt->callee();
   }
@@ -511,6 +512,7 @@ SpParser::callee(SpPoint* pt,
   
   // 2. Looking for indirect call
   if (parse_indirect) {
+    
     SpBlock* b = pt->GetBlock();
     assert(b);
 
@@ -530,21 +532,7 @@ SpParser::callee(SpPoint* pt,
     dt::Address call_addr = 0;
     if (trg) {
       dt::Address segment_reg_val = 0;
-      /*
-      std::set<in::RegisterAST::Ptr> regs;
-      insn->getReadSet(regs);
-      for (std::set<in::RegisterAST::Ptr>::iterator j = regs.begin();
-           j != regs.end(); j++) {
-        if ((*j)->getID().name().find("::fs") != std::string::npos) {
-          ucontext_t context;
-          if (getcontext(&context) == 0) {
-            segment_reg_val = SpSnippet::GetFs(&context);
-            break;
-          }
-        }
-      } // For all read registers
-      sp_debug("FS: %lx", segment_reg_val);
-*/      
+
       SpVisitor visitor(pt, segment_reg_val);
       trg->apply(&visitor);
       call_addr = visitor.call_addr();
@@ -567,7 +555,7 @@ SpParser::callee(SpPoint* pt,
 
     return NULL;
   }
-
+  
   return NULL;
 }
 
@@ -670,6 +658,12 @@ SpParser::FindFunction(dt::Address addr) {
              addr_func_map_[addr]->name().c_str());
     return addr_func_map_[addr];
   }
+
+  // A quick return, if this function is proved to be not found
+  if (addr_func_not_found_.find(addr) != addr_func_not_found_.end()) {
+    sp_debug("NOT FOUND - call at %lx is proved to be not found", addr);
+    return NULL;
+  }
   
   ph::AddrSpace* as = mgr_->as();
   for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
@@ -701,9 +695,11 @@ SpParser::FindFunction(dt::Address addr) {
           return found;
         }
       }
+      addr_func_not_found_.insert(addr);
       return NULL;
     }
   }
+  addr_func_not_found_.insert(addr);
   return NULL;
 }
 
@@ -728,6 +724,13 @@ SpParser::FindFunction(string name,
     return true;
   }
 
+  // A quick return, if this function is proved to be not found
+  if (demangled_func_not_found_.find(name)
+      != demangled_func_not_found_.end()) {
+    sp_debug("NOT FOUND - %s is proved to be not found", name.c_str());
+    return false;
+  }
+  
   // Iterate through each object to look for this function
   assert(mgr_);
   ph::AddrSpace* as = mgr_->as();
@@ -739,6 +742,7 @@ SpParser::FindFunction(string name,
   }
 
   if (func_set.size() == 0) {
+    demangled_func_not_found_.insert(name);
     return false;
   }
 
@@ -772,6 +776,12 @@ SpParser::FindFunction(string name) {
     return mangled_func_map_[name];
   }
 
+  // A quick return, if this function is proved to be not found
+  if (mangled_func_not_found_.find(name) != mangled_func_not_found_.end()) {
+    sp_debug("NOT FOUND - %s is proved to be not found", name.c_str());
+    return NULL;
+  }
+  
   // Iterate through each object to look for this function
   assert(mgr_);
   ph::AddrSpace* as = mgr_->as();
@@ -790,6 +800,7 @@ SpParser::FindFunction(string name) {
     return *func_set.begin();
   }
 
+  mangled_func_not_found_.insert(name);  
   sp_debug("NO FOUND - %s", name.c_str());
   return NULL;
 }
