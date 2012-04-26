@@ -81,9 +81,21 @@ namespace sp {
       SpBlock* blk = pt->GetBlock();
       assert(blk);
 
-      // TODO: Should check PC-sensitive instructions, we may emulate them...
-      return (blk->size() * 2 +
-              InstWorkerDelegate::BaseEstimateRelocInsnSize(pt));
+      size_t size = blk->size() +
+          InstWorkerDelegate::BaseEstimateRelocInsnSize(pt);
+      
+      ph::PatchBlock::Insns insns;
+      blk->getInsns(insns);
+      for (ph::PatchBlock::Insns::iterator i = insns.begin();
+           i != insns.end(); i++) {
+        in::Instruction::Ptr insn = i->second;
+        if (SpSnippet::UsePC(insn)) {
+          sp_debug("EST SIZE - USE PC");
+          size += 20; // the worse case, we emulate pc insn
+        }
+      }
+      sp_debug("EST SIZE - %ld", size);
+      return size;
     }
 	};
 

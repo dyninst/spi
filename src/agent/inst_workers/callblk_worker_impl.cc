@@ -184,7 +184,10 @@ namespace sp {
 
 	size_t
 	RelocCallBlockWorker::EstimateBlobSize(SpPoint* pt) {
-		return InstWorkerDelegate::BaseEstimateRelocBlockSize(pt);
+		size_t size = InstWorkerDelegate::BaseEstimateRelocBlockSize(pt);
+
+    
+    return size;
 	}
 
 }

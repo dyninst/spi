@@ -434,7 +434,6 @@ namespace sp {
     RelocVisitor(SpParser::ptr p)
       : in::Visitor(), p_(p), use_pc_(false) {}
     virtual void visit(in::RegisterAST* r) {
-      // sp_debug("USE REG");
       assert(r);
       if (r->getID().isPC()) {
         use_pc_ = true;
@@ -1033,4 +1032,59 @@ namespace sp {
     return ((ctx->uc_mcontext.gregs[index] >> 32) & 0xffff);
   }
 
+  // Examine whether an instruction is using Pc-sensitive insn
+
+  class UsePcVisitor : public in::Visitor {
+  public:
+    UsePcVisitor()
+      : in::Visitor(), use_pc_(false) {}
+    virtual void visit(in::RegisterAST* r) {
+      assert(r);
+      if (r->getID().isPC()) {
+        use_pc_ = true;
+      }
+    }
+    virtual void visit(in::BinaryFunction* b) {
+    }
+    virtual void visit(in::Immediate* i) {
+    }
+    virtual void visit(in::Dereference* d) {
+    }
+    bool use_pc() const { return use_pc_; }
+  private:
+    bool use_pc_;
+  };
+
+  bool
+  SpSnippet::UsePC(in::Instruction::Ptr insn) {
+
+    assert(insn);
+
+    set<in::RegisterAST::Ptr> pcExp;
+    bool read_use_pc = false;
+    insn->getReadSet(pcExp);
+    for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
+         i != pcExp.end(); i++) {
+      UsePcVisitor visitor;
+      (*i)->apply(&visitor);
+      read_use_pc = visitor.use_pc();
+      if (read_use_pc) {
+        return true;
+      }
+    }
+
+    bool write_use_pc = false;
+    insn->getWriteSet(pcExp);
+    for (set<in::RegisterAST::Ptr>::iterator i = pcExp.begin();
+         i != pcExp.end(); i++) {
+      UsePcVisitor visitor;
+      (*i)->apply(&visitor);
+      write_use_pc = visitor.use_pc();
+      if (write_use_pc) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

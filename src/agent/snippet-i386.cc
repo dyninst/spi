@@ -380,4 +380,11 @@ namespace sp {
     saved_reg_map_[d32::edi] = EDI;
     saved_reg_map_[d32::di] = EDI;
   }
+
+  // On x86, no any insn uses pc
+
+  bool
+  SpSnippet::UsePC(in::Instruction::Ptr insn) {
+    return false;
+  }
 }

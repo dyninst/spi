@@ -26,7 +26,8 @@ class RelocCallBlockWorkerTest : public testing::Test {
 };
 
 
-TEST_F(RelocCallBlockWorkerTest, pid_inject) {
+TEST_F(RelocCallBlockWorkerTest, estimate_size) {
+  
 }
 
 }

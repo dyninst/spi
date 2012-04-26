@@ -72,7 +72,7 @@ namespace sp {
 		}
 
 		const double small_buf_num_ratio = 0.80;
-		const size_t small_buf_size = 200;
+		const size_t small_buf_size = 256;
 
 		const double mid_buf_num_ratio = 0.10;
 		const size_t mid_buf_size = 512;
@@ -92,7 +92,8 @@ namespace sp {
 			small_freebufs_.list.push_back(offset);
 		}
 
-		sp_debug("SMALL BUF (total %ld)- limit: %ld, offset: %ld, base %lx, total_size %ld, buf_size %ld",
+		sp_debug("SMALL BUF (total %ld)- limit: %ld, offset: %ld, base %lx,"
+             " total_size %ld, buf_size %ld",
 						 (long)small_freebufs_.list.size(),
              small_buf_total_size_limit,
              (long)offset,
@@ -106,11 +107,13 @@ namespace sp {
 
 		size_t mid_buf_total_size_limit =
         (size_t)(mid_buf_num_ratio * (double)size) + offset;
-		for (; (offset + mid_buf_size) < mid_buf_total_size_limit; offset += mid_buf_size) {
+		for (; (offset + mid_buf_size) < mid_buf_total_size_limit;
+         offset += mid_buf_size) {
 			mid_freebufs_.list.push_back(offset);
 		}
     
-		sp_debug("MID BUF (total %ld) - limit: %ld, offset: %ld, base %lx, total_size %ld, buf_size %ld",
+		sp_debug("MID BUF (total %ld) - limit: %ld, offset: %ld, base %lx,"
+             " total_size %ld, buf_size %ld",
 						 (long)mid_freebufs_.list.size(),
              mid_buf_total_size_limit,
              (long)offset,
@@ -127,7 +130,8 @@ namespace sp {
     size_t big_buf_total_size_limit = 
         (size_t)(big_buf_num_ratio * (double)size) + offset;
 
-		for (; (offset + big_buf_size) < big_buf_total_size_limit; offset += big_buf_size) {
+		for (; (offset + big_buf_size) < big_buf_total_size_limit;
+         offset += big_buf_size) {
 			big_freebufs_.list.push_back(offset);
 		}
 
@@ -173,45 +177,27 @@ namespace sp {
       return ret;
 		}
 
-    // TODO: should have good estimation algorithm
-    // Iterate each instruction to calculate relocation cost
-    // size *= 2;
-    ret = (dt::Address)::malloc(size);
-
-    if (ret) {
+    size_t ps = getpagesize();
+    size = ((size + ps -1) & ~(ps - 1));
+    if (::posix_memalign((void**)&ret, ps, size) == 0) {
+      // sp_print("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
       sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
       return ret;
-    } else {
-      void* m = MAP_FAILED;
-      m = mmap((void*)0,
-               size,
-               PROT_WRITE | PROT_READ | PROT_EXEC,
-               MAP_PRIVATE | MAP_ANONYMOUS,
-               -1,
-               0);
-      ret = (dt::Address)m;
-      if (m != MAP_FAILED) {
-        buf_size_map_[ret] = size;
-        sp_debug("FAILED TO GET A CLOSE BUFFER - %lx mmaped", ret);
-        return ret;
-      }
     }
-    
     sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
     return 0;
 	}
 
 	bool
 	SpObject::FreeBuffer(dt::Address buf) {
+    if (!buf) return false;
+    
 		if (alloc_bufs_.find(buf) == alloc_bufs_.end()) {
 			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
-      if (buf_size_map_.find(buf) == buf_size_map_.end()) {
-        ::free((void*)buf);
-      } else {
-        munmap((void*)buf, buf_size_map_[buf]);
-      }
+      // sp_print("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
+      ::free((void*)buf);
       buf = NULL;
-      return false;
+      return true;
     }
 
 		BufType type = alloc_bufs_[buf];
@@ -226,6 +212,7 @@ namespace sp {
 			big_freebufs_.list.push_back(buf);
 			break;
 		default:
+      sp_perror("UNKNOWN FREE - %lx", buf);
 			assert(0);
 		}
 		alloc_bufs_.erase(buf);

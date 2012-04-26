@@ -91,6 +91,8 @@ namespace sp {
     static dt::Address set_pc(dt::Address pc, void* context);
     static size_t jump_abs_size();
 
+    static bool UsePC(in::Instruction::Ptr);
+    
   protected:
     SpFunction* func_;
     SpPoint* point_;
