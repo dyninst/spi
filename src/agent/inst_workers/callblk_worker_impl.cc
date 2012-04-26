@@ -70,7 +70,11 @@ namespace sp {
 		assert(snip);
 		size_t est_size = EstimateBlobSize(pt);
 		dt::Address blob = snip->GetBlob(est_size);
-		assert(blob);
+    if (!blob) {
+      sp_debug("NULL BLOB - get null blob at %lx", b->last());
+      return false;
+    }
+    
     long rel_addr = (long)blob - (long)call_blk_addr - 5;
     char insn[64];    // the jump instruction to overwrite call blk
 

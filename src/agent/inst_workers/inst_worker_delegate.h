@@ -80,7 +80,10 @@ namespace sp {
       assert(pt);
       SpBlock* blk = pt->GetBlock();
       assert(blk);
-      return blk->size() + InstWorkerDelegate::BaseEstimateRelocInsnSize(pt);
+
+      // TODO: Should check PC-sensitive instructions, we may emulate them...
+      return (blk->size() * 2 +
+              InstWorkerDelegate::BaseEstimateRelocInsnSize(pt));
     }
 	};
 

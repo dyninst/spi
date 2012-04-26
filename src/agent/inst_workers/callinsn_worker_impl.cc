@@ -84,7 +84,11 @@ namespace sp {
 		assert(snip);
 		size_t est_size = EstimateBlobSize(pt);
 		dt::Address blob = snip->GetBlob(est_size);
-		assert(blob);
+    if (!blob) {
+      sp_debug("NULL BLOB - get null blob at %lx", b->last());
+      return false;
+    }
+
     long rel_addr = (long)blob - (long)call_insn_addr;
     if (!sp::IsDisp32(rel_addr)) {
       sp_debug("NOT 4-byte DISP - blob=%lx, call_insn=%lx, delta=%ld,"

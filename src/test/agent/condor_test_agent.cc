@@ -33,7 +33,7 @@ void MyAgent() {
   agent->SetLibrariesToInstrument(libs_to_inst);
 
   StringSet funcs_not_to_inst;
-  funcs_not_to_inst.insert("ExprTreeToString");
+  //funcs_not_to_inst.insert("ExprTreeToString");
   //funcs_not_to_inst.insert("classad::ClassAdUnParser::Unparse()");
   //funcs_not_to_inst.insert("setbuf");
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);

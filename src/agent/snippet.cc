@@ -98,7 +98,7 @@ namespace sp {
     if (!blob_) {
       sp_debug("ALLOC BLOB - for size %ld", (long)est_size);
       blob_ = (char*)GetBlob(est_size);
-      assert(blob_);
+      if (!blob_) return NULL;
     }
 
     dt::Address ret_addr = point_->ret_addr();
@@ -208,12 +208,13 @@ namespace sp {
   EXIT:
 
     if (func_) {
-      sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx for %s - {",
+      sp_debug("DUMP PATCH AREA %lx (%lu bytes) for point %lx for %s - {",
+               (unsigned long)blob_,
                (unsigned long)blob_size_, b->last(),
                func_->name().c_str());
     } else {
-      sp_debug("DUMP PATCH AREA (%lu bytes) for point %lx - {",
-               (unsigned long)blob_size_, b->last());
+      sp_debug("DUMP PATCH AREA %lx (%lu bytes) for point %lx - {",
+               (unsigned long)blob_, (unsigned long)blob_size_, b->last());
     }
     sp_debug("%s", g_parser->DumpInsns((void*)blob_,
                                        blob_size_).c_str());
@@ -408,7 +409,7 @@ namespace sp {
 
     blob_ = (char*)g_as->malloc(obj, estimate_size,
                                 obj->load_addr());
-    assert(blob_);
+    // assert(blob_);
     return (dt::Address)blob_;
   }
 

@@ -147,7 +147,10 @@ namespace sp {
 		assert(sp_snip);
 
     char* blob = (char*)sp_snip->GetBlob();
-		assert(sp_snip);
+    if (!blob) {
+      sp_debug("TRAP NULL BLOB - get null blob at %lx", pc);
+      return;
+    }
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		sp_debug("TRAP HANDLER - for call insn %lx", pc);
