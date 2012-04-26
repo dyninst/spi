@@ -139,6 +139,7 @@ namespace sp {
     DemangledFuncsMap demangled_func_map_;
 
     AddrSet addr_func_not_found_;
+    AddrSet addr_callee_not_found_;
     StringSet mangled_func_not_found_;
     StringSet demangled_func_not_found_;
     

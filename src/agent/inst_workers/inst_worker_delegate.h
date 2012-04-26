@@ -72,7 +72,7 @@ namespace sp {
 
 		// For relocating an insn
 		static size_t BaseEstimateRelocInsnSize(SpPoint* pt) {
-      return 127;
+      return 200;
     }
 
 		// For relocating a block

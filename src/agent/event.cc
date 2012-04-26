@@ -130,15 +130,18 @@ namespace sp {
     for (StringSet::iterator i = func_names_.begin();
          i != func_names_.end(); i++) {
       // sp_print("%s", (*i).c_str());
-      // TODO: should use FindFunction for pretty name
-      sp::SpFunction* f = g_parser->FindFunction(*i);
-      if (f) funcs_.insert(f);
+      FuncSet found_funcs;
+      g_parser->FindFunction(*i, &found_funcs);
+      for (FuncSet::iterator fi = found_funcs.begin();
+           fi != found_funcs.end(); fi++) {
+        if (*fi) funcs_.insert(*fi);
+      }
     }
 
     for (FuncSet::iterator i = funcs_.begin(); 
            i != funcs_.end(); i++) {
         SpFunction* f = *i;
-        sp_print("PRE-INST FUNC - %s", f->name().c_str());
+        // sp_print("PRE-INST FUNC - %s", f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());

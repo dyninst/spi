@@ -42,7 +42,7 @@ void print_entry(SpPoint* pt) {
   sp::Propel(pt);
 }
 
-void print_after(Point* pt) {
+void print_exit(Point* pt) {
 }
 
 void segv_handler(int num) {
@@ -52,6 +52,7 @@ AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
   agent->SetInitEntry("print_entry");
+  agent->SetInitExit("print_exit");
   agent->Go();
 }
 

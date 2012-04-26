@@ -516,6 +516,12 @@ SpParser::callee(SpPoint* pt,
     SpBlock* b = pt->GetBlock();
     assert(b);
 
+    if (addr_callee_not_found_.find(b->last()) !=
+                                    addr_callee_not_found_.end()) {
+      sp_debug("NOT FOUND - proved not found for %lx", b->last());
+      return NULL;
+    }
+
     sp_debug("PARSING INDIRECT - for call insn %lx",
              b->last());
 
@@ -552,7 +558,7 @@ SpParser::callee(SpPoint* pt,
 
     sp_debug("CANNOT FIND INDRECT CALL - for call insn %lx",
              b->last());
-
+    addr_callee_not_found_.insert(b->last());
     return NULL;
   }
   

@@ -74,13 +74,16 @@ namespace sp {
 		const double small_buf_num_ratio = 0.8;
 		const size_t small_buf_total_size_limit =
 			(size_t)(small_buf_num_ratio * size);
-		const size_t small_buf_size = 128;
+		// const size_t small_buf_size = 150;
+		const size_t small_buf_size = 250;
 
 		const double mid_buf_num_ratio = 0.15;
 		size_t mid_buf_total_size_limit =
 			(size_t)(mid_buf_num_ratio * size);
+		// const size_t mid_buf_size = 512;
 		const size_t mid_buf_size = 512;
 
+		// const size_t big_buf_size = 4096;
 		const size_t big_buf_size = 4096;
 
 		// For small free bufs

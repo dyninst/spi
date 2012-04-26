@@ -16,6 +16,12 @@ PatchFunction* f = Callee(pt);
   sp::Propel(pt);
 }
 
+void spi_test_exit(SpPoint* pt) {
+  PatchFunction* f = Callee(pt);
+  if (!f) return;
+  sp_print("Exit %s", f->name().c_str());
+}
+
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
@@ -28,9 +34,12 @@ void MyAgent() {
 
   StringSet funcs_not_to_inst;
   funcs_not_to_inst.insert("ExprTreeToString");
+  //funcs_not_to_inst.insert("classad::ClassAdUnParser::Unparse()");
+  //funcs_not_to_inst.insert("setbuf");
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
   
   agent->SetInitEntry("test_entry");
+  agent->SetInitExit("spi_test_exit");
   agent->Go();
 }
 

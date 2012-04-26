@@ -88,6 +88,7 @@ VPATH    += $(ST_DIR) \
 UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(AG_DIR)/patchapi/addr_space_unittest.cc \
             $(AG_DIR)/agent_unittest.cc \
+            $(AG_DIR)/payload_unittest.cc \
             $(AG_DIR)/event_unittest.cc \
             $(AG_DIR)/context_unittest.cc \
             $(AG_DIR)/parser_unittest.cc \
@@ -199,6 +200,7 @@ external_mutatees:
 #==========================================================
 TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
            $(TG_DIR)/chrome_test_agent.cc \
+           $(TG_DIR)/payload_test_agent.cc \
            $(TG_DIR)/gcc_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
            $(TG_DIR)/print_test_agent.cc \

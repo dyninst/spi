@@ -9,7 +9,7 @@ using namespace std;
 namespace base {
 
 void foo() {
-  printf("I'm foo!\n");
+  rand();
 }
 
 }
@@ -30,6 +30,18 @@ class EventTest : public testing::Test {
 	}
 };
 
+int printf_count = 0;
+
+void count_entry(SpPoint* pt) {
+
+  SpFunction* f = Callee(pt);
+  if (!f) return;
+
+  if (f->name().compare("rand") == 0) {
+    ++printf_count;
+  }
+  sp::Propel(pt);
+}
 
 TEST_F(EventTest, func_event) {
 
@@ -40,7 +52,14 @@ TEST_F(EventTest, func_event) {
   FuncEvent::ptr event = FuncEvent::Create(preinst_funcs);
   SpAgent::ptr agent = SpAgent::Create();
   agent->SetInitEvent(event);
+  agent->SetInitEntry("count_entry");
   agent->Go();
+
+  base::foo();
+  base::foo();
+  base::foo();
+
+  EXPECT_EQ(printf_count, 3);
 }
 
 }

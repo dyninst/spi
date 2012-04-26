@@ -26,7 +26,20 @@ class PayloadTest : public testing::Test {
 };
 
 
-TEST_F(PayloadTest, pid_inject) {
+TEST_F(PayloadTest, exit_payload) {
+  std::string cmd;
+  cmd = "LD_LIBRARY_PATH=test_mutatee:$LD_LIBRARY_PATH ";
+  cmd += "LD_PRELOAD=test_agent/payload_test_agent.so ";
+	cmd += "test_mutatee/indcall.exe";
+  system(cmd.c_str());
+  /*
+	FILE* fp = popen(cmd.c_str(), "r");
+	char buf[1024];
+	while (fgets(buf, 1024, fp) != NULL) {
+    fprintf(stderr, "%s", buf);
+  }
+  pclose(fp);
+  */
 }
 
 }

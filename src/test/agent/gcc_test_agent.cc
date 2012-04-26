@@ -42,7 +42,9 @@ void print_entry(SpPoint* pt) {
   sp::Propel(pt);
 }
 
-void print_after(Point* pt) {
+void print_exit(SpPoint* pt) {
+  SpFunction* f = sp::Callee(pt);
+  if (!f) return;
 }
 
 void segv_handler(int num) {
@@ -59,6 +61,7 @@ void MyAgent() {
   agent->SetLibrariesToInstrument(libs_to_inst);
   
   agent->SetInitEntry("print_entry");
+  agent->SetInitExit("print_exit");
   agent->Go();
 }
 
