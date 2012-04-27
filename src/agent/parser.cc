@@ -489,16 +489,15 @@ SpParser::callee(SpPoint* pt,
   assert(pt);
 
   // 0. Check the cache
+  SpFunction* f = pt->callee();
 
-  // Proved found
-  if (pt->callee()) {
-    return pt->callee();
+  if (f) {
+    return f;
   }
 
   // 1. Looking for direct call
-  SpFunction* f = FUNC_CAST(pt->getCallee());
+  f = FUNC_CAST(pt->getCallee());
   if (f) {
-
     SpFunction* tmp_f = g_parser->FindFunction(f->GetMangledName());
     if (tmp_f && tmp_f != f) {
       f = tmp_f;

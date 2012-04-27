@@ -8,7 +8,7 @@ using namespace sp;
 
 void test_entry(SpPoint* pt) {
 
-PatchFunction* f = Callee(pt);
+  PatchFunction* f = Callee(pt);
   if (!f) return;
 	sp_print("%s() in %s",
            f->name().c_str(),
@@ -33,7 +33,7 @@ void MyAgent() {
   agent->SetLibrariesToInstrument(libs_to_inst);
 
   StringSet funcs_not_to_inst;
-  funcs_not_to_inst.insert("ExprTreeToString");
+  //funcs_not_to_inst.insert("ExprTreeToString");
   //funcs_not_to_inst.insert("classad::ClassAdUnParser::Unparse()");
   //funcs_not_to_inst.insert("setbuf");
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);

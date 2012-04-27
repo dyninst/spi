@@ -248,8 +248,12 @@ namespace sp {
                         const char* const rem_port,
                         PidSet& pid_set) {
     char cmd[kLenStringBuffer];
-    snprintf(cmd, kLenStringBuffer, "/usr/sbin/lsof -i UDP:%s -i TCP:%s",
-             rem_port, rem_port);
+    std::string lsof_path = getenv("SP_LSOF");
+    if (lsof_path.length() == 0)
+      lsof_path = "lsof";
+    
+    snprintf(cmd, kLenStringBuffer, "%s -i UDP:%s -i TCP:%s",
+             lsof_path.c_str(), rem_port, rem_port);
 
     FILE* fp = popen(cmd, "r");
     char line[1024];

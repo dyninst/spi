@@ -96,7 +96,8 @@ UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(ST_DIR)/chrome_systest.cc \
             $(ST_DIR)/cpp_systest.cc \
             $(ST_DIR)/gcc_systest.cc \
-            $(ST_DIR)/multithread_systest.cc
+            $(ST_DIR)/multithread_systest.cc \
+            $(ST_DIR)/ipc_systest.cc
 
 UT_OBJS   = $(addprefix $(TEST_OBJS_DIR)/, $(notdir $(UT_SRCS:%.cc=%.o)))
 UT_OBJS  += $(TEST_OBJS_DIR)/common_unittest.o
@@ -146,6 +147,8 @@ $(MUTATEE_LIB_SO): $(MUTATEE_EXES_DIR)/%.so : $(MUTATEE_OBJS_DIR)/%.o
 MUTATEE_SRCS  = $(ME_DIR)/tcp_client.c \
                 $(ME_DIR)/tcp_server4.c \
                 $(ME_DIR)/tcp_server6.c \
+                $(ME_DIR)/pipe1.c \
+                $(ME_DIR)/pipe2.c \
                 $(ME_DIR)/indcall.c \
                 $(ME_DIR)/libcall.c \
                 $(ME_DIR)/multithread.c \
@@ -161,7 +164,7 @@ MUTATEE_CPP_EXES  = $(addprefix $(MUTATEE_EXES_DIR)/, $(notdir $(MUTATEE_CPP_SRC
 
 MUTATEE_LDFLAGS    = $(notdir $(MUTATEE_LIB_SO:$(MUTATEE_EXES_DIR)/lib%.so=-l%))
 MUTATEE_FLAGS      += -g -fPIC
-MUTATEE_LDFLAGS    += -lpthread
+MUTATEE_LDFLAGS    += -lpthread -ldl
 MUTATEE_LDFLAGS    += -L$(MUTATEE_EXES_DIR)
 
 mutatee_exes: $(MUTATEE_EXES) $(MUTATEE_CPP_EXES)
@@ -201,6 +204,7 @@ external_mutatees:
 TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
            $(TG_DIR)/chrome_test_agent.cc \
            $(TG_DIR)/payload_test_agent.cc \
+           $(TG_DIR)/ipc_test_agent.cc \
            $(TG_DIR)/gcc_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
            $(TG_DIR)/print_test_agent.cc \
