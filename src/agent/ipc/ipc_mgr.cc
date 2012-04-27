@@ -216,6 +216,7 @@ namespace sp {
   // Return 1 if it is allowed to execute payload code (for tracing);
   // otherwise, 0 is returned.
   char SpIpcMgr::start_tracing(int fd) {
+    sp_print("ipcmgr:start_tracing");
     for (WorkerSet::iterator wi = worker_set_.begin();
          wi != worker_set_.end(); wi++) {
       if ((*wi)->start_tracing(fd)) return 1;

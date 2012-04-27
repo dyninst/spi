@@ -268,7 +268,7 @@ namespace sp {
         pch = strtok_r(NULL, " :()->", &saveptr);
       }
 
-      if (atoi(tokens[8]) == atoi(rem_port)) {
+      if (atoi(tokens[9]) == atoi(rem_port)) {
         pid_set.insert(atoi(tokens[1]));
       }
     }

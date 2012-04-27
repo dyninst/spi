@@ -66,10 +66,11 @@ class InjectorTest : public testing::Test {
 	}
 
 	virtual void TearDown() {
-		kill(pid_, SIGKILL);
+    system("killall tcp_server6.exe");
 		int status;
 		wait(&status);
 		pclose(server_);
+    sleep(2);
 	}
 };
 

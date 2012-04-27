@@ -87,6 +87,7 @@ namespace sp {
   }
 
   char SpPipeWorker::start_tracing(int fd) {
+    sp_print("pipeworker:start_tracing");
     return start_tracing_[getpid()];
   }
 
@@ -101,7 +102,15 @@ namespace sp {
     if (c->injected) return true;
     sp_debug("NO INJECTED -- start injection");
     SpInjector::ptr injector = SpInjector::Create(c->remote_pid);
-    string agent_name = g_parser->agent_name();
+    string agent_name = "";
+    if (getenv("SP_AGENT_DIR")) {
+      agent_name = getenv("SP_AGENT_DIR");
+      agent_name += "/";
+    } else {
+      agent_name = "./";
+    }
+    agent_name += g_parser->agent_name();
+    sp_print("%s", agent_name.c_str());
     injector->Inject(agent_name.c_str());
     c->injected = true;
     return true;

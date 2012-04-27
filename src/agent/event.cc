@@ -118,6 +118,7 @@ namespace sp {
 
 
   // Pre-instrument curtain functions
+
   FuncEvent::FuncEvent(StringSet& funcs) {
     std::copy(funcs.begin(), funcs.end(),
               std::inserter(func_names_, func_names_.begin()));
@@ -145,6 +146,29 @@ namespace sp {
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
+    }
+  }
+
+
+// ------------------------------------------------------------------- 
+// Pre-instrument certain calls
+// -------------------------------------------------------------------
+
+  CallEvent::CallEvent(StringSet& funcs) {
+    std::copy(funcs.begin(), funcs.end(),
+              std::inserter(func_names_, func_names_.begin()));
+  }
+
+  void
+  CallEvent::RegisterEvent() {
+    SetSegfaultSignal();
+
+    for (StringSet::iterator i = func_names_.begin();
+         i != func_names_.end(); i++) {
+      // For each function
+      // Find calls
+      // Get call's pretty name
+      // Check call name (pretty name)
     }
   }
 

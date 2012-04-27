@@ -15,7 +15,7 @@ class IpcSystest : public testing::Test {
   public:
   IpcSystest() {
     prefix_ = "LD_LIBRARY_PATH=test_mutatee::tmp/lib:$LD_LIBRARY_PATH ";
-    prefix_ += "LD_PRELOAD=test_agent/ipc_test_agent.so";
+    prefix_ += "LD_PRELOAD=$SP_DIR/$PLATFORM/test_agent/ipc_test_agent.so";
 	}
 
   protected:

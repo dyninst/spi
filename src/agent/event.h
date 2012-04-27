@@ -101,5 +101,20 @@ class FuncEvent : public SpEvent {
     FuncSet funcs_;
 };
 
+// Pre-instrument curtain calls
+class CallEvent : public SpEvent {
+  public:
+    typedef SHARED_PTR(CallEvent) ptr;
+    typedef std::set<std::string> StringSet;
+
+    static ptr Create(StringSet& funcs) {
+      return ptr(new CallEvent(funcs));
+    }
+    virtual void RegisterEvent() OVERRIDE;
+  protected:
+    CallEvent(StringSet&);
+    StringSet func_names_;
+};
+
 }
 #endif /* SP_EVENT_H_ */

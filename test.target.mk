@@ -88,6 +88,7 @@ VPATH    += $(ST_DIR) \
 UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(AG_DIR)/patchapi/addr_space_unittest.cc \
             $(AG_DIR)/agent_unittest.cc \
+            $(AG_DIR)/utils_unittest.cc \
             $(AG_DIR)/payload_unittest.cc \
             $(AG_DIR)/event_unittest.cc \
             $(AG_DIR)/context_unittest.cc \
@@ -195,7 +196,6 @@ mutatees: mutatee_libs mutatee_exes
 #==========================================================
 external_mutatees:
 	@bash ../scripts/build_mutatees.sh
-	@cp ../test_data/$(PLATFORM)/test_exes/* test_mutatee/
 	@cp ../test_data/$(PLATFORM)/test_libs/* tmp/lib/
 
 #==========================================================

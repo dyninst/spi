@@ -24,9 +24,10 @@ Environment variables related to self-propelled instrumentation:
 1.9, SP_NO_LIBC_MALLOC: will never use libc malloc
 
 2. FOR RUNTIME
+2.0. PLATFORM
 2.1. SP_DIR
-2.2. SP_PLATFORM
-2.3. SP_PARSE_DIR
+2.2. SP_PARSE_DIR
+2.3. SP_AGENT_DIR
 
 Shared memory id used:
 1. 1986

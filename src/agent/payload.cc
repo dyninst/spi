@@ -118,7 +118,6 @@ ArgumentHandle::~ArgumentHandle() {
 // Get callee from a PreCall point
 static SpFunction*
 CalleeNolock(SpPoint* pt) {
-
   bool parse_indirect = true;
 
   // If we just want to instrument direct call, then we skip parsing
@@ -190,7 +189,6 @@ ReturnValue(sp::SpPoint* pt) {
   return ret;
 }
 
-// Implicitly call start_tracing()
 bool
 IsIpcWrite(SpPoint* pt) {
   SpChannel* c = NULL;
@@ -209,11 +207,13 @@ bool
 IsIpcRead(SpPoint* pt) {
   SpChannel* c = NULL;
   bool ret = false;
+  
   SP_LOCK(ISIPCREAD);
   c = pt->channel();
 
-  if (CalleeNolock(pt)->name().compare("accept") != 0)
+  if (CalleeNolock(pt)->name().compare("accept") != 0) {
     return (c && c->rw == SP_READ && StartTracingNolock(c->fd));
+  }
 
   ret = (c && c->rw == SP_READ);
   SP_UNLOCK(ISIPCREAD);
