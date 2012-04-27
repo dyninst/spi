@@ -9,18 +9,16 @@ void test_entry(SpPoint* pt) {
   SpFunction* f = Callee(pt);
   if (!f) return;
 
-	// sp_print("entry func: %s @ pid=%d", f->name().c_str(), getpid());
+	//sp_print("entry func: %s @ pid=%d", f->name().c_str(), getpid());
 
 	if (IsIpcWrite(pt)) {
-		fprintf(stderr, "Write: %s @ pid=%d w/ addr %lx\n",
+		sp_print("Write: %s @ pid=%d w/ addr %lx",
             f->name().c_str(), getpid(), f->addr());
 	}
-  /*
 	else if (IsIpcRead(pt)) {
-		fprintf(stderr, "Read: %s @ pid=%d w/ addr %lx\n",
-            f->name().c_str(), getpid(), f->addr());
+		sp_print("Read: %s @ pid=%d w/ addr %lx\n",
+             f->name().c_str(), getpid(), f->addr());
 	}
-  */
   
   sp::Propel(pt);
 }
@@ -32,14 +30,11 @@ void test_exit(SpPoint* pt) {
 
 	if (IsIpcWrite(pt)) {
 		long size = sp::ReturnValue(pt);
-		fprintf(stderr, "Write size: %lu @ pid=%d\n", size, getpid());
-	}
-  /*
-	if (IsIpcRead(pt)) {
+		sp_print("Write size: %lu @ pid=%d\n", size, getpid());
+	} else if (IsIpcRead(pt)) {
 		long size = sp::ReturnValue(pt);
-		fprintf(stderr, "Read size: %lu @ pid=%d\n", size, getpid());
+		sp_print("Read size: %lu @ pid=%d\n", size, getpid());
 	}
-  */
 }
 
 AGENT_INIT

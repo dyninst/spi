@@ -205,16 +205,20 @@ static char StartTracingNolock(int fd);
 
 bool
 IsIpcRead(SpPoint* pt) {
-  SpChannel* c = NULL;
   bool ret = false;
-  
+
+  SpChannel* c = NULL;
   SP_LOCK(ISIPCREAD);
   c = pt->channel();
 
+  // FIXME: it hangs for pipe!!! should separate accept/connect from
+  //        read / write
+  /*
   if (CalleeNolock(pt)->name().compare("accept") != 0) {
-    return (c && c->rw == SP_READ && StartTracingNolock(c->fd));
+    // return (c && c->rw == SP_READ && StartTracingNolock(c->fd));
+    return (c && c->rw == SP_READ);
   }
-
+  */
   ret = (c && c->rw == SP_READ);
   SP_UNLOCK(ISIPCREAD);
 

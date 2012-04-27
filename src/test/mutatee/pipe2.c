@@ -39,7 +39,13 @@ int main(int argc, char *argv[]) {
     close(pfd[0]);          /* Close unused read end */
 
     /* Manually load the agent for testing */
-    void* h = dlopen("./ipc_test_agent.so", RTLD_NOW|RTLD_GLOBAL);
+    char path[1024];
+    if (getenv("SP_AGENT_DIR")) {
+      snprintf(path, 1024, "%s/ipc_test_agent.so", getenv("SP_AGENT_DIR"));
+    } else {
+      snprintf(path, 1024, "./ipc_test_agent.so");
+    }
+    void* h = dlopen(path, RTLD_NOW|RTLD_GLOBAL);
     if (!h) {
       fprintf(stderr, "%s\n", dlerror());
       exit(1);
