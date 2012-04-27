@@ -196,7 +196,7 @@ namespace sp {
 			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
       // sp_print("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
       ::free((void*)buf);
-      buf = NULL;
+      buf = (dt::Address)NULL;
       return true;
     }
 
