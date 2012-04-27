@@ -75,6 +75,7 @@ SpInjector::FindFunction(const char* func) {
   for (LibraryPool::iterator li = libs.begin(); li != libs.end(); li++) {
     std::string name = (*li)->getName();
     if (name.size() <= 0) continue;
+    sp_debug("IN LIB - %s", name.c_str());
     sb::Symtab *obj = NULL;
     bool ret = sb::Symtab::openFile(obj, name);
     std::vector <sb::Function *> funcs;

@@ -14,10 +14,13 @@ namespace {
 class IpcSystest : public testing::Test {
   public:
   IpcSystest() {
+    prefix_ = "LD_LIBRARY_PATH=test_mutatee::tmp/lib:$LD_LIBRARY_PATH ";
+    prefix_ += "LD_PRELOAD=test_agent/ipc_test_agent.so";
 	}
 
   protected:
-
+  string prefix_;
+  
   virtual void SetUp() {
 	}
 
@@ -26,7 +29,10 @@ class IpcSystest : public testing::Test {
 };
 
 
-TEST_F(IpcSystest, pid_inject) {
+TEST_F(IpcSystest, pipe1) {
+  string cmd;
+  cmd = prefix_ + " test_mutatee/pipe1.exe";
+  system(cmd.c_str());
 }
 
 }
