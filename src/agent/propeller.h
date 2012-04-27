@@ -38,6 +38,7 @@
 namespace sp {
 
   typedef std::vector<Dyninst::PatchAPI::Point*> Points;
+  typedef std::set<std::string> StringSet;
 
   class AGENT_EXPORT SpPropeller {
   public:
@@ -49,7 +50,8 @@ namespace sp {
     bool go(SpFunction* func,
             PayloadFunc entry,
             PayloadFunc exit,
-            ph::Point* pt = NULL);
+            ph::Point* pt = NULL,
+            StringSet* inst_calls = NULL);
 
   protected:
     virtual void next_points(ph::PatchFunction* func,

@@ -107,7 +107,7 @@ namespace sp {
       */
     }
 
-    if (f->name().compare("connect") == 0) {
+    else if (f->name().compare("connect") == 0) {
       int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
       sockaddr** sa = (sockaddr**)sp::PopArgument(pt, &h, sizeof(sockaddr*));
@@ -116,21 +116,26 @@ namespace sp {
       if (sa_out) *sa_out = *sa;
     }
 
-    if (f->name().compare("fputs") == 0) {
+    else if (f->name().compare("fputs") == 0) {
       char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
       if (buf_out) *buf_out = (void*)*str;
       FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
 
-    if (f->name().compare("fputc") == 0) {
+    else if (f->name().compare("putchar") == 0) {
+      int* c = (int*)sp::PopArgument(pt, &h, sizeof(int));
+      if (c_out) *c_out = *c;
+    }
+
+    else if (f->name().compare("fputc") == 0) {
       char* c = (char*)sp::PopArgument(pt, &h, sizeof(char));
       if (c_out) *c_out = *c;
       FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if (fd_out) *fd_out = fileno(*fp);
     }
 
-    if (f->name().compare("fwrite_unlocked") == 0 ||
+    else if (f->name().compare("fwrite_unlocked") == 0 ||
         f->name().compare("fwrite") == 0) {
       void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
       if (buf_out) *buf_out = (void*)*ptr;
@@ -164,7 +169,7 @@ namespace sp {
       if (size_out) *size_out = *size;
     }
 
-    if (f->name().compare("fgets") == 0) {
+    else if (f->name().compare("fgets") == 0) {
       char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
       if (buf_out) *buf_out = (void*)*str;
       int* size = (int*)sp::PopArgument(pt, &h, sizeof(int));
@@ -173,12 +178,12 @@ namespace sp {
       if(fd_out) *fd_out = fileno(*fp);
     }
 
-    if (f->name().compare("fgetc") == 0) {
+    else if (f->name().compare("fgetc") == 0) {
       FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
       if(fd_out) *fd_out = fileno(*fp);
     }
 
-    if (f->name().compare("fread_unlocked") == 0 ||
+    else if (f->name().compare("fread_unlocked") == 0 ||
         f->name().compare("fread") == 0) {
       void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
       if (buf_out) *buf_out = (void*)*ptr;
@@ -189,7 +194,7 @@ namespace sp {
       if(fd_out) *fd_out = fileno(*fp);
     }
 
-    if (f->name().compare("accept") == 0) {
+    else if (f->name().compare("accept") == 0) {
       int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
       if (fd_out) *fd_out = *fd;
     }
@@ -250,7 +255,10 @@ namespace sp {
   bool
   SpIpcMgr::BeforeEntry(SpPoint* pt) {
     ph::PatchFunction* f = sp::Callee(pt);
-    if (!f) return false;
+    if (!f) {
+      sp_print("CALLEE NOT FOUND - in BeforeEntry");
+      return false;
+    }
 
     sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
 
@@ -261,7 +269,10 @@ namespace sp {
     ipc_mgr->get_write_param(pt, &fd, NULL, NULL, NULL, &sa);
     if (fd != -1) {
       SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
-      if (!worker) return false;
+      if (!worker) {
+        sp_print("WORKER NOT FOUND - in BeforeEntry");
+        return false;
+      }
       // Enable tracing for current process
       worker->set_start_tracing(1);
 
@@ -287,7 +298,10 @@ namespace sp {
     ipc_mgr->get_read_param(pt, &fd, NULL, NULL);
     if (fd != -1) {
       SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
-      if (!worker) return false;
+      if (!worker) {
+        sp_print("WORKER NOT FOUND - in BeforeEntry's read side");
+        return false;
+      }
       SpChannel* c = worker->get_channel(fd, SP_READ);
       if (c) {
         pt->SetChannel(c);
@@ -316,7 +330,7 @@ namespace sp {
       FILE* fp = (FILE*)sp::ReturnValue(pt);
       int fd = fileno(fp);
       // XXX: magic?? This is a very artificial way to wait for fork done
-      sleep(2);
+      sleep(5);
       SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd, SP_WRITE);
       ipc_mgr->pipe_worker()->set_start_tracing(0, c);
     }

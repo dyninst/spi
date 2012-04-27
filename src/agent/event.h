@@ -39,6 +39,7 @@
 
 namespace sp {
 
+
 class AGENT_EXPORT SpEvent {
   public:
     virtual ~SpEvent() {}
@@ -50,6 +51,20 @@ class AGENT_EXPORT SpEvent {
     SpEvent();
 };
 
+typedef std::set<SpEvent::ptr> EventSet;
+
+// Combine different events together, any of which is about to activate
+// the instrumentation
+class CombEvent : public SpEvent {
+  public:
+    typedef SHARED_PTR(CombEvent) ptr;
+    static ptr Create(EventSet& events) {
+      return ptr(new CombEvent(events)); }
+    void RegisterEvent();
+  protected:
+    CombEvent(EventSet&);
+    EventSet events_;
+};
 
 // Instrument current function's callees after N seconds
 class AsyncEvent : public SpEvent {
@@ -74,13 +89,11 @@ class AsyncEvent : public SpEvent {
 class SyncEvent : public SpEvent {
   public:
     typedef SHARED_PTR(SyncEvent) ptr;
-    static ptr Create(std::string func_name="") {
-      return ptr(new SyncEvent(func_name)); }
+    static ptr Create() {
+      return ptr(new SyncEvent()); }
     void RegisterEvent();
   protected:
-    SyncEvent(std::string func_name);
-
-    std::string func_name_;
+    SyncEvent();
 };
 
 

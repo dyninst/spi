@@ -150,6 +150,10 @@ MUTATEE_SRCS  = $(ME_DIR)/tcp_client.c \
                 $(ME_DIR)/tcp_server6.c \
                 $(ME_DIR)/pipe1.c \
                 $(ME_DIR)/pipe2.c \
+                $(ME_DIR)/pipe3.c \
+                $(ME_DIR)/pipe4.c \
+                $(ME_DIR)/pipe5.c \
+                $(ME_DIR)/pipe5server.c \
                 $(ME_DIR)/indcall.c \
                 $(ME_DIR)/libcall.c \
                 $(ME_DIR)/multithread.c \

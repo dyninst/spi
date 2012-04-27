@@ -34,6 +34,10 @@
 #include "agent/event.h"
 #include "agent/context.h"
 #include "agent/parser.h"
+#include "agent/patchapi/object.h"
+
+#include "patchAPI/h/PatchMgr.h"
+#include "patchAPI/h/PatchObject.h"
 
 #include "common/utils.h"
 
@@ -41,7 +45,9 @@ namespace sp {
   extern SpContext* g_context;
   extern SpParser::ptr g_parser;
 
-  // Default Event -- dumb event, does nothing
+// ------------------------------------------------------------------- 
+// Default Event -- dumb event, does nothing
+// -------------------------------------------------------------------
   SpEvent::SpEvent() {
   }
 
@@ -49,7 +55,26 @@ namespace sp {
   SpEvent::RegisterEvent() {
   }
 
-  // AsyncEvent
+// ------------------------------------------------------------------- 
+// Combo event -- a set of events
+// -------------------------------------------------------------------
+  CombEvent::CombEvent(EventSet& events) {
+    std::copy(events.begin(), events.end(),
+              std::inserter(events_, events_.begin()));
+  }
+
+  void
+  CombEvent::RegisterEvent() {
+    for (EventSet::iterator ei = events_.begin();
+         ei != events_.end(); ei++) {
+      (*ei)->RegisterEvent();
+    }
+  }
+
+
+// ------------------------------------------------------------------- 
+// AsyncEvent
+// -------------------------------------------------------------------
   typedef void (*event_handler_t)(int, siginfo_t*, void*);
 
   void
@@ -71,9 +96,11 @@ namespace sp {
     if (signum_ == SIGALRM) alarm(after_secs_);
   }
 
-  // SyncEvent
-  SyncEvent::SyncEvent(std::string func_name)
-    : SpEvent(), func_name_(func_name) {
+// ------------------------------------------------------------------- 
+// SyncEvent
+// -------------------------------------------------------------------
+  SyncEvent::SyncEvent()
+    : SpEvent(){
   }
 
 
@@ -116,8 +143,9 @@ namespace sp {
     } // Injection mode
   }
 
-
-  // Pre-instrument curtain functions
+// ------------------------------------------------------------------- 
+// Pre-instrument curtain functions
+// -------------------------------------------------------------------
 
   FuncEvent::FuncEvent(StringSet& funcs) {
     std::copy(funcs.begin(), funcs.end(),
@@ -163,14 +191,45 @@ namespace sp {
   CallEvent::RegisterEvent() {
     SetSegfaultSignal();
 
-    for (StringSet::iterator i = func_names_.begin();
-         i != func_names_.end(); i++) {
-      // For each function
-      // Find calls
-      // Get call's pretty name
-      // Check call name (pretty name)
-    }
-  }
+    assert(g_parser);
+    ph::PatchMgrPtr mgr = g_parser->mgr();
+    assert(mgr);
+    ph::AddrSpace* as = mgr->as();
+    assert(as);
+    
+    FuncSet func_set;
+    for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
+         ci != as->objMap().end(); ci++) {
+      SpObject* obj = OBJ_CAST(ci->second);
+      assert(obj);
 
+      if (strcmp(sp_filename(obj->name().c_str()), "libagent.so") == 0) {
+        sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+        continue;
+      }
+      
+      if (!g_parser->CanInstrumentLib(sp_filename(obj->name().c_str()))) {
+        sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+        continue;
+      }
+      // sp_print("HANDLING - lib %s", sp_filename(obj->name().c_str()));
+
+      pe::CodeObject* co = obj->co();
+      assert(co);
+
+      pe::CodeObject::funclist& all = co->funcs();
+      for (pe::CodeObject::funclist::iterator fit = all.begin();
+           fit != all.end(); fit++) {
+        SpFunction* found = FUNC_CAST(obj->getFunc(*fit));
+        if (!found) continue;
+
+        g_context->init_propeller()->go(found,
+                                        g_context->init_entry(),
+                                        g_context->init_exit(),
+                                        NULL,
+                                        &func_names_);
+      } // For each ParseAPI::Function
+    } // For each PatchObject
+  }
 
 } // namespace

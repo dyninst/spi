@@ -61,7 +61,8 @@ namespace sp {
   SpPropeller::go(SpFunction* func,
                   PayloadFunc entry,
                   PayloadFunc exit,
-                  ph::Point* pt) {
+                  ph::Point* pt,
+                  StringSet* inst_calls) {
     assert(func);
 
     sp_debug("START PROPELLING - propel to callees of function %s",
@@ -112,11 +113,24 @@ namespace sp {
           sp_debug("SKIP NOT-INST FUNC - %s", callee->name().c_str());
           continue;
         }
+
+        // Only works for direct function calls
+        if (inst_calls &&
+            (inst_calls->find(callee->name()) == inst_calls->end())) {
+          // sp_print("SKIP NOT-INST CALL - %s", callee->name().c_str());
+          sp_debug("SKIP NOT-INST CALL - %s", callee->name().c_str());
+          continue;
+        }
         sp_debug("POINT - instrumenting direct call at %lx to "
                  "function %s (%lx) for point %lx",
                  blk->last(), callee->name().c_str(),
                  (dt::Address)callee, (dt::Address)pt);
       } else {
+        if (inst_calls) {
+          // sp_print("SKIP INDIRECT CALL - at %lx", blk->last());
+          sp_debug("SKIP INDIRECT CALL - at %lx", blk->last());
+          continue;
+        }
         sp_debug("POINT - instrumenting indirect call at %lx for point %lx",
                  blk->last(), (dt::Address)pt);
       }

@@ -13,8 +13,8 @@ int main(void) {
 
   char name[255];
   // sort, cat, od, wc, cksum, tee
-  const char* prog = "cat";
-  sprintf(name, "/scratch/wenbin/binaries/bin/bin/%s", prog);
+  const char* prog = "od.exe";
+  sprintf(name, "test_mutatee/%s", prog);
   /* Create one way pipe line with call to popen() */
   if (( pipe_fp = popen(name, "w")) == NULL)
     {

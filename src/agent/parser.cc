@@ -743,6 +743,7 @@ SpParser::FindFunction(string name,
   for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
+
     GetFuncsByName(obj, name, false, &func_set);
   }
 
@@ -794,6 +795,12 @@ SpParser::FindFunction(string name) {
   for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
+
+    if (strcmp(sp_filename(obj->name().c_str()), "libagent.so") == 0) {
+      sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+      continue;
+    }
+    
     GetFuncsByName(obj, name, true, &func_set);
   }
 

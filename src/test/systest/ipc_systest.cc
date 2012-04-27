@@ -48,6 +48,42 @@ TEST_F(IpcSystest, pipe1_preload_before_fork) {
 TEST_F(IpcSystest, pipe2_preload_after_fork) {
   string cmd;
   cmd = mutatee_prefix_ + " test_mutatee/pipe2.exe";
+  // system(cmd.c_str());
+
+  FILE* fp = popen(cmd.c_str(), "r");
+  char buf[1024];
+  int count = 0;
+  while (fgets(buf, 1024, fp) != NULL) {
+    // printf(buf);
+    ++count;
+  }
+  // printf("count: %d\n", count);
+  EXPECT_TRUE(count > 200);
+  pclose(fp);
+}
+
+TEST_F(IpcSystest, pipe3_preload_before_popen) {
+  string cmd;
+  cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe3.exe";
+  // system(cmd.c_str());
+
+  FILE* fp = popen(cmd.c_str(), "r");
+  char buf[1024];
+  int count = 0;
+  while (fgets(buf, 1024, fp) != NULL) {
+    // printf(buf);
+    ++count;
+  }
+  // printf("count: %d\n", count);
+  EXPECT_TRUE(count > 80);
+  pclose(fp);
+}
+
+// XXX: This doesn't work right now!
+#if 0
+TEST_F(IpcSystest, pipe4_preload_after_popen) {
+  string cmd;
+  cmd = mutatee_prefix_ + " test_mutatee/pipe4.exe";
   system(cmd.c_str());
   /*
   FILE* fp = popen(cmd.c_str(), "r");
@@ -63,4 +99,27 @@ TEST_F(IpcSystest, pipe2_preload_after_fork) {
   */
 }
 
+TEST_F(IpcSystest, pipe5_fifo) {
+
+  struct stat s;
+  if (stat("/tmp/myFIFO", &s) == -1) {
+    system("mkfifo /tmp/myFIFO > /dev/null");
+  }
+
+  pid_t pid = fork();
+
+  if (pid == 0) {
+    string cmd;
+    cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe5.exe";
+    system(cmd.c_str());
+    exit(0);
+  }
+  else if (pid > 0) {
+    string cmd;
+    // cmd = mutatee_prefix_ + preload_prefix_ + "test_mutatee/pipe5server.exe";
+    cmd = mutatee_prefix_ + "test_mutatee/pipe5server.exe";
+    system(cmd.c_str());
+  }
+}
+#endif
 }
