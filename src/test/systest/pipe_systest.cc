@@ -11,9 +11,9 @@ using namespace std;
 namespace {
 
 
-class IpcSystest : public testing::Test {
+class PipeSystest : public testing::Test {
   public:
-  IpcSystest() {
+  PipeSystest() {
     mutatee_prefix_ = " LD_LIBRARY_PATH=test_mutatee::tmp/lib:$LD_LIBRARY_PATH ";
     preload_prefix_ = " LD_PRELOAD=$SP_DIR/$PLATFORM/test_agent/ipc_test_agent.so ";
 	}
@@ -29,8 +29,7 @@ class IpcSystest : public testing::Test {
 	}
 };
 
-
-TEST_F(IpcSystest, pipe1_preload_before_fork) {
+TEST_F(PipeSystest, pipe1_preload_before_fork) {
   string cmd;
   cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe1.exe";
   FILE* fp = popen(cmd.c_str(), "r");
@@ -45,7 +44,7 @@ TEST_F(IpcSystest, pipe1_preload_before_fork) {
   pclose(fp);
 }
 
-TEST_F(IpcSystest, pipe2_preload_after_fork) {
+TEST_F(PipeSystest, pipe2_preload_after_fork) {
   string cmd;
   cmd = mutatee_prefix_ + " test_mutatee/pipe2.exe";
   // system(cmd.c_str());
@@ -62,7 +61,7 @@ TEST_F(IpcSystest, pipe2_preload_after_fork) {
   pclose(fp);
 }
 
-TEST_F(IpcSystest, pipe3_preload_before_popen) {
+TEST_F(PipeSystest, pipe3_preload_before_popen) {
   string cmd;
   cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe3.exe";
   // system(cmd.c_str());
@@ -81,7 +80,7 @@ TEST_F(IpcSystest, pipe3_preload_before_popen) {
 
 // XXX: This doesn't work right now!
 #if 0
-TEST_F(IpcSystest, pipe4_preload_after_popen) {
+TEST_F(PipeSystest, pipe4_preload_after_popen) {
   string cmd;
   cmd = mutatee_prefix_ + " test_mutatee/pipe4.exe";
   system(cmd.c_str());
@@ -99,7 +98,7 @@ TEST_F(IpcSystest, pipe4_preload_after_popen) {
   */
 }
 
-TEST_F(IpcSystest, pipe5_fifo) {
+TEST_F(PipeSystest, pipe5_fifo) {
 
   struct stat s;
   if (stat("/tmp/myFIFO", &s) == -1) {

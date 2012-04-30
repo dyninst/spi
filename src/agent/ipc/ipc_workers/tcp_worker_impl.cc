@@ -133,18 +133,23 @@ namespace sp {
       assert(g_context);
       assert(g_parser);
       assert(g_parser->agent_name().size() > 0);
-      default_agent_path += getenv("SP_DIR");
-      default_agent_path += "/";
-      default_agent_path += getenv("PLATFORM");
-      default_agent_path += "/";
+
+      if (getenv("SP_AGENT_DIR")) {
+        default_agent_path += getenv("SP_AGENT_DIR");
+        default_agent_path += "/";
+      } else {
+        default_agent_path = "./";
+      }
+      
       default_agent_path += sp_filename((char*)g_parser->agent_name().c_str());
+
       agent_path = (char*)default_agent_path.c_str();
     }
     if (injector_path == NULL) {
       default_injector_path += getenv("SP_DIR");
       default_injector_path += "/";
       default_injector_path += getenv("PLATFORM");
-      default_injector_path += "/Injector";
+      default_injector_path += "/injector";
       injector_path = (char*)default_injector_path.c_str();
     }
     if (ijagent_path == NULL) {

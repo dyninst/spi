@@ -118,6 +118,8 @@ ArgumentHandle::~ArgumentHandle() {
 // Get callee from a PreCall point
 static SpFunction*
 CalleeNolock(SpPoint* pt) {
+  if (!pt) return NULL;
+  
   bool parse_indirect = true;
 
   // If we just want to instrument direct call, then we skip parsing
