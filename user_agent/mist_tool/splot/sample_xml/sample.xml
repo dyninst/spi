@@ -1,0 +1,73 @@
+<process> 
+  <header> 
+    <parent> 
+      <pid>31030</pid> 
+      <exe_name>sh</exe_name> 
+      <cmdline_argument>run.sh</cmdline_argument> 
+    </parent> 
+    <pid>31032</pid>
+    <host>feta.cs.wisc.edu</host>
+    <exe_name>./demo</exe_name> 
+    <cmdline_argument>1 2 3</cmdline_argument> 
+  </header> 
+ 
+  <traces> 
+    <trace type="working_dir" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+      /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/mist/target/x86_64-unknown-linux2.4
+    </trace> 
+    <trace type="working_dir" triggered_by="main->foo1->chdir" timestamp="2011-11-30 12:20:31"> 
+      /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/mist/target/x86_64-unknown-linux2.4
+    </trace> 
+    <trace type="environment_var" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+      <name>PATH</name> 
+      <val>/usr/bin:/bin</val> 
+    </trace> 
+    <trace type="real_user" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+      <id>7132</id> 
+      <name>wenbin</name> 
+    </trace> 
+    <trace type="real_group" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+      <id>7132</id> 
+      <name>wenbin</name> 
+    </trace> 
+    <trace type="file_open" triggered_by="main->foo->bar->fopen" timestamp="2011-11-30 12:20:31"> 
+      <name>../files/test_1</name> 
+      <fd>22</fd> 
+      <num_hard_links>1</num_hard_links> 
+      <owned_by> 
+        <user> 
+          <name>wenbin</name> 
+          <uid>7132</uid> 
+        </user> 
+      </owned_by> 
+      <owner_perm>rw-</owner_perm> 
+      <group_perm>r--</group_perm> 
+      <other_perm>---</other_perm> 
+      <setuid_bit>unset</setuid_bit> 
+    </trace> 
+    <trace type="file_close" triggered_by="main->foo->bar->fclose" timestamp="2011-11-30 12:20:31"> 
+      <name>../files/test_1</name> 
+      <fd>22</fd> 
+      <num_hard_links>1</num_hard_links> 
+      <owned_by> 
+        <user> 
+          <name>wenbin</name> 
+          <uid>7132</uid> 
+        </user> 
+      </owned_by> 
+      <owner_perm>rw-</owner_perm> 
+      <group_perm>r--</group_perm> 
+      <other_perm>---</other_perm> 
+      <setuid_bit>unset</setuid_bit> 
+    </trace> 
+    <trace type="channel_connect" triggered_by="main->foo->bar->popen" timestamp="2011-11-30 12:20:31"> 
+      <target> 
+        <host>localhost</host> 
+        <port>N/A</port> 
+        <pid>245</pid> 
+        <exe_name>./foo.exe</exe_name> 
+      </target> 
+      <mechanism>pipe</mechanism> 
+    </trace> 
+  </traces> 
+</process> 
