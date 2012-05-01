@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <process> 
   <header> 
     <parent> 
@@ -12,25 +13,25 @@
   </header> 
  
   <traces> 
-    <trace type="working_dir" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+    <trace type="working_dir" triggered_by="init" timestamp="123454"> 
       /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/mist/target/x86_64-unknown-linux2.4
     </trace> 
-    <trace type="working_dir" triggered_by="main->foo1->chdir" timestamp="2011-11-30 12:20:31"> 
+    <trace type="working_dir" triggered_by="main->foo1->chdir" tid="1" timestamp="124567"> 
       /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/mist/target/x86_64-unknown-linux2.4
     </trace> 
-    <trace type="environment_var" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+    <trace type="environment_var" triggered_by="init" timestamp="124567"> 
       <name>PATH</name> 
       <val>/usr/bin:/bin</val> 
     </trace> 
-    <trace type="real_user" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+    <trace type="real_user" triggered_by="init" timestamp="124567"> 
       <id>7132</id> 
       <name>wenbin</name> 
     </trace> 
-    <trace type="real_group" triggered_by="init" timestamp="2011-11-30 12:20:31"> 
+    <trace type="real_group" triggered_by="init" timestamp="124567"> 
       <id>7132</id> 
       <name>wenbin</name> 
     </trace> 
-    <trace type="file_open" triggered_by="main->foo->bar->fopen" timestamp="2011-11-30 12:20:31"> 
+    <trace type="file_open" triggered_by="main->foo->bar->fopen" tid="1" timestamp="124567"> 
       <name>../files/test_1</name> 
       <fd>22</fd> 
       <num_hard_links>1</num_hard_links> 
@@ -45,7 +46,7 @@
       <other_perm>---</other_perm> 
       <setuid_bit>unset</setuid_bit> 
     </trace> 
-    <trace type="file_close" triggered_by="main->foo->bar->fclose" timestamp="2011-11-30 12:20:31"> 
+    <trace type="file_close" triggered_by="main->foo->bar->fclose" tid="1" timestamp="124567"> 
       <name>../files/test_1</name> 
       <fd>22</fd> 
       <num_hard_links>1</num_hard_links> 
@@ -60,7 +61,7 @@
       <other_perm>---</other_perm> 
       <setuid_bit>unset</setuid_bit> 
     </trace> 
-    <trace type="channel_connect" triggered_by="main->foo->bar->popen" timestamp="2011-11-30 12:20:31"> 
+    <trace type="channel_connect" triggered_by="main->foo->bar->popen" tid="2" timestamp="124567"> 
       <target> 
         <host>localhost</host> 
         <port>N/A</port> 
@@ -68,6 +69,28 @@
         <exe_name>./foo.exe</exe_name> 
       </target> 
       <mechanism>pipe</mechanism> 
+    </trace> 
+    <trace type="channel_write" triggered_by="main->foo->bar->write" tid="2" timestamp="124567"> 
+      <target> 
+        <host>localhost</host> 
+        <port>N/A</port> 
+        <pid>245</pid> 
+        <exe_name>./foo.exe</exe_name> 
+      </target> 
+      <mechanism>pipe</mechanism>
+      <size>21</size>
+      <total_size>102</total_size>
+    </trace> 
+    <trace type="channel_read" triggered_by="main->foo->bar->read" tid="1" timestamp="124567"> 
+      <target> 
+        <host>localhost</host> 
+        <port>N/A</port> 
+        <pid>245</pid> 
+        <exe_name>./foo.exe</exe_name> 
+      </target> 
+      <mechanism>pipe</mechanism>
+      <size>21</size>
+      <total_size>102</total_size>
     </trace> 
   </traces> 
 </process> 
