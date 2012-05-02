@@ -15,7 +15,7 @@ $(TRG_EXE): % : $(TRG_OBJS)
 	@$(CC) -o $(TRG_DIR)/$@ $*.o -lpthread
 
 clean:
-	rm -rf $(TRG_OBJS) $(TRG_EXE)
+	rm -rf $(TRG_OBJS) $(TRG_EXE) splog*
 
 d:
 	echo $(TRG_SRCS)

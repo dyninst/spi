@@ -9,7 +9,7 @@ using namespace sp;
 
 Mist mist;
 void mist_before(SpPoint* pt) {
-  PatchFunction* f = sp::callee(pt);
+  PatchFunction* f = sp::Callee(pt);
   if (!f) return;
 
   CheckerUtils::push(f);
@@ -17,11 +17,11 @@ void mist_before(SpPoint* pt) {
   if (pt->tailcall()) {
     CheckerUtils::pop();
   }
-  sp::propel(pt);
+  sp::Propel(pt);
 }
 
 void mist_after(SpPoint* pt) {
-  PatchFunction* f = sp::callee(pt);
+  PatchFunction* f = sp::Callee(pt);
   if (!f) return;
   mist.post_run(pt, f);
   CheckerUtils::pop();
@@ -29,10 +29,10 @@ void mist_after(SpPoint* pt) {
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  sp::SyncEvent::ptr event = sp::SyncEvent::create();
-  agent->set_init_event(event);
-  agent->set_init_before("mist_before");
-  agent->set_init_after("mist_after");
-  agent->go();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  sp::SyncEvent::ptr event = sp::SyncEvent::Create();
+  agent->SetInitEvent(event);
+  agent->SetInitEntry("mist_before");
+  agent->SetInitExit("mist_after");
+  agent->Go();
 }

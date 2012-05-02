@@ -1,4 +1,4 @@
-source ../../../make.config
+source ../../../config.mk
 AGENT_NAME=libmyagent.so
 export LD_LIBRARY_PATH
 
@@ -8,6 +8,8 @@ if test $# -lt 1; then
     exit
 fi
 
-#-----------------------------------------------------------                     # Edit this to add your user program in ../target/$PLATFORM                      #-----------------------------------------------------------                     
+#-----------------------------------------------------------                     
+# Edit this to add your user program in ../target/$PLATFORM
+#-----------------------------------------------------------                     
 
 LD_PRELOAD="$AGENT" $1
