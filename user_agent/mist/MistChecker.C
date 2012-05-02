@@ -111,7 +111,7 @@ bool FileOpenChecker::check(SpPoint* pt, PatchFunction* callee) {
 
   if (u_.check_name(callee, ns)) {
     ArgumentHandle h;
-    char** fname = (char**)pop_argument(pt, &h, sizeof(void*));
+    char** fname = (char**)PopArgument(pt, &h, sizeof(void*));
     u_.print("* FILE OPENED: %s", *fname);
     fname_ = (char*)*fname;
   }
@@ -126,9 +126,9 @@ bool FileOpenChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
   if (u_.check_name(callee, ns)) {
     int fd = 0;
     if (u_.check_name(callee, "open")) {
-      fd = retval(pt);
+      fd = ReturnValue(pt);
     } else {
-      fd = fileno(((FILE*)retval(pt)));
+      fd = fileno(((FILE*)ReturnValue(pt)));
     }
     u_.print("  - file descriptor: fd = %d", fd);
     print_file_info(fname_);
@@ -161,7 +161,7 @@ bool LibChecker::check(SpPoint* pt, PatchFunction* callee) {
 
   if (u_.check_name(callee, ns)) {
     ArgumentHandle h;
-    char** fname = (char**)pop_argument(pt, &h, sizeof(void*));
+    char** fname = (char**)PopArgument(pt, &h, sizeof(void*));
     u_.print("* LIBRARY LOADED: %s", *fname);
     
     // print this file's info
@@ -193,7 +193,7 @@ bool ForkChecker::check(SpPoint* pt, PatchFunction* callee) {
 
 bool ForkChecker::post_check(SpPoint* pt, PatchFunction* callee) {
   if (u_.check_name(callee, ns_)) {
-    long child_pid = retval(pt);
+    long child_pid = ReturnValue(pt);
     if (child_pid) {
       u_.print("* FORK: parent id - %d, child id - %d", getpid(), child_pid);
       u_.where();
@@ -207,9 +207,9 @@ bool ForkChecker::post_check(SpPoint* pt, PatchFunction* callee) {
 bool ChangeIdChecker::check(SpPoint* pt, PatchFunction* callee) {
   bool found = false;
   ArgumentHandle h;
-  uid_t* first = (uid_t*)pop_argument(pt, &h, sizeof(uid_t));
-  uid_t* second = (uid_t*)pop_argument(pt, &h, sizeof(uid_t));
-  uid_t* third = (uid_t*)pop_argument(pt, &h, sizeof(uid_t));
+  uid_t* first = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
+  uid_t* second = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
+  uid_t* third = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
 
   string s = "";
   char buf[512];
@@ -275,7 +275,7 @@ bool ExitChecker::check(SpPoint* pt, PatchFunction* callee) {
 
   if (u_.check_name(callee, ns)) {
     ArgumentHandle h;
-    int* exit_code = (int*)pop_argument(pt, &h, sizeof(void*));
+    int* exit_code = (int*)PopArgument(pt, &h, sizeof(void*));
     u_.print("* EXIT: w/ status code %d", *exit_code);
     u_.where();
     // mist.fini_run();
@@ -294,12 +294,12 @@ bool MmapChecker::check(SpPoint* pt, PatchFunction* callee) {
 
   if (u_.check_name(callee, ns)) {
     ArgumentHandle h;
-    void** addr = (void**)pop_argument(pt, &h, sizeof(void*));
-    size_t* len = (size_t*)pop_argument(pt, &h, sizeof(size_t));
-    int* prot = (int*)pop_argument(pt, &h, sizeof(int));
-    int* flag = (int*)pop_argument(pt, &h, sizeof(int));
-    int* fd = (int*)pop_argument(pt, &h, sizeof(int));
-    off_t* offset = (off_t*)pop_argument(pt, &h, sizeof(off_t));
+    void** addr = (void**)PopArgument(pt, &h, sizeof(void*));
+    size_t* len = (size_t*)PopArgument(pt, &h, sizeof(size_t));
+    int* prot = (int*)PopArgument(pt, &h, sizeof(int));
+    int* flag = (int*)PopArgument(pt, &h, sizeof(int));
+    int* fd = (int*)PopArgument(pt, &h, sizeof(int));
+    off_t* offset = (off_t*)PopArgument(pt, &h, sizeof(off_t));
 
     u_.print("* MMAP: (addr - %lx, len - %d) ", *addr, *len);
     string prot_str;
@@ -334,7 +334,7 @@ bool MmapChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
   ns.push_back("mmap");
 
   if (u_.check_name(callee, ns)) {
-    long start_addr = retval(pt);
+    long start_addr = ReturnValue(pt);
     u_.print("  - actual mapped address: %lx", start_addr);
     u_.where();
     return true;
@@ -350,7 +350,7 @@ bool ChmodChecker::check(SpPoint* pt, PatchFunction* callee) {
 
   if (u_.check_name(callee, ns)) {
     //ArgumentHandle h;
-    //int* exit_code = (int*)pop_argument(pt, &h, sizeof(void*));
+    //int* exit_code = (int*)PopArgument(pt, &h, sizeof(void*));
     //u_.print("* EXIT: w/ status code %d", *exit_code);
     u_.print("* CHMOD:");
     u_.where();
@@ -365,7 +365,7 @@ bool ThreadChecker::check(SpPoint* pt, PatchFunction* callee) {
 
   if (u_.check_name(callee, ns)) {
     ArgumentHandle h;
-    pthread_t** tid = (pthread_t**)pop_argument(pt, &h, sizeof(pthread_t*));
+    pthread_t** tid = (pthread_t**)PopArgument(pt, &h, sizeof(pthread_t*));
     callee_tid_map_[(long)callee] = *tid; 
    }
   return true;

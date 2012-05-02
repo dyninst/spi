@@ -2,5 +2,5 @@ AGENT_SRCS    +=
 
 include ../../../config.mk
 include ../config.mk
-include ../../../spi.target.mk
+include ../../../common.flag.mk
 include	../../target.mk

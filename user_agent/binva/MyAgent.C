@@ -18,12 +18,12 @@ public:
   virtual bool fini_report() { return true; }
   virtual bool post_check(SpPoint* pt) {return true;}
   virtual bool check(SpPoint* pt) {
-    PatchFunction* f = sp::callee(pt);
+    PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 
     if (f->name().compare("free") == 0) {
       ArgumentHandle h;
-      void** p = (void**)pop_argument(pt, &h, sizeof(void*));
+      void** p = (void**)PopArgument(pt, &h, sizeof(void*));
       if (free_list_.find(*p) != free_list_.end()) {
         sp_perror("double free %lx, skip it", (unsigned long)*p);
       } else {
@@ -42,7 +42,7 @@ public:
   virtual bool fini_report() {return true;}
   virtual bool post_check(SpPoint* pt) {return true;}
   virtual bool check(SpPoint* pt) {
-    PatchFunction* f = sp::callee(pt);
+    PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 
     bool dangerous = false;
@@ -63,11 +63,11 @@ public:
   virtual bool fini_report() {return true;}
   virtual bool post_check(SpPoint* pt) {return true;}
   virtual bool check(SpPoint* pt) {
-    PatchFunction* f = sp::callee(pt);
+    PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
     if (f->name().compare("printf") == 0) {
       ArgumentHandle h;
-      char** fmt = (char**)pop_argument(pt, &h, sizeof(void*));
+      char** fmt = (char**)PopArgument(pt, &h, sizeof(void*));
       sp_print("Printf format string: %s", *fmt);
     }
 		return true;
@@ -80,7 +80,7 @@ public:
   virtual bool fini_report() {return true;}
   virtual bool post_check(SpPoint* pt) {return true;}
   virtual bool check(SpPoint* pt) {
-    PatchFunction* f = sp::callee(pt);
+    PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 
     sp_print("StackArrayChecker");
@@ -124,22 +124,22 @@ public:
 		return true;
   }
   virtual bool post_check(SpPoint* pt) {
-    PatchFunction* f = sp::callee(pt);
+    PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
 
     if (f->name().compare("malloc") == 0) {
-      void* p = (void*)retval(pt);
+      void* p = (void*)ReturnValue(pt);
       MemSet.insert(p);
       sp_print("malloc: %lx", (unsigned long)p);
     }
 		return true;
   }
   virtual bool check(SpPoint* pt) {
-    PatchFunction* f = sp::callee(pt);
+    PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
     if (f->name().compare("free") == 0) {
       ArgumentHandle h;
-      void** p = (void**)pop_argument(pt, &h, sizeof(void*));
+      void** p = (void**)PopArgument(pt, &h, sizeof(void*));
       if (MemSet.find(*p) == MemSet.end()) {
         sp_print("freeing an unmalloced pointer: %lx", (unsigned long)*p);
       } else {
@@ -159,11 +159,11 @@ public:
   virtual bool fini_report() {return true;}
   virtual bool post_check(SpPoint* pt) {return true;}
   virtual bool check(SpPoint* pt) {
-    PatchFunction* f = sp::callee(pt);
+    PatchFunction* f = sp::Callee(pt);
     if (!f) return false;
     if (f->name().compare("open") == 0) {
       ArgumentHandle h;
-      char** fn = (char**)pop_argument(pt, &h, sizeof(void*));
+      char** fn = (char**)PopArgument(pt, &h, sizeof(void*));
       sp_print("Open: %s", *fn);
     }
 		return true;
@@ -203,22 +203,22 @@ private:
 BinVa bv;
 void binva_before(SpPoint* pt) {
   bv.run(pt);
-  sp::propel(pt);
+  sp::Propel(pt);
 }
 
 void binva_tail(SpPoint* pt) {
   bv.post_run(pt);
-  sp::propel(pt);
+  sp::Propel(pt);
 }
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  sp::SyncEvent::ptr event = sp::SyncEvent::create();
-  agent->set_init_event(event);
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  sp::SyncEvent::ptr event = sp::SyncEvent::Create();
+  agent->SetInitEvent(event);
 
-  agent->set_init_before("binva_before");
-  agent->set_init_after("binva_after");
+  agent->SetInitEntry("binva_before");
+  agent->SetInitExit("binva_after");
 
-  agent->go();
+  agent->Go();
 }

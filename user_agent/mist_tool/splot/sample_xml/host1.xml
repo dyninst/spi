@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<process> 
+  <header> 
+    <parent> 
+      <pid>31030</pid> 
+      <exe_name>sh</exe_name> 
+      <cmdline_argument>run.sh</cmdline_argument> 
+    </parent> 
+    <pid>31032</pid>
+    <host>feta</host>
+    <exe_name>./demo</exe_name> 
+    <cmdline_argument>1 2 3</cmdline_argument> 
+  </header> 
+ 
+  <traces> 
+    <trace type="channel_connect" triggered_by="main->foo->bar->popen" tid="1" timestamp="124567"> 
+      <target> 
+        <host>bleu</host> 
+        <port>N/A</port> 
+        <pid>245</pid> 
+        <exe_name>./foo.exe</exe_name> 
+      </target> 
+      <mechanism>pipe</mechanism> 
+      <call>connect</call>
+    </trace> 
+    <trace type="channel_write" triggered_by="main->foo->bar->write" tid="1" timestamp="124567"> 
+      <target> 
+        <host>bleu</host> 
+        <port>N/A</port> 
+        <pid>245</pid> 
+        <exe_name>./foo.exe</exe_name> 
+      </target> 
+      <mechanism>pipe</mechanism>
+      <size>20</size>
+      <total_size>20</total_size>
+      <call>write</call>
+    </trace> 
+    <trace type="channel_write" triggered_by="main->foo->bar->write" tid="1" timestamp="124567"> 
+      <target> 
+        <host>bleu</host> 
+        <port>N/A</port> 
+        <pid>245</pid> 
+        <exe_name>./foo.exe</exe_name> 
+      </target> 
+      <mechanism>pipe</mechanism>
+      <size>20</size>
+      <total_size>40</total_size>
+      <call>write</call>
+    </trace> 
+    <trace type="channel_read" triggered_by="main->foo->bar->read" tid="0" timestamp="124567"> 
+      <target> 
+        <host>bleu</host> 
+        <port>N/A</port> 
+        <pid>245</pid> 
+        <exe_name>./foo.exe</exe_name> 
+      </target> 
+      <mechanism>pipe</mechanism>
+      <size>20</size>
+      <total_size>60</total_size>
+      <call>read</call>
+    </trace> 
+  </traces> 
+</process> 

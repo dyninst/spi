@@ -37,7 +37,7 @@ void print_before(SpPoint* pt) {
   default:
     break;
   }
-  sp::propel(pt);
+  sp::Propel(pt);
 }
 
 void print_after(Point* pt) {
@@ -48,14 +48,13 @@ void segv_handler(int num) {
 
 AGENT_INIT
 void MyAgent() {
-  sp::SpAgent::ptr agent = sp::SpAgent::create();
-  sp::SpParser::ptr parser = sp::SpParser::create();
-  sp::SyncEvent::ptr event = sp::SyncEvent::create();
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  sp::SpParser::ptr parser = sp::SpParser::Create();
+  sp::SyncEvent::ptr event = sp::SyncEvent::Create();
 
-  agent->set_parser(parser);
-  agent->set_init_before("print_before");
-  // agent->set_directcall_only(true);
-  agent->go();
+  agent->SetParser(parser);
+  agent->SetInitEntry("print_before");
+  agent->Go();
 }
 
 __attribute__((destructor))
