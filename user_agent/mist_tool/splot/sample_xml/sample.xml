@@ -10,26 +10,25 @@
     <host>feta.cs.wisc.edu</host>
     <exe_name>./demo</exe_name> 
     <cmdline_argument>1 2 3</cmdline_argument> 
+    <working_dir> 
+      /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/mist/target/x86_64-unknown-linux2.4
+    </working_dir> 
+    <environment_vars> 
+				<PATH value="/usr/bin:/bin" />
+    </environment_vars> 
+    <real_user>
+      <id>7132</id> 
+      <name>wenbin</name> 
+    </real_user> 
+    <real_group>
+      <id>7132</id> 
+      <name>wenbin</name> 
+    </real_group>
   </header> 
  
   <traces> 
-    <trace type="working_dir" triggered_by="init" timestamp="123454"> 
-      /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/mist/target/x86_64-unknown-linux2.4
-    </trace> 
     <trace type="working_dir" triggered_by="main->foo1->chdir" tid="1" timestamp="124567"> 
       /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/user_agent/mist/target/x86_64-unknown-linux2.4
-    </trace> 
-    <trace type="environment_var" triggered_by="init" timestamp="124567"> 
-      <name>PATH</name> 
-      <val>/usr/bin:/bin</val> 
-    </trace> 
-    <trace type="real_user" triggered_by="init" timestamp="124567"> 
-      <id>7132</id> 
-      <name>wenbin</name> 
-    </trace> 
-    <trace type="real_group" triggered_by="init" timestamp="124567"> 
-      <id>7132</id> 
-      <name>wenbin</name> 
     </trace> 
     <trace type="file_open" triggered_by="main->foo->bar->fopen" tid="1" timestamp="124567"> 
       <name>../files/test_1</name> 

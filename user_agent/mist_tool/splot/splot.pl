@@ -155,6 +155,6 @@ foreach $file (@file) {
 }
 
 print $g->as_text();
-open FILE, ">sample_xml/sample.png";
-print FILE $g->as_png();
+open FILE, ">sample_xml/sample.ps";
+print FILE $g->as_ps();
 close FILE;
