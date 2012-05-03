@@ -1,5 +1,5 @@
 #include "SpInc.h"
-#include <sys/resource.h>
+#include "mist.h"
 
 using namespace Dyninst;
 using namespace PatchAPI;
@@ -11,8 +11,6 @@ void test_entry(SpPoint* pt) {
 
   SpFunction* f = Callee(pt);
   if (!f) return;
-
-  sp_print("%s", f->name().c_str());
 
   sp::Propel(pt);
 }
