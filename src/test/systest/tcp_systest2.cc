@@ -20,17 +20,23 @@ namespace {
   // -----------------------------------------------------------------------------
   class TcpConnectTest2 : public testing::Test {
   public:
-    TcpConnectTest2() {}
+    TcpConnectTest2() {
+      mutatee_prefix_ = " LD_LIBRARY_PATH=test_mutatee::tmp/lib:$LD_LIBRARY_PATH ";
+      preload_prefix_ = " LD_PRELOAD=$SP_DIR/$PLATFORM/test_agent/ipc_test_agent.so ";
+    }
 
   protected:
     pid_t server_pid_;
 		pid_t client_pid_; 
     FILE* server_;
 		FILE* client_;
+    string mutatee_prefix_;
+    string preload_prefix_;
 
     virtual void SetUp() {
 			// Server
-      server_ = popen("./tcp_server4", "r");
+      string cmd = mutatee_prefix_ + "test_mutatee/tcp_server4.exe";
+      server_ = popen(cmd.c_str(), "r");
       setbuf(server_, NULL);
       if (server_ == NULL) {
         sp_perror("Failed to start tcp_server");
@@ -44,7 +50,9 @@ namespace {
     }
 
     virtual void TearDown() {
-      kill(server_pid_, SIGKILL);
+      system("killall tcp_server4.exe");
+      // sleep(2);
+      // kill(server_pid_, SIGKILL);
       int status;
       wait(&status);
       pclose(server_);
@@ -52,12 +60,15 @@ namespace {
 
 		void run_client() {
 			// Client
-			client_ = popen("LD_PRELOAD=./ipc_test_agent.so ./tcp_client localhost", "r");
+      string cmd = mutatee_prefix_ + preload_prefix_ +
+          "test_mutatee/tcp_client.exe localhost";
+      // system(cmd.c_str());
+
+			client_ = popen(cmd.c_str(), "r");
 			setbuf(client_, NULL);
 			if (client_ == NULL) {
 				sp_perror("Failed to start tcp_client");
 			}
-
 
 			// Two possibilities:
 			// 1. Client finishes too soon, before we get pid
@@ -71,12 +82,15 @@ namespace {
 				int status;
 				wait(&status);
 			}
+
 			pclose(client_);
 		}
 
 		void run_client_no_inst() {
 			// Client
-			client_ = popen("./tcp_client localhost", "r");
+      string cmd = mutatee_prefix_ +
+          "test_mutatee/tcp_client.exe localhost";
+			client_ = popen(cmd.c_str(), "r");
 			setbuf(client_, NULL);
 			if (client_ == NULL) {
 				sp_perror("Failed to start tcp_client");
@@ -101,7 +115,7 @@ namespace {
 
   TEST_F(TcpConnectTest2, set_start_tracing) {
 		run_client();
-		//run_client_no_inst();
-		// run_client();
+		// run_client_no_inst();
+		run_client();
   }
 }

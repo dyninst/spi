@@ -297,7 +297,7 @@ namespace {
 		FILE* fp = popen(cmd.c_str(), "r");
 		const char* hostname = "localhost";
 		tcp_client(hostname, INJECT);
-		// system("./tcp_client localhost");
+		// system("./tcp_client.exe localhost");
 		tcp_client(hostname);
 		char buf[256];
 		EXPECT_TRUE(fgets(buf, 256, fp) != NULL);

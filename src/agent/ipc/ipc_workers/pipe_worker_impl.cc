@@ -121,9 +121,9 @@ namespace sp {
     c->local_pid = getpid();
     PidSet pid_set;
     GetPidsFromFileDesc(fd, pid_set);
-#ifndef SP_RELEASE
     sp_debug("FD TO PID - get a %lu pids from fd %d", (unsigned long)pid_set.size(), fd);
-#endif
+    if (pid_set.size() == 0) return NULL;
+
     for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
       if (*i != c->local_pid) {
         c->remote_pid = *i;

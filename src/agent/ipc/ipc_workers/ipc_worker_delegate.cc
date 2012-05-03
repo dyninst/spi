@@ -69,7 +69,7 @@ namespace sp {
 
     // Construct one channel.
     SpChannel* c = create_channel(fd, rw, arg);
-    assert(c);
+    if (!c) return NULL;
 
     // Update cache.
     if (rw == SP_WRITE) {

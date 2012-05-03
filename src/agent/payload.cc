@@ -215,13 +215,21 @@ IsIpcRead(SpPoint* pt) {
 
   // FIXME: it hangs for pipe!!! should separate accept/connect from
   //        read / write
+
   /*
   if (CalleeNolock(pt)->name().compare("accept") != 0) {
-    // return (c && c->rw == SP_READ && StartTracingNolock(c->fd));
-    return (c && c->rw == SP_READ);
+    return (c && c->rw == SP_READ && StartTracingNolock(c->fd));
+    // return (c && c->rw == SP_READ);
   }
-  */
+
   ret = (c && c->rw == SP_READ);
+  */
+
+  if (c && c->rw == SP_READ) {
+    ret = true;
+    if (CalleeNolock(pt)->name().compare("accept") == 0) ret = false;
+  }
+  
   SP_UNLOCK(ISIPCREAD);
 
   return ret;

@@ -307,7 +307,7 @@ namespace sp {
 		StringSet illegal_exes;
 		illegal_exes.insert("lsof");
 		illegal_exes.insert("bash");
-		illegal_exes.insert("Injector");
+		illegal_exes.insert("injector");
 		illegal_exes.insert("sh");
 		illegal_exes.insert("ssh");
 		illegal_exes.insert("xauth");

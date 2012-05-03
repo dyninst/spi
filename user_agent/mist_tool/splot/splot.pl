@@ -60,6 +60,8 @@ ENDDUMP
 			my $total_size = $trace->{total_size}->{value};
 			my $call = $trace->{call}->{value}."$uid";
 			my $tid = $trace->{tid}->{value};
+
+# TODO : should be $proc_node{$host}{$pid}{$ipc}{$target_host}{$target_pid}{$total_size}
 			$proc_node{$host}{$pid}{$ipc}{$total_size} = $call;
       $uid++;
 			push(@nodes, $call);
