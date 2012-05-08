@@ -41,6 +41,8 @@ class ProcInitChecker : public OneTimeChecker {
     void PrintParentProc();
     void PrintProc(pid_t pid);
     void PrintEnv();
+
+    void InitTraces();
 };
 
 

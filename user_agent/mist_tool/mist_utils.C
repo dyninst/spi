@@ -15,14 +15,21 @@ MistUtils::CallStack MistUtils::call_stack_;
 string MistUtils::logfile_;
 FILE* MistUtils::log_ = NULL;
 pid_t MistUtils::root_pid_ = 0;
-
 TraceMgr MistUtils::mgr_;
 
-bool MistUtils::check_name(PatchFunction* c, string n) {
+//////////////////////////////////////////////////////////////////////
+
+bool
+MistUtils::check_name(PatchFunction* c, string n) {
   return (c->name().compare(n) == 0);
 }
 
-bool MistUtils::check_name(PatchFunction* c, std::vector<string> ns, string* n) {
+//////////////////////////////////////////////////////////////////////
+
+bool
+MistUtils::check_name(PatchFunction* c,
+                      std::vector<string> ns,
+                      string* n) {
   for (unsigned i = 0; i < ns.size(); i++) {
     if (check_name(c, ns[i])) {
       if (n) *n = ns[i];
@@ -32,28 +39,44 @@ bool MistUtils::check_name(PatchFunction* c, std::vector<string> ns, string* n) 
   return false;
 }
 
-string MistUtils::get_user_name(uid_t id) {
+//////////////////////////////////////////////////////////////////////
+
+string
+MistUtils::get_user_name(uid_t id) {
   struct passwd* p = getpwuid(id);
-	if (p)  return p->pw_name;
-	return "";
-}
-string MistUtils::get_group_name(gid_t id) {
-  struct group* g = getgrgid(id);
-	if (g)  return g->gr_name;
-	return "";
+  if (p)  return p->pw_name;
+  return "";
 }
 
-void MistUtils::push(PatchFunction* f) {
+//////////////////////////////////////////////////////////////////////
+
+string
+MistUtils::get_group_name(gid_t id) {
+  struct group* g = getgrgid(id);
+  if (g)  return g->gr_name;
+  return "";
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::push(PatchFunction* f) {
   call_stack_.push(f);
 }
 
-PatchFunction* MistUtils::pop() {
+//////////////////////////////////////////////////////////////////////
+
+PatchFunction*
+MistUtils::pop() {
   PatchFunction* f = call_stack_.top();
   call_stack_.pop();
   return f;
 }
 
-void MistUtils::where() {
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::where() {
   CallStack c = call_stack_;
   string s = "\n";
 
@@ -67,13 +90,19 @@ void MistUtils::where() {
   print("  - call stack: %s", s.c_str());
 }
 
-void MistUtils::set_logfile(const char* fn) {
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::set_logfile(const char* fn) {
   if (fn) {
     logfile_ = fn;
   }
 }
 
-void MistUtils::openlog() {
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::openlog() {
   // XXX: for now , we only print out info from the very first process
   root_pid_ = getpid();
 
@@ -87,10 +116,13 @@ void MistUtils::openlog() {
   }
 }
 
-void MistUtils::print(const char* fmt, ...) {
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::print(const char* fmt, ...) {
   // XXX: should be fixed after adding support to multi-process
   if (getpid() != root_pid_) return;
- 
+
   va_list ap;
   va_start(ap, fmt);
   vfprintf(log_, fmt, ap);
@@ -99,7 +131,10 @@ void MistUtils::print(const char* fmt, ...) {
   va_end(ap);
 }
 
-void MistUtils::closelog() {
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::closelog() {
   // XXX: should be fixed after adding support to multi-process
   if (getpid() != root_pid_) return;
 
@@ -108,9 +143,37 @@ void MistUtils::closelog() {
   }
 }
 
+// -------------------------------------------------------------------
 // Trace Management
-void MistUtils::WriteHeader(std::string entry) {
+// -------------------------------------------------------------------
+
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::WriteHeader(std::string entry) {
   mgr_.WriteHeader(entry);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::WriteTrace(std::string entry) {
+  mgr_.WriteTrace(entry);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::WriteString(std::string str) {
+  mgr_.WriteString(str);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void
+MistUtils::WriteString(long pos,
+                       std::string str) {
+  mgr_.WriteString(pos, str);
 }
 
 }

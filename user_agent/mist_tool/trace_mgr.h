@@ -13,13 +13,15 @@ class TraceMgr {
   ~TraceMgr();
 
   void WriteHeader(std::string header);
-
+  void WriteTrace(std::string trace);
+  void WriteString(long pos,
+                   std::string str);
+  void WriteString(std::string str);
+  
   private:
   std::string filename_;
   FILE* fp_;
 
-  void Complete();
-  void WriteString(std::string str);
 };
 
 }

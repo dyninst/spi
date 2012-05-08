@@ -3,6 +3,8 @@
 
 namespace mist {
 
+//////////////////////////////////////////////////////////////////////
+
 TraceMgr::TraceMgr() {
   if (getenv("MIST_TRACE_FILE")) {
     filename_ = getenv("MIST_TRACE_FILE");
@@ -21,25 +23,50 @@ TraceMgr::TraceMgr() {
   WriteString(init);
 }
 
+//////////////////////////////////////////////////////////////////////
+
 TraceMgr::~TraceMgr() {
   fclose(fp_);
 }
 
+//////////////////////////////////////////////////////////////////////
+
 // Assumption for the current layout of xml file:
 // <?xml ... ?><process><head></head></process>
-void TraceMgr::WriteHeader(std::string header) {
-  fseek(fp_, -17, SEEK_END);
-  WriteString(header);
+void
+TraceMgr::WriteHeader(std::string header) {
+  WriteString(-17, header);
   WriteString("</head></process>");
 }
 
-void TraceMgr::Complete() {
-  WriteString("</traces></process>");
+//////////////////////////////////////////////////////////////////////
+
+// Assumption for the current layout of xml file:
+// <?xml ... ?><process><head></head><traces><trace></trace></traces></process>
+void
+TraceMgr::WriteTrace(std::string trace) {
+  WriteString(-27, trace);
+  WriteString("</trace></traces></process>");
 }
 
-void TraceMgr::WriteString(std::string str) {
+//////////////////////////////////////////////////////////////////////
+
+void
+TraceMgr::WriteString(long pos,
+                      std::string str) {
+  fseek(fp_, pos, SEEK_END);
   fprintf(fp_, "%s", str.c_str());
   fflush(fp_);
 }
 
+//////////////////////////////////////////////////////////////////////
+
+void
+TraceMgr::WriteString(std::string str) {
+  fprintf(fp_, "%s", str.c_str());
+  fflush(fp_);
 }
+
+
+}
+

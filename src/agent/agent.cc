@@ -256,6 +256,11 @@ namespace sp {
         (void*)g_parser->GetFuncAddrFromName(init_entry_);
     assert(payload_entry);
     g_context->SetInitEntry(payload_entry);
+
+    if (init_exit_.size() == 0 && allow_ipc_) {
+      init_exit_ = "default_exit";
+    }
+    
     if (init_exit_.size() > 0) {
       g_context->SetInitExitName(init_exit_);
       void* payload_exit =
@@ -263,6 +268,7 @@ namespace sp {
       assert(payload_exit);
       g_context->SetInitExit(payload_exit);
     }
+    
     g_context->EnableDirectcallOnly(directcall_only_);
     g_context->EnableIpc(allow_ipc_);
     g_context->EnableMultithread(allow_multithread_);

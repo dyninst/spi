@@ -31,7 +31,11 @@ class MistUtils {
     static void closelog();
 
     // Trace Management
-    static void WriteHeader(std::string entry);
+    static void WriteHeader(std::string header);
+    static void WriteTrace(std::string entry);
+    static void WriteString(long pos,
+                            std::string str);
+    static void WriteString(std::string str);
     
   protected:
     typedef std::stack<Dyninst::PatchAPI::PatchFunction*> CallStack;

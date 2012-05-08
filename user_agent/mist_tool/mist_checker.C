@@ -13,16 +13,24 @@ namespace mist {
 //------------------------------------------------
 // Check process stat
 //------------------------------------------------
-bool ProcInitChecker::run() {
+
+//////////////////////////////////////////////////
+
+bool
+ProcInitChecker::run() {
   PrintCurrentProc();
   PrintUserInfo();
   PrintEnv();
   PrintParentProc();
+
+  InitTraces();
 	return true;
 }
 
+//////////////////////////////////////////////////
 
-void ProcInitChecker::PrintUserInfo() {
+void
+ProcInitChecker::PrintUserInfo() {
   char entry[1024];
 
   // Real user
@@ -54,7 +62,10 @@ void ProcInitChecker::PrintUserInfo() {
   u_.WriteHeader(entry);
 }
 
-void ProcInitChecker::PrintCurrentProc() {
+//////////////////////////////////////////////////
+
+void
+ProcInitChecker::PrintCurrentProc() {
   
   PrintProc(getpid());
   char entry[1024];
@@ -66,8 +77,11 @@ void ProcInitChecker::PrintCurrentProc() {
   u_.WriteHeader(entry);
 }
 
+//////////////////////////////////////////////////
+
 // Assumption: it is the last one to be called in ProcInitChecker::run()
-void  ProcInitChecker::PrintParentProc() {
+void
+ProcInitChecker::PrintParentProc() {
   char entry[1024];
   snprintf(entry, 1024, "<parent>");
   u_.WriteHeader(entry);
@@ -78,8 +92,11 @@ void  ProcInitChecker::PrintParentProc() {
   u_.WriteHeader(entry);
 }
 
+//////////////////////////////////////////////////
+
 // XXX: should make it elegant!
-void  ProcInitChecker::PrintProc(pid_t pid) {
+void
+ProcInitChecker::PrintProc(pid_t pid) {
   char path[255];
   snprintf(path, 255, "/proc/%d/cmdline", pid);
   FILE* fp = fopen(path, "r");
@@ -127,7 +144,10 @@ void  ProcInitChecker::PrintProc(pid_t pid) {
   fclose(fp);
 }
 
-void  ProcInitChecker::PrintEnv() {
+//////////////////////////////////////////////////
+
+void
+ProcInitChecker::PrintEnv() {
 
   char entry[1024];
   snprintf(entry, 1024, "<environment_vars>");
@@ -155,6 +175,15 @@ void  ProcInitChecker::PrintEnv() {
 
   snprintf(entry, 1024, "</environment_vars>");
   u_.WriteHeader(entry);
+}
+
+//////////////////////////////////////////////////
+
+// Assumption for the current layout of xml file:
+// <?xml ... ?><process><head></head></process>
+void
+ProcInitChecker::InitTraces() {
+  u_.WriteString(-10, "<traces></traces></process>");
 }
 
 #if 0
@@ -446,19 +475,30 @@ bool ThreadChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
 // ------------------------------------------------------------------- 
 // Ipc Checker
 // -------------------------------------------------------------------
-bool IpcChecker::check(SpPoint* pt,
-                       SpFunction* callee) {
 
-	if (IsIpcWrite(pt)) {
-	}
-	else if (IsIpcRead(pt)) {
-	}
-  
+//////////////////////////////////////////////////////////////////////
+
+bool
+IpcChecker::check(SpPoint* pt,
+                  SpFunction* callee) {
   return true;
 }
 
-bool IpcChecker::post_check(SpPoint* pt,
-                               SpFunction* callee) {
+//////////////////////////////////////////////////////////////////////
+// TODO:
+// 1. maintain mapping: pid->tid->trg_pid->tid size counter on exit
+// 2. output trace on exit
+
+bool
+IpcChecker::post_check(SpPoint* pt,
+                       SpFunction* callee) {
+	if (IsIpcWrite(pt)) {
+    sp_print("ipc write: %s @ %d", callee->name().c_str(), getpid());
+	}
+	else if (IsIpcRead(pt)) {
+    sp_print("ipc read: %s @ %d", callee->name().c_str(), getpid());
+	}
+
 	return true;
 }
 
