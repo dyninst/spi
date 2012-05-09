@@ -47,6 +47,7 @@ namespace sp {
   typedef std::set<pid_t> PidSet;
   typedef std::set<std::string> StringSet;
 
+
   // Timer for profiling.
   // There are only 10 timers to use (0 ~ 10). So the timer_id should be
   // within [0, 9]. Otherwise, those functions does nothing.
@@ -56,7 +57,7 @@ namespace sp {
   COMMON_EXPORT void ResetTimer(const int timer_id);
   COMMON_EXPORT double GetTimer(const int timer_id);
   COMMON_EXPORT void PrintTime(const char* message,
-                           const int timer_id);
+                               const int timer_id);
 
   // Is 32-bit displacement?
   COMMON_EXPORT bool IsDisp32(const long disp);
@@ -68,22 +69,23 @@ namespace sp {
 
   // Is this process using this inode?
   COMMON_EXPORT bool PidUsesInode(const int pid,
-                              const ino_t inode);
+                                  const ino_t inode);
 
   COMMON_EXPORT void GetPidsFromFileDesc(const int fd,
-                                     PidSet& pid_set);
+                                         PidSet& pid_set);
 
   // Get pids that are associated with the local/remote address pair
-  COMMON_EXPORT void GetPidsFromAddrs(const char* const loc_ip,
-                                  const char* const loc_port,
-                                  const char* const rem_ip,
-                                  const char* const rem_port,
-                                  PidSet& pid_set);
+  COMMON_EXPORT void GetPidsFromAddrs(const char* const rem_ip,
+                                      const char* const rem_port,
+                                      PidSet& pid_set);
 
   COMMON_EXPORT in_addr_t GetIpFromHostname(const char* const hostname,
-                                        char* const ip,
-                                        const size_t ip_len);
+                                            char* const ip,
+                                            const size_t ip_len);
 
+  // Get local machine's IPv4 ip address
+  COMMON_EXPORT void GetIPv4Addr(char* ip_out,
+                                 size_t size);
 
   // Is current executable an illegal program in `illegal_prog_names`?
   // We use this, because we want to avoid instrumenting some programs, e.g.,
@@ -104,23 +106,23 @@ namespace sp {
 
   // Socket programing
   COMMON_EXPORT bool GetAddress(sockaddr_storage* const sa,
-                            char* const host,
-                            const size_t host_len,
-                            char* const service,
-                            const size_t service_len);
+                                char* const host,
+                                const size_t host_len,
+                                char* const service,
+                                const size_t service_len);
 
   COMMON_EXPORT bool GetLocalAddress(const int fd,
-                                 sockaddr_storage* const out);
+                                     sockaddr_storage* const out);
 
   COMMON_EXPORT bool GetRemoteAddress(const int fd,
-                                  sockaddr_storage* const out);
+                                      sockaddr_storage* const out);
 
   // Serialization for CodeObject
   // TODO(wenbin)
   COMMON_EXPORT bool SerializeCodeObject(pe::CodeObject* co,
-                                     const char* dir);
+                                         const char* dir);
   COMMON_EXPORT pe::CodeObject* DeserializeCodeObject(const char* dir,
-                                                  const char* file);
+                                                      const char* file);
 
   // Lock / unlock for multithreading
   typedef void* SpTid;

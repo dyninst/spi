@@ -37,7 +37,7 @@ TEST_F(UtilsTest, GetPidsFromAddrs) {
   }
   
   PidSet pid_set;
-  GetPidsFromAddrs("0.0.0.0", "0", "0.0.0.0", "3490", pid_set);
+  GetPidsFromAddrs("127.0.0.1", "3490", pid_set);
   EXPECT_TRUE(pid_set.size() == 1);
   
   system("killall tcp_server6.exe");

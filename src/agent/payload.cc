@@ -41,6 +41,8 @@ extern SpContext* g_context;
 extern SpParser::ptr g_parser;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 // The two wrappers are used only in IPC mode
 void
 wrapper_entry(sp::SpPoint* pt,
@@ -64,6 +66,8 @@ wrapper_entry(sp::SpPoint* pt,
 }
 
 
+//////////////////////////////////////////////////////////////////////
+
 void
 wrapper_exit(sp::SpPoint* pt,
              sp::PayloadFunc_t exit) {
@@ -71,6 +75,8 @@ wrapper_exit(sp::SpPoint* pt,
   exit(pt);
 }
 
+
+//////////////////////////////////////////////////////////////////////
 
 // Default payload functions
 void
@@ -84,27 +90,35 @@ default_entry(sp::SpPoint* pt) {
   sp::Propel(pt);
 }
 
+//////////////////////////////////////////////////////////////////////
+
 void
 default_exit(sp::SpPoint* pt) {
   /*
-  ph::PatchFunction* f = sp::Callee(pt);
-  if (!f) return;
+    ph::PatchFunction* f = sp::Callee(pt);
+    if (!f) return;
 
-  string callee_name = f->name();
-  sp_print("Leave %s", callee_name.c_str());
+    string callee_name = f->name();
+    sp_print("Leave %s", callee_name.c_str());
   */
 }
-
 
 // Utilities that payload writers can use in their payload functions
 
 namespace sp {
 
-
+// Global lock to synchronize instrumentation
+// TODO (wenbin): could we have finer grained lock?
 SpLock g_propel_lock;
 
+//////////////////////////////////////////////////////////////////////
+
 // Argument handle
-ArgumentHandle::ArgumentHandle() : offset(0), num(0) {}
+ArgumentHandle::ArgumentHandle()
+    : offset(0), num(0) {
+}
+
+//////////////////////////////////////////////////////////////////////
 
 char*
 ArgumentHandle::insert_buf(size_t s) {
@@ -113,15 +127,19 @@ ArgumentHandle::insert_buf(size_t s) {
   return b;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 ArgumentHandle::~ArgumentHandle() {
   for (unsigned i = 0; i < bufs.size(); i++) delete bufs[i];
 }
+
+//////////////////////////////////////////////////////////////////////
 
 // Get callee from a PreCall point
 static SpFunction*
 CalleeNolock(SpPoint* pt) {
   if (!pt) return NULL;
-  
+
   bool parse_indirect = true;
 
   // If we just want to instrument direct call, then we skip parsing
@@ -133,6 +151,8 @@ CalleeNolock(SpPoint* pt) {
   return f;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 SpFunction*
 Callee(SpPoint* pt) {
   SpFunction* ret = NULL;
@@ -142,6 +162,7 @@ Callee(SpPoint* pt) {
   return ret;
 }
 
+//////////////////////////////////////////////////////////////////////
 
 // Propel instrumentation to next points of the point `pt`
 void
@@ -173,15 +194,21 @@ Propel(SpPoint* pt) {
   SP_UNLOCK(PROPEL);
 }
 
+//////////////////////////////////////////////////////////////////////
+
 // Get arguments
 void*
-PopArgument(SpPoint* pt, ArgumentHandle* h, size_t size) {
+PopArgument(SpPoint* pt,
+            ArgumentHandle* h,
+            size_t size) {
   void* arg = NULL;
   SP_LOCK(POPARG);
   arg = PT_CAST(pt)->snip()->PopArgument(h, size);
   SP_UNLOCK(POPARG);
   return arg;
 }
+
+//////////////////////////////////////////////////////////////////////
 
 // Get return value
 long
@@ -192,6 +219,8 @@ ReturnValue(sp::SpPoint* pt) {
   SP_UNLOCK(RETVAL);
   return ret;
 }
+
+//////////////////////////////////////////////////////////////////////
 
 bool
 IsIpcWrite(SpPoint* pt) {
@@ -204,6 +233,8 @@ IsIpcWrite(SpPoint* pt) {
   return ret;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 // Implicitly call start_tracing()
 static char StartTracingNolock(int fd);
 
@@ -215,27 +246,17 @@ IsIpcRead(SpPoint* pt) {
   SP_LOCK(ISIPCREAD);
   c = pt->channel();
 
-  // FIXME: it hangs for pipe!!! should separate accept/connect from
-  //        read / write
-
-  /*
-  if (CalleeNolock(pt)->name().compare("accept") != 0) {
-    return (c && c->rw == SP_READ && StartTracingNolock(c->fd));
-    // return (c && c->rw == SP_READ);
-  }
-
-  ret = (c && c->rw == SP_READ);
-  */
-
   if (c && c->rw == SP_READ) {
     ret = true;
     if (CalleeNolock(pt)->name().compare("accept") == 0) ret = false;
   }
-  
+
   SP_UNLOCK(ISIPCREAD);
 
   return ret;
 }
+
+//////////////////////////////////////////////////////////////////////
 
 // Allow to run user-provided trace code?
 static char
@@ -247,6 +268,8 @@ StartTracingNolock(int fd) {
   return ret;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 char
 StartTracing(SpPoint* pt,
              int fd) {
@@ -257,6 +280,8 @@ StartTracing(SpPoint* pt,
   SP_UNLOCK(STARTTRACING);
   return ret;
 }
+
+//////////////////////////////////////////////////////////////////////
 
 bool
 IsInstrumentable(SpPoint* pt) {

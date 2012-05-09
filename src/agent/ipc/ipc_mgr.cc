@@ -44,300 +44,316 @@
 
 namespace sp {
 
-  // Global variables
-  extern SpContext* g_context;
-  extern SpParser::ptr g_parser;
+// Global variables
+extern SpContext* g_context;
+extern SpParser::ptr g_parser;
 
-  // Instantiate workers for different IPC mechanisms.
-  SpIpcMgr::SpIpcMgr() {
-    pipe_worker_ = new SpPipeWorker;
-    worker_set_.insert(pipe_worker_);
+//////////////////////////////////////////////////////////////////////
 
-    tcp_worker_ = new SpTcpWorker;
-    worker_set_.insert(tcp_worker_);
+// Instantiate workers for different IPC mechanisms.
+SpIpcMgr::SpIpcMgr() {
+  pipe_worker_ = new SpPipeWorker;
+  worker_set_.insert(pipe_worker_);
 
-    udp_worker_ = new SpUdpWorker;
-    worker_set_.insert(udp_worker_);
+  tcp_worker_ = new SpTcpWorker;
+  worker_set_.insert(tcp_worker_);
+
+  udp_worker_ = new SpUdpWorker;
+  worker_set_.insert(udp_worker_);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// Destroy all workers.
+SpIpcMgr::~SpIpcMgr() {
+  delete pipe_worker_;
+  delete tcp_worker_;
+  delete udp_worker_;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+
+// Get parameters from "write" functions.
+// Input Param : pt -- the call point from which we get the function
+// Output Param: fd_out -- file descriptor, if it is NULL, then skip it
+// Output Param: buf_out -- the buffer to write, if NULL, then skip it
+// Output Param: c_out -- the character to write, if NULL, then skip it
+// Output Param: size_out -- the size of the buffer, if NULL, then skip it
+// Output Param: sa_out -- sockaddr for connect(), if NULL, then skip it
+void
+SpIpcMgr::get_write_param(SpPoint* pt,
+                          int* fd_out,
+                          void** buf_out,
+                          char* c_out,
+                          size_t* size_out,
+                          sockaddr** sa_out) {
+  ph::PatchFunction* f = sp::Callee(pt);
+  if (!f) return;
+
+  ArgumentHandle h;
+  if (f->name().compare("write") == 0 ||
+      f->name().compare("send") == 0) {
+
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+    void** buf = (void**)sp::PopArgument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = *buf;
+    size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = *size;
   }
 
-  // Destroy all workers.
-  SpIpcMgr::~SpIpcMgr() {
-    delete pipe_worker_;
-    delete tcp_worker_;
-    delete udp_worker_;
+  else if (f->name().compare("connect") == 0) {
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+    sockaddr** sa = (sockaddr**)sp::PopArgument(pt, &h, sizeof(sockaddr*));
+    if (sa_out) *sa_out = *sa;
   }
 
-
-  // Get parameters from "write" functions.
-  // Input Param : pt -- the call point from which we get the function
-  // Output Param: fd_out -- file descriptor, if it is NULL, then skip it
-  // Output Param: buf_out -- the buffer to write, if NULL, then skip it
-  // Output Param: c_out -- the character to write, if NULL, then skip it
-  // Output Param: size_out -- the size of the buffer, if NULL, then skip it
-  // Output Param: sa_out -- sockaddr for connect(), if NULL, then skip it
-  void
-  SpIpcMgr::get_write_param(SpPoint* pt, int* fd_out, void** buf_out,
-                            char* c_out, size_t* size_out, sockaddr** sa_out) {
-    ph::PatchFunction* f = sp::Callee(pt);
-    if (!f) return;
-
-    ArgumentHandle h;
-    if (f->name().compare("write") == 0 ||
-        f->name().compare("send") == 0) {
-
-      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
-      if (fd_out) *fd_out = *fd;
-      void** buf = (void**)sp::PopArgument(pt, &h, sizeof(void*));
-      if (buf_out) *buf_out = *buf;
-      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
-      if (size_out) *size_out = *size;
-
-      /*
-        if (sa_out && is_tcp(*fd)) {
-        sp_debug("GET REM_SA - for fd %d at a %s ()", *fd, f->name().c_str());
-        sockaddr_in rem_sa;
-        memset(&rem_sa, 0, sizeof(sockaddr_in));
-        socklen_t rem_len = sizeof(sockaddr_in);
-        if (getpeername(*fd, (sockaddr*)&rem_sa, &rem_len) == -1) {
-        perror("getsockname");
-        }
-        sp_debug("REMOTE IP - %s", inet_ntoa(rem_sa.sin_addr));
-        sp_debug("REMOTE PORT - %d", htons(rem_sa.sin_port));
-        }
-      */
-    }
-
-    else if (f->name().compare("connect") == 0) {
-      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
-      if (fd_out) *fd_out = *fd;
-      sockaddr** sa = (sockaddr**)sp::PopArgument(pt, &h, sizeof(sockaddr*));
-      // sockaddr* sa_tmp = (sockaddr*)malloc(sizeof(sockaddr));
-      // memcpy(sa_tmp, *sa, sizeof(sockaddr));
-      if (sa_out) *sa_out = *sa;
-    }
-
-    else if (f->name().compare("fputs") == 0) {
-      char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
-      if (buf_out) *buf_out = (void*)*str;
-      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
-      if(fd_out) *fd_out = fileno(*fp);
-    }
-
-    else if (f->name().compare("putchar") == 0) {
-      int* c = (int*)sp::PopArgument(pt, &h, sizeof(int));
-      if (c_out) *c_out = *c;
-    }
-
-    else if (f->name().compare("fputc") == 0) {
-      char* c = (char*)sp::PopArgument(pt, &h, sizeof(char));
-      if (c_out) *c_out = *c;
-      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
-      if (fd_out) *fd_out = fileno(*fp);
-    }
-
-    else if (f->name().compare("fwrite_unlocked") == 0 ||
-        f->name().compare("fwrite") == 0) {
-      void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
-      if (buf_out) *buf_out = (void*)*ptr;
-      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
-      size_t* n = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
-      if (size_out) *size_out = (*size) * (*n);
-      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
-      if(fd_out) *fd_out = fileno(*fp);
-    }
+  else if (f->name().compare("fputs") == 0) {
+    char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
+    if (buf_out) *buf_out = (void*)*str;
+    FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
+    if(fd_out) *fd_out = fileno(*fp);
   }
 
-  // Get parameters from "read" functions.
-  // Input Param : pt -- the call point from which we get the function
-  // Output Param: fd_out -- file descriptor, if it is NULL, then skip it
-  // Output Param: buf_out -- the buffer to write, if NULL, then skip it
-  // Output Param: size_out -- the size of the buffer, if NULL, then skip it
-  void
-  SpIpcMgr::get_read_param(SpPoint* pt, int* fd_out, void** buf_out,
-                           size_t* size_out) {
-    ph::PatchFunction* f = sp::Callee(pt);
-    if (!f) return;
+  else if (f->name().compare("putchar") == 0) {
+    int* c = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (c_out) *c_out = *c;
+  }
 
-    ArgumentHandle h;
-    if (f->name().compare("read") == 0 ||
-        f->name().compare("recv") == 0) {
-      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
-      if (fd_out) *fd_out = *fd;
-      void** buf = (void**)sp::PopArgument(pt, &h, sizeof(void*));
-      if (buf_out) *buf_out = *buf;
-      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
-      if (size_out) *size_out = *size;
-    }
+  else if (f->name().compare("fputc") == 0) {
+    char* c = (char*)sp::PopArgument(pt, &h, sizeof(char));
+    if (c_out) *c_out = *c;
+    FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
+    if (fd_out) *fd_out = fileno(*fp);
+  }
 
-    else if (f->name().compare("fgets") == 0) {
-      char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
-      if (buf_out) *buf_out = (void*)*str;
-      int* size = (int*)sp::PopArgument(pt, &h, sizeof(int));
-      if (size_out) *size_out = *size;
-      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
-      if(fd_out) *fd_out = fileno(*fp);
-    }
+  else if (f->name().compare("fwrite_unlocked") == 0 ||
+           f->name().compare("fwrite") == 0) {
+    void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = (void*)*ptr;
+    size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+    size_t* n = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = (*size) * (*n);
+    FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
+    if(fd_out) *fd_out = fileno(*fp);
+  }
+}
 
-    else if (f->name().compare("fgetc") == 0) {
-      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
-      if(fd_out) *fd_out = fileno(*fp);
-    }
+//////////////////////////////////////////////////////////////////////
 
-    else if (f->name().compare("fread_unlocked") == 0 ||
-        f->name().compare("fread") == 0) {
-      void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
-      if (buf_out) *buf_out = (void*)*ptr;
-      size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
-      size_t* n = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
-      if (size_out) *size_out = (*size) * (*n);
-      FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
-      if(fd_out) *fd_out = fileno(*fp);
-    }
+// Get parameters from "read" functions.
+// Input Param : pt -- the call point from which we get the function
+// Output Param: fd_out -- file descriptor, if it is NULL, then skip it
+// Output Param: buf_out -- the buffer to write, if NULL, then skip it
+// Output Param: size_out -- the size of the buffer, if NULL, then skip it
+void
+SpIpcMgr::get_read_param(SpPoint* pt,
+                         int* fd_out,
+                         void** buf_out,
+                         size_t* size_out) {
+  ph::PatchFunction* f = sp::Callee(pt);
+  if (!f) return;
 
-    else if (f->name().compare("accept") == 0) {
-      int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
-      if (fd_out) *fd_out = *fd;
-    }
+  ArgumentHandle h;
+  if (f->name().compare("read") == 0 ||
+      f->name().compare("recv") == 0) {
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+    void** buf = (void**)sp::PopArgument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = *buf;
+    size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = *size;
 
   }
 
+  else if (f->name().compare("fgets") == 0) {
+    char** str = (char**)sp::PopArgument(pt, &h, sizeof(char*));
+    if (buf_out) *buf_out = (void*)*str;
+    int* size = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (size_out) *size_out = *size;
+    FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
+    if(fd_out) *fd_out = fileno(*fp);
+  }
 
-  // See if the function is a fork
-  bool
-  SpIpcMgr::is_fork(const char* f) {
-    if (strcmp(f, "fork") == 0) return true;
+  else if (f->name().compare("fgetc") == 0) {
+    FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
+    if(fd_out) *fd_out = fileno(*fp);
+  }
+
+  else if (f->name().compare("fread_unlocked") == 0 ||
+           f->name().compare("fread") == 0) {
+    void** ptr = (void**)sp::PopArgument(pt, &h, sizeof(void*));
+    if (buf_out) *buf_out = (void*)*ptr;
+    size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+    size_t* n = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
+    if (size_out) *size_out = (*size) * (*n);
+    FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
+    if(fd_out) *fd_out = fileno(*fp);
+  }
+
+  else if (f->name().compare("accept") == 0) {
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+  }
+
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// See if the function is a fork
+bool
+SpIpcMgr::is_fork(const char* f) {
+  if (strcmp(f, "fork") == 0) return true;
+  return false;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// See if the function is a popen
+bool
+SpIpcMgr::is_popen(const char* f) {
+  if (strcmp(f, "popen") == 0) return true;
+  return false;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// See if current process is allowed to execute the payload code
+// This is used in the user-defined payload function.
+// Return 1 if it is allowed to execute payload code (for tracing);
+// otherwise, 0 is returned.
+char SpIpcMgr::start_tracing(int fd) {
+  sp_print("ipcmgr:start_tracing");
+  for (WorkerSet::iterator wi = worker_set_.begin();
+       wi != worker_set_.end(); wi++) {
+    if ((*wi)->start_tracing(fd)) return 1;
+  }
+  return 0;
+}
+
+// Get a worker according to the file descriptor.
+// Return the worker if the file descriptor is for supported IPC;
+// otherwise, return NULL.
+SpIpcWorkerDelegate* SpIpcMgr::get_worker(int fd) {
+  // PIPE
+  if (IsPipe(fd)) {
+    return pipe_worker();
+  }
+  // TCP
+  else if (IsTcp(fd)) {
+    return tcp_worker();
+  }
+  // UDP
+  else if (IsUdp(fd)) {
+    return udp_worker();
+  }
+  // No IPC
+  else {
+    return NULL;
+  }
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// Will be called before user-specified entry-payload function.
+bool
+SpIpcMgr::BeforeEntry(SpPoint* pt) {
+  ph::PatchFunction* f = sp::Callee(pt);
+  if (!f) {
+    sp_print("CALLEE NOT FOUND - in BeforeEntry");
     return false;
   }
 
-  // See if the function is a popen
-  bool
-  SpIpcMgr::is_popen(const char* f) {
-    if (strcmp(f, "popen") == 0) return true;
-    return false;
-  }
+  sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
 
-  // See if current process is allowed to execute the payload code
-  // This is used in the user-defined payload function.
-  // Return 1 if it is allowed to execute payload code (for tracing);
-  // otherwise, 0 is returned.
-  char SpIpcMgr::start_tracing(int fd) {
-    sp_print("ipcmgr:start_tracing");
-    for (WorkerSet::iterator wi = worker_set_.begin();
-         wi != worker_set_.end(); wi++) {
-      if ((*wi)->start_tracing(fd)) return 1;
-    }
-    return 0;
-  }
-
-  // Get a worker according to the file descriptor.
-  // Return the worker if the file descriptor is for supported IPC;
-  // otherwise, return NULL.
-  SpIpcWorkerDelegate* SpIpcMgr::get_worker(int fd) {
-    // PIPE
-    if (IsPipe(fd)) {
-      return pipe_worker();
-    }
-    // TCP
-    else if (IsTcp(fd)) {
-      return tcp_worker();
-    }
-    // UDP
-    else if (IsUdp(fd)) {
-      return udp_worker();
-    }
-    // No IPC
-    else {
-      return NULL;
-    }
-  }
-
-  // Will be called before user-specified entry-payload function.
-  bool
-  SpIpcMgr::BeforeEntry(SpPoint* pt) {
-    ph::PatchFunction* f = sp::Callee(pt);
-    if (!f) {
-      sp_print("CALLEE NOT FOUND - in BeforeEntry");
+  // Sender-side
+  // Detect initiation of communication
+  int fd = -1;
+  sockaddr* sa = NULL;
+  ipc_mgr->get_write_param(pt, &fd, NULL, NULL, NULL, &sa);
+  SpIpcWorkerDelegate* worker = NULL;
+  if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
+    // SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
+    /*
+      if (!worker) {
+      sp_debug("WORKER NOT FOUND - in BeforeEntry on write, fd = %d", fd);
       return false;
-    }
-
-    sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
-
-    // Sender-side
-    // Detect initiation of communication
-    int fd = -1;
-    sockaddr* sa = NULL;
-    ipc_mgr->get_write_param(pt, &fd, NULL, NULL, NULL, &sa);
-    if (fd != -1) {
-      SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
-      if (!worker) {
-        sp_print("WORKER NOT FOUND - in BeforeEntry");
-        return false;
       }
-      // Enable tracing for current process
-      worker->set_start_tracing(1);
+    */
+    // Enable tracing for current process
+    worker->set_start_tracing(1);
 
-      SpChannel* c = worker->get_channel(fd, SP_WRITE, sa);
-      if (c) {
-        // Inject this agent.so to remote process
-        // Luckily, the SpInjector implementation will automatically detect
-        // whether the agent.so library is already injected. If so, it will
-        // not inject the library again.
-        // if (c->remote_pid != -1) worker->inject(c);
-        worker->inject(c);
+    SpChannel* c = worker->get_channel(fd, SP_WRITE, sa);
+    if (c) {
+      // Inject this agent.so to remote process
+      // Luckily, the SpInjector implementation will automatically detect
+      // whether the agent.so library is already injected. If so, it will
+      // not inject the library again.
+      // if (c->remote_pid != -1) worker->inject(c);
+      worker->inject(c);
 
-        // Enable tracing for remote process
-        if (Callee(pt)->name().compare("connect") != 0)
-          worker->set_start_tracing(1, c);
-        pt->SetChannel(c);
-      }
-      return true;
-    }
-
-    // Receiver-side
-    fd = -1;
-    ipc_mgr->get_read_param(pt, &fd, NULL, NULL);
-    if (fd != -1) {
-      SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
-      if (!worker) {
-        sp_print("WORKER NOT FOUND - in BeforeEntry's read side");
-        return false;
-      }
-      SpChannel* c = worker->get_channel(fd, SP_READ);
-      if (c) {
-        pt->SetChannel(c);
-      }
+      // Enable tracing for remote process
+      if (Callee(pt)->name().compare("connect") != 0)
+        worker->set_start_tracing(1, c);
+      pt->SetChannel(c);
     }
     return true;
   }
 
-  // Will be called before user-specified exit-payload function.
-  bool
-  SpIpcMgr::BeforeExit(SpPoint* pt) {
-    ph::PatchFunction* f = sp::Callee(pt);
-    if (!f) return false;
-
-    // Detect fork for pipe
-    sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
-    if (ipc_mgr->is_fork(f->name().c_str())) {
-      long pid = sp::ReturnValue(pt);
-      // Receiver
-      if (pid == 0) {
-        ipc_mgr->pipe_worker()->set_start_tracing(0);
+  // Receiver-side
+  fd = -1;
+  worker = NULL;
+  ipc_mgr->get_read_param(pt, &fd, NULL, NULL);
+  if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
+    /*
+      SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
+      if (!worker) {
+      sp_debug("WORKER NOT FOUND - in BeforeEntry on read, fd = %d", fd);
+      return false;
       }
+    */
+    SpChannel* c = worker->get_channel(fd, SP_READ);
+    if (c) {
+      pt->SetChannel(c);
+    } else {
+      sp_debug("FAILED TO CREATE CHANNEL - for read");
     }
-    // Detect popen for pipe
-    else if (ipc_mgr->is_popen(f->name().c_str())) {
-      FILE* fp = (FILE*)sp::ReturnValue(pt);
-      int fd = fileno(fp);
-      // XXX: magic?? This is a very artificial way to wait for fork done
-      sleep(5);
-      SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd, SP_WRITE);
-      ipc_mgr->pipe_worker()->set_start_tracing(0, c);
-    }
-    // Detect connect for tcp
-    else {
-    }
-    return true;
   }
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// Will be called before user-specified exit-payload function.
+bool
+SpIpcMgr::BeforeExit(SpPoint* pt) {
+  ph::PatchFunction* f = sp::Callee(pt);
+  if (!f) return false;
+
+  // Detect fork for pipe
+  sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
+  if (ipc_mgr->is_fork(f->name().c_str())) {
+    long pid = sp::ReturnValue(pt);
+    // Receiver
+    if (pid == 0) {
+      ipc_mgr->pipe_worker()->set_start_tracing(0);
+    }
+  }
+  // Detect popen for pipe
+  else if (ipc_mgr->is_popen(f->name().c_str())) {
+    FILE* fp = (FILE*)sp::ReturnValue(pt);
+    int fd = fileno(fp);
+    // XXX: magic?? This is a very artificial way to wait for fork done
+    sleep(5);
+    SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd, SP_WRITE);
+    ipc_mgr->pipe_worker()->set_start_tracing(0, c);
+  }
+  // Detect connect for tcp
+  else {
+  }
+  return true;
+}
 
 } // Namespace sp

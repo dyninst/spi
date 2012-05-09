@@ -41,51 +41,53 @@
 
 namespace sp {
 
-  // Global variables
-  extern SpContext* g_context;
-  extern SpParser::ptr g_parser;
+// Global variables
+extern SpContext* g_context;
+extern SpParser::ptr g_parser;
 
-  // Get channel from fd
-  // If channel doesn't exist, construct one
-  // Return NULL if failed to create one channel
-  SpChannel* SpIpcWorkerDelegate::get_channel(int fd,
-                                      ChannelRW rw,
-                                      void* arg) {
-    // Look up cache.
-    if (rw == SP_WRITE) {
-      if (channel_map_write_.find(fd) != channel_map_write_.end()) {
-        SpChannel* c = channel_map_write_[fd];
-        // Fill in the missed information
-        if (c && c->type == SP_TCP) {
-          // TcpChannel* tcp_channel = (TcpChannel*)c;
-          // TODO
-        }
-        return c;
+//////////////////////////////////////////////////////////////////////
+
+// Get channel from fd
+// If channel doesn't exist, construct one
+// Return NULL if failed to create one channel
+SpChannel* SpIpcWorkerDelegate::get_channel(int fd,
+                                            ChannelRW rw,
+                                            void* arg) {
+  // Look up cache.
+  if (rw == SP_WRITE) {
+    if (channel_map_write_.find(fd) != channel_map_write_.end()) {
+      SpChannel* c = channel_map_write_[fd];
+      // Fill in the missed information
+      if (c && c->type == SP_TCP) {
+        // TcpChannel* tcp_channel = (TcpChannel*)c;
+        // TODO
       }
-    } else {
-      if (channel_map_read_.find(fd) != channel_map_read_.end())
-        return channel_map_read_[fd];
+      return c;
     }
-
-    // Construct one channel.
-    SpChannel* c = create_channel(fd, rw, arg);
-    if (!c) return NULL;
-
-    // Update cache.
-    if (rw == SP_WRITE) {
-      c->rw = SP_WRITE;
-      channel_map_write_[fd] = c;
-      sp_debug("WRITE CHANNEL @ pid = %d - get a WRITE channel with"
-               " inode %ld for fd %d", getpid(), GetInodeFromFileDesc(fd), fd);
-    } else {
-      c->rw = SP_READ;
-      channel_map_read_[fd] = c;
-      sp_debug("READ CHANNEL @ pid = %d - get a READ channel with"
-               " inode %ld for fd %d", getpid(), GetInodeFromFileDesc(fd), fd);
-    }
-    c->fd = fd;
-    return c;
+  } else {
+    if (channel_map_read_.find(fd) != channel_map_read_.end())
+      return channel_map_read_[fd];
   }
+
+  // Construct one channel.
+  SpChannel* c = create_channel(fd, rw, arg);
+  if (!c) return NULL;
+
+  // Update cache.
+  if (rw == SP_WRITE) {
+    c->rw = SP_WRITE;
+    channel_map_write_[fd] = c;
+    sp_debug("WRITE CHANNEL @ pid = %d - get a WRITE channel with"
+             " inode %ld for fd %d", getpid(), GetInodeFromFileDesc(fd), fd);
+  } else {
+    c->rw = SP_READ;
+    channel_map_read_[fd] = c;
+    sp_debug("READ CHANNEL @ pid = %d - get a READ channel with"
+             " inode %ld for fd %d", getpid(), GetInodeFromFileDesc(fd), fd);
+  }
+  c->fd = fd;
+  return c;
+}
 
 
 } // Namespace sp

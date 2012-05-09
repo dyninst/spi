@@ -1,8 +1,9 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include "mist_checker.h"
 #include "mist.h"
+#include "mist_checker.h"
+#include "SpInc.h"
 
 using namespace Dyninst;
 using namespace PatchAPI;
@@ -72,8 +73,14 @@ ProcInitChecker::PrintCurrentProc() {
   
   // Get working dir
   char buf[256];
-  getcwd(buf, 256);
-  snprintf(entry, 1024, "<working_dir>%s</working_dir>", buf);
+  if (getcwd(buf, 256) != NULL) {
+    snprintf(entry, 1024, "<working_dir>%s</working_dir>", buf);
+    u_.WriteHeader(entry);
+  }
+  
+  // Host ip
+  sp::GetIPv4Addr(buf, 256);
+  snprintf(entry, 1024, "<host>%s</host>", buf);
   u_.WriteHeader(entry);
 }
 
@@ -492,13 +499,56 @@ IpcChecker::check(SpPoint* pt,
 bool
 IpcChecker::post_check(SpPoint* pt,
                        SpFunction* callee) {
+
+  bool ipc = false;
+  size_t size = 0;
+  
 	if (IsIpcWrite(pt)) {
-    sp_print("ipc write: %s @ %d", callee->name().c_str(), getpid());
+    ipc = true;
+    size = sp::ReturnValue(pt);
+    if (size == 0) return true;
+    u_.WriteTrace("<trace type=\"channel_write\">");
 	}
 	else if (IsIpcRead(pt)) {
-    sp_print("ipc read: %s @ %d", callee->name().c_str(), getpid());
+    ipc = true;
+    size = sp::ReturnValue(pt);
+    if (size == 0) return true;
+    u_.WriteTrace("<trace type=\"channel_read\">");
 	}
 
+  if (ipc) {
+    sp::TcpChannel* channel = static_cast<sp::TcpChannel*>(pt->channel());
+    if (channel) {
+      std::string remote_addr = channel->GetRemoteHost();
+      if (remote_addr.compare("127.0.0.1") == 0) {
+        char buf[256];
+        sp::GetIPv4Addr(buf, 256);
+        remote_addr = buf;
+      }
+      int remote_port = channel->GetRemotePort();
+      size_t& total_size = size_count_map_[remote_addr][remote_port][channel->type];
+      total_size += size;
+      std::string mechanism = "tcp";
+
+      char buf[1024];
+      snprintf(buf, 1024,
+               "<target>"
+               "<host>%s</host>"
+               "<port>%d</port>"
+               "<pid>%d</pid>"
+               "</target>"
+               "<size>%lu</size>"
+               "<total_size>%lu</total_size>"
+               "<mechanism>%s</mechanism>"
+               "<call>%s</call>",
+               remote_addr.c_str(), remote_port,
+               channel->GetRemotePid(),
+               size, total_size,
+               mechanism.c_str(), callee->name().c_str());
+      u_.WriteTrace(buf);
+    }
+    u_.WriteTrace("</trace>");
+  }
 	return true;
 }
 

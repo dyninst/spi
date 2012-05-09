@@ -9,7 +9,9 @@ TraceMgr::TraceMgr() {
   if (getenv("MIST_TRACE_FILE")) {
     filename_ = getenv("MIST_TRACE_FILE");
   } else {
-    filename_ = "trace.xml";
+    char buf[1024];
+    snprintf(buf, 1024, "%d-trace.xml", getpid());
+    filename_ = buf;
   }
   
   fp_ = fopen(filename_.c_str(), "w");
@@ -45,8 +47,8 @@ TraceMgr::WriteHeader(std::string header) {
 // <?xml ... ?><process><head></head><traces><trace></trace></traces></process>
 void
 TraceMgr::WriteTrace(std::string trace) {
-  WriteString(-27, trace);
-  WriteString("</trace></traces></process>");
+  trace += "</traces></process>";
+  WriteString(-19, trace);
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -146,7 +146,11 @@ class IpcChecker : public MistChecker {
     virtual bool post_check(sp::SpPoint* pt,
                             sp::SpFunction* callee);
   protected:
-    // Per-target-pid+host name counter
+    // trg host ip -> trg port -> protocol -> size count
+    typedef std::map<int, size_t> ProtoSizeMap;
+    typedef std::map<int, ProtoSizeMap> PidProtoMap;
+    typedef std::map<std::string, PidProtoMap> SizeCountMap;
+    SizeCountMap size_count_map_;
 };
 
 }

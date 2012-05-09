@@ -87,6 +87,12 @@ struct TcpChannel : public SpChannel {
   SpChannel() {}
   sockaddr_storage local;
   sockaddr_storage remote;
+
+  pid_t GetRemotePid();
+  std::string GetLocalHost();
+  std::string GetRemoteHost();
+  int GetLocalPort();
+  int GetRemotePort();
 };
 
 struct UdpChannel : public SpChannel {

@@ -114,6 +114,7 @@ AG_SRCS    += $(AG_DIR)/agent.cc \
               $(AG_DIR)/inst_workers/callinsn_worker_impl.cc \
               $(AG_DIR)/inst_workers/callblk_worker_impl.cc \
               $(AG_DIR)/inst_workers/spring_worker_impl.cc \
+              $(AG_DIR)/ipc/channel.cc \
               $(AG_DIR)/ipc/ipc_mgr.cc \
               $(AG_DIR)/ipc/ipc_workers/ipc_worker_delegate.cc \
               $(AG_DIR)/ipc/ipc_workers/pipe_worker_impl.cc \

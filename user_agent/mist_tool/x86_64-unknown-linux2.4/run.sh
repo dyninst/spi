@@ -18,7 +18,9 @@ AGENT=`pwd`/$AGENT_NAME
 
 export SP_AGENT_DIR=`pwd`
 
-$SP_DIR/$PLATFORM/test_mutatee/tcp_server6.exe &
+rm -rf *.xml
+#$SP_DIR/$PLATFORM/test_mutatee/tcp_server6.exe &
+$SP_DIR/$PLATFORM/test_mutatee/tcp_server4.exe &
 SERVER_PID=$!
 LD_PRELOAD="$AGENT" $SP_DIR/$PLATFORM/test_mutatee/tcp_client.exe localhost
 kill -9 $SERVER_PID

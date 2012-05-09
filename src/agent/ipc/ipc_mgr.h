@@ -85,7 +85,7 @@ namespace sp {
     // Input Param : pt -- the call point from which we get the function
     // Output Param: fd_out -- file descriptor, if it is NULL, then skip it
     // Output Param: buf_out -- the buffer to write, if NULL, then skip it
-    // Output Param: size_out -- the size of the buffer, if NULL, then skip it
+    // Output Param: size_out -- the size of the buffer, if NULL, then skip
     void get_read_param(SpPoint* pt,
                         int* fd_out,
                         void** buf_out,
@@ -100,8 +100,8 @@ namespace sp {
 
     // See if current process is allowed to execute the payload code
     // This is used in the user-defined payload function.
-    // Return 1 if it is allowed to execute payload code (for tracing); otherwise,
-    // 0 is returned.
+    // Return 1 if it is allowed to execute payload code (for tracing);
+    // otherwise, 0 is returned.
     char start_tracing(int fd);
 
     // Will be called before user-specified entry-payload function.

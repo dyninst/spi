@@ -37,6 +37,7 @@
 #include "agent/agent.h"
 #include "agent/context.h"
 #include "agent/event.h"
+#include "agent/ipc/channel.h"
 #include "agent/parser.h"
 #include "agent/payload.h"
 #include "agent/patchapi/addr_space.h"
