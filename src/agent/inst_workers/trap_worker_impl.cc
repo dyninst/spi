@@ -93,7 +93,10 @@ namespace sp {
 
     char* call_addr = (char*)b->last();
 		assert(call_addr);
-
+    if (!call_addr || (long)call_addr < getpagesize()) {
+      return false;
+    }
+    
 		size_t est_size = EstimateBlobSize(pt);
 		char* blob = pt->snip()->BuildBlob(est_size);
     if (!blob) {
@@ -111,7 +114,8 @@ namespace sp {
 		assert(obj);
 		assert(g_as);
 
-    if (!g_as->SetMemoryPermission((dt::Address)call_addr, call_size, perm)) {
+    if (!g_as->SetMemoryPermission((dt::Address)call_addr,
+                                   call_size, perm)) {
       sp_debug("FAILED PERM - failed to change memory permission");
       return false;
     } else {
@@ -147,8 +151,9 @@ namespace sp {
 		assert(sp_snip);
 
     char* blob = (char*)sp_snip->GetBlob();
-    if (!blob) {
-      sp_debug("TRAP NULL BLOB - get null blob at %lx", pc);
+    if (!blob || (long)blob < getpagesize()) {
+      sp_debug("TRAP invalid BLOB - at %lx, blob is %lx",
+               pc, (dt::Address)blob);
       return;
     }
 

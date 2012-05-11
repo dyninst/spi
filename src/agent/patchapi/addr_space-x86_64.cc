@@ -223,6 +223,10 @@ SpAddrSpace::UpdateFreeIntervals() {
     size = ((size + ps -1) & ~(ps - 1));
 
     dt::Address base = interval->end - size;
+    if (base < ps) {
+      base += ps;
+      size -= ps;
+    }
     obj->InitMemoryAlloc(base, size);
   }
 }

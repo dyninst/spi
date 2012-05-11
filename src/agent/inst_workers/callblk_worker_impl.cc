@@ -140,7 +140,7 @@ namespace sp {
              (long)est_size, b->size());
     char* blob = snip->BuildBlob(est_size,
 																/*reloc=*/true);
-		if (!blob) {
+		if (!blob || (long)blob < getpagesize()) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
 		}
@@ -161,7 +161,11 @@ namespace sp {
 
     char* addr = (char*)b->start();
 		assert(addr);
-
+		if (!addr || (long)addr < getpagesize()) {
+			sp_debug("BLOCK ADDR LESS THAN PAGESIZE");
+			return false;
+    }
+    
     // Write a jump instruction to call block
     if (g_as->SetMemoryPermission((dt::Address)addr, insn_size, perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)jump_insn, insn_size);

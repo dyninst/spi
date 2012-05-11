@@ -115,7 +115,7 @@ namespace sp {
 		size_t est_size = EstimateBlobSize(pt);
     char* blob = snip->BuildBlob(est_size,
 																	/*reloc=*/true);
-		if (!blob) {
+    if (!blob || (long)blob < getpagesize()) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
 		}
@@ -137,7 +137,7 @@ namespace sp {
     // Relocate spring block & change the permission of the relocated
     // spring block
     char* spring = snip->RelocateSpring(springblk);
-		if (!spring) {
+    if (!spring || (long)spring < getpagesize()) {
 			sp_debug("FAILED TO RELOCATE SPRINGBOARD BLOCK");
 			return false;
 		}
@@ -168,7 +168,12 @@ namespace sp {
 
     // Second jump to relocated spring block
     char* addr = (char*)springblk->start();
-    if (g_as->SetMemoryPermission((dt::Address)addr, springblk->size(), perm)) {
+    if (!addr || (long)addr < getpagesize()) {
+      return false;
+    }
+    
+    if (g_as->SetMemoryPermission((dt::Address)addr,
+                                  springblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)springblk_insn, off);
     } else {
       sp_debug("MPROTECT - Failed to change memory access permission");
@@ -182,7 +187,8 @@ namespace sp {
     callblk_insn[1] = (char)(springblk->start() + call_blk_jmp_trg
                              - ((long)addr + 2));
 
-    if (g_as->SetMemoryPermission((dt::Address)addr, callblk->size(), perm)) {
+    if (g_as->SetMemoryPermission((dt::Address)addr,
+                                  callblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)callblk_insn, 2);
     } else {
       sp_debug("MPROTECT - Failed to change memory access permission");

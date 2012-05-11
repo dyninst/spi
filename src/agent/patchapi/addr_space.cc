@@ -107,7 +107,8 @@ namespace sp {
     } else {
       sp_debug("PAGE SIZE LARGER - pagesize %lx, address %lx",
                (long)pz, (long)a);
-      assert(0 && "LARGE PAGE SIZE?");
+      // assert(0 && "LARGE PAGE SIZE?");
+      return false;
       aligned = 0;
     }
 

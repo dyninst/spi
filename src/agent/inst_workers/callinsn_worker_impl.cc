@@ -116,7 +116,10 @@ namespace sp {
     // XXX: should we move it to the SpInstrumenter::run() ?
     char* call_addr = (char*)b->last();
 		assert(call_addr);
-
+		if (!call_addr || (long)call_addr < getpagesize()) {
+      return false;
+    }
+    
 		SpSnippet::ptr snip = pt->snip();
 		assert(snip);
 
@@ -124,7 +127,7 @@ namespace sp {
 		char* blob = snip->BuildBlob(est_size);
 		assert(blob);
     size_t blob_size = snip->GetBlobSize();
-    if (!blob) {
+    if (!blob || (long)blob < getpagesize()) {
 			sp_debug("FAILED TO GENERATE BLOB");
 			return false;
 		}
@@ -160,7 +163,8 @@ namespace sp {
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		assert(g_as);
-    if (g_as->SetMemoryPermission((dt::Address)call_addr, insn_length, perm)) {
+    if (g_as->SetMemoryPermission((dt::Address)call_addr,
+                                  insn_length, perm)) {
       g_as->write(obj, (dt::Address)call_addr, (dt::Address)jump, 5);
     } else {
       sp_debug("MPROTECT - Failed to change memory access permission");
