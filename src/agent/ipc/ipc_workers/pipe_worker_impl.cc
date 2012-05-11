@@ -86,19 +86,23 @@ SpPipeWorker::tracing_internal(char** start_tracing) {
 
 //////////////////////////////////////////////////////////////////////
 
-void  SpPipeWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
+void
+SpPipeWorker::set_start_tracing(char yes_or_no,
+                                SpChannel* c) {
   start_tracing_[c->remote_pid] = yes_or_no;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void SpPipeWorker::set_start_tracing(char yes_or_no) {
+void
+SpPipeWorker::set_start_tracing(char yes_or_no) {
   start_tracing_[getpid()] = yes_or_no;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-char SpPipeWorker::start_tracing(int fd) {
+char
+SpPipeWorker::start_tracing(int fd) {
   sp_print("pipeworker:start_tracing");
   return start_tracing_[getpid()];
 }
@@ -106,8 +110,9 @@ char SpPipeWorker::start_tracing(int fd) {
 //////////////////////////////////////////////////////////////////////
 
 // Invoke SpInjector::inject directly
-bool SpPipeWorker::inject(SpChannel* c,
-                          char* agent_path,
+bool
+SpPipeWorker::inject(SpChannel* c,
+                         char* agent_path,
                           char* /* ignore injector for pipe */,
                           char* /* ignore ijagent for pipe */) {
 

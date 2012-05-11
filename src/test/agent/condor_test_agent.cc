@@ -10,16 +10,24 @@ void test_entry(SpPoint* pt) {
 
   PatchFunction* f = Callee(pt);
   if (!f) return;
-	sp_print("%s() in %s",
-           f->name().c_str(),
-           pt->GetObject()->name().c_str());
+
+  if (IsIpcWrite(pt) || IsIpcRead(pt)) {
+
+    sp_print("%s() in %s @ pid=%d",
+             f->name().c_str(),
+             pt->GetObject()->name().c_str(),
+             getpid());
+  }
   sp::Propel(pt);
 }
 
 void spi_test_exit(SpPoint* pt) {
   PatchFunction* f = Callee(pt);
   if (!f) return;
-  sp_print("Exit %s", f->name().c_str());
+  if (IsIpcWrite(pt) || IsIpcRead(pt)) {
+    sp_print("Exit %s @ pid = %d",
+             f->name().c_str(), getpid());
+  }
 }
 
 AGENT_INIT
@@ -34,9 +42,16 @@ void MyAgent() {
 
   StringSet funcs_not_to_inst;
   funcs_not_to_inst.insert("ExprTreeToString");
-  //funcs_not_to_inst.insert("classad::ClassAdUnParser::Unparse()");
-  //funcs_not_to_inst.insert("setbuf");
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
+
+  if (getenv("SP_IPC")) {
+    agent->EnableIpc(true);
+  }
+  
+  StringSet preinst_funcs;
+  preinst_funcs.insert("Daemon::connectSock");
+  FuncEvent::ptr event = FuncEvent::Create(preinst_funcs);
+  agent->SetInitEvent(event);
   
   agent->SetInitEntry("test_entry");
   agent->SetInitExit("spi_test_exit");

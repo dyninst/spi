@@ -49,7 +49,9 @@ SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
 
 //////////////////////////////////////////////////////////////////////
 
-void SpTcpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
+void
+SpTcpWorker::set_start_tracing(char yes_or_no,
+                               SpChannel* c) {
   sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
   assert(c);
   // Sanity check
@@ -65,7 +67,8 @@ void SpTcpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
 
 //////////////////////////////////////////////////////////////////////
 
-void SpTcpWorker::set_start_tracing(char yes_or_no) {
+void
+SpTcpWorker::set_start_tracing(char yes_or_no) {
   start_tracing_ = yes_or_no;
 }
 
@@ -73,7 +76,8 @@ void SpTcpWorker::set_start_tracing(char yes_or_no) {
 
 // If tcpworker has more than one read-channel, and it is not allowed to
 // start tracing, then we need to wait for OOB msg
-char SpTcpWorker::start_tracing(int fd) {
+char
+SpTcpWorker::start_tracing(int fd) {
 
   if (IsTcp(fd) && !start_tracing_) {
     fd_set rset, xset;
@@ -99,9 +103,11 @@ char SpTcpWorker::start_tracing(int fd) {
 // This interface is subject to change, which implies local and remote
 // machines are binary compatible. However, it is not true. We may define a
 // bunch of environment variables.
-bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
-                         char* injector_path,
-                         char* ijagent_path) {
+bool
+SpTcpWorker::inject(SpChannel* c,
+                    char* agent_path,
+                    char* injector_path,
+                    char* ijagent_path) {
   // XXX: potential problem - two hosts may communicate w/ multiple channels.
   //      e.g., pipe and tcp at the same time. Should have an approach to
   //      do bookkeeping correctly.
@@ -178,12 +184,12 @@ bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
   string exe_cmd;
   if (local_machine) {
     exe_cmd = injector_path;
-    exe_cmd += " ";
+    exe_cmd += " \"";
   }
   else {
     exe_cmd = "ssh ";
     exe_cmd += remote_ip;
-    exe_cmd += " ";
+    exe_cmd += " \"";
     exe_cmd += injector_path;
     exe_cmd += " ";
   }
@@ -196,8 +202,10 @@ bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
   exe_cmd += remote_port;
   exe_cmd += " ";
   exe_cmd += agent_path;
+  exe_cmd += "\"";
 
-  sp_debug("INJECT CMD - %s", exe_cmd.c_str());
+  sp_print("INJECT CMD - %s", exe_cmd.c_str());
+  // sp_debug("INJECT CMD - %s", exe_cmd.c_str());
 
   FILE* fp = popen(exe_cmd.c_str(), "r");
   char line[1024];
@@ -213,7 +221,10 @@ bool SpTcpWorker::inject(SpChannel* c, char* agent_path,
 
 //////////////////////////////////////////////////////////////////////
 
-SpChannel* SpTcpWorker::create_channel(int fd, ChannelRW rw, void* arg) {
+SpChannel*
+SpTcpWorker::create_channel(int fd,
+                            ChannelRW rw,
+                            void* arg) {
   TcpChannel* c = new TcpChannel;
   c->local_pid = getpid();
   c->type = SP_TCP;

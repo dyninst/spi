@@ -1,5 +1,5 @@
 
-INJECTOR   = injector
+INJECTOR   = injector.exe
 IJAGENT    = libijagent.so
 
 ifeq ($(DYNLINK), false)
@@ -85,7 +85,10 @@ $(IJMAIN_OBJS): $(OBJS_DIR)/%.o : %.cc
 $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(IJ_LDFLAGS)
-
+	@rm -f injector
+	@echo "export LD_LIBRARY_PATH=$(SP_DIR)/$(PLATFORM):$(SP_DIR)/$(PLATFORM)/test_mutatee:$(DYNINST_DIR)/../$(PLATFORM)/lib:./" > injector
+	@echo "$(SP_DIR)/$(PLATFORM)/$(INJECTOR) \$$1 \$$2 \$$3 \$$4 \$$5" >> injector
+	@chmod 755 injector
 #---------------- 
 # libijagent.so
 #---------------- 

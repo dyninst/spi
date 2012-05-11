@@ -43,6 +43,8 @@
 
 #include "common/utils.h"
 
+#define IJ_TIMEOUT 800
+
 namespace sp {
 
 SpInjector::ptr
@@ -223,7 +225,7 @@ void SpInjector::Inject(const char* lib_name) {
     // Wait for dlopen to return
     int count = 0;
     while (shm->loaded == -1) {
-      if (count > 5) {
+      if (count > IJ_TIMEOUT) {
         sp_perror("INJECTOR [pid = %d]: injectee not response, abort", getpid());
       }
       sleep(1);
