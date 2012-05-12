@@ -32,6 +32,8 @@
 #ifndef SP_COMMON_H_
 #define SP_COMMON_H_
 
+#include <stdio.h>
+
 // Some macros for code readability
 #define OVERRIDE
 #define OVERLOAD
@@ -58,6 +60,8 @@ const int kLenStringBuffer = 255;
   fflush(stdout); \
 } while(0)
 
+extern FILE* g_debug_fp;
+
 #define sp_debug(...) do { \
   if (getenv("SP_DEBUG")) {   \
   		char* nodir = basename((char*)__FILE__);				 \
@@ -66,7 +70,13 @@ const int kLenStringBuffer = 255;
       fprintf(stderr, "\n");  \
       fflush(stderr); \
     } \
-    else ; \
+  else if (getenv("SP_FDEBUG")) {               \
+  		char* nodir = basename((char*)__FILE__);				 \
+      fprintf(g_debug_fp, "%s [%d]: ", nodir, __LINE__); \
+      fprintf(g_debug_fp, __VA_ARGS__); \
+      fprintf(g_debug_fp, "\n");  \
+      fflush(g_debug_fp); \
+  }\
 } while(0)
 
 // Gets file name from a full path name

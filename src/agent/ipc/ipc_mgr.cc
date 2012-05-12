@@ -262,7 +262,8 @@ bool
 SpIpcMgr::BeforeEntry(SpPoint* pt) {
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) {
-    sp_print("CALLEE NOT FOUND - in BeforeEntry");
+    sp_print("CALLEE NOT FOUND - in BeforeEntry for call insn %lx",
+             pt->block()->last());
     return false;
   }
 

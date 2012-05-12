@@ -6,53 +6,51 @@ using namespace PatchAPI;
 using namespace sp;
 
 FILE* fp = NULL;
+pid_t previous_pid = 0;
 
 void test_entry(SpPoint* pt) {
 
   PatchFunction* f = Callee(pt);
   if (!f) return;
 
-  fprintf(stderr, "%s() in %s @ pid=%d\n",
+  SpPoint* caller = pt->caller_pt();
+  fprintf(fp, "%s<-", f->name().c_str());
+  while (caller) {
+    PatchFunction* caller_func = Callee(caller);
+    if (caller_func) {
+      fprintf(fp, "%s<-", caller_func->name().c_str());
+    } else {
+      break;
+    }
+    caller = caller->caller_pt();
+  }
+  fprintf(fp, "main @ %d\n", getpid());
+  /*
+  if (previous_pid != getpid()) {
+    char fn[255];
+    snprintf(fn, 255, "/tmp/spi-%d-output", getpid());
+    fp = fopen(fn, "w");
+    previous_pid = getpid();
+  }
+  fprintf(fp, "%s() in %s @ pid=%d\n",
            f->name().c_str(),
            pt->GetObject()->name().c_str(),
            getpid());
-  
-  if (IsIpcWrite(pt) || IsIpcRead(pt)) {
-    sp_print("%s() in %s @ pid=%d",
-             f->name().c_str(),
-             pt->GetObject()->name().c_str(),
-             getpid());
-    /*
-    fprintf(fp, "%s() in %s @ pid=%d",
-             f->name().c_str(),
-             pt->GetObject()->name().c_str(),
-             getpid());
-    */
-  }
+  */
   sp::Propel(pt);
 }
 
 void spi_test_exit(SpPoint* pt) {
-  PatchFunction* f = Callee(pt);
-  if (!f) return;
-  if (IsIpcWrite(pt) || IsIpcRead(pt)) {
-    sp_print("Exit %s @ pid = %d",
-             f->name().c_str(), getpid());
-    /*
-    fprintf(fp, "Exit %s @ pid = %d",
-             f->name().c_str(), getpid());
-    */
-  }
 }
 
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
 
-  // char fn[255];
-  // snprintf(fn, 255, "/tmp/spi-%d", getpid());
-  // fp = fopen(fn, "w");
-  
+  char fn[255];
+  snprintf(fn, 255, "/tmp/spi-%d-output", getpid());
+  fp = fopen(fn, "w");
+
   StringSet libs_to_inst;
   libs_to_inst.insert("libcondor_utils.so");
   libs_to_inst.insert("libclassad.so");
@@ -60,7 +58,8 @@ void MyAgent() {
   agent->SetLibrariesToInstrument(libs_to_inst);
 
   StringSet funcs_not_to_inst;
-  funcs_not_to_inst.insert("ExprTreeToString");
+  // funcs_not_to_inst.insert("ExprTreeToString");
+  funcs_not_to_inst.insert("dc_main");
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
 
   if (getenv("SP_IPC")) {
@@ -80,4 +79,5 @@ void MyAgent() {
 
 AGENT_FINI
 void DumpOutput() {
+
 }

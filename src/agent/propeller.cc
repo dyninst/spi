@@ -61,7 +61,7 @@ namespace sp {
   SpPropeller::go(SpFunction* func,
                   PayloadFunc entry,
                   PayloadFunc exit,
-                  ph::Point* pt,
+                  SpPoint* point,
                   StringSet* inst_calls) {
     assert(func);
 
@@ -73,7 +73,7 @@ namespace sp {
     ph::PatchMgrPtr mgr = g_parser->mgr();
     assert(mgr);
     ph::PatchFunction* cur_func = NULL;
-    if (pt) {
+    if (point) {
       cur_func = func;
     } else {
       cur_func = g_parser->FindFunction(func->GetMangledName());
@@ -86,27 +86,19 @@ namespace sp {
     // 2. Start instrumentation
     ph::Patcher patcher(mgr);
     for (unsigned i = 0; i < pts.size(); i++) {
-      SpPoint* pt = PT_CAST(pts[i]);
-      assert(pt);
-      SpBlock* blk = pt->GetBlock();
+      SpPoint* p = PT_CAST(pts[i]);
+      assert(p);
+      SpBlock* blk = p->GetBlock();
       assert(blk);
 
       if (blk->instrumented()) {
         continue;
       }
       
-      /*
-      if (blk->isShared()) {
-        if (blk->instrumented()) {
-          continue;
-        }
-      }
-      */
-      
       // It's possible that callee will be NULL, which is an indirect call.
       // In this case, we'll parse it later during runtime.
 
-      SpFunction* callee = g_parser->callee(pt);
+      SpFunction* callee = g_parser->callee(p);
 
       if (callee) {
         if (!g_parser->CanInstrumentFunc(callee->name())) {
@@ -124,7 +116,7 @@ namespace sp {
         sp_debug("POINT - instrumenting direct call at %lx to "
                  "function %s (%lx) for point %lx",
                  blk->last(), callee->name().c_str(),
-                 (dt::Address)callee, (dt::Address)pt);
+                 (dt::Address)callee, (dt::Address)p);
       } else {
         if (inst_calls) {
           // sp_print("SKIP INDIRECT CALL - at %lx", blk->last());
@@ -132,19 +124,20 @@ namespace sp {
           continue;
         }
         sp_debug("POINT - instrumenting indirect call at %lx for point %lx",
-                 blk->last(), (dt::Address)pt);
+                 blk->last(), (dt::Address)p);
       }
 
       sp_debug("PAYLOAD ENTRY - %lx", (long)entry);
+      p->SetCallerPt(point);
       SpSnippet::ptr sp_snip = SpSnippet::create(callee,
-                                                 pt,
+                                                 p,
                                                  entry,
                                                  exit);
       ph::Snippet<SpSnippet::ptr>::Ptr snip =
         ph::Snippet<SpSnippet::ptr>::create(sp_snip);
       assert(sp_snip && snip);
-      pt->SetSnip(sp_snip);
-      patcher.add(ph::PushBackCommand::create(pt, snip));
+      p->SetSnip(sp_snip);
+      patcher.add(ph::PushBackCommand::create(p, snip));
     }
     bool ret = patcher.commit();
 

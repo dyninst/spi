@@ -7,6 +7,8 @@
 
 using namespace sp;
 
+FILE*         g_debug_fp = NULL;
+
 // Here we go!
 int main(int argc, char *argv[]) {
 

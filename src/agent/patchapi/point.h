@@ -58,7 +58,8 @@ namespace sp {
 			callee_(NULL),
 			install_method_(SP_NONE),
 			channel_(NULL),
-			ret_addr_(0) {
+      ret_addr_(0),
+      caller_point_(NULL) {
     }
 	SpPoint(ph::Point::Type t,
 					ph::PatchMgrPtr m,
@@ -69,7 +70,9 @@ namespace sp {
 			callee_(NULL),
 			install_method_(SP_NONE),
 			channel_(NULL),
-			ret_addr_(0) {
+      ret_addr_(0),
+      caller_point_(NULL) {
+      
     }
 	SpPoint(ph::Point::Type t,
 					ph::PatchMgrPtr m,
@@ -80,7 +83,8 @@ namespace sp {
 			callee_(NULL),
 			install_method_(SP_NONE),
 			channel_(NULL),
-			ret_addr_(0) {
+      ret_addr_(0),
+      caller_point_(NULL) {
     }
 	SpPoint(ph::Point::Type t,
 					ph::PatchMgrPtr m,
@@ -93,7 +97,8 @@ namespace sp {
 			callee_(NULL),
 			install_method_(SP_NONE),
 			channel_(NULL),
-			ret_addr_(0) {
+      ret_addr_(0),
+      caller_point_(NULL) {
     }
 	SpPoint(ph::Point::Type t,
 					ph::PatchMgrPtr m,
@@ -104,7 +109,8 @@ namespace sp {
 			callee_(NULL),
 			install_method_(SP_NONE),
 			channel_(NULL),
-			ret_addr_(0) {
+      ret_addr_(0),
+      caller_point_(NULL) {
     }
 
     virtual ~SpPoint() { }
@@ -127,6 +133,9 @@ namespace sp {
 		void SetRetAddr(dt::Address a) { ret_addr_ = a; }
 		dt::Address ret_addr() const { return ret_addr_; }
 
+    void SetCallerPt(SpPoint* pt) { caller_point_ = pt; }
+    SpPoint* caller_pt() { return caller_point_; }
+    
 		// For convenience ...
 		SpBlock* GetBlock() const;
 		SpObject* GetObject() const;
@@ -138,6 +147,7 @@ namespace sp {
     SpSnippet::ptr spsnip_;
     SpChannel* channel_;
 		dt::Address ret_addr_;
+    SpPoint* caller_point_;
 	};
 
 }

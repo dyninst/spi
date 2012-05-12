@@ -39,6 +39,8 @@
 
 #include "patchAPI/h/PatchMgr.h"
 
+FILE*         g_debug_fp = NULL;
+
 namespace sp {
 
   // The only definition of global variables
@@ -60,6 +62,13 @@ namespace sp {
       if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
         sp_perror("ERROR: failed to setup core dump ability\n");
       }
+    }
+
+    // Enalbe outputing debug info to /tmp/spi-$PID
+    if (getenv("SP_FDEBUG")) {
+      char fn[255];
+      snprintf(fn, 255, "/tmp/spi-%d", getpid());
+      g_debug_fp = fopen(fn, "w");
     }
     return ptr(new SpAgent());
   }

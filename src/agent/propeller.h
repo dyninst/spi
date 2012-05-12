@@ -50,7 +50,7 @@ namespace sp {
     bool go(SpFunction* func,
             PayloadFunc entry,
             PayloadFunc exit,
-            ph::Point* pt = NULL,
+            SpPoint* pt = NULL,
             StringSet* inst_calls = NULL);
 
   protected:
