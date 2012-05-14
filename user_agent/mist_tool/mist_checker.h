@@ -11,12 +11,14 @@ namespace mist {
 class OneTimeChecker {
   public:
     virtual bool run() = 0;
+    virtual ~OneTimeChecker() {}
   protected:
     MistUtils u_;
 };
 
 class MistChecker {
   public:
+  virtual ~MistChecker() {}
   virtual bool check(sp::SpPoint* pt,
                      sp::SpFunction* callee) = 0;
   virtual bool post_check(sp::SpPoint* pt,
@@ -141,6 +143,7 @@ class ThreadChecker : public MistChecker {
 // IPC
 class IpcChecker : public MistChecker {
   public:
+  virtual ~IpcChecker() {}
     virtual bool check(sp::SpPoint* pt,
                        sp::SpFunction* callee);
     virtual bool post_check(sp::SpPoint* pt,
