@@ -14,7 +14,7 @@ namespace {
 class PipeSystest : public testing::Test {
   public:
   PipeSystest() {
-    mutatee_prefix_ = " LD_LIBRARY_PATH=test_mutatee::tmp/lib:$LD_LIBRARY_PATH ";
+    mutatee_prefix_ = " LD_LIBRARY_PATH=test_mutatee:tmp/lib:$LD_LIBRARY_PATH ";
     preload_prefix_ = " LD_PRELOAD=$SP_DIR/$PLATFORM/test_agent/ipc_test_agent.so ";
 	}
 
@@ -32,8 +32,8 @@ class PipeSystest : public testing::Test {
 TEST_F(PipeSystest, pipe1_preload_before_fork) {
   string cmd;
   cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe1.exe";
-  system(cmd.c_str());
-  /*
+  // system(cmd.c_str());
+
   FILE* fp = popen(cmd.c_str(), "r");
   char buf[1024];
   int count = 0;
@@ -44,13 +44,12 @@ TEST_F(PipeSystest, pipe1_preload_before_fork) {
   // printf("count: %d\n", count);
   EXPECT_TRUE(count > 200);
   pclose(fp);
-  */
 }
 
 TEST_F(PipeSystest, pipe2_preload_after_fork) {
   string cmd;
   cmd = mutatee_prefix_ + " test_mutatee/pipe2.exe";
-  // system(cmd.c_str());
+  //  system(cmd.c_str());
 
   FILE* fp = popen(cmd.c_str(), "r");
   char buf[1024];
@@ -118,7 +117,6 @@ TEST_F(PipeSystest, pipe5_fifo) {
   }
   else if (pid > 0) {
     string cmd;
-    // cmd = mutatee_prefix_ + preload_prefix_ + "test_mutatee/pipe5server.exe";
     cmd = mutatee_prefix_ + "test_mutatee/pipe5server.exe";
     system(cmd.c_str());
   }

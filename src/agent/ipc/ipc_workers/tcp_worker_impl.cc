@@ -108,6 +108,7 @@ SpTcpWorker::inject(SpChannel* c,
                     char* agent_path,
                     char* injector_path,
                     char* ijagent_path) {
+  sp_debug("tcp worker, injected? %d", c->injected);
   // XXX: potential problem - two hosts may communicate w/ multiple channels.
   //      e.g., pipe and tcp at the same time. Should have an approach to
   //      do bookkeeping correctly.
@@ -184,7 +185,7 @@ SpTcpWorker::inject(SpChannel* c,
   string exe_cmd;
   if (local_machine) {
     exe_cmd = injector_path;
-    exe_cmd += " \"";
+    exe_cmd += " ";
   }
   else {
     exe_cmd = "ssh ";
@@ -202,9 +203,9 @@ SpTcpWorker::inject(SpChannel* c,
   exe_cmd += remote_port;
   exe_cmd += " ";
   exe_cmd += agent_path;
-  exe_cmd += "\"";
+  if (!local_machine)
+    exe_cmd += "\"";
 
-  sp_print("INJECT CMD - %s", exe_cmd.c_str());
   // sp_debug("INJECT CMD - %s", exe_cmd.c_str());
 
   FILE* fp = popen(exe_cmd.c_str(), "r");

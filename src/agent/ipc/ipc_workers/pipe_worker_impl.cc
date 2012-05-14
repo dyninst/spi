@@ -120,6 +120,7 @@ SpPipeWorker::inject(SpChannel* c,
   //      e.g., pipe and tcp at the same time. Should have an approach to
   //      do bookkeeping correctly.
   if (c->injected) return true;
+
   sp_debug("NO INJECTED -- start injection");
   SpInjector::ptr injector = SpInjector::Create(c->remote_pid);
   string agent_name = "";
@@ -132,6 +133,44 @@ SpPipeWorker::inject(SpChannel* c,
   agent_name += g_parser->agent_name();
   sp_print("%s", agent_name.c_str());
   injector->Inject(agent_name.c_str());
+
+#if 0
+  // Command line:
+  //   $SP_DIR/$PLATFORM/injector pid $SP_AGENT_DIR/agent_name
+  
+  string injector_path = "";
+  if (getenv("SP_DIR") && getenv("PLATFORM")) {
+    injector_path += getenv("SP_DIR");
+    injector_path += "/";
+    injector_path += getenv("PLATFORM");
+    injector_path += "/injector";
+  } else {
+    injector_path += "injector";
+  }
+  
+  string agent_name = "";
+  if (getenv("SP_AGENT_DIR")) {
+    agent_name = getenv("SP_AGENT_DIR");
+    agent_name += "/";
+  } else {
+    agent_name = "./";
+  }
+  agent_name += g_parser->agent_name();
+  
+  char cmd[1024];
+  snprintf(cmd, 1024, "bash %s %d %s",
+           injector_path.c_str(),
+           c->remote_pid,
+           agent_name.c_str());
+  sp_debug("INJECTOR CMD - %s", cmd);
+  // system(cmd);
+  FILE* fp = popen(cmd, "r");
+  char linebuf[255];
+  while (fgets(linebuf, 255, fp) != NULL) {
+    sp_debug("%s", linebuf);
+  }
+  pclose(fp);
+#endif
   c->injected = true;
   return true;
 }

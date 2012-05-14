@@ -533,7 +533,7 @@ IsIllegalProgram() {
   StringSet illegal_exes;
   illegal_exes.insert("lsof");
   illegal_exes.insert("bash");
-  illegal_exes.insert("injector");
+  illegal_exes.insert("injector.exe");
   illegal_exes.insert("sh");
   illegal_exes.insert("ssh");
   illegal_exes.insert("xauth");
