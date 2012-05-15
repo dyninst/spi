@@ -176,4 +176,9 @@ MistUtils::WriteString(long pos,
   mgr_.WriteString(pos, str);
 }
 
+void
+MistUtils::ChangeTraceFile() {
+  mgr_.ChangeTraceFile();
+}
+
 }

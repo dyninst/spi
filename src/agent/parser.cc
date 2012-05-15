@@ -817,6 +817,8 @@ SpParser::FindFunction(string name) {
   return NULL;
 }
 
+size_t total_count=0;
+size_t total_size=0;
 // Internal function used by FindFunction
 bool
 SpParser::GetFuncsByName(sp::SpObject* obj,
@@ -845,8 +847,11 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
 
     // sp_debug("FUNC - %s", (*fit)->name().c_str());
     // Get or create a PatchFunction instance
-    SpFunction* found = FUNC_CAST(obj->getFunc(*fit));
 
+    SpFunction* found = FUNC_CAST(obj->getFunc(*fit));
+    total_count++;
+    total_size += sizeof(SpFunction);
+    
     // Skip unmatched function
 
     if (mangled) {

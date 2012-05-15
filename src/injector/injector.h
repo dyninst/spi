@@ -49,7 +49,7 @@ namespace sp {
     typedef dyn_detail::boost::shared_ptr<SpInjector> ptr;
 
     INJECTOR_EXPORT static ptr Create(dt::PID pid);
-    INJECTOR_EXPORT void Inject(const char* lib_name);
+    INJECTOR_EXPORT bool Inject(const char* lib_name);
 
     ~SpInjector();
  protected:

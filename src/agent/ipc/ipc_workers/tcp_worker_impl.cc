@@ -50,8 +50,8 @@ SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
 //////////////////////////////////////////////////////////////////////
 
 void
-SpTcpWorker::set_start_tracing(char yes_or_no,
-                               SpChannel* c) {
+SpTcpWorker::SetStartTracing(char yes_or_no,
+                             SpChannel* c) {
   sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
   assert(c);
   // Sanity check
@@ -68,12 +68,11 @@ SpTcpWorker::set_start_tracing(char yes_or_no,
 //////////////////////////////////////////////////////////////////////
 
 void
-SpTcpWorker::set_start_tracing(char yes_or_no) {
+SpTcpWorker::SetStartTracing(char yes_or_no) {
   start_tracing_ = yes_or_no;
 }
 
 //////////////////////////////////////////////////////////////////////
-
 // If tcpworker has more than one read-channel, and it is not allowed to
 // start tracing, then we need to wait for OOB msg
 char
@@ -99,116 +98,81 @@ SpTcpWorker::start_tracing(int fd) {
 }
 
 //////////////////////////////////////////////////////////////////////
-
 // This interface is subject to change, which implies local and remote
 // machines are binary compatible. However, it is not true. We may define a
 // bunch of environment variables.
 bool
-SpTcpWorker::inject(SpChannel* c,
-                    char* agent_path,
-                    char* injector_path,
-                    char* ijagent_path) {
-  sp_debug("tcp worker, injected? %d", c->injected);
-  // XXX: potential problem - two hosts may communicate w/ multiple channels.
-  //      e.g., pipe and tcp at the same time. Should have an approach to
-  //      do bookkeeping correctly.
+SpTcpWorker::Inject(SpChannel* c,
+                    char* agent_path) {
+
   if (c->injected) return true;
   sp_debug("NO INJECTED -- start injection");
 
   TcpChannel *tcp_channel = static_cast<TcpChannel*>(c);
   assert(tcp_channel);
 
-  char local_ip[256];
-  char local_port[64];
+  // Get ip and port
   char remote_ip[256];
   char remote_port[64];
-
-  if (!GetAddress(&tcp_channel->local, local_ip, 256, local_port, 64)) {
-    sp_perror("failed to get local address in tcp_worker::inject()");
-  }
   if (!GetAddress(&tcp_channel->remote, remote_ip, 256, remote_port, 64)) {
     sp_perror("failed to get remote address in tcp_worker::inject()");
   }
-
-  // XXX: how to determine it is a local machiune?
-  // 1. 127.0.0.1
-  // 2. local ip == remote ip
-  // ??
-  bool local_machine = false;
-  if (strstr(remote_ip, "127.0.0.1")) {
-    sp_debug("LOCAL MACHINE TCP");
-    local_machine = true;
-  }
   sp_debug("REMOTE IP: %s, REMOTE PORT: %s", remote_ip, remote_port);
 
-  // XXX: Should do it in a configure file
-  string default_agent_path;
-  string default_injector_path;
-  string default_ijagent_path;
+  char cmd[1024];
+  string cmd_exe;
 
+  if (strstr(remote_ip, "127.0.0.1")) {
+    // For local machine, invoke injector directly
+    sp_debug("LOCAL MACHINE TCP");
+  } else {
+    // For remote machine, ssh injector
+    snprintf(cmd, 1024, "ssh %s \"", remote_ip);
+    cmd_exe += cmd;
+  }
+
+  // Injector path
+  if (getenv("SP_DIR") && getenv("PLATFORM")) {
+    snprintf(cmd, 1024, "%s/%s/",
+             getenv("SP_DIR"),
+             getenv("PLATFORM"));
+  }
+  cmd_exe += cmd;
+  cmd_exe += "injector";
+
+  // IP and Port
+  snprintf(cmd, 1024, " %s %s ", remote_ip, remote_port);
+  cmd_exe += cmd;
+
+  // Agent path
   if (agent_path == NULL) {
-    assert(g_context);
-    assert(g_parser);
-    assert(g_parser->agent_name().size() > 0);
-
     if (getenv("SP_AGENT_DIR")) {
-      default_agent_path += getenv("SP_AGENT_DIR");
-      default_agent_path += "/";
+      snprintf(cmd, 1024, "%s %s/", cmd, getenv("SP_AGENT_DIR"));
     } else {
-      default_agent_path = "./";
+      snprintf(cmd, 1024, "%s ./", cmd);
     }
-
-    default_agent_path += sp_filename((char*)g_parser->agent_name().c_str());
-
-    agent_path = (char*)default_agent_path.c_str();
-  }
-  if (injector_path == NULL) {
-    default_injector_path += getenv("SP_DIR");
-    default_injector_path += "/";
-    default_injector_path += getenv("PLATFORM");
-    default_injector_path += "/injector";
-    injector_path = (char*)default_injector_path.c_str();
-  }
-  if (ijagent_path == NULL) {
-    default_ijagent_path += getenv("SP_DIR");
-    default_ijagent_path += "/";
-    default_ijagent_path += getenv("PLATFORM");
-    default_ijagent_path += "/libijagent.so";
-    ijagent_path = (char*)default_ijagent_path.c_str();
+    cmd_exe += cmd;
+    assert(g_parser);
+    snprintf(cmd, 1024, "%s%s", cmd,
+             sp_filename((char*)g_parser->agent_name().c_str()));
+    cmd_exe += cmd;
+  } else {
+    snprintf(cmd, 1024, "%s%s", cmd, agent_path);
+    cmd_exe += cmd;
   }
 
-  sp_debug("AGENT PATH - %s", agent_path);
-  sp_debug("INJECTOR PATH - %s", injector_path);
-  sp_debug("IJAGENT PATH - %s", ijagent_path);
-
-  // SSH into remote machine to run Injector
-  string exe_cmd;
-  if (local_machine) {
-    exe_cmd = injector_path;
-    exe_cmd += " ";
+  if (strstr(remote_ip, "127.0.0.1")) {
+    // For local machine, invoke injector directly
+    sp_debug("LOCAL MACHINE TCP");
+  } else {
+    // For remote machine, ssh injector
+    cmd_exe += "\"";
   }
-  else {
-    exe_cmd = "ssh ";
-    exe_cmd += remote_ip;
-    exe_cmd += " \"";
-    exe_cmd += injector_path;
-    exe_cmd += " ";
-  }
-  exe_cmd += local_ip;
-  exe_cmd += " ";
-  exe_cmd += local_port;
-  exe_cmd += " ";
-  exe_cmd += remote_ip;
-  exe_cmd += " ";
-  exe_cmd += remote_port;
-  exe_cmd += " ";
-  exe_cmd += agent_path;
-  if (!local_machine)
-    exe_cmd += "\"";
 
-  // sp_debug("INJECT CMD - %s", exe_cmd.c_str());
+  sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
 
-  FILE* fp = popen(exe_cmd.c_str(), "r");
+  // Execute the command
+  FILE* fp = popen(cmd_exe.c_str(), "r");
   char line[1024];
   fgets(line, 1024, fp);
   fgets(line, 1024, fp);
@@ -217,15 +181,15 @@ SpTcpWorker::inject(SpChannel* c,
   }
   pclose(fp);
 
-  return true;
+  return c->injected;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 SpChannel*
-SpTcpWorker::create_channel(int fd,
-                            ChannelRW rw,
-                            void* arg) {
+SpTcpWorker::CreateChannel(int fd,
+                           ChannelRW rw,
+                           void* arg) {
   TcpChannel* c = new TcpChannel;
   c->local_pid = getpid();
   c->type = SP_TCP;

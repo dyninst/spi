@@ -13,7 +13,6 @@ Mist::Mist() {
 
   // Each checker is called for each point
   checkers_.insert(new IpcChecker);
-  
   /*
   checkers_.insert(new FileOpenChecker);
   checkers_.insert(new LibChecker);
@@ -23,8 +22,7 @@ Mist::Mist() {
   checkers_.insert(new MmapChecker);
   checkers_.insert(new ChmodChecker);
   checkers_.insert(new ThreadChecker);
-  */
-  
+  */  
   // Each fini_checker is called only once when this agent is unloaded
   fini_checkers_.insert(new ProcFiniChecker);
 
@@ -49,6 +47,11 @@ Mist::~Mist() {
        i != fini_checkers_.end(); i++) {
     delete *i;
   }
+}
+
+void Mist::fork_init_run() {
+  u_.ChangeTraceFile();
+  init_run();
 }
 
 void Mist::init_run() {

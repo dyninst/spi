@@ -12,6 +12,8 @@ void test_entry(SpPoint* pt) {
 
   PatchFunction* f = Callee(pt);
   if (!f) return;
+  fprintf(fp, "%s @ pid=%d\n",
+          f->name().c_str(), getpid());
 
   SpPoint* caller = pt->caller_pt();
   fprintf(fp, "%s<-", f->name().c_str());
@@ -60,6 +62,17 @@ void MyAgent() {
   StringSet funcs_not_to_inst;
   // funcs_not_to_inst.insert("ExprTreeToString");
   funcs_not_to_inst.insert("dc_main");
+  /*
+  funcs_not_to_inst.insert("DaemonCore::reconfig");
+  funcs_not_to_inst.insert("config");
+  funcs_not_to_inst.insert("check_core_files");
+  funcs_not_to_inst.insert("MyString::~MyString");
+  funcs_not_to_inst.insert("MyString::init");
+  funcs_not_to_inst.insert("param_info_hash_lookup");
+  funcs_not_to_inst.insert("param_boolean");
+  funcs_not_to_inst.insert("DaemonCore::DaemonCore");
+  funcs_not_to_inst.insert("drop_core_in_log");
+  */
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
 
   if (getenv("SP_IPC")) {

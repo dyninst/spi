@@ -38,25 +38,36 @@
 
 namespace sp {
 
-  // UDP worker
-  void  SpUdpWorker::set_start_tracing(char yes_or_no, SpChannel* c) {
-  }
+//////////////////////////////////////////////////////////////////////
+void
+SpUdpWorker::SetStartTracing(char yes_or_no,
+                             SpChannel* c) {
+}
 
-  void SpUdpWorker::set_start_tracing(char yes_or_no) {
-  }
+////////////////////////////////////////////////////////////////////// 
+void
+SpUdpWorker::SetStartTracing(char yes_or_no) {
+}
 
-  char SpUdpWorker::start_tracing(int fd) {
-    return 0;
-  }
+////////////////////////////////////////////////////////////////////// 
+char
+SpUdpWorker::start_tracing(int fd) {
+  return 0;
+}
 
-  bool SpUdpWorker::inject(SpChannel* c, char* agent_path,
-                           char* injector_path,
-                           char* ijagent_path) {
-    return 0;
-  }
+////////////////////////////////////////////////////////////////////// 
+bool
+SpUdpWorker::Inject(SpChannel* c,
+                    char* agent_path) {
+  return 0;
+}
 
-  SpChannel* SpUdpWorker::create_channel(int fd, ChannelRW rw, void*) {
-    return NULL;
-  }
+////////////////////////////////////////////////////////////////////// 
+SpChannel*
+SpUdpWorker::CreateChannel(int fd,
+                           ChannelRW rw,
+                           void*) {
+  return NULL;
+}
 
 } // Namespace sp

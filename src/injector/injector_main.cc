@@ -12,12 +12,12 @@ FILE*         g_debug_fp = NULL;
 // Here we go!
 int main(int argc, char *argv[]) {
 
-  if (argc != 3 && argc != 6) {
+  if (argc != 3 && argc != 4) {
     sp_print("usage1: %s PID LIB_NAME\n", argv[0]);
     sp_print("    example: %s 2345 /tmp/myagent.so\n", argv[0]);
-    sp_print("usage2: %s LOCAL_IP LOCAL_PORT REMOTE_IP REMOTE_PORT LIB_NAME\n",
+    sp_print("usage2: %s REMOTE_IP REMOTE_PORT LIB_NAME\n",
              argv[0]);
-    sp_print("    example: %s 192.127.4.2 2456 192.125.5.2 3490 "
+    sp_print("    example: %s 192.125.5.2 3490 "
              "/tmp/myagent.so\n", argv[0]);
     exit(0);
   }
@@ -43,15 +43,15 @@ int main(int argc, char *argv[]) {
   else {
     // XXX: currently, we only look at the port number
     //      so we don't do error checking for the time being
-    const char* lib_name = argv[5];
+    const char* lib_name = argv[3];
 
     PidSet pid_set;
-    sp::GetPidsFromAddrs(argv[3], argv[4], pid_set);
+    sp::GetPidsFromAddrs(argv[1], argv[2], pid_set);
     int try_count = 5;
     while (pid_set.size() < 1 && try_count > 0) {
       fprintf(stderr, "Cannot find any process listening to port %s at %s,"
-              " %d tries remain\n", argv[4], argv[3], try_count);
-      sp::GetPidsFromAddrs(argv[3], argv[4], pid_set);
+              " %d tries remain\n", argv[2], argv[1], try_count);
+      sp::GetPidsFromAddrs(argv[1], argv[2], pid_set);
       sleep(1);
       try_count --;
     }
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     for (PidSet::iterator pi = pid_set.begin(); pi != pid_set.end(); pi++) {
       Dyninst::PID pid = *pi;
       sp_print("Injector [pid = %d]: INJECTING - %s to port=%s / pid=%d ...",
-               getpid(), lib_name, argv[4], pid);
+               getpid(), lib_name, argv[2], pid);
       sp_debug("========== Injector ==========");
       SpInjector::ptr injector = SpInjector::Create(pid);
       injector->Inject(lib_name);

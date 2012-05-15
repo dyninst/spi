@@ -20,11 +20,12 @@ namespace mist {
 bool
 ProcInitChecker::run() {
   PrintCurrentProc();
+  PrintParentProc();
   PrintUserInfo();
   PrintEnv();
-  PrintParentProc();
 
   InitTraces();
+
 	return true;
 }
 
@@ -104,20 +105,21 @@ ProcInitChecker::PrintParentProc() {
 // XXX: should make it elegant!
 void
 ProcInitChecker::PrintProc(pid_t pid) {
-  char path[255];
-  snprintf(path, 255, "/proc/%d/cmdline", pid);
-  FILE* fp = fopen(path, "r");
-  int c;
-
   char entry[1024];
 
   // Get pid
-  snprintf(entry, 1024, "<pid>%d</pid>", getpid());
+  snprintf(entry, 1024, "<pid>%d</pid>", pid);
   u_.WriteHeader(entry);
-  
+
   // Get exe
+  char path[255];
+  snprintf(path, 255, "/proc/%d/cmdline", pid);
+  FILE* fp = fopen(path, "r");
+
   string exe;
-  while ((c = fgetc(fp)) != '\0') {
+  int c;
+  while ((c = fgetc(fp)) != '\0' && c != -1) {
+    // sp_print("%c -- %d", (char)c, c);
     exe += (char)c;
   }
   exe += '\0';
@@ -147,8 +149,8 @@ ProcInitChecker::PrintProc(pid_t pid) {
            "<cmdline_argument>%s</cmdline_argument>",
            cmdline.c_str());
   u_.WriteHeader(entry);
-  
   fclose(fp);
+
 }
 
 //////////////////////////////////////////////////
@@ -488,6 +490,27 @@ bool ThreadChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
 bool
 IpcChecker::check(SpPoint* pt,
                   SpFunction* callee) {
+  if (callee->name().compare("connect") == 0) {
+    ArgumentHandle h;
+    PopArgument(pt, &h, sizeof(int));
+    sockaddr** addr = (sockaddr**)PopArgument(pt, &h,
+                                              sizeof(sockaddr*));
+    char host[256];
+    char service[256];
+    if (sp::GetAddress((sockaddr_storage*)*addr, host, 256, service, 256)) {
+      u_.WriteTrace("<trace type=\"connect\">");
+      char buf[1024];
+      pid_t pid = -1;
+      snprintf(buf, 1024,
+               "<target>"
+               "<host>%s</host><port>%s</port>"
+               "<pid>%d</pid>"
+               "</target>",
+               host, service, pid);
+      u_.WriteTrace(buf);
+      u_.WriteTrace("</trace>");
+    }
+  }
   return true;
 }
 
@@ -499,7 +522,7 @@ IpcChecker::check(SpPoint* pt,
 bool
 IpcChecker::post_check(SpPoint* pt,
                        SpFunction* callee) {
-
+  /*
   bool ipc = false;
   size_t size = 0;
   
@@ -549,6 +572,7 @@ IpcChecker::post_check(SpPoint* pt,
     }
     u_.WriteTrace("</trace>");
   }
+  */
 	return true;
 }
 

@@ -17,7 +17,8 @@ class TraceMgr {
   void WriteString(long pos,
                    std::string str);
   void WriteString(std::string str);
-  
+
+  void ChangeTraceFile();
   private:
   std::string filename_;
   FILE* fp_;

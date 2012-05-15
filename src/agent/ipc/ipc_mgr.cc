@@ -284,20 +284,20 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       }
     */
     // Enable tracing for current process
-    worker->set_start_tracing(1);
+    worker->SetStartTracing(1);
 
-    SpChannel* c = worker->get_channel(fd, SP_WRITE, sa);
+    SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
     if (c) {
       // Inject this agent.so to remote process
       // Luckily, the SpInjector implementation will automatically detect
       // whether the agent.so library is already injected. If so, it will
       // not inject the library again.
-      // if (c->remote_pid != -1) worker->inject(c);
-      worker->inject(c);
+      // if (c->remote_pid != -1) worker->Inject(c);
+      worker->Inject(c);
 
       // Enable tracing for remote process
       if (Callee(pt)->name().compare("connect") != 0)
-        worker->set_start_tracing(1, c);
+        worker->SetStartTracing(1, c);
       pt->SetChannel(c);
     }
     return true;
@@ -315,7 +315,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       return false;
       }
     */
-    SpChannel* c = worker->get_channel(fd, SP_READ);
+    SpChannel* c = worker->GetChannel(fd, SP_READ);
     if (c) {
       pt->SetChannel(c);
     } else {
@@ -339,7 +339,7 @@ SpIpcMgr::BeforeExit(SpPoint* pt) {
     long pid = sp::ReturnValue(pt);
     // Receiver
     if (pid == 0) {
-      ipc_mgr->pipe_worker()->set_start_tracing(0);
+      ipc_mgr->pipe_worker()->SetStartTracing(0);
     }
   }
   // Detect popen for pipe
@@ -348,8 +348,8 @@ SpIpcMgr::BeforeExit(SpPoint* pt) {
     int fd = fileno(fp);
     // XXX: magic?? This is a very artificial way to wait for fork done
     sleep(5);
-    SpChannel* c = ipc_mgr->pipe_worker()->get_channel(fd, SP_WRITE);
-    ipc_mgr->pipe_worker()->set_start_tracing(0, c);
+    SpChannel* c = ipc_mgr->pipe_worker()->GetChannel(fd, SP_WRITE);
+    ipc_mgr->pipe_worker()->SetStartTracing(0, c);
   }
   // Detect connect for tcp
   else {

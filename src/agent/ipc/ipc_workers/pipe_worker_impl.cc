@@ -50,7 +50,7 @@ extern SpParser::ptr g_parser;
 
 SpPipeWorker::SpPipeWorker() {
   // sp_debug("PIPE WORKER - created for pid=%d", getpid());
-  tracing_internal(&start_tracing_);
+  TracingInternal(&start_tracing_);
   start_tracing_[getpid()] = 0;
 }
 
@@ -71,7 +71,7 @@ SpPipeWorker::~SpPipeWorker() {
 
 // Initialize shared memory
 void
-SpPipeWorker::tracing_internal(char** start_tracing) {
+SpPipeWorker::TracingInternal(char** start_tracing) {
   int shmid;
   if ((shmid = shmget(TRACING_ID, TRACING_SIZE, IPC_CREAT | 0666)) < 0) {
     sp_perror("ERROR: cannot create shared memory with id %d", TRACING_ID);
@@ -87,15 +87,15 @@ SpPipeWorker::tracing_internal(char** start_tracing) {
 //////////////////////////////////////////////////////////////////////
 
 void
-SpPipeWorker::set_start_tracing(char yes_or_no,
-                                SpChannel* c) {
+SpPipeWorker::SetStartTracing(char yes_or_no,
+                              SpChannel* c) {
   start_tracing_[c->remote_pid] = yes_or_no;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void
-SpPipeWorker::set_start_tracing(char yes_or_no) {
+SpPipeWorker::SetStartTracing(char yes_or_no) {
   start_tracing_[getpid()] = yes_or_no;
 }
 
@@ -111,76 +111,38 @@ SpPipeWorker::start_tracing(int fd) {
 
 // Invoke SpInjector::inject directly
 bool
-SpPipeWorker::inject(SpChannel* c,
-                         char* agent_path,
-                          char* /* ignore injector for pipe */,
-                          char* /* ignore ijagent for pipe */) {
-
+SpPipeWorker::Inject(SpChannel* c,
+                     char* agent_path) {
   // XXX: potential problem - two hosts may communicate w/ multiple channels.
   //      e.g., pipe and tcp at the same time. Should have an approach to
   //      do bookkeeping correctly.
   if (c->injected) return true;
 
   sp_debug("NO INJECTED -- start injection");
-  SpInjector::ptr injector = SpInjector::Create(c->remote_pid);
-  string agent_name = "";
-  if (getenv("SP_AGENT_DIR")) {
-    agent_name = getenv("SP_AGENT_DIR");
-    agent_name += "/";
-  } else {
-    agent_name = "./";
-  }
-  agent_name += g_parser->agent_name();
-  sp_print("%s", agent_name.c_str());
-  injector->Inject(agent_name.c_str());
 
-#if 0
-  // Command line:
-  //   $SP_DIR/$PLATFORM/injector pid $SP_AGENT_DIR/agent_name
-  
-  string injector_path = "";
-  if (getenv("SP_DIR") && getenv("PLATFORM")) {
-    injector_path += getenv("SP_DIR");
-    injector_path += "/";
-    injector_path += getenv("PLATFORM");
-    injector_path += "/injector";
-  } else {
-    injector_path += "injector";
+  if (c->remote_pid > 0) {
+    SpInjector::ptr injector = SpInjector::Create(c->remote_pid);
+    string agent_name = "";
+    if (getenv("SP_AGENT_DIR")) {
+      agent_name = getenv("SP_AGENT_DIR");
+      agent_name += "/";
+    } else {
+      agent_name = "./";
+    }
+    agent_name += g_parser->agent_name();
+    sp_print("%s", agent_name.c_str());
+    c->injected = injector->Inject(agent_name.c_str());
   }
-  
-  string agent_name = "";
-  if (getenv("SP_AGENT_DIR")) {
-    agent_name = getenv("SP_AGENT_DIR");
-    agent_name += "/";
-  } else {
-    agent_name = "./";
-  }
-  agent_name += g_parser->agent_name();
-  
-  char cmd[1024];
-  snprintf(cmd, 1024, "bash %s %d %s",
-           injector_path.c_str(),
-           c->remote_pid,
-           agent_name.c_str());
-  sp_debug("INJECTOR CMD - %s", cmd);
-  // system(cmd);
-  FILE* fp = popen(cmd, "r");
-  char linebuf[255];
-  while (fgets(linebuf, 255, fp) != NULL) {
-    sp_debug("%s", linebuf);
-  }
-  pclose(fp);
-#endif
-  c->injected = true;
-  return true;
+
+  return c->injected;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 SpChannel*
-SpPipeWorker::create_channel(int fd,
-                             ChannelRW rw,
-                             void*) {
+SpPipeWorker::CreateChannel(int fd,
+                            ChannelRW rw,
+                            void*) {
   SpChannel* c = new PipeChannel;
   c->local_pid = getpid();
   PidSet pid_set;

@@ -117,6 +117,11 @@ namespace sp {
   COMMON_EXPORT bool GetRemoteAddress(const int fd,
                                       sockaddr_storage* const out);
 
+  COMMON_EXPORT pid_t GetRemotePid(const char* host,
+                                   const size_t host_len,
+                                   const char* port,
+                                   const size_t port_len);
+  
   // Serialization for CodeObject
   // TODO(wenbin)
   COMMON_EXPORT bool SerializeCodeObject(pe::CodeObject* co,

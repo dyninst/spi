@@ -40,55 +40,53 @@
 namespace sp {
 
 
-	class SpIpcWorkerDelegate {
+  class SpIpcWorkerDelegate {
 
-  public:
+ public:
     // An entry_payload function does two things:
     // 1. tracing: user-defined logic
     // 2. propagation: propagate instrumentation
     // Here we let user determine if it is okay to trace
-		// This set_* function is used by the sender-end process, to determine
+    // This set_* function is used by the sender-end process, to determine
     // whether or not the process who owns this worker instance can start
     // tracing
-    virtual void set_start_tracing(char yes_or_no,
-                                   SpChannel* c) = 0;
+    virtual void SetStartTracing(char yes_or_no,
+                                 SpChannel* c) = 0;
 
-		// This is used by the process who owns this worker instance
-    virtual void set_start_tracing(char yes_or_no) = 0;
+    // This is used by the process who owns this worker instance
+    virtual void SetStartTracing(char yes_or_no) = 0;
 
-		// Query if it's okay to trace on local end of the channel:
+    // Query if it's okay to trace on local end of the channel:
     // 1. For Write-channel, it always return 1 (true)
     // 2. For Read-channel, it should be synchronized by remote process
     // Used by the process who owns this Worker instance.
     virtual char start_tracing(int fd) = 0;
 
-		// Inject the agent shared library to the other end of a channel
-    virtual bool inject(SpChannel*, char* agent_path = NULL,
-                        char* injector_path = NULL,
-												char* ijagent_path = NULL) = 0;
+    // Inject the agent shared library to the other end of a channel
+    virtual bool Inject(SpChannel*, char* agent_path = NULL) = 0;
 
     // Get IPC channel from a file descriptor.
     // Input Param: fd -- the file descriptor
     // Input Param: rw -- specify whether the channel is read-only or
     // write-only
     // Return NULL if not a valid IPC channel; otherwise, the channel.
-    virtual SpChannel* get_channel(int fd,
-                                   ChannelRW rw,
-                                   void* arg = NULL);
+    virtual SpChannel* GetChannel(int fd,
+                                  ChannelRW rw,
+                                  void* arg = NULL);
 
-		virtual ~SpIpcWorkerDelegate() {}
-  protected:
+    virtual ~SpIpcWorkerDelegate() {}
+ protected:
     // fd-to-SpChannel mapping
     typedef std::map<long, SpChannel*> ChannelMap;
     ChannelMap channel_map_write_;
     ChannelMap channel_map_read_;
 
-		// Create a channel.
+    // Create a channel.
     // Assumption: the channel for this fd has not yet existed
-		virtual SpChannel* create_channel(int fd,
-                                      ChannelRW rw,
-                                      void*) = 0;
-	};
+    virtual SpChannel* CreateChannel(int fd,
+                                     ChannelRW rw,
+                                     void*) = 0;
+  };
 
 
 }

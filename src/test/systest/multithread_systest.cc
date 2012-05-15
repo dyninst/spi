@@ -34,10 +34,13 @@ TEST_F(MultithreadTest, simple) {
 	cmd += "test_mutatee/multithread.exe";
 	FILE* fp = popen(cmd.c_str(), "r");
 	char buf[1024];
+  int count = 0;
 	while (fgets(buf, 1024, fp) != NULL) {
-    fprintf(stderr, "%s", buf);
+    count++;
+    // fprintf(stderr, "%s", buf);
   }
   pclose(fp);
+  EXPECT_TRUE(count > 40);
 }
 
 }

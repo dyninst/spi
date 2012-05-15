@@ -47,12 +47,14 @@
 
 namespace sp {
 
+////////////////////////////////////////////////////////////////////// 
 SpInjector::ptr
 SpInjector::Create(dt::PID pid) {
   SpInjector::ptr ret = ptr(new SpInjector(pid));
   return ret;
 }
 
+////////////////////////////////////////////////////////////////////// 
 SpInjector::SpInjector(dt::PID pid)
     : pid_(pid) {
 
@@ -65,10 +67,12 @@ SpInjector::SpInjector(dt::PID pid)
   thr_ = thrs.getInitialThread();
 }
 
+////////////////////////////////////////////////////////////////////// 
 SpInjector::~SpInjector() {
   proc_->detach();
 }
 
+////////////////////////////////////////////////////////////////////// 
 // Find do_dlopen
 Address
 SpInjector::FindFunction(const char* func) {
@@ -95,8 +99,11 @@ SpInjector::FindFunction(const char* func) {
 }
 
 
+// ------------------------------------------------------------------- 
 // Event handlers
+// -------------------------------------------------------------------
 
+////////////////////////////////////////////////////////////////////// 
 // For loading library event
 Process::cb_ret_t
 on_event_lib(Event::const_ptr ev) {
@@ -110,16 +117,19 @@ on_event_lib(Event::const_ptr ev) {
   return Process::cbThreadContinue;
 }
 
+////////////////////////////////////////////////////////////////////// 
 // For segment fault event
 Process::cb_ret_t
 on_event_signal(Event::const_ptr ev) {
   EventSignal::const_ptr sigev = ev->getEventSignal();
   if(sigev->getSignal() == SIGSEGV) {
-    sp_perror("Injector [pid = %5d] - Segment fault on mutatee side", getpid());
+    sp_perror("Injector [pid = %5d] - Segment fault on mutatee side",
+              getpid());
   }
   return Process::cbThreadContinue;
 }
 
+////////////////////////////////////////////////////////////////////// 
 // Check whether a library is loaded
 bool
 SpInjector::IsLibraryLoaded(const char* libname) {
@@ -149,6 +159,7 @@ typedef struct {
   long bp;
 } IjMsg;
 
+////////////////////////////////////////////////////////////////////// 
 // The main injection procedure, which has two main steps:
 // Step 1: Force injectee to execute do_dlopen to load shared library
 //         libijagent.so.
@@ -184,7 +195,8 @@ typedef struct {
 // report or checking return value. In this case, why don't we have an easy and
 // uniformed way to pass argument and check return value?
 
-void SpInjector::Inject(const char* lib_name) {
+bool
+SpInjector::Inject(const char* lib_name) {
 
   // Verify the existence of lib_name
   char* abs_lib_name = realpath(lib_name, NULL);
@@ -195,7 +207,7 @@ void SpInjector::Inject(const char* lib_name) {
   if (IsLibraryLoaded(sp_filename(abs_lib_name))) {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...",
              getpid(), sp_filename(lib_name));
-    return;
+    return true;
   }
 
   // Step 1. Load libijagent.so
@@ -226,21 +238,29 @@ void SpInjector::Inject(const char* lib_name) {
     int count = 0;
     while (shm->loaded == -1) {
       if (count > IJ_TIMEOUT) {
-        sp_perror("INJECTOR [pid = %d]: injectee not response, abort", getpid());
+        sp_perror("INJECTOR [pid = %d]: injectee not response, abort",
+                  getpid());
       }
       sleep(1);
       ++count;
     }
 
-    if (!shm->loaded) sp_perror(shm->err);
-    else sp_print(shm->err);
+    if (!shm->loaded) {
+      sp_print(shm->err);
+      return false;
+    }
+    else {
+      sp_print(shm->err);
+    }
   } else {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...",
              getpid(), sp_filename(lib_name));
   }
+  return true;
   // proc_->detach();
 }
 
+////////////////////////////////////////////////////////////////////// 
 // Invoke ijagent function in libijagent.so, which in turn invokes dlopen
 void
 SpInjector::LoadUserLibrary() {
@@ -274,6 +294,7 @@ SpInjector::LoadUserLibrary() {
   proc_->freeMemory(code_addr);
 }
 
+////////////////////////////////////////////////////////////////////// 
 // Load a library by using do_dlopen
 void
 SpInjector::LoadIjagent(const char* lib_name) {
@@ -338,6 +359,7 @@ SpInjector::LoadIjagent(const char* lib_name) {
   free(libname);
 }
 
+////////////////////////////////////////////////////////////////////// 
 // This piece of code is borrowed from DyninstAPI_RT
 bool
 SpInjector::GetResolvedLibPath(const std::string &filename,
@@ -435,7 +457,9 @@ SpInjector::GetResolvedLibPath(const std::string &filename,
 }
 
 
-void SpInjector::UpdateFrameInfo() {
+////////////////////////////////////////////////////////////////////// 
+void
+SpInjector::UpdateFrameInfo() {
   IjMsg* shm = (IjMsg*)GetSharedMemory(IJMSG_ID, sizeof(IjMsg));
   shm->pc = pc();
   shm->sp = sp();

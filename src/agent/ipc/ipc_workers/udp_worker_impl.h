@@ -38,23 +38,21 @@
 
 namespace sp {
 
-	class SpUdpWorker : public SpIpcWorkerDelegate {
-  public:
-    virtual void set_start_tracing(char yes_or_no,
-                                   SpChannel* c);
-    virtual void set_start_tracing(char yes_or_no);
+  class SpUdpWorker : public SpIpcWorkerDelegate {
+ public:
+    virtual void SetStartTracing(char yes_or_no,
+                                 SpChannel* c);
+    virtual void SetStartTracing(char yes_or_no);
 
     virtual char start_tracing(int fd);
-    virtual bool inject(SpChannel*,
-                        char* agent_path = NULL,
-                        char* injector_path = NULL,
-												char* ijagent_path = NULL);
+    virtual bool Inject(SpChannel*,
+                        char* agent_path = NULL);
 
-  protected:
-		virtual SpChannel* create_channel(int fd,
-                                      ChannelRW rw,
-                                      void* arg);
-	};
+ protected:
+    virtual SpChannel* CreateChannel(int fd,
+                                     ChannelRW rw,
+                                     void* arg);
+  };
 
 }
 

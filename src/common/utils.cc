@@ -451,6 +451,15 @@ GetRemoteAddress(const int fd,
   return true;
 }
 
+////////////////////////////////////////////////////////////////////// 
+pid_t
+GetRemotePid(const char* host,
+             const size_t host_len,
+             const char* port,
+             const size_t port_len) {
+  return -1;
+}
+
 //////////////////////////////////////////////////////////////////////
 
 bool
@@ -562,6 +571,7 @@ IsIllegalProgram() {
 //////////////////////////////////////////////////////////////////////
 
 // Gets current process's executable's full path name
+// TODO: examine it!!!! possibly cmdline would be empty if it is forked
 std::string
 GetExeName() {
   std::string proc_path = "";

@@ -38,22 +38,20 @@
 
 namespace sp {
 
-	class SpPipeWorker : public SpIpcWorkerDelegate {
-  public:
+  class SpPipeWorker : public SpIpcWorkerDelegate {
+ public:
     SpPipeWorker();
     ~SpPipeWorker();
 
-    virtual void set_start_tracing(char yes_or_no,
-                                   SpChannel* c);
-    virtual void set_start_tracing(char yes_or_no);
+    virtual void SetStartTracing(char yes_or_no,
+                                 SpChannel* c);
+    virtual void SetStartTracing(char yes_or_no);
 
     virtual char start_tracing(int fd);
-    virtual bool inject(SpChannel*,
-                        char* agent_path = NULL,
-                        char* injector_path = NULL,
-												char* ijagent_path = NULL);
+    virtual bool Inject(SpChannel*,
+                        char* agent_path = NULL);
 
-  protected:
+ protected:
 
     // Child process set
     PidSet child_proc_set_;
@@ -62,13 +60,13 @@ namespace sp {
     // This buffer is in shared memory
     char* start_tracing_;
 
-	  // Initialize shared memory
-    void tracing_internal(char** start_tracing);
+    // Initialize shared memory
+    void TracingInternal(char** start_tracing);
 
-		virtual SpChannel* create_channel(int fd,
-                                      ChannelRW rw,
-                                      void* arg);
-	};
+    virtual SpChannel* CreateChannel(int fd,
+                                     ChannelRW rw,
+                                     void* arg);
+  };
 
 
 }

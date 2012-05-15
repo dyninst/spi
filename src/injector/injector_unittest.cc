@@ -131,8 +131,6 @@ TEST_F(InjectorTest, network_inject) {
 	string cmd = injector_path_;
 	cmd += " ";
 	cmd += "127.0.0.1 ";
-	cmd += "80 ";          // Fake port number
-	cmd += "127.0.0.1 ";
 	cmd += "3490 ";        // The only thing we use for injection
 	cmd += " ";
   cmd += getenv("SP_DIR");

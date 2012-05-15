@@ -17,6 +17,7 @@ class Mist {
     Mist();
     ~Mist();
     void init_run();
+    void fork_init_run();
     void fini_run();
     void run(sp::SpPoint* pt,
              sp::SpFunction* f);

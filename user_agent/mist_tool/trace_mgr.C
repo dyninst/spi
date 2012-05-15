@@ -6,13 +6,33 @@ namespace mist {
 //////////////////////////////////////////////////////////////////////
 
 TraceMgr::TraceMgr() {
-  if (getenv("MIST_TRACE_FILE")) {
-    filename_ = getenv("MIST_TRACE_FILE");
+  if (getenv("MIST_TRACE_DIR")) {
+    char buf[1024];
+    snprintf(buf, 1024, "%s/%d-trace.xml",
+             getenv("MIST_TRACE_DIR"), getpid());
+    filename_ = buf;
   } else {
     char buf[1024];
-    snprintf(buf, 1024, "%d-trace.xml", getpid());
+    snprintf(buf, 1024, "/tmp/%d-trace.xml", getpid());
     filename_ = buf;
   }
+  
+  fp_ = fopen(filename_.c_str(), "w");
+  if (fp_ == NULL) {
+    sp_perror("Failed to write %s", filename_.c_str());
+  }
+
+  string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
+  init += "<process><head>";
+  init += "</head></process>";
+  WriteString(init);
+}
+
+void
+TraceMgr::ChangeTraceFile() {
+  char buf[1024];
+  snprintf(buf, 1024, "/tmp/%d-trace.xml", getpid());
+  filename_ = buf;
   
   fp_ = fopen(filename_.c_str(), "w");
   if (fp_ == NULL) {
