@@ -22,13 +22,6 @@ void condor_hier_exit(SpPoint* pt) {
   SpFunction* f = Callee(pt);
   if (!f) return;
 
-  if (f->name().compare("fork") == 0) {
-    long ret = ReturnValue(pt);
-    if (ret == 0) {
-      g_mist.fork_init_run();
-    }
-  }
-  
   g_mist.post_run(pt, f);
 }
 
@@ -74,7 +67,11 @@ void MyAgent() {
   preinst_funcs.insert("quit_on_signal_with_core");
   preinst_funcs.insert("safe_is_path_trusted_fork");
 
-  // Fork connect()
+  // For clone()
+
+  // For setuid / seteuid
+
+  // For connect()
   preinst_funcs.insert("tcp_connect");
   preinst_funcs.insert("Sock::connect");
   preinst_funcs.insert("SafeSock::connect");
@@ -84,6 +81,10 @@ void MyAgent() {
   preinst_funcs.insert("open_tcp");
   preinst_funcs.insert("SSHToJob::receiveSshConnection");
   preinst_funcs.insert("condor_connect");
+
+  // For accept()
+  preinst_funcs.insert("condor_accept");
+  preinst_funcs.insert("tcp_accept_timeout");
   
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
   agent->SetLibrariesToInstrument(libs_to_inst);

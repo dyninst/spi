@@ -8,16 +8,16 @@ my $cat = "hier_only";
 my $graph_name = "w_label";
 
 
-my %colors;
-$colors{"wenbin"} = "green";
-$colors{"condor"} = "pink";
-$colors{"root"} = "red";
 
 # Global GraphViz object
 my $g;
 
 my $xml_dir = "../../../condor_traces";
 my %mytraces;
+my %colors;
+$colors{"wenbin"} = "green";
+$colors{"condor"} = "pink";
+$colors{"root"} = "red";
 
 # Build structures
 sub parse_xml {
@@ -31,9 +31,6 @@ sub parse_xml {
 		my $header = $root->{process}->{head};
 		my $pid = $header->{pid}->{value};
 		my $host = $header->{host}->{value};
-		if ($host ne "192.168.8.135") {
-				return;
-		}
 		my $user = $header->{effective_user}->{name}->{value};
 		my $exe_name = $header->{exe_name}->{value};
 		my $cmdline_argument = $header->{cmdline_argument}->{value};
@@ -123,23 +120,29 @@ sub draw_graph {
 		foreach $host (keys %mytraces) {
 				# Draw clusters by host
 				print "$host\n";
+				my %host_bucket = %{$mytraces{$host}};
+				my $num_procs = keys %host_bucket;
 				my $proccluster = {
 						name      =>"$host",
 						style     =>'filled',
+						tooltip   => "$num_procs processes on $host",
 						fillcolor =>'white',
 				};
 
-				my %host_bucket = %{$mytraces{$host}};
 				foreach $pid (keys %host_bucket) {
 						print "$pid\n";
 						# Draw processes in cluster
 						my $node_id = "pid=$pid\@$host";
 						my $exe_name = $host_bucket{$pid}{"exe_name"};
 						my $user = $host_bucket{$pid}{"user"};
+						if (!$user) {
+								$user = "unknown";
+						}
 						$g->add_node($node_id,
-												 label => "pid=$pid\nexe=$exe_name\neid=$user",
+												 id => "$node_id",
+												 label => "pid=$pid\n$exe_name",
 												 cluster => $proccluster,
-												 fontcolor => "black",
+												 tooltip => "pid = $pid \@ $host, exe_name: $exe_name, user: $user",
 												 color => "$colors{$user}");
 				}
 
@@ -151,8 +154,9 @@ sub draw_graph {
 								my $child_node_id = "pid=$pid\@$host";
 								$g->add_edge($parent_node_id,
 														 $child_node_id,
-														 label=>"fork",
+														 label=>"",
 														 color=>"blue",
+														 edgetooltip=>"$parent_exe forks $child_exe",
 														 fontcolor=>"blue");
 						}
 				}
@@ -160,32 +164,34 @@ sub draw_graph {
 
 		# Draw communication edges
 		my %uniq_edges;
-#		foreach $host (keys %mytraces) {
-#				my %host_bucket = %{$mytraces{$host}};
-#				foreach $pid (keys %host_bucket) {
-#						my %pid_bucket = %{$host_bucket{$pid}};
-#						my @targets = @{$pid_bucket{"targets"}};
-#						foreach $h (@targets) {
-#								my ($trg_host, $trg_port) = split(":", $h);
-#								print "connect to $trg_host:$trg_port\n";
-#								my $trg_pid = &match_node($trg_host, $trg_port);
-#								if (length($trg_pid) > 0) {
-#										my $node_id = "pid=$pid\@$host";
-#										my $trg_node_id = "pid=$trg_pid\@$trg_host";
-#										my $uid="$node_id==$trg_node_id";
-#										$uniq_edges{$uid} = 1;
-#										print "$node_id => $trg_node_id\n";
-#								}
-#						}
-#				}
-#		}
-#		foreach $uid (keys %uniq_edges) {
-#				my ($node_id, $trg_node_id) = split("==", $uid);
+		foreach $host (keys %mytraces) {
+				my %host_bucket = %{$mytraces{$host}};
+				foreach $pid (keys %host_bucket) {
+						my %pid_bucket = %{$host_bucket{$pid}};
+						my @targets = @{$pid_bucket{"targets"}};
+						foreach $h (@targets) {
+								my ($trg_host, $trg_port) = split(":", $h);
+								print "connect to $trg_host:$trg_port\n";
+								my $trg_pid = &match_node($trg_host, $trg_port);
+								if (length($trg_pid) > 0) {
+										my $node_id = "pid=$pid\@$host";
+										my $trg_node_id = "pid=$trg_pid\@$trg_host";
+										my $uid="$node_id==$trg_node_id";
+										$uniq_edges{$uid} = 1;
+										print "$node_id => $trg_node_id\n";
+								}
+						}
+				}
+		}
+
+		foreach $uid (keys %uniq_edges) {
+				my ($node_id, $trg_node_id) = split("==", $uid);
 #				$g->add_edge($node_id, $trg_node_id,
 #										 arrowhead => 'empty',
 #										 style => 'dotted',
-#										 label => 'connect');
-#		}
+#										 edgetooltip=>"$node_id connects to $trg_node_id",
+#										 label => '');
+		}
 }
 
 #------------------------------------------------------------

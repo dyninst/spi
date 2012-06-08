@@ -28,324 +28,376 @@ var Log = {
 
 function init(){
     //init data
-    var json = {
-        "id": "347_0",
-        "name": "Nine Inch Nails",
-        "children": [{
-            "id": "126510_1",
-            "name": "Jerome Dillon",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "52163_2",
-                "name": "Howlin' Maggie",
-                "data": {
-                    "band": "Jerome Dillon",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "324134_3",
-                "name": "nearLY",
-                "data": {
-                    "band": "Jerome Dillon",
-                    "relation": "member of band"
-                },
-                "children": []
-            }]
-        }, {
-            "id": "173871_4",
-            "name": "Charlie Clouser",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": []
-        }, {
-            "id": "235952_5",
-            "name": "James Woolley",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": []
-        }, {
-            "id": "235951_6",
-            "name": "Jeff Ward",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "2382_7",
-                "name": "Ministry",
-                "data": {
-                    "band": "Jeff Ward",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "2415_8",
-                "name": "Revolting Cocks",
-                "data": {
-                    "band": "Jeff Ward",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "3963_9",
-                "name": "Pigface",
-                "data": {
-                    "band": "Jeff Ward",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "7848_10",
-                "name": "Lard",
-                "data": {
-                    "band": "Jeff Ward",
-                    "relation": "member of band"
-                },
-                "children": []
-            }]
-        }, {
-            "id": "235950_11",
-            "name": "Richard Patrick",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "1007_12",
-                "name": "Filter",
-                "data": {
-                    "band": "Richard Patrick",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "327924_13",
-                "name": "Army of Anyone",
-                "data": {
-                    "band": "Richard Patrick",
-                    "relation": "member of band"
-                },
-                "children": []
-            }]
-        }, {
-            "id": "2396_14",
-            "name": "Trent Reznor",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "3963_15",
-                "name": "Pigface",
-                "data": {
-                    "band": "Trent Reznor",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "32247_16",
-                "name": "1000 Homo DJs",
-                "data": {
-                    "band": "Trent Reznor",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "83761_17",
-                "name": "Option 30",
-                "data": {
-                    "band": "Trent Reznor",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "133257_18",
-                "name": "Exotic Birds",
-                "data": {
-                    "band": "Trent Reznor",
-                    "relation": "member of band"
-                },
-                "children": []
-            }]
-        }, {
-            "id": "36352_19",
-            "name": "Chris Vrenna",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "1013_20",
-                "name": "Stabbing Westward",
-                "data": {
-                    "band": "Chris Vrenna",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "3963_21",
-                "name": "Pigface",
-                "data": {
-                    "band": "Chris Vrenna",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "5752_22",
-                "name": "Jack Off Jill",
-                "data": {
-                    "band": "Chris Vrenna",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "33602_23",
-                "name": "Die Warzau",
-                "data": {
-                    "band": "Chris Vrenna",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "40485_24",
-                "name": "tweaker",
-                "data": {
-                    "band": "Chris Vrenna",
-                    "relation": "is person"
-                },
-                "children": []
-            }, {
-                "id": "133257_25",
-                "name": "Exotic Birds",
-                "data": {
-                    "band": "Chris Vrenna",
-                    "relation": "member of band"
-                },
-                "children": []
-            }]
-        }, {
-            "id": "236021_26",
-            "name": "Aaron North",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": []
-        }, {
-            "id": "236024_27",
-            "name": "Jeordie White",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "909_28",
-                "name": "A Perfect Circle",
-                "data": {
-                    "band": "Jeordie White",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "237377_29",
-                "name": "Twiggy Ramirez",
-                "data": {
-                    "band": "Jeordie White",
-                    "relation": "is person"
-                },
-                "children": []
-            }]
-        }, {
-            "id": "235953_30",
-            "name": "Robin Finck",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "1440_31",
-                "name": "Guns N' Roses",
-                "data": {
-                    "band": "Robin Finck",
-                    "relation": "member of band"
-                },
-                "children": []
-            }]
-        }, {
-            "id": "235955_32",
-            "name": "Danny Lohner",
-            "data": {
-                "band": "Nine Inch Nails",
-                "relation": "member of band"
-            },
-            "children": [{
-                "id": "909_33",
-                "name": "A Perfect Circle",
-                "data": {
-                    "band": "Danny Lohner",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "1695_34",
-                "name": "Killing Joke",
-                "data": {
-                    "band": "Danny Lohner",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "1938_35",
-                "name": "Methods of Mayhem",
-                "data": {
-                    "band": "Danny Lohner",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "5138_36",
-                "name": "Skrew",
-                "data": {
-                    "band": "Danny Lohner",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "53549_37",
-                "name": "Angkor Wat",
-                "data": {
-                    "band": "Danny Lohner",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "113510_38",
-                "name": "Puscifer",
-                "data": {
-                    "band": "Danny Lohner",
-                    "relation": "member of band"
-                },
-                "children": []
-            }, {
-                "id": "113512_39",
-                "name": "Renhold\u00ebr",
-                "data": {
-                    "band": "Danny Lohner",
-                    "relation": "is person"
-                },
-                "children": []
-            }]
-        }],
-        "data": []
-    };
+
+var json = 
+{
+"id": "1",
+"name": "init",
+"children": [
+{
+"id": "6732",
+"name": "/usr/sbin/condor_master",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+{
+"id": "6734",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+{
+"id": "6748",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+]
+},
+{
+"id": "6775",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6809",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+{
+"id": "6814",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+]
+},
+{
+"id": "6784",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+{
+"id": "6789",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+]
+},
+{
+"id": "6763",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6795",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+{
+"id": "6803",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+]
+},
+{
+"id": "6751",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6733",
+"name": "condor_startd",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+{
+"id": "6777",
+"name": "mips",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6750",
+"name": "/usr/lib/condor/libexec/condor_ckpt_probe",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6761",
+"name": "/usr/lib/condor/libexec/condor_power_state",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6829",
+"name": "condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6764",
+"name": "/usr/sbin/condor_starter",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6834",
+"name": "/bin/rm",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6782",
+"name": "kflops",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6820",
+"name": "condor_procd",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+{
+"id": "6770",
+"name": "/usr/sbin/condor_starter.std",
+"data": {
+"playcount": "209","image": "http://userserve-ak.last.fm/serve/300x300/32349839.jpg",
+"": 209
+},
+"children": [
+]
+},
+]
+},
+]
+},
+]
+}
+/*
+  var json = 
+{
+"id": "1",
+"name": "init",
+"children": [
+{
+"id": "6732",
+"name": "/usr/sbin/condor_master",
+"children": [
+{
+"id": "6734",
+"name": "condor_starter",
+"children": [
+{
+"id": "6748",
+"name": "condor_starter",
+"children": [
+]
+},
+]
+},
+{
+"id": "6775",
+"name": "condor_starter",
+"children": [
+]
+},
+{
+"id": "6809",
+"name": "condor_starter",
+"children": [
+{
+"id": "6814",
+"name": "condor_starter",
+"children": [
+]
+},
+]
+},
+{
+"id": "6784",
+"name": "condor_starter",
+"children": [
+{
+"id": "6789",
+"name": "condor_starter",
+"children": [
+]
+},
+]
+},
+{
+"id": "6763",
+"name": "condor_starter",
+"children": [
+]
+},
+{
+"id": "6795",
+"name": "condor_starter",
+"children": [
+{
+"id": "6803",
+"name": "condor_starter",
+"children": [
+]
+},
+]
+},
+{
+"id": "6751",
+"name": "condor_starter",
+"children": [
+]
+},
+{
+"id": "6733",
+"name": "condor_startd",
+"children": [
+{
+"id": "6777",
+"name": "mips",
+"children": [
+]
+},
+{
+"id": "6750",
+"name": "/usr/lib/condor/libexec/condor_ckpt_probe",
+"children": [
+]
+},
+{
+"id": "6761",
+"name": "/usr/lib/condor/libexec/condor_power_state",
+"children": [
+]
+},
+{
+"id": "6829",
+"name": "condor_starter",
+"children": [
+]
+},
+{
+"id": "6764",
+"name": "/usr/sbin/condor_starter",
+"children": [
+]
+},
+{
+"id": "6834",
+"name": "/bin/rm",
+"children": [
+]
+},
+{
+"id": "6782",
+"name": "kflops",
+"children": [
+]
+},
+{
+"id": "6820",
+"name": "condor_procd",
+"children": [
+]
+},
+{
+"id": "6770",
+"name": "/usr/sbin/condor_starter.std",
+"children": [
+]
+},
+]
+},
+]
+},
+]
+};
+*/
+  
     //end
     var infovis = document.getElementById('infovis');
     var w = infovis.offsetWidth - 50, h = infovis.offsetHeight - 50;

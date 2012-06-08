@@ -6,7 +6,7 @@
 
 namespace mist {
 
-  class TraceMgr;
+class TraceMgr;
 class MistUtils {
   public:
     // Check whether function c has a name n, or has a name in ns
@@ -37,7 +37,8 @@ class MistUtils {
                             std::string str);
     static void WriteString(std::string str);
     static void ChangeTraceFile();
-    
+
+    static unsigned long GetUsec();
   protected:
     typedef std::stack<Dyninst::PatchAPI::PatchFunction*> CallStack;
     static CallStack call_stack_;

@@ -77,17 +77,7 @@ class LibChecker : public MistChecker {
                             sp::SpFunction* callee) { return false;}
 };
 
-// Fork
-class ForkChecker : public MistChecker {
-  public:
-    ForkChecker();
-    virtual bool check(sp::SpPoint* pt,
-                       sp::SpFunction* callee);
-    virtual bool post_check(sp::SpPoint* pt,
-                            sp::SpFunction* callee);
-  private:
-    std::vector<string> ns_;
-};
+
 
 // Check the changes of uid/gid
 class ChangeIdChecker : public MistChecker {
@@ -149,11 +139,33 @@ class IpcChecker : public MistChecker {
     virtual bool post_check(sp::SpPoint* pt,
                             sp::SpFunction* callee);
   protected:
-    // trg host ip -> trg port -> protocol -> size count
-    typedef std::map<int, size_t> ProtoSizeMap;
-    typedef std::map<int, ProtoSizeMap> PidProtoMap;
-    typedef std::map<std::string, PidProtoMap> SizeCountMap;
-    SizeCountMap size_count_map_;
+    string port;
+};
+
+// Fork
+class Mist;
+class ForkChecker : public MistChecker {
+  public:
+    ForkChecker(Mist* mist);
+    virtual bool check(sp::SpPoint* pt,
+                       sp::SpFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt,
+                            sp::SpFunction* callee);
+  private:
+    Mist* mist_;
+};
+
+// Clone
+class Mist;
+class CloneChecker : public MistChecker {
+  public:
+    CloneChecker(Mist* mist);
+    virtual bool check(sp::SpPoint* pt,
+                       sp::SpFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt,
+                            sp::SpFunction* callee);
+  private:
+    Mist* mist_;
 };
 
 }

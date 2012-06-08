@@ -1,6 +1,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <stdarg.h>
+#include <sys/time.h>
 
 #include "mist_utils.h"
 #include "trace_mgr.h"
@@ -179,6 +180,20 @@ MistUtils::WriteString(long pos,
 void
 MistUtils::ChangeTraceFile() {
   mgr_.ChangeTraceFile();
+}
+
+// ------------------------------------------------------------------- 
+// Get usecs since 1970
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+unsigned long MistUtils::GetUsec() {
+  struct timeval tv;
+  int ret = gettimeofday(&tv, NULL);
+  if (ret == 0) {
+    return ((tv.tv_sec - 1339166869l)* 1000000 + tv.tv_usec);
+  }
+  return 0;
 }
 
 }

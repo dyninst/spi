@@ -120,22 +120,30 @@ sub draw_graph {
 		foreach $host (keys %mytraces) {
 				# Draw clusters by host
 				print "$host\n";
+				my %host_bucket = %{$mytraces{$host}};
+				my $num_procs = keys %host_bucket;
 				my $proccluster = {
 						name      =>"$host",
 						style     =>'filled',
+						tooltip   => "$num_procs processes on $host",
 						fillcolor =>'white',
 				};
 
-				my %host_bucket = %{$mytraces{$host}};
 				foreach $pid (keys %host_bucket) {
 						print "$pid\n";
 						# Draw processes in cluster
 						my $node_id = "pid=$pid\@$host";
 						my $exe_name = $host_bucket{$pid}{"exe_name"};
 						my $user = $host_bucket{$pid}{"user"};
+						if (!$user) {
+								$user = "unknown";
+						}
 						$g->add_node($node_id,
+												 id => "$node_id",
 												 label => "",
 												 cluster => $proccluster,
+												 shape => "circle",
+												 tooltip => "pid = $pid \@ $host, exe_name: $exe_name, user: $user",
 												 color => "$colors{$user}");
 				}
 
@@ -149,6 +157,7 @@ sub draw_graph {
 														 $child_node_id,
 														 label=>"",
 														 color=>"blue",
+														 edgetooltip=>"$parent_exe forks $child_exe",
 														 fontcolor=>"blue");
 						}
 				}
@@ -181,6 +190,7 @@ sub draw_graph {
 				$g->add_edge($node_id, $trg_node_id,
 										 arrowhead => 'empty',
 										 style => 'dotted',
+										 edgetooltip=>"$node_id connects to $trg_node_id",
 										 label => '');
 		}
 }

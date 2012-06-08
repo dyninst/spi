@@ -8,16 +8,16 @@ my $cat = "comm_only";
 my $graph_name = "wo_label";
 
 
-my %colors;
-$colors{"wenbin"} = "green";
-$colors{"condor"} = "pink";
-$colors{"root"} = "red";
 
 # Global GraphViz object
 my $g;
 
 my $xml_dir = "../../../condor_traces";
 my %mytraces;
+my %colors;
+$colors{"wenbin"} = "green";
+$colors{"condor"} = "pink";
+$colors{"root"} = "red";
 
 # Build structures
 sub parse_xml {
@@ -68,12 +68,10 @@ ENDDUMP
 				}
 		}
 
-		if ($#listens <= 0 && $#targets <= 0) {
-				print "skip\n";
-				return;
-		} else {
-				print "*** listen: $#listens and targets: $#targets\n";
-		}
+						if (($#targets == -1) &&
+								($#listens == -1)) {
+								next;
+						}
 
 		my %pid_bucket;
 		$pid_bucket{"exe_name"} = $exe_name;
@@ -81,7 +79,6 @@ ENDDUMP
 		$pid_bucket{"ppid"} = $parent_pid;
 		$pid_bucket{"listens"} = \@listens;
 		$pid_bucket{"targets"} = \@targets;
-
     if (!%{$mytraces{$host}}) {
 				print "THERE\n";
 				my %host_bucket;
@@ -92,12 +89,12 @@ ENDDUMP
 				%{$mytraces{$host}{$pid}} = %pid_bucket;
 		}
 		
-#		if (!$mytraces{$host}{$parent_pid}) {
-#				my %pid_bucket;
-#				$pid_bucket{"exe_name"} = $parent_exe_name;
-#				$pid_bucket{"user"} = $parent_user;
-#				%{$mytraces{$host}{$parent_pid}} = %pid_bucket;
-#		}
+		if (!$mytraces{$host}{$parent_pid}) {
+				my %pid_bucket;
+				$pid_bucket{"exe_name"} = $parent_exe_name;
+				$pid_bucket{"user"} = $parent_user;
+				%{$mytraces{$host}{$parent_pid}} = %pid_bucket;
+		}
 }
 
 # Match communication target node
@@ -128,39 +125,52 @@ sub draw_graph {
 		foreach $host (keys %mytraces) {
 				# Draw clusters by host
 				print "$host\n";
+				my %host_bucket = %{$mytraces{$host}};
+				my $num_procs = keys %host_bucket;
 				my $proccluster = {
 						name      =>"$host",
 						style     =>'filled',
+						tooltip   => "$num_procs processes on $host",
 						fillcolor =>'white',
 				};
 
-				my %host_bucket = %{$mytraces{$host}};
 				foreach $pid (keys %host_bucket) {
 						print "$pid\n";
 						# Draw processes in cluster
 						my $node_id = "pid=$pid\@$host";
 						my $exe_name = $host_bucket{$pid}{"exe_name"};
 						my $user = $host_bucket{$pid}{"user"};
+						if (!$user) {
+								$user = "unknown";
+						}
+#						my %pid_bucket = %{$mytraces{$host}{$pid}};
+#						my @targets = @{$pid_bucket{"targets"}};
+#						my @listens = @{$pid_bucket{"listens"}};
+						print "**** $#targets, $#listens\n";
+						
 						$g->add_node($node_id,
+												 id => "$node_id",
 												 label => "",
 												 cluster => $proccluster,
-												 fontcolor => "black",
+												 shape => "circle",
+												 tooltip => "pid = $pid \@ $host, exe_name: $exe_name, user: $user",
 												 color => "$colors{$user}");
 				}
 
 				# Draw parent-child edges
-#				foreach $pid (keys %host_bucket) {
-#						my $ppid = $host_bucket{$pid}{"ppid"};
-#						if ($ppid) {
-#								my $parent_node_id = "pid=$ppid\@$host";
-#								my $child_node_id = "pid=$pid\@$host";
-#								$g->add_edge($parent_node_id,
-#														 $child_node_id,
-#														 label=>"fork",
-#														 color=>"blue",
-#														 fontcolor=>"blue");
-#						}
-#				}
+				foreach $pid (keys %host_bucket) {
+						my $ppid = $host_bucket{$pid}{"ppid"};
+						if ($ppid) {
+								my $parent_node_id = "pid=$ppid\@$host";
+								my $child_node_id = "pid=$pid\@$host";
+								$g->add_edge($parent_node_id,
+														 $child_node_id,
+														 label=>"",
+														 color=>"blue",
+														 edgetooltip=>"$parent_exe forks $child_exe",
+														 fontcolor=>"blue");
+						}
+				}
 		}
 
 		# Draw communication edges
@@ -190,6 +200,7 @@ sub draw_graph {
 				$g->add_edge($node_id, $trg_node_id,
 										 arrowhead => 'empty',
 										 style => 'dotted',
+										 edgetooltip=>"$node_id connects to $trg_node_id",
 										 label => '');
 		}
 }

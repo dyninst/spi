@@ -22,7 +22,7 @@ ProcInitChecker::run() {
   PrintCurrentProc();
   PrintParentProc();
   PrintUserInfo();
-  PrintEnv();
+  // PrintEnv();
 
   InitTraces();
 
@@ -127,6 +127,7 @@ ProcInitChecker::PrintProc(pid_t pid) {
   snprintf(entry, 1024, "<exe_name>%s</exe_name>", exe.c_str());
   u_.WriteHeader(entry);
 
+#if 0
   // Get arguments
   typedef std::vector<string> Args;
   Args args;
@@ -149,6 +150,7 @@ ProcInitChecker::PrintProc(pid_t pid) {
            "<cmdline_argument>%s</cmdline_argument>",
            cmdline.c_str());
   u_.WriteHeader(entry);
+#endif
   fclose(fp);
 
 }
@@ -192,7 +194,8 @@ ProcInitChecker::PrintEnv() {
 // <?xml ... ?><process><head></head></process>
 void
 ProcInitChecker::InitTraces() {
-  u_.WriteString(-10, "<traces></traces></process>");
+  u_.WriteString(-10,
+                 "<traces></traces></process>");
 }
 
 #if 0
@@ -277,25 +280,6 @@ bool LibChecker::check(SpPoint* pt, PatchFunction* callee) {
 	return true;
 }
 
-// Check fork
-ForkChecker::ForkChecker() {
-  ns_.push_back("fork");
-}
-
-bool ForkChecker::check(SpPoint* pt, PatchFunction* callee) {
-	return true;
-}
-
-bool ForkChecker::post_check(SpPoint* pt, PatchFunction* callee) {
-  if (u_.check_name(callee, ns_)) {
-    long child_pid = ReturnValue(pt);
-    if (child_pid) {
-      u_.print("* FORK: parent id - %d, child id - %d", getpid(), child_pid);
-      u_.where();
-    }
-  }
-  return false;
-}
 
 // check uid/gid changes
 // Check the changes of uid/gid
@@ -498,82 +482,134 @@ IpcChecker::check(SpPoint* pt,
     char host[256];
     char service[256];
     if (sp::GetAddress((sockaddr_storage*)*addr, host, 256, service, 256)) {
-      u_.WriteTrace("<trace type=\"connect\">");
       char buf[1024];
-      pid_t pid = -1;
       snprintf(buf, 1024,
-               "<target>"
-               "<host>%s</host><port>%s</port>"
-               "<pid>%d</pid>"
-               "</target>",
-               host, service, pid);
+               "<trace type=\"connect to\" time=\"%lu\">",
+               u_.GetUsec());
+      u_.WriteTrace(buf);
+      snprintf(buf, 1024,
+               "<host>%s</host><port>%s</port>",
+               host, service);
       u_.WriteTrace(buf);
       u_.WriteTrace("</trace>");
+    } 
+  } else if (callee->name().compare("accept") == 0) {
+    ArgumentHandle h;
+    int* fd = (int*)PopArgument(pt, &h, sizeof(int));
+    sockaddr_storage addr;
+    if (GetLocalAddress(*fd, &addr)) {
+      char host[256];
+      char service[256];
+      if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
+        char buf[1024];
+        snprintf(buf, 1024,
+                 "<trace type=\"accept from\" time=\"%lu\">",
+                 u_.GetUsec());
+        u_.WriteTrace(buf);
+        snprintf(buf, 1024,
+                 "<host>%s</host><port>%s</port>",
+                 host, service);
+        u_.WriteTrace(buf);
+        u_.WriteTrace("</trace>");
+      }
     }
   }
+
+
   return true;
 }
 
-//////////////////////////////////////////////////////////////////////
-// TODO:
-// 1. maintain mapping: pid->tid->trg_pid->tid size counter on exit
-// 2. output trace on exit
-
+////////////////////////////////////////////////////////////////////// 
 bool
 IpcChecker::post_check(SpPoint* pt,
                        SpFunction* callee) {
   /*
-  bool ipc = false;
-  size_t size = 0;
-  
-	if (IsIpcWrite(pt)) {
-    ipc = true;
-    size = sp::ReturnValue(pt);
-    if (size == 0) return true;
-    u_.WriteTrace("<trace type=\"channel_write\">");
-	}
-	else if (IsIpcRead(pt)) {
-    ipc = true;
-    size = sp::ReturnValue(pt);
-    if (size == 0) return true;
-    u_.WriteTrace("<trace type=\"channel_read\">");
-	}
-
-  if (ipc) {
-    sp::TcpChannel* channel = static_cast<sp::TcpChannel*>(pt->channel());
-    if (channel) {
-      std::string remote_addr = channel->GetRemoteHost();
-      if (remote_addr.compare("127.0.0.1") == 0) {
-        char buf[256];
-        sp::GetIPv4Addr(buf, 256);
-        remote_addr = buf;
+  if (callee->name().compare("accept") == 0) {
+    int fd = ReturnValue(pt);
+    sockaddr_storage addr;
+    if (GetRemoteAddress(fd, &addr)) {
+      char host[256];
+      char service[256];
+      if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
+        char buf[1024];
+        snprintf(buf, 1024,
+                 "<trace type=\"accept from\" time=\"%lu\">",
+                 u_.GetUsec());
+        u_.WriteTrace(buf);
+        snprintf(buf, 1024,
+                 "<host>%s</host><port>%s</port>",
+                 host, service);
+        u_.WriteTrace(buf);
+        u_.WriteTrace("</trace>");
       }
-      int remote_port = channel->GetRemotePort();
-      size_t& total_size = size_count_map_[remote_addr][remote_port][channel->type];
-      total_size += size;
-      std::string mechanism = "tcp";
-
-      char buf[1024];
-      snprintf(buf, 1024,
-               "<target>"
-               "<host>%s</host>"
-               "<port>%d</port>"
-               "<pid>%d</pid>"
-               "</target>"
-               "<size>%lu</size>"
-               "<total_size>%lu</total_size>"
-               "<mechanism>%s</mechanism>"
-               "<call>%s</call>",
-               remote_addr.c_str(), remote_port,
-               channel->GetRemotePid(),
-               size, total_size,
-               mechanism.c_str(), callee->name().c_str());
-      u_.WriteTrace(buf);
     }
-    u_.WriteTrace("</trace>");
   }
   */
 	return true;
+}
+
+// ------------------------------------------------------------------- 
+// Fork
+// -------------------------------------------------------------------
+ForkChecker::ForkChecker(Mist* mist) : mist_(mist) {
+}
+
+bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
+	return true;
+}
+
+bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
+  if (callee->name().compare("fork") == 0) {
+    long ret = ReturnValue(pt);
+    if (ret == 0) {
+      mist_->fork_init_run();
+    } else {
+      char buf[1024];
+      snprintf(buf, 1024,
+               "<trace type=\"fork\" time=\"%lu\">%lu",
+               u_.GetUsec(), ret);
+      u_.WriteTrace(buf);
+      u_.WriteTrace("</trace>");
+    }
+  }
+  
+  return true;
+}
+
+// ------------------------------------------------------------------- 
+// Clone
+// -------------------------------------------------------------------
+CloneChecker::CloneChecker(Mist* mist) : mist_(mist) {
+}
+
+bool CloneChecker::check(SpPoint* pt, SpFunction* callee) {
+  if (callee->name().compare("clone") == 0) {
+    // Get callback function instance, record it
+    system("touch /tmp/clone_laaaa");
+  }
+
+  // If callback function is not NULL, and is callee
+  // Start new trace file
+  // Run init_run
+  
+	return true;
+}
+
+bool CloneChecker::post_check(SpPoint* pt, SpFunction* callee) {
+
+  if (callee->name().compare("clone") == 0) {
+    long ret = ReturnValue(pt);
+    if (ret > 0) {
+      char buf[1024];
+      snprintf(buf, 1024,
+               "<trace type=\"clone\" time=\"%lu\">%lu",
+               u_.GetUsec(), ret);
+      u_.WriteTrace(buf);
+      u_.WriteTrace("</trace>");
+    }
+  }
+
+  return true;
 }
 
 }

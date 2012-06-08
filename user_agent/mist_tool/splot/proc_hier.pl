@@ -11,6 +11,7 @@ my %mytraces;
 # Build structures
 sub parse_xml {
 		my $file = "".(shift @_);
+		print "parsing $file\n";
 		my $obj = new XML::Bare(file => $file);
 		if (!$obj) {
 				return;
@@ -104,9 +105,12 @@ sub draw_graph {
 		$g = GraphViz->new(rankdir => 0,
 											 node    => {fontcolor => 'white',
 																	 style => 'filled'});
+
+		my @hosts = ("192.168.8.134", "192.168.8.133", "192.168.8.135");
 		# Draw nodes
 		print "===== Draw graph =====\n";
-		foreach $host (keys %mytraces) {
+#		foreach $host (keys %mytraces) {
+		foreach $host (@hosts) {
 				# Draw clusters by host
 				print "$host\n";
 				my $proccluster = {
@@ -123,7 +127,8 @@ sub draw_graph {
 						my $exe_name = $host_bucket{$pid}{"exe_name"};
 						my $user = $host_bucket{$pid}{"user"};
 						$g->add_node($node_id,
-												 label => "pid=$pid\nexe=$exe_name\neid=$user",
+							 #label => "pid=$pid\nexe=$exe_name\neid=$user",
+							 label => "",
 												 cluster => $proccluster,
 												 color => "red");
 				}
@@ -134,18 +139,20 @@ sub draw_graph {
 						if ($ppid) {
 								my $parent_node_id = "pid=$ppid\@$host";
 								my $child_node_id = "pid=$pid\@$host";
-								$g->add_edge($parent_node_id,
-														 $child_node_id,
-														 label=>"fork",
-														 color=>"blue",
-														 fontcolor=>"blue");
+#								$g->add_edge($parent_node_id,
+#									 $child_node_id,
+									 #label=>"fork",
+#														 label=>"",
+#														 color=>"blue",
+#														 fontcolor=>"blue");
 						}
 				}
 		}
 
 		# Draw communication edges
 		my %uniq_edges;
-		foreach $host (keys %mytraces) {
+#		foreach $host (keys %mytraces) {
+		foreach $host (@hosts) {
 				my %host_bucket = %{$mytraces{$host}};
 				foreach $pid (keys %host_bucket) {
 						my %pid_bucket = %{$host_bucket{$pid}};
@@ -170,13 +177,16 @@ sub draw_graph {
 				$g->add_edge($node_id, $trg_node_id,
 										 arrowhead => 'empty',
 										 style => 'dotted',
-										 label => 'connect');
+										 #label => 'connect');
+										 label => '');
 		}
 }
 
 #------------------------------------------------------------
 # Main
 #------------------------------------------------------------
+#&parse_xml("condor_traces/exe_host/3109-trace.xml");
+#exit;
 $g = GraphViz->new(rankdir => 0,
                    node    => {fontcolor => 'white', style => 'filled'});
 
@@ -199,6 +209,7 @@ closedir DIR;
 &draw_graph();
 
 print $g->as_text();
-open FILE, ">$xml_dir/sample.png";
-print FILE $g->as_png();
+
+open FILE, ">$xml_dir/sample.svg";
+print FILE $g->as_svg();
 close FILE;
