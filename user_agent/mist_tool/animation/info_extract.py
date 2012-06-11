@@ -1,24 +1,29 @@
-# 1. Iterate all files in condor_traces
-# 2. For each file, add record into the priliminary trace object
-# 3. From priliminary trace objects
-#    3.1. match up connect and accept insert into final trace objects
-#    3.2. insert other non-head priliminary trace object into final trace object
-#    3.3. insert head priliminary trace object into final head trace object
+"""
+Preliminary trace object
+------------------------
+- trace: (name, value1, value2, time)
+- Preliminary: host -> pid -> {'head' or 'traces'} -> array of traces
++ output a static svg for better layout
 
-# Priliminary trace object
-# - trace(name, value1, value2, time)
-# - host -> pid -> {head or traces} -> trace array
-# + output a static svg for better layout
+Final trace object (deduplicate by name/value + sort by time)
+-------------------------------------------------------------
+- trace: (name, value1, value2, time)
+- array of traces
++ output an xml for furture use in javascript OR
++ output a list of static figures
+  - maintain a cache for status (e.g., user), have the initial value as default
 
-# Final trace object (deduplicate by name/value + sort by time)
-# - trace(name, value1, value2, time)
-# - trace array
-# + output an xml for furture use in javascript
+TODO
+----
+- Executable letters
+- Legend
+- User color
+- Trace setuid
+- Add setuid event
+- Trace multiple machines
+"""
 
-# Replay temporal traces:
-# - maintain a cache for status (e.g., user), have the initial value as default
-
-
+import logging
 import glob
 import pydot
 import os
@@ -53,10 +58,6 @@ class Trace:
     def __hash__(self):
         return hash(self.name) ^ hash(self.value1) ^ hash(self.value2)
 
-    name = ''
-    value1 = ''
-    value2 = ''
-    time = 0
 
 
 class PrelimTraces(dict):
@@ -91,7 +92,6 @@ class FileOperation:
             for xmlfile in glob.glob(os.path.join(infile,
                                                   '*.xml')):
                 yield xmlfile
-    path = ''
 
 #-----------------------------------------------------------
 # Xml Parser
@@ -109,6 +109,8 @@ class XmlParser:
         host = self.get_node_value1(head_nodes, 'host')
         pid = self.get_node_value1(head_nodes, 'pid')
         exe_name = self.get_node_value1(head_nodes, 'exe_name')
+        if (exe_name.rpartition('/')[2]):
+            exe_name = exe_name.rpartition('/')[2]
         user = self.get_node_value2(head_nodes, 'effective_user', 'name')
         exe_name_trace = Trace('exe_name', exe_name, None, 0)
         if 'head' in self.prelim[host][pid]:
@@ -128,8 +130,9 @@ class XmlParser:
             trace_type = self.get_attr_value1(trace, 'type')
             trace_time = self.get_attr_value1(trace, 'time')
             if (trace_type == 'fork'):
-                fork_trace = Trace('fork', trace.firstChild.nodeValue, None, trace_time)
-                self.prelim[host][pid]['traces'].append(fork_trace)
+                if trace.firstChild.nodeValue != '4294967295':
+                    fork_trace = Trace('fork', trace.firstChild.nodeValue, None, trace_time)
+                    self.prelim[host][pid]['traces'].append(fork_trace)
             elif (trace_type == 'connect to'):
                 trg_host = self.get_node_value1(trace.childNodes, 'host')
                 trg_port = self.get_node_value1(trace.childNodes, 'port')
@@ -168,8 +171,6 @@ class XmlParser:
             return val
         return None
 
-    file_path = ''
-    prelim = None
 
 #-----------------------------------------------------------
 # Information Extractor
@@ -178,6 +179,7 @@ class InfoExtractor:
     """ Mainly to match up connect / accept pair """
     def __init__(self, prelim):
         self.prelim = prelim
+        self.final = []
 
     def extract(self):
         for host in self.prelim:
@@ -211,61 +213,241 @@ class InfoExtractor:
         for trace in self.final:
             print trace
 
-    prelim = None
-    final = []
 
 #-----------------------------------------------------------
 # Draw graphs
 #-----------------------------------------------------------
 class GraphArtist:
     """ Produce dot file, and them generate svg graph """
+
     def __init__(self, prelim, temporal_generator):
+        # Prelim data structure containing all traces
         self.prelim = prelim
-        self.temporal_trace_list = temporal_generator
+
+        # The index to assist assigning a letter to each exe_name
+        self.exe_abbr_index = 0
+
+        # Mapping from exe_name to a letter
+        self.exe_abbr_map = {}
+        
+        # Temporal trace list, the earlier the first
+        self.temporal_trace_list = []
+
+        # Mapping from hostname to a cluster in graphviz
+        self.host_cluster_map = {}
+
+        # Mapping from hostname to booleen
+        self.cluster_added = {}
+
+        # Mapping from user to color
+        self.user_color_map = {'root':'red', 'condor':'pink', 'wenbin':'green'}
+
+        for trace in temporal_generator:
+            self.temporal_trace_list.append(trace)
 
     def dump_temporal(self):
         for trace in self.temporal_trace_list:
-            print trace
+            logging.info(trace)
 
-    """ The union of all snapshots """
-    def draw_static_graph(self):
+    def dump_exe_abbr_map(self):
+        for exe_name in self.exe_abbr_map:
+            logging.info("%s => %s", exe_name, self.exe_abbr_map[exe_name])
+
+    def get_init_exe_name(self, host, pid):
+        """ Get a process's initial exe_name """
+        for trace in self.prelim[host][pid]['head']:
+            if (trace.name == "exe_name"):
+                return trace.value1
+        return None
+
+    def get_user_color(self, host, pid):
+        """ TODO(wenbin): track setuid events """
+        for trace in self.prelim[host][pid]['head']:
+            if (trace.name == "user"):
+                if trace.value1 in self.user_color_map:
+                    return self.user_color_map[trace.value1]
+        return "white"
+
+        
+    def get_exe_abbr(self, host, pid):
+        """
+        Get executable name's letter abbrebiation, basic steps:
+        1. Check the cache (exe_name -> letter). If found, return.
+        2. Maintain a counter to index alphabet. Build up the cache.
+        """
+        exe_name = self.get_init_exe_name(host, pid)
+        if exe_name == None:
+            return 'Unknown'
+
+        if (exe_name in self.exe_abbr_map):
+            return self.exe_abbr_map[exe_name]
+        else:
+            alphabet = map(chr, range(65, 91))
+            self.exe_abbr_map[exe_name] = alphabet[self.exe_abbr_index]
+            self.exe_abbr_index += 1
+            return self.exe_abbr_map[exe_name]
+
+
+    def get_cluster(self, node_id_str, graph):
+        """
+        Get cluster for a given host, basic steps:
+        1. Check the cache (hostname -> cluster). If found, return.
+        2. Otherwise, creat a cluster and add to parent graph.
+        """
+        (pid, sep, host) = node_id_str.partition('@')
+        if host in self.host_cluster_map:
+            return self.host_cluster_map[host]
+
+        cluster_id = "%d" % hash(host)
+        cluster = pydot.Cluster(cluster_id,label=host)
+        self.host_cluster_map[host] = cluster
+        return cluster
+
+    def add_cluster(self, cluster, graph):
+        if cluster not in self.cluster_added:
+            graph.add_subgraph(cluster)
+
+    def draw_static_graph(self, path):
+        """ The union of all snapshots, mainly use prelim structure """
+        logging.info("Draw static graph")
         graph = pydot.Dot(graph_type='digraph')
         for host in self.prelim:
+            cluster_id = "%d" % hash(host)
+            cluster = pydot.Cluster(cluster_id,label = host)
             for pid in self.prelim[host]:
                 node_id = "%s@%s" % (pid, host)
-                node = pydot.Node(node_id, style="filled", fillcolor="green", label=" ", shape="circle")
-                graph.add_node(node)
-        for trace in self.temporal_trace_list:
-            graph.add_edge(pydot.Edge(trace.value1, trace.value2))
-        graph.write_svg('output.svg')
-        
+                color = self.get_user_color(host, pid)
+                exe_abbr = self.get_exe_abbr(host, pid)
+                node = pydot.Node(node_id, \
+                                      style = "filled", \
+                                      fillcolor = color, \
+                                      label = exe_abbr, \
+                                      shape = "circle")
+                cluster.add_node(node)
+            graph.add_subgraph(cluster)
 
+        edge_id = 0
+        for trace in self.temporal_trace_list:
+            edge_num = "%d" % edge_id
+            edge_id += 1
+            edge = pydot.Edge(trace.value1, trace.value2, label=edge_num)
+            if trace.name == "connect":
+                edge.set_style("dotted")
+            graph.add_edge(edge)
+
+        output_path = "%s/static.svg" % path
+        graph.write_svg(output_path)
+        raw_output_path = "%s/static.dot" % path
+        graph.write_raw(raw_output_path)
+    
+
+    def draw_animation(self, output_dir):
+        """ A series of static pictures for animation, use both prelim and final """
+        logging.info("Draw animation graphs")
+        len_temporal = len(self.temporal_trace_list)
+        logging.info("Length of temporal trace list is %d", len_temporal)
+        for i in range(len_temporal):
+            logging.info("Replay from 0 ~ %d traces", i)
+            graph = pydot.Dot(graph_type='digraph')
+            for j in range(i+1):
+                trace = self.temporal_trace_list[j]
+                (from_pid, sep, from_host) = trace.value1.partition('@')
+                from_color = self.get_user_color(from_host, from_pid)
+                from_exe_abbr = self.get_exe_abbr(from_host, from_pid)
+                from_cluster = self.get_cluster(trace.value1, graph)
+                from_node = pydot.Node(trace.value1, \
+                                      style = "filled", \
+                                      fillcolor = from_color, \
+                                      label = from_exe_abbr, \
+                                      shape = "circle")
+                from_cluster.add_node(from_node)
+
+                (to_pid, sep, to_host) = trace.value2.partition('@')
+                to_color = self.get_user_color(to_host, to_pid)
+                to_exe_abbr = self.get_exe_abbr(to_host, to_pid)
+                to_cluster = self.get_cluster(trace.value2, graph)
+                to_node = pydot.Node(trace.value2, \
+                                      style="filled", \
+                                      fillcolor=to_color, \
+                                      label=to_exe_abbr, \
+                                      shape="circle")
+                to_cluster.add_node(to_node)
+
+            for host, cluster in self.host_cluster_map.items():
+                self.add_cluster(cluster, graph)
+
+            for j in range(i+1):
+                trace = self.temporal_trace_list[j]
+                edge = pydot.Edge(trace.value1, trace.value2)
+                if trace.name == "connect":
+                    edge.set_style("dotted")
+                graph.add_edge(edge)
+
+            output_path = "%s/%d.svg" % (output_dir, i)
+            graph.write_svg(output_path)
+            raw_output_path = "%s/%d.dot" % (output_dir, i)
+            graph.write_raw(raw_output_path)
+
+#-----------------------------------------------------------
+# Generate HTML file to display svg
+#-----------------------------------------------------------
+class HtmlGenerator:
+    def __init__(self, output_dir, trace_generator):
+        self.output_dir = output_dir
+        self.traces = []
+        for trace in trace_generator:
+            self.traces.append(trace)
+
+    def generate_config(self):
+        output_path = "%s/config.js" % self.output_dir
+        config_file = open(output_path, "w")
+        config_str = "var kNumFrames = %d;" % len(self.traces)
+        config_file.write(config_str)
+        
 #-----------------------------------------------------------
 # Main function
 #-----------------------------------------------------------
 def main():
-    """ Configurable variables """
+    #
+    # Configurable variables
+    #
+    logging.basicConfig(level=logging.INFO)
     root_path = 'condor_traces';
+    static_output_path = 'animation/';
+    animation_output_dir = 'animation/';
 
-    """ Parse XML """
+    #
+    # Parse XML
+    #
     file_op_obj = FileOperation(root_path)
     generator = file_op_obj.xml_path_generator()
     prelim = PrelimTraces()
     for f in generator:
         parser = XmlParser(f, prelim)
         parser.parse_xml()
-    # prelim.dump()
 
-    """ Extract information """
+    prelim.dump()
+
+    #
+    # Extract information
+    #
     extractor = InfoExtractor(prelim)
     extractor.extract()
-    # extractor.dump()
 
-    """ Draw static svg """
+    #
+    # Draw static svg
+    #
     temporal_generator = extractor.temporal_trace_generator()
     artist = GraphArtist(prelim, temporal_generator)
-    artist.dump_temporal()
-    artist.draw_static_graph()
+    artist.draw_animation(animation_output_dir)
+    artist.draw_static_graph(static_output_path)
+
+    #
+    # Generate HTML file to display svg
+    #
+    temporal_generator = extractor.temporal_trace_generator()
+    html_generator = HtmlGenerator(animation_output_dir, temporal_generator)
+    html_generator.generate_config()
 
 if __name__ == "__main__":
     main()
