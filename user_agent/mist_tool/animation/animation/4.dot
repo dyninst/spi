@@ -1,0 +1,41 @@
+digraph G {
+subgraph cluster_2016039413625036039 {
+label="192.168.8.133";
+"2766@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=brown1, label=A];
+"2771@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=pink, label=A];
+"2766@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=A];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2771@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=pink, label=A];
+"2772@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2766@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=A];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2772@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2771@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=pink, label=A];
+"2772@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2766@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=A];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2772@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2772@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2772@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2771@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=pink, label=A];
+"2766@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=A];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2772@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2772@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2772@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=brown1, label=B];
+"2771@192.168.8.133" [color=black, shape=circle, style=filled, fillcolor=pink, label=A];
+"2771@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=pink, label=A];
+"2773@192.168.8.133" [color=chartreuse, shape=circle, style=filled, fillcolor=brown1, label=C];
+}
+
+"2766@192.168.8.133" -> "2771@192.168.8.133";
+"2771@192.168.8.133" -> "2772@192.168.8.133";
+"2771@192.168.8.133" -> "2772@192.168.8.133"  [style=dotted, arrowhead=empty];
+"2772@192.168.8.133" -> "2771@192.168.8.133"  [style=dotted, arrowhead=empty];
+"2771@192.168.8.133" -> "2773@192.168.8.133"  [color=chartreuse];
+}

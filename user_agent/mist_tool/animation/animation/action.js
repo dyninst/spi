@@ -1,9 +1,17 @@
 var kCursor = -1;
+var kPause = false;
 
 function refresh_canvas(cur) {
-  kCursor = cur
+  kCursor = cur;
   filename = kCursor;
   filename += ".svg";
+  event_id = "Event ";
+  event_id += cur;
+  $("#event_id").text(event_id);
+  event_file = "";
+  event_file += kCursor;
+  event_file += ".e";
+  $("#event").load(event_file);
   $("#canvas").attr("src", filename).dequeue();
 }
 
@@ -28,10 +36,12 @@ function init() {
 
 function play() {
   kCursor = 0;
-  for (var i = 0; i < kNumFrames; i++) {
-    $("#canvas").delay(1000).queue(
+   for (var i = kCursor; i < kNumFrames; i++) {
+    console.log(i)
+    $("#canvas").delay(500).queue(
         function(n) {
-          refresh_canvas(kCursor);
+          console.log(kPause)
+           refresh_canvas(kCursor);
           kCursor++;
         });
   }
@@ -39,4 +49,20 @@ function play() {
 
 function show_static() {
   $("#canvas").attr("src", "static.svg");
+}
+
+function stop() {
+  $("#canvas").stop().clearQueue();
+}
+
+function next() {
+  if (kCursor >= kNumFrames-1) return;
+  kCursor++;
+  refresh_canvas(kCursor);
+}
+
+function previous() {
+  if (kCursor <= 0) return;
+  kCursor--;
+  refresh_canvas(kCursor);
 }

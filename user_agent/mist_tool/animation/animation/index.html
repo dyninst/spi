@@ -17,14 +17,17 @@
 
 <div id="framecontentLeft">
 <div class="innertube">
-<h3>Details about process:</h3>
-TODO
+<h3 id="event_id"></h3>
+<div id="event"></div>
 </div>
 </div>
 
 <div id="framecontentBottom">
 <div class="innertube">
 <input type="button" value="Play" onclick="play()"/>
+<input type="button" value="Stop" onclick="stop()"/>
+<input type="button" value="Previous" onclick="previous()"/>
+<input type="button" value="Next" onclick="next()"/>
 <input type="button" value="Static Diagram" onclick="show_static()"/>
 <p>
 <div id="slider" > </div>
@@ -36,7 +39,7 @@ TODO
 <div id="maincontent">
 <div class="innertube">
 <h1>Process Architecture</h1>
-<img src="" id="canvas"/>
+<img src="static.svg" id="canvas"/>
 </div>
 </div>
 

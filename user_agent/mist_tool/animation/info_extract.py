@@ -133,13 +133,21 @@ class XmlParser:
                 if trace.firstChild.nodeValue != '4294967295':
                     fork_trace = Trace('fork', trace.firstChild.nodeValue, None, trace_time)
                     self.prelim[host][pid]['traces'].append(fork_trace)
+            elif (trace_type == 'clone'):
+                if trace.firstChild.nodeValue != '4294967295':
+                    clone_trace = Trace('clone', trace.firstChild.nodeValue, None, trace_time)
+                    self.prelim[host][pid]['traces'].append(clone_trace)
             elif (trace_type == 'connect to'):
                 trg_host = self.get_node_value1(trace.childNodes, 'host')
+                if trg_host == '127.0.0.1':
+                    trg_host = host
                 trg_port = self.get_node_value1(trace.childNodes, 'port')
                 connect_trace = Trace('connect', trg_host, trg_port, trace_time)
                 self.prelim[host][pid]['traces'].append(connect_trace)
             elif (trace_type == 'accept from'):
                 trg_host = self.get_node_value1(trace.childNodes, 'host')
+                if trg_host == '127.0.0.1':
+                    trg_host = host
                 trg_port = self.get_node_value1(trace.childNodes, 'port')
                 accept_trace = Trace('accept', trg_host, trg_port, trace_time)
                 self.prelim[host][pid]['traces'].append(accept_trace)
@@ -190,16 +198,25 @@ class InfoExtractor:
                         to_id = "%s@%s" % (trace.value1, host)
                         new_trace = Trace('fork', from_id, to_id, trace.time)
                         self.final.append(new_trace)
+                    elif trace.name == 'clone':
+                        from_id = "%s@%s" % (pid, host)
+                        to_id = "%s@%s" % (trace.value1, host)
+                        new_trace = Trace('clone', from_id, to_id, trace.time)
+                        self.final.append(new_trace)
                     elif trace.name == 'connect':
                         from_id = "%s@%s" % (pid, host)
                         to_id = "%s@%s" % (self.get_pid(trace.value1, trace.value2), trace.value1)
                         new_trace = Trace('connect', from_id, to_id, trace.time)
                         self.final.append(new_trace)
+
         self.final = list(set(self.final))
         self.final.sort()
 
     # For connect
     def get_pid(self, host, port):
+        if host not in self.prelim:
+            return
+
         for pid in self.prelim[host]:
             for trace in self.prelim[host][pid]['traces']:
                 if trace.name == 'accept'and trace.value2 == port:
@@ -210,8 +227,10 @@ class InfoExtractor:
             yield trace
 
     def dump(self):
+        i = 0
         for trace in self.final:
-            print trace
+            print i, trace
+            i += 1
 
 
 #-----------------------------------------------------------
@@ -240,7 +259,7 @@ class GraphArtist:
         self.cluster_added = {}
 
         # Mapping from user to color
-        self.user_color_map = {'root':'red', 'condor':'pink', 'wenbin':'green'}
+        self.user_color_map = {'root':'brown1', 'condor':'pink', 'wenbin':'green'}
 
         for trace in temporal_generator:
             self.temporal_trace_list.append(trace)
@@ -255,6 +274,9 @@ class GraphArtist:
 
     def get_init_exe_name(self, host, pid):
         """ Get a process's initial exe_name """
+        if host not in self.prelim or \
+                pid not in self.prelim[host]:
+            None
         for trace in self.prelim[host][pid]['head']:
             if (trace.name == "exe_name"):
                 return trace.value1
@@ -262,6 +284,10 @@ class GraphArtist:
 
     def get_user_color(self, host, pid):
         """ TODO(wenbin): track setuid events """
+        if host not in self.prelim or \
+                pid not in self.prelim[host]:
+            return "white"
+
         for trace in self.prelim[host][pid]['head']:
             if (trace.name == "user"):
                 if trace.value1 in self.user_color_map:
@@ -307,86 +333,140 @@ class GraphArtist:
         if cluster not in self.cluster_added:
             graph.add_subgraph(cluster)
 
-    def draw_static_graph(self, path):
-        """ The union of all snapshots, mainly use prelim structure """
-        logging.info("Draw static graph")
-        graph = pydot.Dot(graph_type='digraph')
-        for host in self.prelim:
-            cluster_id = "%d" % hash(host)
-            cluster = pydot.Cluster(cluster_id,label = host)
-            for pid in self.prelim[host]:
-                node_id = "%s@%s" % (pid, host)
-                color = self.get_user_color(host, pid)
-                exe_abbr = self.get_exe_abbr(host, pid)
-                node = pydot.Node(node_id, \
-                                      style = "filled", \
-                                      fillcolor = color, \
-                                      label = exe_abbr, \
-                                      shape = "circle")
-                cluster.add_node(node)
-            graph.add_subgraph(cluster)
+    def add_node(self):
+        pass
 
-        edge_id = 0
-        for trace in self.temporal_trace_list:
-            edge_num = "%d" % edge_id
-            edge_id += 1
-            edge = pydot.Edge(trace.value1, trace.value2, label=edge_num)
-            if trace.name == "connect":
-                edge.set_style("dotted")
-            graph.add_edge(edge)
+    def exist_pid_host(self, pid, host):
+        if host not in self.prelim or \
+                pid not in self.prelim[host]:
+            return False
+        return True
 
-        output_path = "%s/static.svg" % path
-        graph.write_svg(output_path)
-        raw_output_path = "%s/static.dot" % path
-        graph.write_raw(raw_output_path)
-    
+    def remove_node(self, node_id_str):
+        """ 
+        """
+        pass
 
-    def draw_animation(self, output_dir):
-        """ A series of static pictures for animation, use both prelim and final """
-        logging.info("Draw animation graphs")
+    def rename_node(self, node_id_str):
+        """
+        We deduplicate such nodes with all these properties:
+        1. No traces
+        2. Same parent
+        """
+        pass
+
+    def draw(self, output_dir, static = True):
+        """ 
+        Draw pictures, use both prelim and final. 
+        If static is True, then output $output_dir/static.svn. Otherwise,
+        output $output_dir/$i.svn
+        """
         len_temporal = len(self.temporal_trace_list)
         logging.info("Length of temporal trace list is %d", len_temporal)
         for i in range(len_temporal):
-            logging.info("Replay from 0 ~ %d traces", i)
             graph = pydot.Dot(graph_type='digraph')
-            for j in range(i+1):
+            if static == True:
+                i = len(self.temporal_trace_list) - 1
+                logging.info("***%d", i)
+
+            logging.info("Replay [0, %d) traces", i)
+            j = 0
+            while True:
+                if j > i and j != 0:
+                    break
                 trace = self.temporal_trace_list[j]
+                j += 1
                 (from_pid, sep, from_host) = trace.value1.partition('@')
                 from_color = self.get_user_color(from_host, from_pid)
                 from_exe_abbr = self.get_exe_abbr(from_host, from_pid)
                 from_cluster = self.get_cluster(trace.value1, graph)
+                (to_pid, sep, to_host) = trace.value2.partition('@')
+                to_color = self.get_user_color(to_host, to_pid)
+                to_exe_abbr = self.get_exe_abbr(to_host, to_pid)
+                to_cluster = self.get_cluster(trace.value2, graph)
+                if from_exe_abbr == 'Unknown' or to_exe_abbr == 'Unknown':
+                    continue
+                if not self.exist_pid_host(from_pid, from_host) or \
+                        not self.exist_pid_host(to_pid, to_host):
+                    logging.info("Skip %s@%s => %s@%s", from_pid, \
+                                     from_host, to_pid, to_host)
+                    continue
+
+                border_color = 'black'
+                if j > i and static == False:
+                    border_color = 'chartreuse'
+
                 from_node = pydot.Node(trace.value1, \
                                       style = "filled", \
+                                      color = border_color, \
                                       fillcolor = from_color, \
                                       label = from_exe_abbr, \
                                       shape = "circle")
                 from_cluster.add_node(from_node)
 
-                (to_pid, sep, to_host) = trace.value2.partition('@')
-                to_color = self.get_user_color(to_host, to_pid)
-                to_exe_abbr = self.get_exe_abbr(to_host, to_pid)
-                to_cluster = self.get_cluster(trace.value2, graph)
                 to_node = pydot.Node(trace.value2, \
                                       style="filled", \
+                                      color = border_color, \
                                       fillcolor=to_color, \
                                       label=to_exe_abbr, \
                                       shape="circle")
                 to_cluster.add_node(to_node)
+                logging.info("Drawing %d trace", j-1)
 
             for host, cluster in self.host_cluster_map.items():
                 self.add_cluster(cluster, graph)
 
-            for j in range(i+1):
+            j = 0
+            while True:
+                if j > i and j != 0:
+                    break
                 trace = self.temporal_trace_list[j]
+                j += 1
+                (from_pid, sep, from_host) = trace.value1.partition('@')
+                (to_pid, sep, to_host) = trace.value2.partition('@')
+                from_exe_abbr = self.get_exe_abbr(from_host, from_pid)
+                to_exe_abbr = self.get_exe_abbr(to_host, to_pid)
+                if from_exe_abbr == 'Unknown' or to_exe_abbr == 'Unknown':
+                    continue
+
+                if self.exist_pid_host(from_pid, from_host) == False or \
+                        self.exist_pid_host(to_pid, to_host) == False:
+                    logging.info("Skip %s@%s => %s@%s", from_pid, \
+                                     from_host, to_pid, to_host)
+                    continue
                 edge = pydot.Edge(trace.value1, trace.value2)
+                # Highlight the last event edge
+                if j > i and static == False:
+                    edge.set_color('chartreuse')
                 if trace.name == "connect":
                     edge.set_style("dotted")
+                    edge.set_arrowhead("empty")
+                elif trace.name == "clone":
+                    edge.set_style("dashed")
+
                 graph.add_edge(edge)
 
-            output_path = "%s/%d.svg" % (output_dir, i)
-            graph.write_svg(output_path)
-            raw_output_path = "%s/%d.dot" % (output_dir, i)
-            graph.write_raw(raw_output_path)
+            if static == True:
+                output_path = "%s/static.svg" % output_dir
+                graph.write_svg(output_path)
+                raw_output_path = "%s/static.dot" % output_dir
+                graph.write_raw(raw_output_path)
+                return
+            else:
+                output_path = "%s/%d.svg" % (output_dir, i)
+                graph.write_svg(output_path)
+                raw_output_path = "%s/%d.dot" % (output_dir, i)
+                graph.write_raw(raw_output_path)
+                event_output_path = "%s/%d.e" % (output_dir, i)
+                ef = open(event_output_path, "w")
+                ef_str = ""
+                if trace.name == "connect":
+                    ef_str = "%s connects to %s" % (trace.value1, trace.value2)
+                elif trace.name == "clone":
+                    ef_str = "%s clones %s" % (trace.value1, trace.value2)
+                elif trace.name == "fork":
+                    ef_str = "%s forks %s" % (trace.value1, trace.value2)
+                ef.write(ef_str)
 
 #-----------------------------------------------------------
 # Generate HTML file to display svg
@@ -413,8 +493,7 @@ def main():
     #
     logging.basicConfig(level=logging.INFO)
     root_path = 'condor_traces';
-    static_output_path = 'animation/';
-    animation_output_dir = 'animation/';
+    output_dir = 'animation/';
 
     #
     # Parse XML
@@ -433,20 +512,23 @@ def main():
     #
     extractor = InfoExtractor(prelim)
     extractor.extract()
+    extractor.dump()
 
     #
     # Draw static svg
     #
     temporal_generator = extractor.temporal_trace_generator()
     artist = GraphArtist(prelim, temporal_generator)
-    artist.draw_animation(animation_output_dir)
-    artist.draw_static_graph(static_output_path)
+
+    # FIXME: cannot generate static and animation together!
+    # artist.draw(output_dir, True)
+    artist.draw(output_dir, False)
 
     #
     # Generate HTML file to display svg
     #
     temporal_generator = extractor.temporal_trace_generator()
-    html_generator = HtmlGenerator(animation_output_dir, temporal_generator)
+    html_generator = HtmlGenerator(output_dir, temporal_generator)
     html_generator.generate_config()
 
 if __name__ == "__main__":

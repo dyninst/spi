@@ -1,1 +1,1 @@
-var kNumFrames = 29;
+var kNumFrames = 77;
