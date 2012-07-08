@@ -79,14 +79,6 @@ class LibChecker : public MistChecker {
 
 
 
-// Check the changes of uid/gid
-class ChangeIdChecker : public MistChecker {
-  public:
-    virtual bool check(sp::SpPoint* pt,
-                       sp::SpFunction* callee);
-    virtual bool post_check(sp::SpPoint* pt,
-                            sp::SpFunction* callee) { return false; }
-};
 
 // Check when to exit
 class ExitChecker : public MistChecker {
@@ -142,7 +134,7 @@ class IpcChecker : public MistChecker {
     string port;
 };
 
-// Fork
+// Fork or exec
 class Mist;
 class ForkChecker : public MistChecker {
   public:
@@ -166,6 +158,15 @@ class CloneChecker : public MistChecker {
                             sp::SpFunction* callee);
   private:
     Mist* mist_;
+};
+
+// Check the changes of uid/gid
+class ChangeIdChecker : public MistChecker {
+  public:
+    virtual bool check(sp::SpPoint* pt,
+                       sp::SpFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt,
+                            sp::SpFunction* callee) { return false; }
 };
 
 }

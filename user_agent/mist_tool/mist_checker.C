@@ -281,70 +281,6 @@ bool LibChecker::check(SpPoint* pt, PatchFunction* callee) {
 }
 
 
-// check uid/gid changes
-// Check the changes of uid/gid
-bool ChangeIdChecker::check(SpPoint* pt, PatchFunction* callee) {
-  bool found = false;
-  ArgumentHandle h;
-  uid_t* first = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
-  uid_t* second = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
-  uid_t* third = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
-
-  string s = "";
-  char buf[512];
-  if (u_.check_name(callee, "setuid")) {
-    snprintf(buf, 512, "  - real user: (name: %s, id: %d)", u_.get_user_name(*first).c_str(), *first);
-    s += buf;
-    found = true;
-  } else if (u_.check_name(callee, "seteuid")) {
-    snprintf(buf, 512, "  - effect user: (name: %s, id: %d)", u_.get_user_name(*first).c_str(), *first);
-    s += buf;
-    found = true;
-  } else if (u_.check_name(callee, "setreuid")) {
-    snprintf(buf, 512, "  - real user: (name: %s, id: %d)\n", u_.get_user_name(*first).c_str(), *first);
-    s += buf;
-    snprintf(buf, 512, "  - effect user: (name: %s, id: %d)", u_.get_user_name(*second).c_str(), *second);
-    s += buf;
-    found = true;
-  } else if (u_.check_name(callee, "setresuid")) {
-    snprintf(buf, 512, "  - real user: (name: %s, id: %d)\n", u_.get_user_name(*first).c_str(), *first);
-    s += buf;
-    snprintf(buf, 512, "  - effect user: (name: %s, id: %d)\n", u_.get_user_name(*second).c_str(), *second);
-    s += buf;
-    snprintf(buf, 512, "  - saved user: (name: %s, id: %d)", u_.get_user_name(*third).c_str(), *third);
-    s += buf;
-    found = true;
-  } else if (u_.check_name(callee, "setgid")) {
-    snprintf(buf, 512, "  - real group: (name: %s, id: %d)", u_.get_group_name(*first).c_str(), *first);
-    s += buf;
-    found = true;
-  } else if (u_.check_name(callee, "setegid")) {
-    snprintf(buf, 512, "  - effect group: (name: %s, id: %d)", u_.get_group_name(*first).c_str(), *first);
-    s += buf;
-    found = true;
-  } else if (u_.check_name(callee, "setregid")) {
-    snprintf(buf, 512, "  - real group: (name: %s, id: %d)\n", u_.get_group_name(*first).c_str(), *first);
-    s += buf;
-    snprintf(buf, 512, "  - effect group: (name: %s, id: %d)", u_.get_group_name(*second).c_str(), *second);
-    s += buf;
-    found = true;
-  } else if (u_.check_name(callee, "setresgid")) {
-    snprintf(buf, 512, "  - real group: (name: %s, id: %d)\n", u_.get_group_name(*first).c_str(), *first);
-    s += buf;
-    snprintf(buf, 512, "  - effect group: (name: %s, id: %d)\n", u_.get_group_name(*second).c_str(), *second);
-    s += buf;
-    snprintf(buf, 512, "  - saved group: (name: %s, id: %d)", u_.get_group_name(*third).c_str(), *third);
-    s += buf;
-    found = true;
-  }
-
-  if (found) {
-    u_.print("* ID changed: %s", callee->name().c_str());
-    u_.print("%s", s.c_str());
-    u_.where();
-  }
-	return true;
-}
 
 // Exit checker
 extern Mist mist;
@@ -555,6 +491,93 @@ ForkChecker::ForkChecker(Mist* mist) : mist_(mist) {
 }
 
 bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
+  if (callee->name().compare("execve") == 0) {
+    // Output trace
+    ArgumentHandle h;
+    char** path = (char**)PopArgument(pt, &h, sizeof(char*));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
+
+    // Modify environment
+    // /mnt/hgfs/shared/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so
+    char cmd[1024];
+    sprintf(cmd, "echo \"%s\" > /tmp/%d.txt", *path, getpid());
+    system(cmd);
+    
+    char buf[102400];
+    char trace_file[255];
+    snprintf(trace_file, 255, "/tmp/%d-trace.xml", getpid());
+    snprintf(buf, 102400,
+             "<trace type=\"%s\" time=\"%lu\">%s",
+             callee->name().c_str(), u_.GetUsec(), *path);
+    char** ptr = *argvs;
+    while (*ptr != NULL) {
+      strcat(buf, *ptr);
+      ptr++;
+    }
+    ptr = *envs;
+    char **new_envs = (char**)malloc(1024*sizeof(char*));
+    int cur = 0;
+    while (*ptr != NULL) {
+      new_envs[cur++] = *ptr;
+      strcat(buf, *ptr);
+      ptr++;
+    }
+    /*
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "PLATFORM=x86_64-unknown-linux2.4");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_TEST_RELOCINSN=1");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_LSOF=/usr/bin/lsof");
+    cur++;
+
+    cur = 0;
+    ptr = new_envs;
+    while (*ptr != NULL) {
+      strcat(buf, *ptr);
+      ptr++;
+    }
+    */
+    struct stat s;
+
+    // XXX: why the last trace record is not flushed to disk??
+    /*
+    if (stat(trace_file, &s) != 0) {
+      mist_->fork_init_run();
+    }
+    */
+    if (stat(trace_file, &s) == 0) {
+      snprintf(cmd, 1024, "cp /tmp/%d-trace.xml /tmp/%d-exe.xml",
+               getpid(), getpid());
+      system(cmd);
+      char fn[1024];
+      sprintf(fn, "/tmp/%d-exe.xml", getpid());
+      //      FILE* fp = fopen(fn, "r+");
+      FILE* fp = fopen(fn, "a");
+      fseek(fp, -19, SEEK_END);
+      fprintf(fp, "%s</trace></traces></process>", buf);
+      fclose(fp);
+    }
+    
+    // execve(*path, *argvs, new_envs);
+    // system("touch /tmp/fail_execve");
+    // Setup LD_PRELOAD for job
+  }
+
 	return true;
 }
 
@@ -595,7 +618,8 @@ bool CloneChecker::check(SpPoint* pt, SpFunction* callee) {
 	return true;
 }
 
-bool CloneChecker::post_check(SpPoint* pt, SpFunction* callee) {
+bool CloneChecker::post_check(SpPoint* pt,
+                              SpFunction* callee) {
 
   if (callee->name().compare("clone") == 0) {
     long ret = ReturnValue(pt);
@@ -606,10 +630,43 @@ bool CloneChecker::post_check(SpPoint* pt, SpFunction* callee) {
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
       u_.WriteTrace("</trace>");
+    } else if (ret == 0){
+      // mist_->fork_init_run();
     }
   }
 
   return true;
 }
 
+// check uid/gid changes
+// Check the changes of uid/gid
+bool ChangeIdChecker::check(SpPoint* pt,
+                            SpFunction* callee) {
+  if (callee->name().compare("seteuid") == 0 ||
+      callee->name().compare("setuid") == 0 ) {
+    ArgumentHandle h;
+    uid_t* uid = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
+    char buf[1024];
+    snprintf(buf, 1024,
+             "<trace type=\"%s\" time=\"%lu\">%d",
+             callee->name().c_str(), u_.GetUsec(), *uid);
+    u_.WriteTrace(buf);
+    u_.WriteTrace("</trace>");
+  } else if (callee->name().compare("seteuid") == 0) {
+    ArgumentHandle h;
+    PopArgument(pt, &h, sizeof(uid_t));
+    uid_t* uid = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
+    char buf[1024];
+    snprintf(buf, 1024,
+             "<trace type=\"%s\" time=\"%lu\">%d",
+             callee->name().c_str(), u_.GetUsec(), *uid);
+    u_.WriteTrace(buf);
+    u_.WriteTrace("</trace>");
+  }
+
+	return true;
 }
+
+}
+
+// set_user_euid

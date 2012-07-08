@@ -17,7 +17,8 @@ class TraceMgr {
   void WriteString(long pos,
                    std::string str);
   void WriteString(std::string str);
-
+  void CloseTrace();
+  
   void ChangeTraceFile();
   void XMLEncode(std::string& str);
   private:

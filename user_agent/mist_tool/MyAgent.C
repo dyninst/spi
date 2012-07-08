@@ -66,10 +66,23 @@ void MyAgent() {
   preinst_funcs.insert("midwife_executable");
   preinst_funcs.insert("quit_on_signal_with_core");
   preinst_funcs.insert("safe_is_path_trusted_fork");
+  preinst_funcs.insert("CreateProcessForkit::exec");
 
   // For clone()
 
   // For setuid / seteuid
+  preinst_funcs.insert("set_user_euid");
+  preinst_funcs.insert("set_user_ruid");
+  preinst_funcs.insert("set_condor_euid");
+  preinst_funcs.insert("set_condor_ruid");
+  preinst_funcs.insert("set_root_euid");
+  preinst_funcs.insert("set_root_ruid");
+  preinst_funcs.insert("set_owner_euid");
+  preinst_funcs.insert("set_owner_ruid");
+  // preinst_funcs.insert("_set_priv");
+  // preinst_funcs.insert("safe_switch_to_uid");
+  // preinst_funcs.insert("do_command");
+  // preinst_funcs.insert("seteuid");
 
   // For connect()
   preinst_funcs.insert("tcp_connect");

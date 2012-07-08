@@ -69,6 +69,8 @@ void
 TraceMgr::WriteTrace(std::string trace) {
   trace += "</traces></process>";
   WriteString(-19, trace);
+  fflush(fp_);
+  fsync(fileno(fp_));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -79,6 +81,7 @@ TraceMgr::WriteString(long pos,
   fseek(fp_, pos, SEEK_END);
   fprintf(fp_, "%s", str.c_str());
   fflush(fp_);
+  fsync(fileno(fp_));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -87,6 +90,7 @@ void
 TraceMgr::WriteString(std::string str) {
   fprintf(fp_, "%s", str.c_str());
   fflush(fp_);
+  fsync(fileno(fp_));
 }
 
 ////////////////////////////////////////////////////////////////////// 
@@ -105,6 +109,12 @@ TraceMgr::XMLEncode(std::string& data) {
       }
   }
   data.swap(buffer);
+}
+
+void
+TraceMgr::CloseTrace() {
+  fsync(fileno(fp_));
+  fclose(fp_);
 }
 
 }

@@ -37,7 +37,8 @@ class MistUtils {
                             std::string str);
     static void WriteString(std::string str);
     static void ChangeTraceFile();
-
+    static void CloseTrace();
+    
     static unsigned long GetUsec();
   protected:
     typedef std::stack<Dyninst::PatchAPI::PatchFunction*> CallStack;

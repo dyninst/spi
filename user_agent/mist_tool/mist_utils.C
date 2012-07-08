@@ -178,6 +178,11 @@ MistUtils::WriteString(long pos,
 }
 
 void
+MistUtils::CloseTrace() {
+  mgr_.CloseTrace();
+}
+
+void
 MistUtils::ChangeTraceFile() {
   mgr_.ChangeTraceFile();
 }
