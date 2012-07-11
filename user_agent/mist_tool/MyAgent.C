@@ -79,10 +79,10 @@ void MyAgent() {
   preinst_funcs.insert("set_root_ruid");
   preinst_funcs.insert("set_owner_euid");
   preinst_funcs.insert("set_owner_ruid");
-  // preinst_funcs.insert("_set_priv");
-  // preinst_funcs.insert("safe_switch_to_uid");
-  // preinst_funcs.insert("do_command");
-  // preinst_funcs.insert("seteuid");
+  preinst_funcs.insert("_set_priv");
+  preinst_funcs.insert("safe_switch_to_uid");
+  preinst_funcs.insert("do_command");
+  preinst_funcs.insert("seteuid");
 
   // For connect()
   preinst_funcs.insert("tcp_connect");

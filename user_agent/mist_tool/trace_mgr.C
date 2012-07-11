@@ -13,7 +13,8 @@ TraceMgr::TraceMgr() {
     filename_ = buf;
   } else {
     char buf[1024];
-    snprintf(buf, 1024, "/tmp/%d-trace.xml", getpid());
+    srand(time(0));
+    snprintf(buf, 1024, "/tmp/%d-trace%d.xml", getpid(), rand());
     filename_ = buf;
   }
   
@@ -21,7 +22,8 @@ TraceMgr::TraceMgr() {
   if (fp_ == NULL) {
     sp_perror("Failed to write %s", filename_.c_str());
   }
-
+  setbuf(fp_, NULL);
+  
   string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
   init += "<process><head>";
   init += "</head></process>";
@@ -31,13 +33,15 @@ TraceMgr::TraceMgr() {
 void
 TraceMgr::ChangeTraceFile() {
   char buf[1024];
-  snprintf(buf, 1024, "/tmp/%d-trace.xml", getpid());
+  srand(time(0));
+  snprintf(buf, 1024, "/tmp/%d-trace%d.xml", getpid(), rand());
   filename_ = buf;
   
   fp_ = fopen(filename_.c_str(), "w");
   if (fp_ == NULL) {
     sp_perror("Failed to write %s", filename_.c_str());
   }
+  setbuf(fp_, NULL);
 
   string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
   init += "<process><head>";

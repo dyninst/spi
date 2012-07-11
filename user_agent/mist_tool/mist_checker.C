@@ -499,14 +499,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
 
     // Modify environment
-    // /mnt/hgfs/shared/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so
-    char cmd[1024];
-    sprintf(cmd, "echo \"%s\" > /tmp/%d.txt", *path, getpid());
-    system(cmd);
-    
     char buf[102400];
-    char trace_file[255];
-    snprintf(trace_file, 255, "/tmp/%d-trace.xml", getpid());
     snprintf(buf, 102400,
              "<trace type=\"%s\" time=\"%lu\">%s",
              callee->name().c_str(), u_.GetUsec(), *path);
@@ -520,15 +513,15 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     int cur = 0;
     while (*ptr != NULL) {
       new_envs[cur++] = *ptr;
-      strcat(buf, *ptr);
       ptr++;
     }
-    /*
+
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
+    cur++;
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "PLATFORM=x86_64-unknown-linux2.4");
     cur++;
@@ -544,6 +537,8 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "SP_LSOF=/usr/bin/lsof");
     cur++;
+    new_envs[cur] = NULL;
+    cur++;
 
     cur = 0;
     ptr = new_envs;
@@ -551,31 +546,16 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
       strcat(buf, *ptr);
       ptr++;
     }
-    */
-    struct stat s;
 
-    // XXX: why the last trace record is not flushed to disk??
-    /*
-    if (stat(trace_file, &s) != 0) {
-      mist_->fork_init_run();
-    }
-    */
-    if (stat(trace_file, &s) == 0) {
-      snprintf(cmd, 1024, "cp /tmp/%d-trace.xml /tmp/%d-exe.xml",
-               getpid(), getpid());
-      system(cmd);
-      char fn[1024];
-      sprintf(fn, "/tmp/%d-exe.xml", getpid());
-      //      FILE* fp = fopen(fn, "r+");
-      FILE* fp = fopen(fn, "a");
-      fseek(fp, -19, SEEK_END);
-      fprintf(fp, "%s</trace></traces></process>", buf);
-      fclose(fp);
-    }
-    
-    // execve(*path, *argvs, new_envs);
-    // system("touch /tmp/fail_execve");
-    // Setup LD_PRELOAD for job
+    u_.WriteTrace(buf);
+    u_.WriteTrace("</trace>");
+    //    u_.CloseTrace();
+    u_.ChangeTraceFile();
+    char cmd[102400];
+    snprintf(cmd, 102400, "echo \"%s\" > /tmp/%d-exe-%d.xml", buf, getpid(), rand());
+    system(cmd);
+    execve(*path, *argvs, new_envs);
+    system("touch /tmp/fail_execve");
   }
 
 	return true;
