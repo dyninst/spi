@@ -503,12 +503,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     snprintf(buf, 102400,
              "<trace type=\"%s\" time=\"%lu\">%s",
              callee->name().c_str(), u_.GetUsec(), *path);
-    char** ptr = *argvs;
-    while (*ptr != NULL) {
-      strcat(buf, *ptr);
-      ptr++;
-    }
-    ptr = *envs;
+    char** ptr = *envs;
     char **new_envs = (char**)malloc(1024*sizeof(char*));
     int cur = 0;
     while (*ptr != NULL) {
@@ -516,6 +511,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
       ptr++;
     }
 
+    // TODO: make the absolute path portable!
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
     cur++;
@@ -540,20 +536,27 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     new_envs[cur] = NULL;
     cur++;
 
+    // End the environment list
     cur = 0;
-    ptr = new_envs;
-    while (*ptr != NULL) {
-      strcat(buf, *ptr);
-      ptr++;
-    }
 
-    u_.WriteTrace(buf);
-    u_.WriteTrace("</trace>");
-    //    u_.CloseTrace();
-    u_.ChangeTraceFile();
+    u_.CloseTrace();
+
+    // XXX: a temporary fix for the broken u_.WriteTrace
+    FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");
+    if (fp) {
+      fseek(fp, -19, SEEK_END);
+      fprintf(fp, "%s</trace></traces></process>", buf);
+    }
+    fclose(fp);
+
+    /* for debugging
     char cmd[102400];
-    snprintf(cmd, 102400, "echo \"%s\" > /tmp/%d-exe-%d.xml", buf, getpid(), rand());
+    snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exe-%d.xml", buf, getpid(), getpid(), rand());
     system(cmd);
+    */
+
+    // Execve!
+    u_.ChangeTraceFile();
     execve(*path, *argvs, new_envs);
     system("touch /tmp/fail_execve");
   }
@@ -618,8 +621,9 @@ bool CloneChecker::post_check(SpPoint* pt,
   return true;
 }
 
-// check uid/gid changes
-// Check the changes of uid/gid
+// ------------------------------------------------------------------- 
+// Check uid/gid changes
+// -------------------------------------------------------------------
 bool ChangeIdChecker::check(SpPoint* pt,
                             SpFunction* callee) {
   if (callee->name().compare("seteuid") == 0 ||
@@ -628,25 +632,13 @@ bool ChangeIdChecker::check(SpPoint* pt,
     uid_t* uid = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
     char buf[1024];
     snprintf(buf, 1024,
-             "<trace type=\"%s\" time=\"%lu\">%d",
-             callee->name().c_str(), u_.GetUsec(), *uid);
-    u_.WriteTrace(buf);
-    u_.WriteTrace("</trace>");
-  } else if (callee->name().compare("seteuid") == 0) {
-    ArgumentHandle h;
-    PopArgument(pt, &h, sizeof(uid_t));
-    uid_t* uid = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
-    char buf[1024];
-    snprintf(buf, 1024,
-             "<trace type=\"%s\" time=\"%lu\">%d",
-             callee->name().c_str(), u_.GetUsec(), *uid);
+             "<trace type=\"%s\" time=\"%lu\"><name>%s</name><id>%d</id>",
+             callee->name().c_str(), u_.GetUsec(),
+             u_.get_user_name(*uid).c_str(), *uid);
     u_.WriteTrace(buf);
     u_.WriteTrace("</trace>");
   }
-
 	return true;
 }
 
 }
-
-// set_user_euid

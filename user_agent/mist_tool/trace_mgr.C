@@ -1,3 +1,5 @@
+#include <sys/stat.h>
+
 #include "SpInc.h"
 #include "trace_mgr.h"
 
@@ -6,47 +8,13 @@ namespace mist {
 //////////////////////////////////////////////////////////////////////
 
 TraceMgr::TraceMgr() {
-  if (getenv("MIST_TRACE_DIR")) {
-    char buf[1024];
-    snprintf(buf, 1024, "%s/%d-trace.xml",
-             getenv("MIST_TRACE_DIR"), getpid());
-    filename_ = buf;
-  } else {
-    char buf[1024];
-    srand(time(0));
-    snprintf(buf, 1024, "/tmp/%d-trace%d.xml", getpid(), rand());
-    filename_ = buf;
-  }
+  OpenFile();
   
-  fp_ = fopen(filename_.c_str(), "w");
-  if (fp_ == NULL) {
-    sp_perror("Failed to write %s", filename_.c_str());
-  }
-  setbuf(fp_, NULL);
-  
-  string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
-  init += "<process><head>";
-  init += "</head></process>";
-  WriteString(init);
 }
 
 void
 TraceMgr::ChangeTraceFile() {
-  char buf[1024];
-  srand(time(0));
-  snprintf(buf, 1024, "/tmp/%d-trace%d.xml", getpid(), rand());
-  filename_ = buf;
-  
-  fp_ = fopen(filename_.c_str(), "w");
-  if (fp_ == NULL) {
-    sp_perror("Failed to write %s", filename_.c_str());
-  }
-  setbuf(fp_, NULL);
-
-  string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
-  init += "<process><head>";
-  init += "</head></process>";
-  WriteString(init);
+  OpenFile();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -117,8 +85,85 @@ TraceMgr::XMLEncode(std::string& data) {
 
 void
 TraceMgr::CloseTrace() {
+  fflush(fp_);
   fsync(fileno(fp_));
   fclose(fp_);
+}
+
+////////////////////////////////////////////////////////////////////// 
+std::string
+TraceMgr::TraceFileName() const {
+  return filename_;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Naming convention:
+// 1. trace file: /tmp/pid-seq.xml (seq starts from 1)
+// 2. sequence number file: /tmp/pid-seq-num
+//
+// Basic steps:
+// 1. Check if /tmp/pid-seq-num exists, if not create it
+// 2. Read pid-seq-num to get the sequence number
+// 3. Construct the trace file name based on the sequence number
+// 4. Open trace file for write
+// 5. Increment the sequence number
+// 6. Write sequence number into /tmp/pid-seq-num
+// 7. Write xml template into trace file
+
+void
+TraceMgr::OpenFile() {
+  // Get seq
+  char seq_file_name[255];
+  snprintf(seq_file_name, 255, "/tmp/%d-seq-num", getpid());
+
+  FILE* fp_seq = NULL;
+  char linebuf[255];
+
+  struct stat s;
+  if (stat(seq_file_name, &s) == 0) {
+    sp_debug("%s exists\n", seq_file_name);
+
+    fp_seq = fopen(seq_file_name, "rw");
+    if (fp_seq == NULL) {
+      sp_perror("fail to open %s\n", seq_file_name);
+    }
+    if (fgets(linebuf, 255, fp_seq) == NULL) {
+      sp_perror("fail to read %s\n", seq_file_name);
+    }
+  } else {
+    sp_debug("%s not exists\n", seq_file_name);
+
+    fp_seq = fopen(seq_file_name, "w");
+    if (fp_seq == NULL) {
+      sp_perror("fail to open %s\n", seq_file_name);
+    }
+    fprintf(fp_seq, "1");
+    fflush(fp_seq);
+    strcpy(linebuf, "1");
+  }
+  int seq = atoi(linebuf);
+
+  // Construct trace file name
+  char trace_file_name[255];
+  snprintf(trace_file_name, 255, "/tmp/%d-%d.xml", getpid(), seq);
+  filename_ = trace_file_name;
+  fp_ = fopen(trace_file_name, "w");
+  if (fp_ == NULL) {
+    sp_perror("fail to open %s\n", trace_file_name);
+  }
+  setbuf(fp_, NULL);
+
+  // Write back seq
+  ++seq;
+  rewind(fp_seq);
+  fprintf(fp_seq, "%d", seq);
+  fclose(fp_seq);
+
+  // Write initial data
+  string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
+  init += "<process><head>";
+  init += "</head></process>";
+  WriteString(init);
 }
 
 }

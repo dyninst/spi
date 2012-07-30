@@ -38,6 +38,7 @@ class MistUtils {
     static void WriteString(std::string str);
     static void ChangeTraceFile();
     static void CloseTrace();
+    static std::string TraceFileName();
     
     static unsigned long GetUsec();
   protected:

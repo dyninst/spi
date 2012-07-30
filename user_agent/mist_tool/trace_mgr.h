@@ -18,10 +18,12 @@ class TraceMgr {
                    std::string str);
   void WriteString(std::string str);
   void CloseTrace();
+  std::string TraceFileName() const;
   
   void ChangeTraceFile();
   void XMLEncode(std::string& str);
   private:
+  void OpenFile();
   std::string filename_;
   FILE* fp_;
 

@@ -187,6 +187,11 @@ MistUtils::ChangeTraceFile() {
   mgr_.ChangeTraceFile();
 }
 
+std::string
+MistUtils::TraceFileName() {
+  return mgr_.TraceFileName();
+}
+
 // ------------------------------------------------------------------- 
 // Get usecs since 1970
 // -------------------------------------------------------------------
