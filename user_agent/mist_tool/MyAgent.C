@@ -98,6 +98,10 @@ void MyAgent() {
   // For accept()
   preinst_funcs.insert("condor_accept");
   preinst_funcs.insert("tcp_accept_timeout");
+
+  // For exit()
+  preinst_funcs.insert("_exit");
+  preinst_funcs.insert("__stack_chk_fail");
   
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
   agent->SetLibrariesToInstrument(libs_to_inst);

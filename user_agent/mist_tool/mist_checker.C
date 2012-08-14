@@ -282,26 +282,6 @@ bool LibChecker::check(SpPoint* pt, PatchFunction* callee) {
 
 
 
-// Exit checker
-extern Mist mist;
-bool ExitChecker::check(SpPoint* pt, PatchFunction* callee) {
-  std::vector<string> ns;
-  ns.push_back("exit");
-
-  if (u_.check_name(callee, ns)) {
-    ArgumentHandle h;
-    int* exit_code = (int*)PopArgument(pt, &h, sizeof(void*));
-    u_.print("* EXIT: w/ status code %d", *exit_code);
-    u_.where();
-    // mist.fini_run();
-  }
-	return true;
-}
-
-bool ExitChecker::post_check(sp::SpPoint* pt, PatchFunction* callee) {
-  return false;
-}
-
 // mmap checker
 bool MmapChecker::check(SpPoint* pt, PatchFunction* callee) {
   std::vector<string> ns;
@@ -549,33 +529,71 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     }
     fclose(fp);
 
-    /* for debugging
+
     char cmd[102400];
-    snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exe-%d.xml", buf, getpid(), getpid(), rand());
+    snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exe-%d-seq-num", buf, getpid(), getpid(), rand());
     system(cmd);
-    */
 
     // Execve!
     u_.ChangeTraceFile();
     execve(*path, *argvs, new_envs);
     system("touch /tmp/fail_execve");
-  }
 
+  } else if (callee->name().compare("execl") == 0 ||
+             callee->name().compare("execlp") == 0 ||
+             callee->name().compare("execle") == 0 ||
+             callee->name().compare("execv") == 0 ||
+             callee->name().compare("execvp") == 0) {
+    // Output trace
+    ArgumentHandle h;
+    char** path = (char**)PopArgument(pt, &h, sizeof(char*));
+
+    char buf[102400];
+    snprintf(buf, 102400,
+             "<trace type=\"%s\" time=\"%lu\">%s",
+             callee->name().c_str(), u_.GetUsec(), *path);
+
+    u_.CloseTrace();
+
+    // extern char** environ;
+
+    // TODO: setup environment variable correctly
+    
+    // XXX: a temporary fix for the broken u_.WriteTrace
+    FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");
+    if (fp) {
+      fseek(fp, -19, SEEK_END);
+      fprintf(fp, "%s</trace></traces></process>", buf);
+    }
+    fclose(fp);
+    u_.ChangeTraceFile();
+  }
 	return true;
 }
 
 bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
   if (callee->name().compare("fork") == 0) {
-    long ret = ReturnValue(pt);
+    pid_t ret = ReturnValue(pt);
     if (ret == 0) {
       mist_->fork_init_run();
-    } else {
+    } else if (ret > 0) {
       char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"fork\" time=\"%lu\">%lu",
+               "<trace type=\"fork\" time=\"%lu\">%d",
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
       u_.WriteTrace("</trace>");
+      snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-fork-seq-num", buf, getpid());
+      system(buf);
+    } else {
+      char buf[1024];
+      snprintf(buf, 1024,
+               "<trace type=\"failed fork\" time=\"%lu\">%d",
+               u_.GetUsec(), ret);
+      u_.WriteTrace(buf);
+      u_.WriteTrace("</trace>");
+      snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-failed-fork-seq-num", buf, getpid());
+      system(buf);
     }
   }
   
@@ -588,33 +606,48 @@ bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
 CloneChecker::CloneChecker(Mist* mist) : mist_(mist) {
 }
 
-bool CloneChecker::check(SpPoint* pt, SpFunction* callee) {
-  if (callee->name().compare("clone") == 0) {
-    // Get callback function instance, record it
-    system("touch /tmp/clone_laaaa");
+bool CloneChecker::check(SpPoint* pt,
+                         SpFunction* callee) {
+  // TODO (wenbin):
+  // 1. get the first parameter of clone, which is the callback of clone
+  // 2. run mist_->fork_init_run() inside this callback (how to do it??)
+  /*
+  if (callee->name().compare("CreateProcessForkit::exec") == 0) {
+    mist_->fork_init_run();
   }
-
-  // If callback function is not NULL, and is callee
-  // Start new trace file
-  // Run init_run
-  
+  */
 	return true;
 }
 
 bool CloneChecker::post_check(SpPoint* pt,
                               SpFunction* callee) {
 
-  if (callee->name().compare("clone") == 0) {
-    long ret = ReturnValue(pt);
+  if (callee->name().compare("clone") == 0 ||
+      callee->name().compare("__clone2") == 0) {
+    pid_t ret = ReturnValue(pt);
+    
     if (ret > 0) {
+      /*
+      char exe_buf[1024];
+      snprintf(exe_buf, 1024, "touch /tmp/%d-clone-post-seq-num-%d", getpid(), ret);
+      system(exe_buf);
+      */
       char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"clone\" time=\"%lu\">%lu",
+               "<trace type=\"clone\" time=\"%lu\">%d",
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
       u_.WriteTrace("</trace>");
-    } else if (ret == 0){
       // mist_->fork_init_run();
+    } else {
+      char buf[1024];
+      snprintf(buf, 1024,
+               "<trace type=\"failed clone\" time=\"%lu\">%d",
+               u_.GetUsec(), ret);
+      u_.WriteTrace(buf);
+      u_.WriteTrace("</trace>");
+      snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-failed-clone-seq-num", buf, getpid());
+      system(buf);
     }
   }
 
@@ -639,6 +672,34 @@ bool ChangeIdChecker::check(SpPoint* pt,
     u_.WriteTrace("</trace>");
   }
 	return true;
+}
+
+
+// ------------------------------------------------------------------- 
+// Exit checker
+// -------------------------------------------------------------------
+
+bool ExitChecker::check(SpPoint* pt,
+                        SpFunction* callee) {
+  if (callee->name().compare("exit") == 0 ||
+      callee->name().compare("_exit") == 0 ) {
+    ArgumentHandle h;
+    int* exit_code = (int*)PopArgument(pt, &h, sizeof(uid_t));
+    char buf[1024];
+    snprintf(buf, 1024,
+             "<trace type=\"%s\" time=\"%lu\">%d",
+             callee->name().c_str(), u_.GetUsec(),
+             *exit_code);
+    u_.WriteTrace(buf);
+    u_.WriteTrace("</trace>");
+  }
+
+	return true;
+}
+
+bool ExitChecker::post_check(sp::SpPoint* pt,
+                             SpFunction* callee) {
+  return false;
 }
 
 }

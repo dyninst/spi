@@ -80,14 +80,6 @@ class LibChecker : public MistChecker {
 
 
 
-// Check when to exit
-class ExitChecker : public MistChecker {
-  public:
-    virtual bool check(sp::SpPoint* pt,
-                       sp::SpFunction* callee);
-    virtual bool post_check(sp::SpPoint* pt,
-                            sp::SpFunction* callee);
-};
 
 // Check mmap
 class MmapChecker : public MistChecker {
@@ -167,6 +159,15 @@ class ChangeIdChecker : public MistChecker {
                        sp::SpFunction* callee);
     virtual bool post_check(sp::SpPoint* pt,
                             sp::SpFunction* callee) { return false; }
+};
+
+// Check when to exit
+class ExitChecker : public MistChecker {
+  public:
+    virtual bool check(sp::SpPoint* pt,
+                       sp::SpFunction* callee);
+    virtual bool post_check(sp::SpPoint* pt,
+                            sp::SpFunction* callee);
 };
 
 }

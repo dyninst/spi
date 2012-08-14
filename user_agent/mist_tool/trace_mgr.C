@@ -2,6 +2,7 @@
 
 #include "SpInc.h"
 #include "trace_mgr.h"
+#include "mist_utils.h"
 
 namespace mist {
 
@@ -96,6 +97,7 @@ TraceMgr::TraceFileName() const {
   return filename_;
 }
 
+#if 0
 //////////////////////////////////////////////////////////////////////
 // Naming convention:
 // 1. trace file: /tmp/pid-seq.xml (seq starts from 1)
@@ -109,6 +111,8 @@ TraceMgr::TraceFileName() const {
 // 5. Increment the sequence number
 // 6. Write sequence number into /tmp/pid-seq-num
 // 7. Write xml template into trace file
+//
+// XXX: seems this function has problems ... seq is not updated correctly
 
 void
 TraceMgr::OpenFile() {
@@ -127,6 +131,7 @@ TraceMgr::OpenFile() {
     if (fp_seq == NULL) {
       sp_perror("fail to open %s\n", seq_file_name);
     }
+    setbuf(fp_seq, NULL);
     if (fgets(linebuf, 255, fp_seq) == NULL) {
       sp_perror("fail to read %s\n", seq_file_name);
     }
@@ -137,6 +142,7 @@ TraceMgr::OpenFile() {
     if (fp_seq == NULL) {
       sp_perror("fail to open %s\n", seq_file_name);
     }
+    setbuf(fp_seq, NULL);
     fprintf(fp_seq, "1");
     fflush(fp_seq);
     strcpy(linebuf, "1");
@@ -157,7 +163,38 @@ TraceMgr::OpenFile() {
   ++seq;
   rewind(fp_seq);
   fprintf(fp_seq, "%d", seq);
+  fflush(fp_seq);
   fclose(fp_seq);
+
+  // Write initial data
+  string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";
+  init += "<process><head>";
+  init += "</head></process>";
+  WriteString(init);
+}
+#endif
+
+//////////////////////////////////////////////////////////////////////
+// Naming convention:
+//
+// trace file: /tmp/pid-seq.xml (seq has 14 digits, which is from
+//               MistUtils::GetUsec())
+//
+
+void
+TraceMgr::OpenFile() {
+  // Get seq
+  unsigned long seq = MistUtils::GetUsec();
+
+  // Construct trace file name
+  char trace_file_name[255];
+  snprintf(trace_file_name, 255, "/tmp/%d-%.14lu.xml", getpid(), seq);
+  filename_ = trace_file_name;
+  fp_ = fopen(trace_file_name, "w");
+  if (fp_ == NULL) {
+    sp_perror("fail to open %s\n", trace_file_name);
+  }
+  setbuf(fp_, NULL);
 
   // Write initial data
   string init = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>";

@@ -14,13 +14,13 @@ Mist::Mist() {
   // Each checker is called for each point
   checkers_.insert(new IpcChecker);
   checkers_.insert(new ForkChecker(this));
+  checkers_.insert(new CloneChecker(this));
+  checkers_.insert(new ExitChecker);
   checkers_.insert(new ChangeIdChecker);
 
   /*
   checkers_.insert(new FileOpenChecker);
   checkers_.insert(new LibChecker);
-  checkers_.insert(new ChangeIdChecker);
-  checkers_.insert(new ExitChecker);
   checkers_.insert(new MmapChecker);
   checkers_.insert(new ChmodChecker);
   checkers_.insert(new ThreadChecker);
