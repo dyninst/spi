@@ -170,7 +170,7 @@ namespace sp {
     for (FuncSet::iterator i = funcs_.begin(); 
            i != funcs_.end(); i++) {
         SpFunction* f = *i;
-        // sp_print("PRE-INST FUNC - %s", f->name().c_str());
+        sp_debug("PRE-INST FUNC - %s", f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());

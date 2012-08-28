@@ -36,7 +36,11 @@ void MyAgent() {
   agent->SetInitEntry("condor_hier_entry");
   agent->SetInitExit("condor_hier_exit");
   libs_to_inst.insert("libcondor_utils.so");
-  // libs_to_inst.insert("libc-2.11.3.so");
+
+  // XXX: a hack to capture exit in condor_submit
+  // if (strcmp(sp::GetExeName().c_str(), "condor_submit") == 0) {
+    libs_to_inst.insert("libc-2.11.3.so");
+  //}
  
   // For fork()
   preinst_funcs.insert("main");
@@ -101,7 +105,6 @@ void MyAgent() {
   preinst_funcs.insert("tcp_accept_timeout");
 
   // For exit()
-  preinst_funcs.insert("_start");
   preinst_funcs.insert("__libc_start_main");
   preinst_funcs.insert("_exit");
   preinst_funcs.insert("__stack_chk_fail");

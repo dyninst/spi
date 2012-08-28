@@ -839,7 +839,7 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   }
 
   if (obj->name().find("libc-") != std::string::npos &&
-      name.compare("__libc_start_main") != 0) {
+      strcmp(name.c_str(), "__libc_start_main") != 0) {
     sp_debug("SKIP - lib %s and non __libc_start_main",
              sp_filename(obj->name().c_str()));
     return false;

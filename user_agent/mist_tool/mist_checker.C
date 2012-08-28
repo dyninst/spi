@@ -487,8 +487,8 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
 
     // XXX: Magically set seteuid event, in case it is not captured before
     snprintf(buf, 102400,
-             "<trace type=\"%s\" time=\"%lu\">%s"
-             "<trace type=\"seteuid\" time=\"%lu\"><name>%s</name><id>%d</id></trace>",
+             "<trace type=\"%s\" time=\"%lu\">%s</trace>"
+             "<trace type=\"seteuid\" time=\"%lu\"><name>%s</name><id>%d</id>",
              callee->name().c_str(), u_.GetUsec(), *path,
              u_.GetUsec(), u_.get_user_name(geteuid()).c_str(), geteuid());
     
