@@ -1,5 +1,6 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "mist.h"
 #include "mist_checker.h"
@@ -8,6 +9,9 @@
 using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
+
+// Used by ForkChecker to set execl's environment vars
+extern char** environ;
 
 namespace mist {
 
@@ -480,9 +484,19 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
 
     // Modify environment
     char buf[102400];
+
+    // XXX: Magically set seteuid event, in case it is not captured before
     snprintf(buf, 102400,
-             "<trace type=\"%s\" time=\"%lu\">%s",
-             callee->name().c_str(), u_.GetUsec(), *path);
+             "<trace type=\"%s\" time=\"%lu\">%s"
+             "<trace type=\"seteuid\" time=\"%lu\"><name>%s</name><id>%d</id></trace>",
+             callee->name().c_str(), u_.GetUsec(), *path,
+             u_.GetUsec(), u_.get_user_name(geteuid()).c_str(), geteuid());
+    
+    char cmd[102400];
+    srand(time(0));
+    snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exe-%d-seq-num", buf, getpid(), getpid(), rand());
+    system(cmd);
+
     char** ptr = *envs;
     char **new_envs = (char**)malloc(1024*sizeof(char*));
     int cur = 0;
@@ -515,27 +529,31 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     cur++;
     new_envs[cur] = NULL;
     cur++;
-
-    // End the environment list
-    cur = 0;
-
+    
     u_.CloseTrace();
-
+    
     // XXX: a temporary fix for the broken u_.WriteTrace
     FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");
+    
     if (fp) {
       fseek(fp, -19, SEEK_END);
       fprintf(fp, "%s</trace></traces></process>", buf);
+      fclose(fp);
+    } else {
+      char trace_file_name[255];
+      unsigned long seq = MistUtils::GetUsec();
+      snprintf(trace_file_name, 255, "/tmp/%d-%.14lu.xml", getpid(), seq);
+      fp = fopen(trace_file_name, "w");
+      if (fp) {
+        fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><process>"
+                "<head></head><traces>%s</trace></traces></process>", buf);
+        fclose(fp);
+      }
     }
-    fclose(fp);
-
-
-    char cmd[102400];
-    snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exe-%d-seq-num", buf, getpid(), getpid(), rand());
-    system(cmd);
 
     // Execve!
     u_.ChangeTraceFile();
+
     execve(*path, *argvs, new_envs);
     system("touch /tmp/fail_execve");
 
@@ -553,11 +571,45 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
              "<trace type=\"%s\" time=\"%lu\">%s",
              callee->name().c_str(), u_.GetUsec(), *path);
 
+    char cmd[102400];
+    srand(time(0));
+    snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exel-%d-seq-num", buf, getpid(), getpid(), rand());
+    system(cmd);
+    
     u_.CloseTrace();
 
-    // extern char** environ;
+    char **ptr = environ;
+    char **new_envs = (char**)malloc(1024*sizeof(char*));
+    int cur = 0;
+    while (*ptr != NULL) {
+      new_envs[cur++] = *ptr;
+      ptr++;
+    }
 
-    // TODO: setup environment variable correctly
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "PLATFORM=x86_64-unknown-linux2.4");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_TEST_RELOCINSN=1");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+    cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_LSOF=/usr/bin/lsof");
+    cur++;
+    new_envs[cur] = NULL;
+    cur++;
+    environ = new_envs;
     
     // XXX: a temporary fix for the broken u_.WriteTrace
     FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");

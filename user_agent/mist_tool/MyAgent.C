@@ -36,7 +36,8 @@ void MyAgent() {
   agent->SetInitEntry("condor_hier_entry");
   agent->SetInitExit("condor_hier_exit");
   libs_to_inst.insert("libcondor_utils.so");
-
+  // libs_to_inst.insert("libc-2.11.3.so");
+ 
   // For fork()
   preinst_funcs.insert("main");
   preinst_funcs.insert("Server::ProcessServiceReq");
@@ -100,8 +101,14 @@ void MyAgent() {
   preinst_funcs.insert("tcp_accept_timeout");
 
   // For exit()
+  preinst_funcs.insert("_start");
+  preinst_funcs.insert("__libc_start_main");
   preinst_funcs.insert("_exit");
   preinst_funcs.insert("__stack_chk_fail");
+
+  // exec
+  preinst_funcs.insert("DC_Exit");
+  
   
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
   agent->SetLibrariesToInstrument(libs_to_inst);

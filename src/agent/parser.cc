@@ -830,11 +830,21 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   sp_debug("IN OBJECT - %s in %s?",
            name.c_str(), obj->name().c_str());
 
+  // Two cases to skip:
+  // 1. Not in inst_lib list
+  // 2. In inst_lib, lib is libc, but function is not __libc_start_main
   if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
     sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
     return false;
   }
 
+  if (obj->name().find("libc-") != std::string::npos &&
+      name.compare("__libc_start_main") != 0) {
+    sp_debug("SKIP - lib %s and non __libc_start_main",
+             sp_filename(obj->name().c_str()));
+    return false;
+  }
+  
   sb::Symtab* sym = obj->symtab();
   assert(sym);
 
