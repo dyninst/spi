@@ -204,7 +204,7 @@ mutatees: mutatee_libs mutatee_exes
 #==========================================================
 external_mutatees:
 	@bash ../scripts/build_mutatees.sh
-	@cp ../test_data/$(PLATFORM)/test_libs/* tmp/lib/
+	@cp ../scripts/test_data/$(PLATFORM)/test_libs/* tmp/lib/
 
 #==========================================================
 # Test agents
