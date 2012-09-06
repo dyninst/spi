@@ -23,6 +23,8 @@ COMMON_LDFLAGS   += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
 COMMON_LDFLAGS   += -lsymtabAPI
 COMMON_LDFLAGS   += -L$(DYNINST_DIR)/common/$(PLATFORM)
 COMMON_LDFLAGS   += -lcommon
+COMMON_LDFLAGS   += -L$(LIBDWARF_LIB)
+COMMON_LDFLAGS   += -ldwarf
 
 UTILS_DIR         = $(SP_DIR)/src/common
 
