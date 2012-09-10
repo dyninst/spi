@@ -8,22 +8,49 @@ using namespace sp;
 FILE* fp = NULL;
 pid_t previous_pid = 0;
 
+int level = -1;
+typedef map<int, Address> LevelMap;
+LevelMap level_map;
+
 void test_entry(SpPoint* pt) {
 
+  level ++;
+  if (pt->tailcall()) level--;
+  
   SpFunction* f = Callee(pt);
   if (!f) return;
 
-  sp_print("%s", f->GetMangledName().c_str());
+  namespace d64 = Dyninst::x86_64;
+  /*
+  if (level_map.find(level) != level_map.end()) {
+    if (level_map[level] != pt->snip()->GetSavedReg(d64::rsp)) {
+      sp_print("orig %lx, new %lx: %s / %s",
+               level_map[level],
+               pt->snip()->GetSavedReg(d64::rsp),
+               f->name().c_str(),
+               f->GetMangledName().c_str());
+      exit(-1);
+    }
+  } else {
+    level_map[level] = pt->snip()->GetSavedReg(d64::rsp);
+  }
+  */  
+  for (int i = 0; i < level; i++)
+    fprintf(stdout, " ");
+  sp_print("%lx: %s / %s",
+           pt->snip()->GetSavedReg(d64::rsp),
+           f->name().c_str(),
+           f->GetMangledName().c_str());
 
   sp::Propel(pt);
 }
 
 void spi_test_exit(SpPoint* pt) {
+  level --;
 }
 
 AGENT_INIT
 void MyAgent() {
-#if 0
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
 
   StringSet libs_to_inst;
@@ -33,7 +60,7 @@ void MyAgent() {
   agent->SetLibrariesToInstrument(libs_to_inst);
 
   StringSet funcs_not_to_inst;
-  // funcs_not_to_inst.insert("ExprTreeToString");
+  funcs_not_to_inst.insert("ExprTreeToString");
   /*
   funcs_not_to_inst.insert("classad::ClassAdUnParser::ClassAdUnParser");
   funcs_not_to_inst.insert("_ZNSs6assignEPKcm");
@@ -58,7 +85,6 @@ void MyAgent() {
   agent->SetInitEntry("test_entry");
   agent->SetInitExit("spi_test_exit");
   agent->Go();
-#endif
 }
 
 AGENT_FINI

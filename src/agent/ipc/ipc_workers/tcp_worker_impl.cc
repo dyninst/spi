@@ -127,16 +127,20 @@ SpTcpWorker::Inject(SpChannel* c,
     sp_debug("LOCAL MACHINE TCP");
   } else {
     // For remote machine, ssh injector
-    snprintf(cmd, 1024, "ssh %s \"", remote_ip);
+    snprintf(cmd, 1024, "ssh root@%s \"", remote_ip);
     cmd_exe += cmd;
   }
-
+  sp_debug("cmd_exe = %s", cmd_exe.c_str());
+      
   // Injector path
   if (getenv("SP_DIR") && getenv("PLATFORM")) {
     snprintf(cmd, 1024, "%s/%s/",
              getenv("SP_DIR"),
              getenv("PLATFORM"));
+  } else {
+    cmd[0] = '\0';
   }
+  
   cmd_exe += cmd;
   cmd_exe += "injector";
 
@@ -166,7 +170,7 @@ SpTcpWorker::Inject(SpChannel* c,
     sp_debug("LOCAL MACHINE TCP");
   } else {
     // For remote machine, ssh injector
-    cmd_exe += "\"";
+    cmd_exe += "\" >> /tmp/injector_log";
   }
 
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());

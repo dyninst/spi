@@ -101,6 +101,8 @@ SpIpcMgr::get_write_param(SpPoint* pt,
     if (buf_out) *buf_out = *buf;
     size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
     if (size_out) *size_out = *size;
+
+    sp_debug("IPC GOT WRITE -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("connect") == 0) {
@@ -108,6 +110,8 @@ SpIpcMgr::get_write_param(SpPoint* pt,
     if (fd_out) *fd_out = *fd;
     sockaddr** sa = (sockaddr**)sp::PopArgument(pt, &h, sizeof(sockaddr*));
     if (sa_out) *sa_out = *sa;
+
+    sp_debug("IPC GOT CONNECT -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("fputs") == 0) {
@@ -166,6 +170,7 @@ SpIpcMgr::get_read_param(SpPoint* pt,
     size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
     if (size_out) *size_out = *size;
 
+    sp_debug("IPC GOT READ -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("fgets") == 0) {
@@ -196,6 +201,8 @@ SpIpcMgr::get_read_param(SpPoint* pt,
   else if (f->name().compare("accept") == 0) {
     int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
     if (fd_out) *fd_out = *fd;
+
+    sp_debug("IPC GOT ACCEPT -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
 }
@@ -239,10 +246,12 @@ char SpIpcMgr::start_tracing(int fd) {
 SpIpcWorkerDelegate* SpIpcMgr::get_worker(int fd) {
   // PIPE
   if (IsPipe(fd)) {
+    sp_debug("PIPE FD - fd = %d", fd);
     return pipe_worker();
   }
   // TCP
   else if (IsTcp(fd)) {
+    sp_debug("TCP FD - fd = %d", fd);
     return tcp_worker();
   }
   // UDP

@@ -421,6 +421,12 @@ namespace sp {
         reg == d64::sp ||
         reg == d64::spl) {
 
+      sp_debug("GOT SP - %s = %lx = %lx + %x",
+               reg.name().c_str(), saved_context_loc_+RSP,
+               saved_context_loc_, RSP);
+      if (func()) {
+        sp_debug("Before %s", func()->name().c_str());
+      }
       return (saved_context_loc_+RSP);
     }
 
@@ -435,7 +441,8 @@ namespace sp {
       : in::Visitor(), p_(p), use_pc_(false) {}
     virtual void visit(in::RegisterAST* r) {
       assert(r);
-      if (r->getID().isPC()) {
+      //      if (r->getID().isPC()) {
+      if (r->getID() == Dyninst::x86_64::rip) {
         use_pc_ = true;
       }
     }
@@ -515,7 +522,8 @@ namespace sp {
     virtual void visit(in::RegisterAST* r) {
       assert(r);
       // value in RIP is a_
-      if (r->getID().isPC()) {
+      if (r->getID() == Dyninst::x86_64::rip) {
+        //      if (r->getID().isPC()) {
         imm_ = a_;
         stack_.push(imm_);
         sp_debug("EMU VISITOR - pc %lx", a_);
@@ -836,6 +844,9 @@ namespace sp {
 
     if (use_pc) {
       assert(opSet.size() == 1);
+      sp_debug("USE PC: %s",
+               g_parser->DumpInsns((void*)insn->ptr(),
+                                   insn->size()).c_str());
       sp_debug("USE_PC - at %lx", src_insn);
     } else {
       sp_debug("NOT_USE PC - at %lx", src_insn);
@@ -1040,7 +1051,8 @@ namespace sp {
       : in::Visitor(), use_pc_(false) {}
     virtual void visit(in::RegisterAST* r) {
       assert(r);
-      if (r->getID().isPC()) {
+      // if (r->getID().isPC()) {
+      if (r->getID() == Dyninst::x86_64::rip) {
         use_pc_ = true;
       }
     }
@@ -1069,6 +1081,9 @@ namespace sp {
       (*i)->apply(&visitor);
       read_use_pc = visitor.use_pc();
       if (read_use_pc) {
+        sp_debug("READ USE PC: %s",
+                 g_parser->DumpInsns((void*)insn->ptr(),
+                                     insn->size()).c_str());
         return true;
       }
     }
@@ -1081,6 +1096,9 @@ namespace sp {
       (*i)->apply(&visitor);
       write_use_pc = visitor.use_pc();
       if (write_use_pc) {
+        sp_debug("WRITE USE PC: %s",
+                 g_parser->DumpInsns((void*)insn->ptr(),
+                                     insn->size()).c_str());
         return true;
       }
     }

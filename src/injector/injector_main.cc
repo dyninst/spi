@@ -24,14 +24,17 @@ int main(int argc, char *argv[]) {
 
   // Non-networking mode: We inject to a process w/ known pid
   if (argc == 3) {
+    // sp_print("Non-network mode");
     Dyninst::PID pid = atoi(argv[1]);
     const char* lib_name = argv[2];
     sp_print("Injector [pid = %5d]: INJECTING - %s to pid=%d...",
              getpid(), lib_name, pid);
     sp_debug("========== Injector ==========");
     SpInjector::ptr injector = SpInjector::Create(pid);
-    std::string lsof_path = getenv("SP_LSOF");
-    if (lsof_path.length() == 0)
+    std::string lsof_path;
+    if (getenv("SP_LSOF") != NULL)
+      lsof_path = getenv("SP_LSOF");
+    else
       lsof_path = "lsof";
     char cmd[1024];
     snprintf(cmd, 1024, "%s -i TCP > /tmp/lsofdump", lsof_path.c_str());
@@ -41,10 +44,12 @@ int main(int argc, char *argv[]) {
 
   // Networking mode: We inject to processes w/ known ip/port
   else {
+    // sp_print("Network mode");
+    
     // XXX: currently, we only look at the port number
     //      so we don't do error checking for the time being
     const char* lib_name = argv[3];
-
+    
     PidSet pid_set;
     sp::GetPidsFromAddrs(argv[1], argv[2], pid_set);
     int try_count = 5;

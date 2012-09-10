@@ -73,7 +73,7 @@ SpInjector::~SpInjector() {
 }
 
 ////////////////////////////////////////////////////////////////////// 
-// Find do_dlopen
+// Find function in all loaded libraries
 Address
 SpInjector::FindFunction(const char* func) {
   LibraryPool& libs = proc_->libraries();
@@ -96,6 +96,19 @@ SpInjector::FindFunction(const char* func) {
     }
   }
   return 0;
+}
+
+Address
+SpInjector::FindDlopen() {
+  Address func_addr = FindFunction("do_dlopen");
+  if (func_addr) return func_addr;
+
+  sp_debug("Injector [pid = %5d]: Cannot find do_dlopen", getpid());
+
+  func_addr = FindFunction("__libc_dlopen_mode");
+  sp_debug("Injector [pid = %5d]: Got _dl_open at %lx", getpid(), func_addr);
+  
+  return func_addr;
 }
 
 
@@ -161,8 +174,8 @@ typedef struct {
 
 ////////////////////////////////////////////////////////////////////// 
 // The main injection procedure, which has two main steps:
-// Step 1: Force injectee to execute do_dlopen to load shared library
-//         libijagent.so.
+// Step 1: Force injectee to execute do_dlopen or __libc_dlopen_mode to
+//         load shared library libijagent.so.
 // Step 2: Force injectee to execute ij_agent in libijagent.so to load the
 //         user-specified shared library. In this step, we have to pass
 //         parameters by IPC mechanism, where we use shared memory in current
@@ -187,7 +200,12 @@ typedef struct {
 // library libijagent.so, from libijagent.so, we use safe dlopen function to
 // load uncontrolled user-provided library.
 //
-// 3. Why we use IPC mechanism to pass parameters to ij_agent in libijagent.so?
+// 3. Why sometimes we may use __libc_dlopen_mode?
+//
+// Answer: Because ... if libc is stripped, then we cannot find do_open, but
+//         we can still find __libc_dlopen_mode
+//
+// 4. Why we use IPC mechanism to pass parameters to ij_agent in libijagent.so?
 //
 // Answer: ij_agent is a function that calls dlopen. After dlopen is invoked, we
 // want to check whether the loading is successful. Even when dlopen fails, we
@@ -295,7 +313,7 @@ SpInjector::LoadUserLibrary() {
 }
 
 ////////////////////////////////////////////////////////////////////// 
-// Load a library by using do_dlopen
+// Load a library by using do_dlopen or __libc_dlopen_mode
 void
 SpInjector::LoadIjagent(const char* lib_name) {
   // Make absolute path for this shared library
@@ -313,50 +331,93 @@ SpInjector::LoadIjagent(const char* lib_name) {
   Process::registerEventCallback(EventType::Library, on_event_lib);
   Process::registerEventCallback(EventType::Signal, on_event_signal);
 
+  size_t size = 0;
+  char* code = NULL;
+  Address code_addr = 0;
+  Address lib_name_addr = 0;
+  Address args_addr = 0;
+  
   // Find do_dlopen function
   Address do_dlopen_addr = FindFunction("do_dlopen");
   if (do_dlopen_addr > 0) {
     sp_debug("FOUND - Address of do_dlopen function at %lx", do_dlopen_addr);
+
+    size_t lib_name_len = strlen(libname) + 1;
+    lib_name_addr = proc_->mallocMemory(lib_name_len);
+    proc_->writeMemory(lib_name_addr, (void*)libname, lib_name_len);
+    sp_debug("STORED - Library name \"%s\" in mutatee's heap at %lx",
+             sp_filename(libname), lib_name_addr);
+
+    DlopenArg args;
+    args_addr = proc_->mallocMemory(sizeof(DlopenArg));
+    args.libname = (char*)lib_name_addr;
+    args.mode = RTLD_NOW | RTLD_GLOBAL;
+    args.link_map = 0;
+    proc_->writeMemory(args_addr, &args, sizeof(args));
+    sp_debug("STORED - do_dlopen's argument in mutatee's heap at %lx", args_addr);
+
+    size = GetCodeTemplateSize();
+    code_addr = proc_->mallocMemory(size);
+    code = GetCodeTemplate(args_addr, do_dlopen_addr, code_addr);
+    sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
+             " at %lx of %lu bytes", code_addr, (unsigned long)size);
   }
+
+  // Cannot do_dlopen, then we try __libc_dl_open_mode
   else {
-    sp_perror("Injector [pid = %5d] - Failed to find do_dlopen", getpid());
+    sp_debug("Injector [pid = %5d] - Failed to find do_dlopen, "
+              "try __libc_dl_open_mode", getpid());
+    Address libc_dlopen_addr = FindFunction("__libc_dlopen_mode");
+    if (libc_dlopen_addr > 0) {
+      sp_debug("FOUND - Address of do_dlopen function at %lx",
+               libc_dlopen_addr);
+
+      // Argument 1
+      size_t lib_name_len = strlen(libname) + 1;
+      lib_name_addr = proc_->mallocMemory(lib_name_len);
+      proc_->writeMemory(lib_name_addr, (void*)libname, lib_name_len);
+      sp_debug("STORED - 1st argument libname \"%s\" in mutatee's heap at %lx",
+               sp_filename(libname), lib_name_addr);
+
+      // Argument 2
+      int mode = RTLD_NOW | RTLD_GLOBAL;
+
+      size = GetDlmodeTemplateSize();
+      code_addr = proc_->mallocMemory(size);
+      code = GetDlmodeTemplate(lib_name_addr, mode,
+                               libc_dlopen_addr, code_addr);
+      sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
+               " at %lx of %lu bytes", code_addr, (unsigned long)size);
+    } else {
+      // Fail-stop!
+      sp_perror("Injector [pid = %5d] - Failed to execute load-library code"
+                " in mutatee's address space", getpid());
+    }
   }
 
-  // Prepare irpc
-  size_t lib_name_len = strlen(libname) + 1;
-  Address lib_name_addr = proc_->mallocMemory(lib_name_len);
-  proc_->writeMemory(lib_name_addr, (void*)libname, lib_name_len);
-  sp_debug("STORED - Library name \"%s\" in mutatee's heap at %lx",
-           sp_filename(libname), lib_name_addr);
+  // Post ipc
+  if (size > 0) {
+    IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
+    irpc->setStartOffset(2);
 
-  DlopenArg args;
-  Address args_addr = proc_->mallocMemory(sizeof(DlopenArg));
-  args.libname = (char*)lib_name_addr;
-  args.mode = RTLD_NOW | RTLD_GLOBAL;
-  args.link_map = 0;
-  proc_->writeMemory(args_addr, &args, sizeof(args));
-  sp_debug("STORED - do_dlopen's argument in mutatee's heap at %lx", args_addr);
+    if (!proc_->postIRPC(irpc)) {
+      sp_perror("Injector [pid = %5d] - Failed to execute load-library code"
+                " in mutatee's address space", getpid());
+    }
+    proc_->continueProc();
+    Process::handleEvents(true);
 
-  size_t size = GetCodeTemplateSize();
-  Address code_addr = proc_->mallocMemory(size);
-  char* code = GetCodeTemplate(args_addr, do_dlopen_addr, code_addr);
-  sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
-           " at %lx of %lu bytes", code_addr, (unsigned long)size);
-  IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
-  irpc->setStartOffset(2);
-
-  if (!proc_->postIRPC(irpc)) {
-    sp_perror("Injector [pid = %5d] - Failed to execute load-library code"
-              " in mutatee's address space", getpid());
+    // Clean up
+    proc_->freeMemory(lib_name_addr);
+    proc_->freeMemory(args_addr);
+    proc_->freeMemory(code_addr);
+    free(libname);
   }
-  proc_->continueProc();
-  Process::handleEvents(true);
-
-  // Clean up
-  proc_->freeMemory(lib_name_addr);
-  proc_->freeMemory(args_addr);
-  proc_->freeMemory(code_addr);
-  free(libname);
+  /*
+  char dump_maps[1024];
+  snprintf(dump_maps, 1024, "cat /proc/%d/maps", getpid());
+  system(dump_maps);
+  */
 }
 
 ////////////////////////////////////////////////////////////////////// 

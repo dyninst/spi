@@ -282,14 +282,21 @@ void
 GetPidsFromAddrs(const char* const rem_ip,
                  const char* const rem_port,
                  PidSet& pid_set) {
+  sp_print("GetPidsFromAddrs");
   char cmd[kLenStringBuffer];
-  std::string lsof_path = getenv("SP_LSOF");
-  if (lsof_path.length() == 0)
+  std::string lsof_path;  
+  if (getenv("SP_LSOF") != NULL)
+    lsof_path = getenv("SP_LSOF");
+  else
     lsof_path = "lsof";
 
-  snprintf(cmd, kLenStringBuffer, "ssh %s \"%s -i UDP:%s -i TCP:%s\"",
+  snprintf(cmd, kLenStringBuffer, "ssh root@%s \"%s -i UDP:%s -i TCP:%s\"",
            rem_ip, lsof_path.c_str(), rem_port, rem_port);
+  // snprintf(cmd, kLenStringBuffer, "%s -i UDP:%s -i TCP:%s",
+  //         lsof_path.c_str(), rem_port, rem_port);
 
+  // sp_print(cmd);
+  // system(cmd);
   FILE* fp = popen(cmd, "r");
   char line[1024];
   fgets(line, 1024, fp);  // skip the header line
@@ -299,11 +306,16 @@ GetPidsFromAddrs(const char* const rem_ip,
     char* pch = strtok_r(line, " :()->", &saveptr);
     std::vector<char*> tokens;
     while (pch != NULL) {
+      sp_debug(pch);
       tokens.push_back(pch);
       pch = strtok_r(NULL, " :()->", &saveptr);
     }
 
-    if (atoi(tokens[9]) == atoi(rem_port)) {
+    // case 1: tcp_serve 13321 wenbin    4u  IPv6 228465      0t0  TCP *:3490 (LISTEN)
+    // case 2: condor_su 8466 wenbin   54u  IPv4 163551      0t0  TCP debian3.cs.wisc.edu:57918->debian3.cs.wisc.edu:44564 (ESTABLISHED)
+      
+    if ((tokens.size() >= 10 && atoi(tokens[9]) == atoi(rem_port)) ||
+        (tokens.size() >= 12 && atoi(tokens[11]) == atoi(rem_port))) {
       pid_set.insert(atoi(tokens[1]));
     }
   }
