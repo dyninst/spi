@@ -43,7 +43,7 @@ namespace sp {
   class SpFunction;
 
 
-  class SpSnippet {
+  class SpSnippet : public ph::Snippet {
     friend class SpInstrumenter;
     friend class RelocCallBlockWorker;
     friend class SpringboardWorker;
@@ -92,6 +92,9 @@ namespace sp {
     static size_t jump_abs_size();
 
     static bool UsePC(in::Instruction::Ptr);
+
+    // XXX: to make inheritence happen
+    virtual bool generate(ph::Point *, ph::Buffer &) { return true; }
     
   protected:
     SpFunction* func_;
