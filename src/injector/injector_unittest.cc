@@ -139,6 +139,8 @@ TEST_F(InjectorTest, network_inject) {
   cmd += getenv("PLATFORM");
   cmd += "/test_agent/inject_test_agent.so";
 
+  // system(cmd.c_str());
+
 	// Execute the injector
 	FILE* fp = popen(cmd.c_str(), "r");
 	char buf[1024];
