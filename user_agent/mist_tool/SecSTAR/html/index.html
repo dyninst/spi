@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>Demo for animating Condor architecture</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+		<!-- 3rd party libraries -->
+    <link href="lib/jquery-ui.css" rel="stylesheet" type="text/css"/>
+    <script type="text/javascript" src="lib/jquery.min.js"></script>
+    <script type="text/javascript" src="lib/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="lib/zip.js"></script>
+    <script type="text/javascript" src="lib/zip-fs.js"></script>
+		<!-- SecSTAR code -->
+    <script type="text/javascript" src="SecSTAR.js"></script>
+  </head>
+
+  <!-- Initialization -->
+  <body onload="init();">
+
+    <!-- Left panel -->
+    <div id="framecontentLeft" style="display: none">
+      <div class="innertube">
+        <h3 id="event_title">Events</h3>
+        <h3 id="event_id">Static Figure</h3>
+        <div id="event"></div>
+      </div>
+    </div>
+
+    <!-- Middle panel -->
+    <div id="maincontent" style="display: none">
+      <div class="innertube" id="innertube">
+        <h3 id="canvas_title">Process architecture of Condor</h3>
+        <div id="canvas">
+        </div>
+      </div>
+    </div>
+
+    <!-- Waiting ICON -->
+    <div id="progress">
+      <img src="images/waiting_icon.gif" />
+    </div>
+
+    <!-- Right panel -->
+    <div id="framecontentRight" style="display: none">
+      <div class="innertube">
+        <h3 id="legend_title">Legend</h3>
+        <i id="exe_title">Abbr. for executables:</i>
+        <div id="abbr_exe"></div>
+        <br />
+        <i id="color_title">Colors for users:</i>
+        <div id="color_user"></div>
+        <br />
+        <i id="node_title">Nodes and edges:</i>
+        <div id="shape"></div>
+      </div>
+    </div>
+
+    <!-- Bottom panel -->
+    <div id="framecontentBottom" style="display:none">
+      <div class="innertube">
+        <input type="button" value="Play" onclick="play()" id="play_btn" />
+        <input type="button" value="Stop" onclick="stop()" id="stop_btn" />
+        <input type="button" value="First" onclick="first()" id="first_btn" />
+        <input type="button" value="Previous" onclick="previous()" id="previous_btn" />
+        <input type="button" value="Next" onclick="next()" id="next_btn" />
+        <input type="button" value="Last" onclick="last()" id="last_btn" />
+        <input type="button" value="Static Diagram" onclick="show_static()" id="static_btn" />
+				<input type="button" value="zoomin" onclick="zoomin()" id="zoomin_btn" />
+				<input type="button" value="zoomout" onclick="zoomout()" id="zoomout_btn" />
+				<input type="button" value="faster" onclick="faster()" id="faster_btn" />
+				<input type="button" value="slower" onclick="slower()" id="slower_btn" />
+        <input type="checkbox" value="Collapse nodes" onclick="dedup()" name="dedup" id="dedup" unchecked />
+        Group identical nodes
+        <p>
+          <div id="timeline_title">Timeline:</div> <div id="slider" > </div><br>
+					<div id="speed_meter">Speed: 0%</div>
+        </p>
+      </div>
+    </div>
+
+  </body>
+</html>
