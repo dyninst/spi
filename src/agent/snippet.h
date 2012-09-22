@@ -43,8 +43,8 @@ namespace sp {
   class SpFunction;
 
 
-  //  class SpSnippet : public ph::Snippet {
-  class SpSnippet {
+  class SpSnippet : public ph::Snippet {
+  // class SpSnippet {
 
     friend class SpInstrumenter;
     friend class RelocCallBlockWorker;
@@ -96,7 +96,7 @@ namespace sp {
     static bool UsePC(in::Instruction::Ptr);
 
     // XXX: to make inheritence happen
-    // virtual bool generate(ph::Point *, ph::Buffer &) { return true; }
+    virtual bool generate(ph::Point *, ph::Buffer &) { return true; }
     
   protected:
     SpFunction* func_;

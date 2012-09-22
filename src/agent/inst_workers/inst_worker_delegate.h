@@ -94,7 +94,7 @@ namespace sp {
           size += 20; // the worse case, we emulate pc insn
         }
       }
-      sp_debug("EST SIZE - %ld", size);
+      sp_debug("EST SIZE - %lu", (unsigned long)size);
       return size;
     }
 	};

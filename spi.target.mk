@@ -86,7 +86,7 @@ $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@echo Linking $@
 	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(IJ_LDFLAGS)
 	@rm -f injector
-	@echo "export LD_LIBRARY_PATH=$(SP_DIR)/$(PLATFORM):$(SP_DIR)/$(PLATFORM)/test_mutatee:$(DYNINST_DIR)/../$(PLATFORM)/lib:./" > injector
+	@echo "export LD_LIBRARY_PATH=$(SP_DIR)/$(PLATFORM):$(SP_DIR)/$(PLATFORM)/test_mutatee:$(DYNINST_DIR)/../$(PLATFORM)/lib:./:\$$LD_LIBRARY_PATH" > injector
 	@echo "$(SP_DIR)/$(PLATFORM)/$(INJECTOR) \$$1 \$$2 \$$3 \$$4 \$$5" >> injector
 	@chmod 755 injector
 #---------------- 

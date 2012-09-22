@@ -7,4 +7,4 @@ rm -f /tmp/spi-*
 #service condor stop
 #_condor_MASTER_TIMEOUT_MULTIPLIER=100 _condor_TOOL_TIMEOUT_MULTIPLIER=100 _condor_SUBMIT_TIMEOUT_MULTIPLIER=100 service condor start
 
-LD_PRELOAD=/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent/print_test_agent.so test_mutatee/ls.exe
+#LD_PRELOAD=/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent/print_test_agent.so test_mutatee/ls.exe

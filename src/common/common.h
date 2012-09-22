@@ -125,7 +125,7 @@ namespace in = Dyninst::InstructionAPI;
 
 // Shortcut for pointer Conversion / shared pointer stuffs
 #define DYN_CAST(type, obj) \
-	dyn_detail::boost::dynamic_pointer_cast<type>(obj)
+	boost::dynamic_pointer_cast<type>(obj)
 
 #define FUNC_CAST(f) static_cast<SpFunction*>(f)
 #define BLK_CAST(b) static_cast<SpBlock*>(b)
@@ -133,8 +133,8 @@ namespace in = Dyninst::InstructionAPI;
 #define AS_CAST(a) static_cast<SpAddrSpace*>(a)
 #define PT_CAST(a) static_cast<SpPoint*>(a)
 
-#define SHARED_THIS(c) dyn_detail::boost::enable_shared_from_this<c>
-#define SHARED_PTR(c) dyn_detail::boost::shared_ptr<c>
+#define SHARED_THIS(c) boost::enable_shared_from_this<c>
+#define SHARED_PTR(c) boost::shared_ptr<c>
 
 #define IJMSG_ID        1986
 #define IJLIB_ID        1985

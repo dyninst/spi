@@ -43,11 +43,21 @@ static char kDlopenCode[] = {
 
 // The code snippet to invoke __libc_dlopen_mode
 static char kLibcDlopenModeCode[] = {
+  // 0, 1
   0x90, 0x90,                 // nop, nop
-  0x68, 0x0, 0x0, 0x0, 0x0,   // pushl libname
+  // 2,   3,   4,   5,   6,
+  //    OFF_ARGS  
   0x68, 0x0, 0x0, 0x0, 0x0,   // pushl mode
-  0xe8, 0x0, 0x0, 0x0, 0x0,   // call do_dlopen
-  0x83, 0xc4, 0x04,           // addl $04, %esp
+  // 7,   8,   9,  10,  11,
+  //    OFF_ARGS+5  
+  0x68, 0x0, 0x0, 0x0, 0x0,   // pushl libname
+  //12,  13,  14,  15,  16,
+  //    OFF_DLOPEN+5  
+  0xe8, 0x0, 0x0, 0x0, 0x0,   // call __libc_dlopen_mode
+  //17,   18,   19,
+  // OFF_RET + 5
+  0x83, 0xc4, 0x08,           // addl $08, %esp
+  //20
   0xcc
 };
 
@@ -104,13 +114,18 @@ char*
 SpInjector::GetDlmodeTemplate(Dyninst::Address libname,
                               Dyninst::Address mode,
                               Dyninst::Address dlopen,
-                              Dyninst::Address /*code_addr*/) {
-  long* p = (long*)&kLibcDlopenModeCode[OFF_DODLOPEN+10];
-  *p = (long)dlopen;
+                              Dyninst::Address code_addr) {
+  Dyninst::Address abs_ret = code_addr + OFF_DLRET + 5;
+  long* p = (long*)&kLibcDlopenModeCode[OFF_DLOPEN+5];
+  *p = (long)dlopen - (long)abs_ret;
+
   p = (long*)&kLibcDlopenModeCode[OFF_ARGS];
+  *p = (int)mode;
+
+  p = (long*)&kLibcDlopenModeCode[OFF_ARGS+5];
   *p = (long)libname;
-  p = (long*)&kLibcDlopenModeCode[OFF_ARGS+10];
-  *p = (long)mode;
+
+
   return kLibcDlopenModeCode;
 }
 

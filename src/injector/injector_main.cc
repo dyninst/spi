@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
              getpid(), lib_name, pid);
     sp_debug("========== Injector ==========");
     SpInjector::ptr injector = SpInjector::Create(pid);
+    /*
     std::string lsof_path;
     if (getenv("SP_LSOF") != NULL)
       lsof_path = getenv("SP_LSOF");
@@ -39,6 +40,7 @@ int main(int argc, char *argv[]) {
     char cmd[1024];
     snprintf(cmd, 1024, "%s -i TCP > /tmp/lsofdump", lsof_path.c_str());
     system(cmd);
+    */
     injector->Inject(lib_name);
   }
 

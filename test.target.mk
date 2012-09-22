@@ -252,3 +252,6 @@ $(TG_OBJS): $(TAGENT_OBJS_DIR)/%.o : $(TG_DIR)/%.cc
 $(TG_SO): $(TAGENT_EXES_DIR)/%.so : $(TAGENT_OBJS_DIR)/%.o  $(AGENT)
 	@echo "Linking $*.so"
 	@$(GCC) -o $@ $< $(TG_LDFLAGS)
+
+debug:
+	echo $(UT_LDFLAGS)

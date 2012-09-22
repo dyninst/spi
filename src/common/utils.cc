@@ -313,7 +313,9 @@ GetPidsFromAddrs(const char* const rem_ip,
 
     // case 1: tcp_serve 13321 wenbin    4u  IPv6 228465      0t0  TCP *:3490 (LISTEN)
     // case 2: condor_su 8466 wenbin   54u  IPv4 163551      0t0  TCP debian3.cs.wisc.edu:57918->debian3.cs.wisc.edu:44564 (ESTABLISHED)
-    sp_debug("Token size: %lu, tokens[9]: %s", tokens.size(), tokens[9]);
+    sp_debug("Token size: %lu, tokens[9]: %s",
+             (unsigned long)tokens.size(),
+             tokens[9]);
     if ((tokens.size() >= 10 && atoi(tokens[9]) == atoi(rem_port)) ||
         (tokens.size() >= 12 && atoi(tokens[11]) == atoi(rem_port))) {
       pid_set.insert(atoi(tokens[1]));

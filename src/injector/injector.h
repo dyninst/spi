@@ -36,7 +36,7 @@
 #define SP_INJECTOR_H_
 
 // ProcControlAPI
-#include "proccontrol/h/Process.h"
+#include "proccontrol/h/PCProcess.h"
 
 // SelfPropelled
 #include "common/common.h"
@@ -46,7 +46,7 @@ namespace sp {
 
   class SpInjector {
  public:
-    typedef dyn_detail::boost::shared_ptr<SpInjector> ptr;
+    typedef boost::shared_ptr<SpInjector> ptr;
 
     INJECTOR_EXPORT static ptr Create(dt::PID pid);
     INJECTOR_EXPORT bool Inject(const char* lib_name);

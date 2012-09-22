@@ -851,7 +851,7 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   pe::CodeObject* co = obj->co();
   assert(co);
   
-  pe::CodeObject::funclist& all = co->funcs();
+  const pe::CodeObject::funclist& all = co->funcs();
   for (pe::CodeObject::funclist::iterator fit = all.begin();
        fit != all.end(); fit++) {
 

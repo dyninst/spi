@@ -339,8 +339,8 @@ SpSnippet::jump_abs_size() {
 
 // Get argument of a function call
 void*
-SpSnippet::pop_argument(ArgumentHandle* h,
-                        size_t size) {
+SpSnippet::PopArgument(ArgumentHandle* h,
+                       size_t size) {
   void* a = (void*)(saved_context_loc_ + 32 + h->offset);
   h->offset += size;
   return a;

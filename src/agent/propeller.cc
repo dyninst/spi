@@ -133,18 +133,16 @@ namespace sp {
                                                  p,
                                                  entry,
                                                  exit);
-
+      /*
       ph::Snippet<SpSnippet::ptr>::Ptr snip =
         ph::Snippet<SpSnippet::ptr>::create(sp_snip);
       assert(sp_snip && snip);
       p->SetSnip(sp_snip);
       patcher.add(ph::PushBackCommand::create(p, snip));
-
-      /*
+      */
       assert(sp_snip);
       p->SetSnip(sp_snip);
       patcher.add(ph::PushBackCommand::create(p, sp_snip));
-      */
     }
     bool ret = patcher.commit();
 

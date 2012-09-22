@@ -44,7 +44,7 @@ class InjectorTest : public testing::Test {
     char mutatee[1024];
     snprintf(mutatee, 1024,
              "LD_LIBRARY_PATH=%s/%s/test_mutatee:$LD_LIBRARY_PATH"
-             " %s/%s/test_mutatee/tcp_server6.exe",
+             " %s/%s/test_mutatee/tcp_server4.exe",
              getenv("SP_DIR"), getenv("PLATFORM"),
              getenv("SP_DIR"), getenv("PLATFORM"));
 
@@ -66,7 +66,7 @@ class InjectorTest : public testing::Test {
 	}
 
 	virtual void TearDown() {
-    system("killall tcp_server6.exe");
+    system("killall tcp_server4.exe");
 		int status;
 		wait(&status);
 		pclose(server_);
@@ -89,6 +89,7 @@ TEST_F(InjectorTest, pid_inject) {
   cmd += "/test_agent/inject_test_agent.so";
 
   // system(cmd.c_str());
+
 	// Execute the injector
 	FILE* fp = popen(cmd.c_str(), "r");
 	char buf[1024];
@@ -100,6 +101,7 @@ TEST_F(InjectorTest, pid_inject) {
 	// Check "INJECTED" for the second line
 	ASSERT_TRUE(strstr(buf, "INJECTED") != NULL);
 	pclose(fp);
+
 }
 
 TEST_F(InjectorTest, pid_complex_agent_inject) {

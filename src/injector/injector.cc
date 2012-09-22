@@ -366,10 +366,10 @@ SpInjector::LoadIjagent(const char* lib_name) {
   // Cannot do_dlopen, then we try __libc_dl_open_mode
   else {
     sp_debug("Injector [pid = %5d] - Failed to find do_dlopen, "
-              "try __libc_dl_open_mode", getpid());
+              "try __libc_dlopen_mode", getpid());
     Address libc_dlopen_addr = FindFunction("__libc_dlopen_mode");
     if (libc_dlopen_addr > 0) {
-      sp_debug("FOUND - Address of do_dlopen function at %lx",
+      sp_debug("FOUND - Address of __libc_dlopen_mode function at %lx",
                libc_dlopen_addr);
 
       // Argument 1
@@ -415,9 +415,9 @@ SpInjector::LoadIjagent(const char* lib_name) {
   }
   /*
   char dump_maps[1024];
-  snprintf(dump_maps, 1024, "cat /proc/%d/maps", getpid());
+  snprintf(dump_maps, 1024, "cat /proc/%d/maps", pid_);
   system(dump_maps);
-  */
+*/
 }
 
 ////////////////////////////////////////////////////////////////////// 

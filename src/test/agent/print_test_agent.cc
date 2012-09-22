@@ -11,8 +11,8 @@ void test_entry(SpPoint* pt) {
   SpFunction* f = Callee(pt);
   if (!f) return;
   //sp_print("%s", f->GetPrettyName().c_str());
-  //sp_print("%s", f->name().c_str());
-  sp_print("%s", f->GetMangledName().c_str());
+  sp_print("%s", f->name().c_str());
+  //sp_print("%s", f->GetMangledName().c_str());
 
   sp::Propel(pt);
 }
