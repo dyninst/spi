@@ -4,9 +4,7 @@ DYNINST_DIR=
 #`pwd`
 SP_DIR=
 
-# x86_64-unknown-linux2.4 or i386-unknown-linux2.4
-PLATFORM=
-
-LD_LIBRARY_PATH=
-
+# Set 'true' to build agent as a small shared library that relies on other
+# shared libraries, e.g., dyninst libraries; 
+# otherwise, a single huge shared library that static-linked all libraries.
 DYNLINK=

@@ -137,7 +137,6 @@ namespace in = Dyninst::InstructionAPI;
 #define SHARED_PTR(c) boost::shared_ptr<c>
 
 #define IJMSG_ID        1986
-#define IJLIB_ID        1985
 #define IJAGENT         "libijagent.so"
 
 #endif  // SP_COMMON_H_
