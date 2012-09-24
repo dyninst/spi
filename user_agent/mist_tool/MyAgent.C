@@ -1,3 +1,7 @@
+/*
+  It will output trace data to /tmp. Please read README file for more details.
+ */
+
 #include "SpInc.h"
 #include "mist.h"
 
@@ -16,6 +20,8 @@ void condor_hier_entry(SpPoint* pt) {
   if (!f) return;
 
   g_mist.run(pt, f);
+
+  sp::Propel(pt);
 }
 
 void condor_hier_exit(SpPoint* pt) {
@@ -37,6 +43,7 @@ void MyAgent() {
   agent->SetInitExit("condor_hier_exit");
   libs_to_inst.insert("libcondor_utils.so");
 
+  /*
   // XXX: a hack to capture exit in condor_submit
   // if (strcmp(sp::GetExeName().c_str(), "condor_submit") == 0) {
     libs_to_inst.insert("libc-2.11.3.so");
@@ -111,7 +118,7 @@ void MyAgent() {
 
   // exec
   preinst_funcs.insert("DC_Exit");
-  
+  */  
   
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
   agent->SetLibrariesToInstrument(libs_to_inst);
