@@ -290,10 +290,10 @@ GetPidsFromAddrs(const char* const rem_ip,
   else
     lsof_path = "lsof";
 
-  snprintf(cmd, kLenStringBuffer, "ssh root@%s \"%s -i UDP:%s -i TCP:%s\"",
-           rem_ip, lsof_path.c_str(), rem_port, rem_port);
-  // snprintf(cmd, kLenStringBuffer, "%s -i UDP:%s -i TCP:%s",
-  //         lsof_path.c_str(), rem_port, rem_port);
+  // snprintf(cmd, kLenStringBuffer, "ssh root@%s \"%s -i UDP:%s -i TCP:%s\"",
+  //         rem_ip, lsof_path.c_str(), rem_port, rem_port);
+  snprintf(cmd, kLenStringBuffer, "%s -i UDP:%s -i TCP:%s",
+           lsof_path.c_str(), rem_port, rem_port);
 
   // sp_print(cmd);
   // system(cmd);

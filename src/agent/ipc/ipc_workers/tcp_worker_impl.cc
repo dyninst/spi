@@ -127,7 +127,8 @@ SpTcpWorker::Inject(SpChannel* c,
     sp_debug("LOCAL MACHINE TCP");
   } else {
     // For remote machine, ssh injector
-    snprintf(cmd, 1024, "ssh root@%s \"", remote_ip);
+    // snprintf(cmd, 1024, "ssh root@%s \"", remote_ip);
+    snprintf(cmd, 1024, "ssh %s \"", remote_ip);
     cmd_exe += cmd;
   }
   sp_debug("cmd_exe = %s", cmd_exe.c_str());
