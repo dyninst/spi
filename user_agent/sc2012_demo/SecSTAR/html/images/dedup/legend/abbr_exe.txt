@@ -1,0 +1,1 @@
+a: condor_shadow<br>c: condor_collector<br>e: condor_exec.exe<br>i: condor_mips<br>h: condor_schedd<br>k: condor_kflops<br>m: condor_master<br>n: condor_negotiator<br>p: condor_procd<br>s: condor_startd<br>r: rm<br>u: condor_submit<br>t: condor_starter

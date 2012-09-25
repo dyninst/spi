@@ -1,0 +1,76 @@
+
+body{
+margin: 0;
+padding: 0;
+border: 0;
+overflow: hidden;
+height: 100%; 
+max-height: 100%; 
+}
+
+#framecontentLeft{
+position: absolute;
+top: 0; 
+left: 0; 
+width: 200px; /*Width of left frame div*/
+height: 100%;
+overflow: hidden; /*Disable scrollbars. Set to "scroll" to enable*/
+background-color: #FFDE40;
+}
+
+#framecontentRight {
+position: absolute;
+top: 0; 
+right: 0px; 
+width: 200px; /*Width of right frame div*/
+height: 100%;
+overflow: hidden; /*Disable scrollbars. Set to "scroll" to enable*/
+#background-color: #FFDE40;
+}
+
+#framecontentBottom{
+position: absolute;
+top: auto; 
+left: 200px; /*Set left value to WidthOfLeftFrameDiv*/
+width: auto;
+bottom: 0;
+right: 200px;
+height: 120px; /*Height of bottom frame div*/
+overflow: hidden; /*Disable scrollbars. Set to "scroll" to enable*/
+background-color: #FFFF73;
+color: black;
+}
+
+#maincontent{
+position: fixed; 
+top: 0;
+left: 200px; /*Set left value to WidthOfLeftFrameDiv*/
+right: 200px; /*Set left value to WidthOfRightFrameDiv*/
+bottom: 120px; /*Set bottom value to HeightOfTopFrameDiv*/
+overflow: auto; 
+background: #fff;
+}
+
+#canvas {
+height: 100%
+width: 100%
+}
+
+.innertube{
+margin: 15px; /*Margins for inner DIV inside each DIV (to provide padding)*/
+margin-top: 0;
+}
+
+* html body{ /*IE6 hack*/
+padding: 0 0 120px 200px; /*Set value to (0 0 HeightOfTopFrameDiv WidthOfLeftFrameDiv)*/
+}
+
+* html #maincontent{ /*IE6 hack*/
+height: 100%; 
+width: 100%; 
+}
+
+* html #framecontentBottom{ /*IE6 hack*/
+width: 100%;
+}
+
