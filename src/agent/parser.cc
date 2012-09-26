@@ -165,6 +165,7 @@ SpParser::CreatePatchobjs(sp::SymtabSet& unique_tabs,
     // parsing the libraries that are either well known (e.g., libc,
     // or dyninst).
     string libname_no_path = sp_filename(sym->name().c_str());
+
     if (!CanInstrumentLib(libname_no_path)) {
       sp_debug("SKIPED - skip parsing %s",
                sp_filename(sym->name().c_str()));

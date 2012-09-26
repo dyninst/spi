@@ -143,6 +143,14 @@ SpIpcMgr::get_write_param(SpPoint* pt,
     FILE** fp = (FILE**)sp::PopArgument(pt, &h, sizeof(FILE*));
     if(fd_out) *fd_out = fileno(*fp);
   }
+
+  else if (f->name().compare("sendfile64") == 0) {
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+
+    sp_debug("IPC GOT sendfile -- %s => fd = %d", f->name().c_str(), *fd_out);
+  }
+  
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -271,7 +279,7 @@ bool
 SpIpcMgr::BeforeEntry(SpPoint* pt) {
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) {
-    sp_print("CALLEE NOT FOUND - in BeforeEntry for call insn %lx",
+    sp_debug("CALLEE NOT FOUND - in BeforeEntry for call insn %lx",
              pt->block()->last());
     return false;
   }

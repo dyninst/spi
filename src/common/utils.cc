@@ -316,9 +316,18 @@ GetPidsFromAddrs(const char* const rem_ip,
     sp_debug("Token size: %lu, tokens[9]: %s",
              (unsigned long)tokens.size(),
              tokens[9]);
+    /*
     if ((tokens.size() >= 10 && atoi(tokens[9]) == atoi(rem_port)) ||
         (tokens.size() >= 12 && atoi(tokens[11]) == atoi(rem_port))) {
-      pid_set.insert(atoi(tokens[1]));
+    */
+    if (tokens.size() >= 10) {
+      // For things like lighttpd, something like auserver8000 would appear
+      // We only need the numeric part
+      char* p = tokens[9];
+      while (*p != '\0' && !isdigit(*p)) p++;
+      if (atoi(p) == atoi(rem_port)) {
+        pid_set.insert(atoi(tokens[1]));
+      }
     }
   }
   pclose(fp);
