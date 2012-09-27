@@ -127,8 +127,8 @@ def build_spi():
     """
     logging.basicConfig(level=logging.INFO)
 
-    _git_clone('/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi', 'spi')
-    # _git_clone('git.dyninst.org:/pub/spi', 'spi')
+    # _git_clone('/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi', 'spi')
+    _git_clone('git.dyninst.org:/pub/spi', 'spi')
     _config_spi()
     os.chdir('spi/%s' % os.getenv('PLATFORM'))
     _make_spi()

@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     sp::GetPidsFromAddrs(argv[1], argv[2], pid_set);
     int try_count = 5;
     while (pid_set.size() < 1 && try_count > 0) {
-      fprintf(stderr, "Cannot find any process listening to port %s at %s,"
+      sp_debug("Cannot find any process listening to port %s at %s,"
               " %d tries remain\n", argv[2], argv[1], try_count);
       sp::GetPidsFromAddrs(argv[1], argv[2], pid_set);
       sleep(1);

@@ -23,11 +23,11 @@ class UtilsTest : public testing::Test {
 	}
 };
 
-TEST_F(UtilsTest, GetPidsFromAddrs) {
+TEST_F(UtilsTest, GetPidsFromAddrs1) {
   char mutatee[1024];
   snprintf(mutatee, 1024,
            "LD_LIBRARY_PATH=%s/%s/test_mutatee:$LD_LIBRARY_PATH"
-           " %s/%s/test_mutatee/tcp_server6.exe",
+           " %s/%s/test_mutatee/tcp_server4.exe",
            getenv("SP_DIR"), getenv("PLATFORM"),
            getenv("SP_DIR"), getenv("PLATFORM"));
 
@@ -40,11 +40,15 @@ TEST_F(UtilsTest, GetPidsFromAddrs) {
   GetPidsFromAddrs("127.0.0.1", "3490", pid_set);
   EXPECT_TRUE(pid_set.size() == 1);
   
-  system("killall tcp_server6.exe");
+  system("killall tcp_server4.exe");
   int status;
   wait(&status);
   pclose(server_);
   sleep(2);
+}
+
+TEST_F(UtilsTest, GetPidsFromAddrs2) {
+
 }
 
 }
