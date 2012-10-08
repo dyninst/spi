@@ -523,7 +523,8 @@ class GraphArtist:
                               label = user, \
                               fontcolor = "white", \
                               fontsize = 9, \
-                              shape = "box")
+                              fixedsize='true', \
+                              shape = "circle")
             nodes.append(node)
             color_graph.add_node(node)
 
