@@ -469,7 +469,7 @@ IpcChecker::post_check(SpPoint* pt,
 }
 
 // ------------------------------------------------------------------- 
-// Fork
+// Fork / Exec
 // -------------------------------------------------------------------
 ForkChecker::ForkChecker(Mist* mist) : mist_(mist) {
 }
@@ -485,12 +485,9 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     // Modify environment
     char buf[102400];
 
-    // XXX: Magically set seteuid event, in case it is not captured before
     snprintf(buf, 102400,
              "<trace type=\"%s\" time=\"%lu\">%s</trace>"
-             "<trace type=\"seteuid\" time=\"%lu\"><name>%s</name><id>%d</id>",
-             callee->name().c_str(), u_.GetUsec(), *path,
-             u_.GetUsec(), u_.get_user_name(geteuid()).c_str(), geteuid());
+             callee->name().c_str(), u_.GetUsec(), *path);
     
     char cmd[102400];
     srand(time(0));
