@@ -8,3 +8,5 @@ SP_DIR=
 # shared libraries, e.g., dyninst libraries; 
 # otherwise, a single huge shared library that static-linked all libraries.
 DYNLINK=
+
+PLATFORM=
