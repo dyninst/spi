@@ -36,14 +36,8 @@ fi
 #--------------------------------------------
 # gcc
 #--------------------------------------------
-GCCPATH=""
-GCCLIBPATH=""
-if [ $PLATFORM = "x86_64-unknown-linux2.4" ]; then
-  GCCPATH=$SP_DIR/scripts/test_data/x86_64-unknown-linux2.4/test_exes/cc1.exe
-	GCCLIBPATH=$SP_DIR/scripts/test_data/x86_64-unknown-linux2.4/test_libs/*
-else
-  GCCPATH=/afs/cs.wisc.edu/s/gcc-4.6.1/i386_rhel5/libexec/gcc/i686-pc-linux-gnu/4.6.1/cc1
-fi
+GCCPATH=$SP_DIR/scripts/test_data/$PLATFORM/test_exes/cc1.exe
+GCCLIBPATH=$SP_DIR/scripts/test_data/$PLATFORM/test_libs/*
 
 if [ ! -f $BINDIR/cc1.exe ]; then
   cp -f $GCCPATH $BINDIR/cc1.exe

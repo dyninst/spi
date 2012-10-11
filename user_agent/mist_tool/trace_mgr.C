@@ -30,8 +30,11 @@ TraceMgr::~TraceMgr() {
 // <?xml ... ?><process><head></head></process>
 void
 TraceMgr::WriteHeader(std::string header) {
+  uid_t uid = geteuid();
+  seteuid(0);
   WriteString(-17, header);
   WriteString("</head></process>");
+  seteuid(uid);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -40,10 +43,13 @@ TraceMgr::WriteHeader(std::string header) {
 // <?xml ... ?><process><head></head><traces><trace></trace></traces></process>
 void
 TraceMgr::WriteTrace(std::string trace) {
+  uid_t uid = geteuid();
+  seteuid(0);
   trace += "</traces></process>";
   WriteString(-19, trace);
   fflush(fp_);
   fsync(fileno(fp_));
+  seteuid(uid);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -51,19 +57,25 @@ TraceMgr::WriteTrace(std::string trace) {
 void
 TraceMgr::WriteString(long pos,
                       std::string str) {
+  uid_t uid = geteuid();
+  seteuid(0);
   fseek(fp_, pos, SEEK_END);
   fprintf(fp_, "%s", str.c_str());
   fflush(fp_);
   fsync(fileno(fp_));
+  seteuid(uid);
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void
 TraceMgr::WriteString(std::string str) {
+  uid_t uid = geteuid();
+  seteuid(0);
   fprintf(fp_, "%s", str.c_str());
   fflush(fp_);
   fsync(fileno(fp_));
+  seteuid(uid);
 }
 
 ////////////////////////////////////////////////////////////////////// 

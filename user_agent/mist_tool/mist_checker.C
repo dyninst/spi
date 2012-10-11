@@ -486,7 +486,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     char buf[102400];
 
     snprintf(buf, 102400,
-             "<trace type=\"%s\" time=\"%lu\">%s</trace>"
+             "<trace type=\"%s\" time=\"%lu\">%s",
              callee->name().c_str(), u_.GetUsec(), *path);
     
     char cmd[102400];
