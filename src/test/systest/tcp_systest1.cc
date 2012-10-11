@@ -292,7 +292,6 @@ TEST_F(TcpTest1, get_channel_ipv4) {
   }
 }
 
-/*
 TEST_F(TcpTest1, inject) {
   string cmd = mutatee_prefix_ + "test_mutatee/tcp_server4.exe";
 
@@ -302,15 +301,12 @@ TEST_F(TcpTest1, inject) {
 
   tcp_client(hostname, INJECT);
   tcp_client(hostname);
-  // EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
-  // EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
-   EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
-  // EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
+  EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
+  EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
   EXPECT_STREQ(buf, "AGINJECTED\n");
 
   system("killall tcp_server4.exe");
 }
-*/
 
 // Out-of-band mechanism
 TEST_F(TcpTest1, oob) {

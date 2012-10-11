@@ -167,7 +167,7 @@ SpIpcMgr::get_read_param(SpPoint* pt,
                          size_t* size_out) {
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) return;
-
+  // sp_print("%s", f->name().c_str());
   ArgumentHandle h;
   if (f->name().compare("read") == 0 ||
       f->name().compare("recv") == 0) {
@@ -293,28 +293,31 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   ipc_mgr->get_write_param(pt, &fd, NULL, NULL, NULL, &sa);
   SpIpcWorkerDelegate* worker = NULL;
   if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
-    // SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
-    /*
-      if (!worker) {
-      sp_debug("WORKER NOT FOUND - in BeforeEntry on write, fd = %d", fd);
-      return false;
-      }
-    */
+    sp_print("Get write");
+
     // Enable tracing for current process
-    worker->SetStartTracing(1);
+    // worker->SetStartTracing(1);
 
     SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
     if (c) {
+      sp_print("get channel for %s", f->name().c_str());
+
       // Inject this agent.so to remote process
       // Luckily, the SpInjector implementation will automatically detect
       // whether the agent.so library is already injected. If so, it will
       // not inject the library again.
-      // if (c->remote_pid != -1) worker->Inject(c);
       worker->Inject(c);
 
+      /*
       // Enable tracing for remote process
-      if (Callee(pt)->name().compare("connect") != 0)
+      if (Callee(pt)->name().compare("connect") != 0) {
+        sp_print("*** %s", Callee(pt)->name().c_str());
         worker->SetStartTracing(1, c);
+        sp_print("send oob");
+      }
+      else
+        sp_print("A connect, don't send oob for now");
+      */
       pt->SetChannel(c);
     }
     return true;
@@ -324,21 +327,18 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   fd = -1;
   worker = NULL;
   ipc_mgr->get_read_param(pt, &fd, NULL, NULL);
+
   if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
-    /*
-      SpIpcWorkerDelegate* worker = ipc_mgr->get_worker(fd);
-      if (!worker) {
-      sp_debug("WORKER NOT FOUND - in BeforeEntry on read, fd = %d", fd);
-      return false;
-      }
-    */
+    sp_print("get read");
     SpChannel* c = worker->GetChannel(fd, SP_READ);
+    
     if (c) {
       pt->SetChannel(c);
     } else {
       sp_debug("FAILED TO CREATE CHANNEL - for read");
     }
   }
+
   return true;
 }
 
@@ -347,6 +347,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
 // Will be called before user-specified exit-payload function.
 bool
 SpIpcMgr::BeforeExit(SpPoint* pt) {
+
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) return false;
 
@@ -371,6 +372,7 @@ SpIpcMgr::BeforeExit(SpPoint* pt) {
   // Detect connect for tcp
   else {
   }
+
   return true;
 }
 

@@ -221,6 +221,7 @@ ReturnValue(sp::SpPoint* pt) {
 }
 
 //////////////////////////////////////////////////////////////////////
+static char StartTracingNolock(int fd);
 
 bool
 IsIpcWrite(SpPoint* pt) {
@@ -235,9 +236,6 @@ IsIpcWrite(SpPoint* pt) {
 
 //////////////////////////////////////////////////////////////////////
 
-// Implicitly call start_tracing()
-static char StartTracingNolock(int fd);
-
 bool
 IsIpcRead(SpPoint* pt) {
   bool ret = false;
@@ -246,9 +244,13 @@ IsIpcRead(SpPoint* pt) {
   SP_LOCK(ISIPCREAD);
   c = pt->channel();
 
+  // if (c && c->rw == SP_READ && StartTracingNolock(c->fd)) {
   if (c && c->rw == SP_READ) {
     ret = true;
-    if (CalleeNolock(pt)->name().compare("accept") == 0) ret = false;
+    if (CalleeNolock(pt)->name().compare("accept") == 0) {
+      sp_debug("Accept skip");
+      ret = false;
+    }
   }
 
   SP_UNLOCK(ISIPCREAD);
