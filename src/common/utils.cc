@@ -277,60 +277,59 @@ GetPidsFromFileDesc(const int fd,
 //////////////////////////////////////////////////////////////////////
 
 // Get pids that are associated with the remote address pair
-// Assumption: we can login remote machine withou password
+// Basic ideas:
+// 1. Look at /proc/net/tcp for inode
+//    - TODO(wenbin): support udp
+// 2. Iterate all pids, and see if it uses this inode
+
 void
 GetPidsFromAddrs(const char* const rem_ip,
                  const char* const rem_port,
                  PidSet& pid_set) {
 
-  char cmd[kLenStringBuffer];
-  std::string lsof_path;  
-  if (getenv("SP_LSOF") != NULL)
-    lsof_path = getenv("SP_LSOF");
-  else
-    lsof_path = "lsof";
+  // Convert port string to int
+  int rem_port_int = atoi(rem_port);
 
-  // snprintf(cmd, kLenStringBuffer, "ssh root@%s \"%s -i UDP:%s -i TCP:%s\"",
-  //         rem_ip, lsof_path.c_str(), rem_port, rem_port);
-  snprintf(cmd, kLenStringBuffer, "%s -i UDP:%s -i TCP:%s",
-           lsof_path.c_str(), rem_port, rem_port);
-
-  // sp_print(cmd);
-  // system(cmd);
-  FILE* fp = popen(cmd, "r");
-  char line[1024];
-  fgets(line, 1024, fp);  // skip the header line
-
-  char* saveptr;
-  while (fgets(line, kLenStringBuffer, fp) != NULL) {
-    char* pch = strtok_r(line, " :()->", &saveptr);
-    std::vector<char*> tokens;
-    while (pch != NULL) {
-      sp_debug(pch);
-      tokens.push_back(pch);
-      pch = strtok_r(NULL, " :()->", &saveptr);
-    }
-
-    // case 1: tcp_serve 13321 wenbin    4u  IPv6 228465      0t0  TCP *:3490 (LISTEN)
-    // case 2: condor_su 8466 wenbin   54u  IPv4 163551      0t0  TCP debian3.cs.wisc.edu:57918->debian3.cs.wisc.edu:44564 (ESTABLISHED)
-    sp_debug("Token size: %lu, tokens[9]: %s",
-             (unsigned long)tokens.size(),
-             tokens[9]);
-    /*
-    if ((tokens.size() >= 10 && atoi(tokens[9]) == atoi(rem_port)) ||
-        (tokens.size() >= 12 && atoi(tokens[11]) == atoi(rem_port))) {
-    */
-    if (tokens.size() >= 10) {
-      // For things like lighttpd, something like auserver8000 would appear
-      // We only need the numeric part
-      char* p = tokens[9];
-      while (*p != '\0' && !isdigit(*p)) p++;
-      if (atoi(p) == atoi(rem_port)) {
-        pid_set.insert(atoi(tokens[1]));
-      }
-    }
+  // Read /proc/net/tcp for
+  FILE* tcp_fp = fopen("/proc/net/tcp", "r");
+  char line[2048];
+  int inode = -1;
+  if (fgets(line, 2048, tcp_fp) == NULL) {
+    sp_perror("Failed to read headline of /proc/net/tcp");
   }
-  pclose(fp);
+  while (fgets(line, 2048, tcp_fp) != NULL) {
+    int iloc_ip, iloc_port, irem_ip, irem_port;
+    if (sscanf(line, "%*u: %08X:%04X %08X:%04X %*02X %*08X:%*08X "
+               "%*02X:%*08X %*08X %*u %*d %u",
+               &iloc_ip, &iloc_port, &irem_ip, &irem_port, &inode) != 5) {
+      sp_perror("Failed to read a line in /proc/net/tcp");
+    }
+    if (iloc_port == rem_port_int) break;
+  }
+  fclose(tcp_fp);
+  if (inode == -1) return;
+
+  // Iterate all pids
+  DIR *dir;
+  int pid;
+  if ((dir = opendir("/proc")) == 0) {
+    sp_perror("ERROR: cannot access /proc");
+  }
+  struct dirent *de;
+  char *ep;
+  while ((de = readdir(dir)) != 0) {
+    if (isdigit(de->d_name[0])) {
+      pid = strtol(de->d_name, &ep, 10);
+      if (ep == 0 || *ep != 0 || pid < 0) {
+        sp_perror("ERROR: strtol failed on %s\n", de->d_name);
+      }
+      if (pid != getpid() &&
+          PidUsesInode(pid, inode)) {
+        pid_set.insert(pid);
+        // sp_print("Found pid=%d opening port %d", pid, rem_port_int);
+      }
+    } // Is pid?
+  } // Iterate all pids
 }
 
 // ------------------------------------------------------------------- 
