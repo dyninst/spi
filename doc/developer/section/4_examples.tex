@@ -1,1 +1,30 @@
 \section{Examples}
+\subsection{Writing Payload}
+
+\lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
+\lstset{numbers=left}
+\begin{lstlisting}[caption=Writing Payload]
+void payload(SpPoint* pt) {
+  SpFunction* func = sp::Callee(pt);
+  if (func == NULL) return;
+  sp::Propel(pt);
+}
+\end{lstlisting}
+
+\subsection{Configuration}
+\lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
+\lstset{numbers=left}
+\begin{lstlisting}[caption=Configuration]
+TODO
+\end{lstlisting}
+
+\subsection{Using Injector}
+
+\subsection{Extending SPI}
+\subsubsection{Parser}
+\subsubsection{Event}
+\subsubsection{AddrSpace}
+\subsubsection{CFG}
+\subsubsection{Point}
+\subsubsection{Instrumentation Workers}
+\subsubsection{IPC Workers}
