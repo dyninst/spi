@@ -11,21 +11,15 @@ SecSTAR’s source code is packaged in a -----(tar.gz) format. If your SecSTAR s
 
 \textbf{2. Configuring paths in config.mk} \\
 After unpacking,the next thing is to set DYNINST\_ROOT, PLATFORM, and LD\_LIBRARY\_PATH environment variables in.  \\
-\textitDYNINST\_ROOT should be set to path of the directory that contains subdirectories like dyninstAPI, parse API etc.,  i.e. within dyninst directory SP\_DIR should be set to the the path of the current working directory (where self propelled instrumentation is installed). \\
+{\textit DYNINST\_ROOT} should be set to path of the directory that contains subdirectories like dyninstAPI, parse API etc.,  i.e. within dyninst directory SP\_DIR should be set to the the path of the current working directory (where self propelled instrumentation is installed). \\
 
 \$DYNLINK should be set true for building agent as a small shared library that relies on other shared libraries. Otherwise, a single huge shared library that static-linked all libraries(doubt) \\
 
 \$PLATFORM should be set to one of the following values depending upon what operating system you are running on: \\
-\begin{table}[h]
-\centering
-\begin{tabular}{l l}
-i386-unknown-linux 2.4 	&	Linux 2.4/2.6 on an Intel x86 processor \
-rs6000-ibm-aix5.1 	&	AIX Version 5.1 \\
-x86\_64-unknown-linux2.4 &	Linux 2.4/2.6 on an AMD-64 processor \\
-ppc64\_linux 		&	Linux 2.6 on a 64-bit PPC processor \\
-ppc32\_linux 		&	Linux 2.6 on a 32-bit PPC processor \\
-\end{tabular}
-\end{table}
+\begin{itemize}
+  \item i386-unknown-linux 2.4: Linux 2.4/2.6 on an Intel x86 processor
+  \item x86\_64-unknown-linux2.4: Linux 2.4/2.6 on an AMD-64/Intel x86-64 processor
+\end{itemize}
 
 Before building, you should also check whether \$LD\_LIBRARY\_PATH variable is set. If you are using bash shell, then open ~/.bashrc file and check if \$LD\_LIBRARY\_PATH is already present. If not, then LD\_LIBRARY\_PATH variable should be set in a way that it includes  \${DYNINST\_LIB PATH} directories.  If you are using C shell, then do the above mentioned tasks in ~/.cshrc file. \\
  

@@ -1,7 +1,7 @@
 TEX=/s/texlive-2011/bin/pdflatex
 MAIN=spi
 DEP=spi.tex \
-	section/1_intro.tex \
+		section/*.tex \
 
 
 $(MAIN).pdf: $(DEP)
@@ -9,7 +9,7 @@ $(MAIN).pdf: $(DEP)
 	$(TEX) $(MAIN)
 
 clean:
-	@rm -f *.dvi *.log *.aux *.ent *.bak *.bbl *.blg *.out *.toc
+	@rm -f *.dvi *.log *.aux *.ent *.bak *.bbl *.blg *.out *.toc $(MAIN).pdf
 
 read:
 	@xpdf spi.pdf
