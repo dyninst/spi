@@ -69,7 +69,7 @@ google-mock: $(GMOCK_MAIN)
 # SPI UNIT TESTS
 #==========================================================
 UT_FLAGS   = $(AG_IFLAGS) $(AG_FLAGS) $(CPPFLAGS)
-UT_LDFLAGS = -lpthread
+UT_LDFLAGS = -lpthread -ldl
 
 ifeq ($(DYNLINK), true)
 UT_LDFLAGS += $(AG_LDFLAGS)

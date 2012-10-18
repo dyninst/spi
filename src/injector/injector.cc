@@ -274,8 +274,8 @@ SpInjector::Inject(const char* lib_name) {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...",
              getpid(), sp_filename(lib_name));
   }
-  return true;
   // proc_->detach();
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////// 
