@@ -41,6 +41,8 @@
 #include "stackwalk/h/frame.h"
 #include "stackwalk/h/walker.h"
 
+#include <execinfo.h>
+
 namespace sp {
 
   extern SpParser::ptr g_parser;
@@ -76,8 +78,22 @@ namespace sp {
   // TODO (wenbin): use gstack to avoid the stackwalker bug on 32-bit x86
   void
   SpContext::GetCallStack(FuncSet* call_stack) {
+    /*
+    void* buffer[100];
+    int num = backtrace(buffer, 100);
+    sp_debug("%d traces", num);
+    char** syms = backtrace_symbols(buffer, num);
+    for (int i = 0; i < num; i++) {
+      sp_debug("%lx - %s", *(unsigned long*)buffer[i], syms[i]);
+    }
+    return;
+    */
+    
     long pc, sp, bp;
     parser_->GetFrame(&pc, &sp, &bp);
+    SpFunction* func = parser_->FindFunction(pc);
+    if (func) sp_print("%s", func->name().c_str());
+
     sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
     std::vector<sk::Frame> stackwalk;
     sk::Walker *walker = sk::Walker::newWalker();

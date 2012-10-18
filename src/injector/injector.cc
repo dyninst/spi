@@ -264,11 +264,11 @@ SpInjector::Inject(const char* lib_name) {
     }
 
     if (!shm->loaded) {
-      sp_print(shm->err);
+      sp_print("%s", shm->err);
       return false;
     }
     else {
-      sp_print(shm->err);
+      sp_print("%s", shm->err);
     }
   } else {
     sp_print("Injector [pid = %5d]: Library %s is already loaded...",
