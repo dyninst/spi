@@ -52,7 +52,14 @@ users, how would initial instrumentation be done, whether or not to enable
 inter-process instrumentation propagation ...
 
 \subsection{Initial Instrumentation}
+Once the configuration code in the {\em Agent shared library} finishes execution
+inside the application process, the initial instrumentation would be performed
+right away, e.g., instrumenting all function calls inside the {\em main}
+function.
 
-\subsection{Intra-process Propagation}
+\subsection{Instrumentation Propagation}
+When one of the initial instrumentation gets executed, then instrumentation
+propagates itself either within the process by following control flow, or across
+process boundaries by following communication flow.
 
-\subsection{Inter-process Propagation}
+% May put intra-process propagation and inter-process propagation diagram here

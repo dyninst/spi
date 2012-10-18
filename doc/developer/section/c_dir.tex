@@ -2,7 +2,20 @@
 \section{Directory Organization}
 
 \begin{itemize}
-\item src/
-\item x86-unknown-linux-2.4/
-\item i386-unknown-linux-2.4/
+\item common.flag.mk : Compilation flags
+\item config.mk : User-defined configuration file
+\item spi.target.mk : Major compilation rules
+\item test.target.mk : Compilation rules for tests
+\item scripts/ : Containing some scripts to assist testing
+\item h/ : Public header files
+\item src/ : Source code for injector, agent, and tests
+\begin{itemize}
+\item agent/ : Source code for agent
+\item common/ : Common code used by injector and agent
+\item injector/ : Source code for injector
+\item test/ : Some tests
+\end{itemize}
+\item user\_agent/ : Example user-provided agents
+\item x86-unknown-linux-2.4/ : Build directory for x86-64
+\item i386-unknown-linux-2.4/ : Build directory for x86
 \end{itemize}
