@@ -122,7 +122,7 @@ class GraphArtist:
         self.__draw_animation(dest_dir)
 
         # Generate legend
-        # self.__generate_legend(dest_dir)
+        self.__generate_legend(dest_dir)
 
 
     #
@@ -555,7 +555,8 @@ class GraphArtist:
                               label = user, \
                               fontcolor = "white", \
                               fontsize = 9, \
-                              shape = "box")
+                              fixedsize='true', \
+                              shape = "circle")
             nodes.append(node)
             color_graph.add_node(node)
 
@@ -593,25 +594,6 @@ class GraphArtist:
                               shape = "box")
         shape_graph.add_node(single_proc)
         shape_graph.add_node(single_proc_legend)
-        multi_proc = pydot.Node('multi_proc', \
-                              style = "filled", \
-                              fillcolor = 'red', \
-                              label = ' ', \
-                              shape = "doublecircle")
-        multi_proc_legend = pydot.Node('multi_proc_legend', \
-                              style = "filled", \
-                              fillcolor = 'white', \
-                              label = 'Multi-process', \
-                              color = 'white',\
-                              fontsize = 10, \
-                              shape = "box")
-        shape_graph.add_node(multi_proc)
-        shape_graph.add_node(multi_proc_legend)
-        edge = pydot.Edge(single_proc, multi_proc, style='invis')
-        shape_graph.add_edge(edge)
-        edge = pydot.Edge(single_proc_legend, multi_proc_legend, style='invis')
-        shape_graph.add_edge(edge)
-
 
         dummy_left1 = pydot.Node('dummy_left1', \
                               style = "filled", \
@@ -641,13 +623,13 @@ class GraphArtist:
                               color = 'white',\
                               shape = "none")
         shape_graph.add_node(dummy_right2)
-        edge = pydot.Edge(multi_proc, dummy_left1, style='invis')
+        edge = pydot.Edge(single_proc, dummy_left1, style='invis')
         shape_graph.add_edge(edge)
         edge = pydot.Edge(dummy_left1, dummy_left2, label='fork', style='dotted', fontsize=10)
         shape_graph.add_edge(edge)
-        edge = pydot.Edge(multi_proc_legend, dummy_right1, style='solid', label='connect', fontsize=10)
+        edge = pydot.Edge(single_proc_legend, dummy_right1, style='solid', label='connect', fontsize=10)
         shape_graph.add_edge(edge)
-        edge = pydot.Edge(dummy_right1, dummy_right2, style='dotted', label='clone', arrowhead='empty', fontsize=10)
+        edge = pydot.Edge(dummy_right1, dummy_right2, style='solid', label='send', arrowhead='empty', fontsize=10)
         shape_graph.add_edge(edge)
         shape_graph.write_svg(shape_path)
 
