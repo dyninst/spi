@@ -1,7 +1,9 @@
 \section{Installation}
-This appendix describes how to build self propelled instrumentation from source code, which can be downloaded from \url{http://www.paradyn.org} or \url{http://www.dyninst.org}. \\
+This appendix describes how to build self propelled instrumentation
+from source code, which can be downloaded from \url{http://www.paradyn.org}
+or \url{http://www.dyninst.org}. \\
 
-\underline{\textbf{BUILDING ON UNIX}}	\\
+
 Before starting to build self propelled instrumentation, you have to make sure that you have already installed and built Dyninst. (refer Dyninst Programming Guide\footnote{\url{http://www.dyninst.org/sites/default/files/manuals/dyninst/dyninstProgGuide.pdf} - Appendix D} for building Dyninst) \\
 
 Building self propelled instrumentation on UNIX platforms is a very simple three step process that involves: unpacking the self propelled instrumentation source, configuring and running the build. \\
@@ -10,7 +12,7 @@ Building self propelled instrumentation on UNIX platforms is a very simple three
 Self propelled instrumenation`s source code is packaged in \textit{tar.gz} format. If your self propelled instrumentation source tarball is called \textit{src\_spi.tar.gz}, then you could extract it with the commands \textit{gunzip src\_spi.tar.gz ; tar  -xvf src\_spi.tar}. This will create a list of directories and files.  \\
 
 \textbf{2. Configuration} \\
-After unpacking, the next thing is to set DYNINST\_ROOT, PLATFORM and DYNLINK variables in \textit{config.mk}.  DYNINST\_ROOT should be set to path of the directory that contains subdirectories like dyninstAPI, parse API etc.,  i.e. within dyninst directory SP\_DIR should be set to the the path of the current working directory (where self propelled instrumentation is installed). \\
+After unpacking, the next thing is to set SP\_DIR, DYNINST\_ROOT, PLATFORM and DYNLINK variables in \textit{config.mk}.  DYNINST\_ROOT should be set to path of the directory that contains subdirectories like dyninstAPI, parseAPI etc.,  i.e. within dyninst directory SP\_DIR should be set to the the path of the current working directory (where self propelled instrumentation is installed). \\
 DYNLINK should be set \textit{true} for building agent as a small shared library that relies on other shared libraries. Otherwise, set DYNLINK as \textit{false} for buidling a single huge shared library that static-linked all libraries \\
 PLATFORM should be set to one of the following values depending upon what operating system you are running on: \\
 \begin{table}[h]
@@ -22,7 +24,7 @@ PLATFORM should be set to one of the following values depending upon what operat
 
 Before building, you should also check whether LD\_LIBRARY\_PATH environment variable is set. If you are using bash shell, then open ~/.bashrc file and check if LD\_LIBRARY\_PATH is already present. If not, then LD\_LIBRARY\_PATH variable should be set in a way that it includes {\$DYNINST\_ROOT}/lib directories.  If you are using C shell, then do the above mentioned tasks in ~/.cshrc file. \\
  
-\textbf{3. Building self propelled instrumentation:} \\
+\textbf{3. Building self-propelled instrumentation:} \\
 Once config.mk is set, you are ready to build self propelled instrumentation. Move to PLATFORM directory  and execute the command \textit{make}. This will build libagent.so, injector, test-cases and  test-programs. Other make commands for custom building are as follows:
 
 \begin{table}[h]

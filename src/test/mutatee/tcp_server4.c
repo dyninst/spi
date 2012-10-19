@@ -119,8 +119,9 @@ int main(void) {
 
       fprintf(stderr, "Fork PID=%d to handle request\n", getpid());
 
-      if (send(new_fd, "Hello", 5, 0) == -1)
+      if (send(new_fd, "Hello, world!\n", 14, 0) == -1)
 				perror("send");
+      /*
       if (send(new_fd, ", ", 2, 0) == -1)
 				perror("send");
       if (send(new_fd, "world", 5, 0) == -1)
@@ -129,7 +130,7 @@ int main(void) {
 				perror("send");
       if (send(new_fd, "\n", 1, 0) == -1)
 				perror("send");
-
+      */
       close(new_fd);
       exit(0);
     }

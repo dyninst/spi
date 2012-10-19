@@ -6,4 +6,4 @@ export SP_AGENT_DIR=`pwd`/../../$PLATFORM
 
 rm -rf /tmp/*.xml
 
-LD_PRELOAD="$AGENT" $SP_DIR/$PLATFORM/test_mutatee/tcp_client.exe localhost
+LD_PRELOAD="$AGENT" $SP_DIR/$PLATFORM/test_mutatee/tcp_client.exe grilled

@@ -34,7 +34,7 @@ class LookupTable:
         """
 
         relation_map = dict()
-        relation_types = ['connect', 'fork', 'clone', 'accept']
+        relation_types = ['connect', 'fork', 'clone', 'accept', 'send']
         for host in self.trace_map.keys():
             for pid, trace in self.trace_map[host].items():
                 for eve in trace.event_list:
@@ -45,7 +45,7 @@ class LookupTable:
                         eve.set_trg_pid(trg_pid)
 
                     # Add every events into event_list first
-                    if eve.type != 'accept':
+                    if eve.type != 'accept' and eve.type != 'recv':
                         self.event_list.append(eve)
 
                     # Build relation map, which records the process involved
@@ -60,6 +60,10 @@ class LookupTable:
                                 eve.host in self.trace_map and \
                                 eve.child in self.trace_map[eve.host]:
                             self.__add_to_2d_dict(relation_map, eve.host, eve.child, 1)
+                        elif eve.type == 'send' and \
+                                eve.trg_host in self.trace_map and \
+                                eve.trg_pid in self.trace_map[eve.trg_host]:
+                            self.__add_to_2d_dict(relation_map, eve.trg_host, eve.trg_pid, 1)
 
         # We only keep those processes that have relationships with othersx
         self.event_list = [eve for eve in self.event_list \
@@ -68,6 +72,9 @@ class LookupTable:
 
         # Sorting!
         self.event_list.sort()
+        # eve = event_list[0]
+        # the_eve = event.CloneEvent('init', eve.time, eve.host, eve.pid)
+        
         # for e in self.event_list: print e
 
     def __get_pid_by_port(self, host, port):

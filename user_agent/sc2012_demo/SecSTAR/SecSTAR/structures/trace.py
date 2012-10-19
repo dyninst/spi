@@ -105,6 +105,8 @@ class Trace:
             - seteuid
             - exit
             - execeve
+            - send
+            - recv
         """
 
         logging.info("- Parsing %s", self.file_path)
@@ -143,6 +145,23 @@ class Trace:
                 trg_port = self.__get_node_value1(eve.childNodes, 'port')
                 the_eve = event.ConnectEvent('connect', eve_time, self.hostname,
                                              self.pid, trg_host, trg_port)
+
+            elif eve_type == 'send':
+                trg_host = self.__get_node_value1(eve.childNodes, 'host')
+                if trg_host == '127.0.0.1':
+                    trg_host = self.hostname
+                trg_pid = self.__get_node_value1(eve.childNodes, 'pid')
+                the_eve = event.SendEvent('send', eve_time, self.hostname,
+                                             self.pid, trg_host, trg_pid)
+
+            elif eve_type == 'recv':
+                trg_host = self.__get_node_value1(eve.childNodes, 'host')
+                if trg_host == '127.0.0.1':
+                    trg_host = self.hostname
+                trg_port = self.__get_node_value1(eve.childNodes, 'port')
+                the_eve = event.RecvEvent('recv', eve_time, self.hostname,
+                                             self.pid, trg_host, trg_port)
+
             elif eve_type == 'accept from':
                 trg_host = self.__get_node_value1(eve.childNodes, 'host')
                 if trg_host == '127.0.0.1':

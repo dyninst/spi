@@ -33,7 +33,15 @@ class Event:
 
     def pidhost(self):
         return "%s@%s" % (self.pid, self.host)
-        
+
+class InitEvent(Event):
+    def __init__(self, the_type, the_time, the_host, the_pid):
+        Event.__init__(self, the_type, the_time, the_host, the_pid)
+
+    def __str__(self):
+        ret = Event.__str__(self)
+        ret += 'child: %s}\n' % self.child
+        return ret
 
 class ForkEvent(Event):
     def __init__(self, the_type, the_time, the_host, the_pid, the_child):
@@ -62,6 +70,41 @@ class CloneEvent(Event):
         return "%s@%s" % (self.child, self.host)
 
 class ConnectEvent(Event):
+    def __init__(self, the_type, the_time, src_host, src_pid, trg_host, trg_port):
+        Event.__init__(self, the_type, the_time, src_host, src_pid)
+        self.trg_host = trg_host
+        self.trg_port = trg_port
+        self.trg_pid = ''
+
+    def __str__(self):
+        ret = Event.__str__(self)
+        ret += 'trg_host: %s, trg_port: %s}\n' % (self.trg_host, self.trg_port)
+        return ret
+
+    def set_trg_pid(self, pid):
+        self.trg_pid = pid
+
+    def trg_pidhost(self):
+        return "%s@%s" % (self.trg_pid, self.trg_host)
+
+class SendEvent(Event):
+    def __init__(self, the_type, the_time, src_host, src_pid, trg_host, trg_pid):
+        Event.__init__(self, the_type, the_time, src_host, src_pid)
+        self.trg_host = trg_host
+        self.trg_pid = trg_pid
+
+    def __str__(self):
+        ret = Event.__str__(self)
+        ret += 'trg_host: %s, trg_port: %s}\n' % (self.trg_host, self.trg_pid)
+        return ret
+
+    def set_trg_pid(self, pid):
+        self.trg_pid = pid
+
+    def trg_pidhost(self):
+        return "%s@%s" % (self.trg_pid, self.trg_host)
+
+class RecvEvent(Event):
     def __init__(self, the_type, the_time, src_host, src_pid, trg_host, trg_port):
         Event.__init__(self, the_type, the_time, src_host, src_pid)
         self.trg_host = trg_host

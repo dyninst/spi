@@ -122,7 +122,7 @@ class GraphArtist:
         self.__draw_animation(dest_dir)
 
         # Generate legend
-        self.__generate_legend(dest_dir)
+        # self.__generate_legend(dest_dir)
 
 
     #
@@ -159,9 +159,24 @@ class GraphArtist:
           Draw a static graph, which retains all final states except for `exit`
         """
         self.__dot = pydot.Dot(graph_type='digraph', graph_name='SecSTAR')
+        
+        # Draw the very first node
+        try:
+            eve = self.event_list[0]
+            cluster = self.__get_cluster(eve.host)
+            self.__get_node(eve.pidhost(), cluster)
+        except:
+            logging.error('No event')
+            os._exit(-1)
+
         for eve in self.event_list:
             cluster = self.__get_cluster(eve.host)
+            #print eve
             if eve.type == 'connect':
+                self.__get_node(eve.pidhost(), cluster)
+                self.__get_node(eve.trg_pidhost(), cluster)
+                self.__get_edge(eve.pidhost(), eve.trg_pidhost(), eve.type)
+            elif eve.type == 'send':
                 self.__get_node(eve.pidhost(), cluster)
                 self.__get_node(eve.trg_pidhost(), cluster)
                 self.__get_edge(eve.pidhost(), eve.trg_pidhost(), eve.type)
@@ -184,6 +199,7 @@ class GraphArtist:
         self.__make_all_invisible()
         self.__build_node_edges_map()
 
+
         event_count = 0
         for i in range(len(self.event_list)):
             eve_desc = ''
@@ -201,6 +217,19 @@ class GraphArtist:
                     self.__show_edge(edge, eve.type)
                     if j == i: self.__highlight_edge(edge)
                     eve_desc = "%s<br><font color='red'><b>connects to</b></font><br>%s" % \
+                        (eve.pidhost(), eve.trg_pidhost())
+
+                elif eve.type == 'send':
+                    node = self.__get_node(eve.pidhost(), cluster)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    node = self.__get_node(eve.trg_pidhost(), cluster)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    edge = self.__get_edge(eve.pidhost(), eve.trg_pidhost(), eve.type)
+                    self.__show_edge(edge, eve.type)
+                    if j == i: self.__highlight_edge(edge)
+                    eve_desc = "%s<br><font color='red'><b>sends to</b></font><br>%s" % \
                         (eve.pidhost(), eve.trg_pidhost())
         
                 elif eve.type == 'fork' or eve.type == 'clone':
@@ -446,6 +475,9 @@ class GraphArtist:
             edge.set_arrowhead('empty')
         elif event_type == 'connect':
             edge.set_style('solid')
+        elif event_type == 'send':
+            edge.set_style('solid')
+            edge.set_arrowhead('empty')
 
     def __hide_edge(self, edge):
         edge.set_style('invis')

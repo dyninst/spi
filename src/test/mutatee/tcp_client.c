@@ -80,10 +80,12 @@ int main(int argc, char *argv[])
   fprintf(stderr, "Get content: ", s);
   freeaddrinfo(servinfo); // all done with this structure
 
-  while ((numbytes = recv(sockfd, buf, 1, 0)) != 0 && numbytes != -1) {
-		fprintf(stderr, "%c",buf[0]);
+  while ((numbytes = recv(sockfd, buf, MAXDATASIZE, 0)) != 0 && numbytes != -1) {
+    buf[numbytes] = '\0'; 
+		fprintf(stderr, "%s",buf);
   }
 	// system("/usr/sbin/lsof -i TCP");
   close(sockfd);
+  exit(0);
   return 0;
 }

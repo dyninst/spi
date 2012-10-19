@@ -433,25 +433,35 @@ IpcChecker::check(SpPoint* pt,
         u_.WriteTrace("</trace>");
       }
     }
-  } else  if (callee->name().compare("send") == 0 ||
-              callee->name().compare("recv") == 0) {
+  } else  if (callee->name().compare("send") == 0) {
+              //              callee->name().compare("recv") == 0) {
     ArgumentHandle h;
     int* fd = (int*)PopArgument(pt, &h, sizeof(int));
     sockaddr_storage addr;
     if (sp::GetRemoteAddress(*fd, &addr)) {
       char host[256];
       char service[256];
+      char cmd[1024];
       if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
+        
         char buf[1024];
         snprintf(buf, 1024,
                  "<trace type=\"%s\" time=\"%lu\">",
                  callee->name().c_str(), u_.GetUsec());
         u_.WriteTrace(buf);
+
+        sprintf(cmd, "/tmp/getpidfromport %s", service);
+        char line[1024];
+        FILE* fp = popen(cmd, "r");
+        fgets(line, 1024, fp);
+        pclose(fp);
+        
         snprintf(buf, 1024,
-                 "<host>%s</host><port>%s</port>",
-                 host, service);
+                 "<host>%s</host><pid>%s</pid>",
+                 host, line);
         u_.WriteTrace(buf);
         u_.WriteTrace("</trace>");
+
       }
     }
   }

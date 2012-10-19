@@ -63,6 +63,7 @@ class GraphBuilder:
         logging.info(path)
         logging.info("Remove all .dot files")
         os.system("rm -f %s/*.dot" % path)
+        os.system("rm -f %s/*.zip" % path)
 
         if not os.path.exists("%s/static.zip" % path):
             logging.info("Package static.svg")
@@ -131,9 +132,9 @@ def main():
   
     builder = GraphBuilder()
     builder.go(input_dir, output_dir, dedup=False)
-    builder.go(input_dir, output_dir, dedup=True)
+#    builder.go(input_dir, output_dir, dedup=True)
     builder.package(output_dir, dedup=False)
-    builder.package(output_dir, dedup=True)
+#    builder.package(output_dir, dedup=True)
 
 if __name__ == "__main__":
     main()
