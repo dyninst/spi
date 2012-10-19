@@ -435,7 +435,6 @@ IpcChecker::check(SpPoint* pt,
     }
   }
 
-
   return true;
 }
 
@@ -443,28 +442,28 @@ IpcChecker::check(SpPoint* pt,
 bool
 IpcChecker::post_check(SpPoint* pt,
                        SpFunction* callee) {
-  /*
-  if (callee->name().compare("accept") == 0) {
-    int fd = ReturnValue(pt);
-    sockaddr_storage addr;
-    if (GetRemoteAddress(fd, &addr)) {
-      char host[256];
-      char service[256];
-      if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
-        char buf[1024];
-        snprintf(buf, 1024,
-                 "<trace type=\"accept from\" time=\"%lu\">",
-                 u_.GetUsec());
-        u_.WriteTrace(buf);
-        snprintf(buf, 1024,
-                 "<host>%s</host><port>%s</port>",
-                 host, service);
-        u_.WriteTrace(buf);
-        u_.WriteTrace("</trace>");
-      }
-    }
+  if (callee->name().compare("send") == 0) {
+		ssize_t size = sp::ReturnValue(pt);
+    char buf[1024];
+    snprintf(buf, 1024,
+             "<trace type=\"send\" time=\"%lu\">",
+             u_.GetUsec());
+    u_.WriteTrace(buf);
+    snprintf(buf, 1024, "%lu", size);
+    u_.WriteTrace(buf);
+    u_.WriteTrace("</trace>");
+  } else if (callee->name().compare("recv") == 0) {
+		ssize_t size = sp::ReturnValue(pt);
+    char buf[1024];
+    snprintf(buf, 1024,
+             "<trace type=\"recv\" time=\"%lu\">",
+             u_.GetUsec());
+    u_.WriteTrace(buf);
+    snprintf(buf, 1024, "%lu", size);
+    u_.WriteTrace(buf);
+    u_.WriteTrace("</trace>");
   }
-  */
+
 	return true;
 }
 

@@ -481,11 +481,11 @@ class GraphArtist:
         # We don't consider fork-then-exe, connect, and seteuid event
         trace = self.trace_map[eve.host][eve.child]
         for e in trace.event_list:
-            if e.type == 'execve' or \
+            if e != None and (e.type == 'execve' or \
                     e.type == 'seteuid' or \
                     e.type == 'fork' or \
                     e.type == 'clone' or \
-                    e.type == 'connect':
+                    e.type == 'connect'):
                 return True
 
         # Check dedup_dict
