@@ -32,6 +32,7 @@ def run(input_dir):
     logging.info('[1] CombineWorker is running for %s', input_dir)
     for host_dir in os.listdir(input_dir):
         host_path = os.path.join(input_dir, host_dir)
+        if os.path.isdir(host_path) != True: continue
         for xml_file in sorted(os.listdir(host_path)):
             (pid, sep, tmp_seq) = xml_file.partition("-")
             if sep == "": 

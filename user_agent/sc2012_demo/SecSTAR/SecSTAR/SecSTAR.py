@@ -73,7 +73,7 @@ class GraphBuilder:
             logging.info("Package animation svg files")
             os.system("cd %s;ls *.svg | sort -n | xargs cat >> svgs.svg" % path)
             os.system("cd %s; zip -9 svgs.zip svgs.svg" % path)
-            os.system("rm -f %s/svgs.svg" % path)
+            os.system("rm -f %s/*.svg" % path)
 
         if not os.path.exists("%s/events.zip" % path):
             logging.info("Package event files")
@@ -86,7 +86,7 @@ class GraphBuilder:
             fp.close()
             os.system("cd %s;zip -9 events.zip events.e" % path)
             os.system("rm -f %s/event_tmp" % path)
-            os.system("rm -f %s/events.e" % path)
+            os.system("rm -f %s/*.e" % path)
 
     def go(self, input_dir, output_dir, dedup = False):
         """

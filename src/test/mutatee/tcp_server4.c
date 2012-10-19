@@ -34,8 +34,8 @@ void *get_in_addr(struct sockaddr *sa)
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(void)
-{
+int main(void) {
+  fprintf(stderr, "Start server PID=%d\n", getpid());
   int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
   struct addrinfo hints, *servinfo, *p;
   struct sockaddr_storage their_addr; // connector's address information
@@ -117,6 +117,8 @@ int main(void)
     if (!fork()) { // this is the child process
       close(sockfd); // child doesn't need the listener
 
+      fprintf(stderr, "Fork PID=%d to handle request\n", getpid());
+
       if (send(new_fd, "Hello", 5, 0) == -1)
 				perror("send");
       if (send(new_fd, ", ", 2, 0) == -1)
@@ -125,40 +127,14 @@ int main(void)
 				perror("send");
       if (send(new_fd, "!", 1, 0) == -1)
 				perror("send");
+      if (send(new_fd, "\n", 1, 0) == -1)
+				perror("send");
 
-			/*      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-      if (send(new_fd, "!", 1, 0) == -1)
-				perror("send");
-*/
       close(new_fd);
       exit(0);
     }
     close(new_fd);  // parent doesn't need this
 		//	} while (0);
-		printf("server done\n");
 	}
 
   return 0;

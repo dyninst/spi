@@ -36,6 +36,7 @@ def run(input_dir):
     table = lookup_table.LookupTable()
     for host_dir in os.listdir(input_dir):
         host_path = os.path.join(input_dir, host_dir)
+        if os.path.isdir(host_path) != True: continue
         for xml_file in sorted(os.listdir(host_path)):
             (pid, sep, suffix) = xml_file.partition(".")
             xml_path = os.path.join(host_path, xml_file)

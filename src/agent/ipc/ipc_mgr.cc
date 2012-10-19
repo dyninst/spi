@@ -240,7 +240,6 @@ SpIpcMgr::is_popen(const char* f) {
 // Return 1 if it is allowed to execute payload code (for tracing);
 // otherwise, 0 is returned.
 char SpIpcMgr::start_tracing(int fd) {
-  sp_print("ipcmgr:start_tracing");
   for (WorkerSet::iterator wi = worker_set_.begin();
        wi != worker_set_.end(); wi++) {
     if ((*wi)->start_tracing(fd)) return 1;
@@ -293,14 +292,12 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   ipc_mgr->get_write_param(pt, &fd, NULL, NULL, NULL, &sa);
   SpIpcWorkerDelegate* worker = NULL;
   if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
-    sp_print("Get write");
 
     // Enable tracing for current process
     // worker->SetStartTracing(1);
 
     SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
     if (c) {
-      sp_print("get channel for %s", f->name().c_str());
 
       // Inject this agent.so to remote process
       // Luckily, the SpInjector implementation will automatically detect
@@ -313,7 +310,6 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       if (Callee(pt)->name().compare("connect") != 0) {
         sp_print("*** %s", Callee(pt)->name().c_str());
         worker->SetStartTracing(1, c);
-        sp_print("send oob");
       }
       else
         sp_print("A connect, don't send oob for now");
@@ -329,7 +325,6 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   ipc_mgr->get_read_param(pt, &fd, NULL, NULL);
 
   if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
-    sp_print("get read");
     SpChannel* c = worker->GetChannel(fd, SP_READ);
     
     if (c) {

@@ -1,1 +1,1 @@
-26873@192.168.8.133<br><font color='red'><b>seteuid</b></font> to<br>root
+28676@128.105.14.86<br><font color='red'><b>exits</b></font><br>exit code: 0
