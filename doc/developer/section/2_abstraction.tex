@@ -17,8 +17,11 @@ Injector in details.
   main} function right away; 2) instrumenting all callees of specified functions
   right away; 3) instrumenting specified function calls right away.
 \item Payload function. It contains user-specified code. 
-  Frome user's perspective, a payload function will be invoke before or after each
+  From user's perspective, a payload function will be invoke before or after each
   function call in the process.
+  There are two types of payload functions, {\em entry payload} that is invoked
+  before each function call and {\em exit payload} that is invoked after each
+  function call.
 \item Point. It represents an instrumentation point at current function call and
   is used in Payload function.
 \item Control Flow Graph (CFG) structures. CFG structures include Object,

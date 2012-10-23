@@ -1,22 +1,76 @@
 \section{Examples}
-\subsection{Writing Payload}
+To illustrate the ideas of Self-propelled instrumentation, we present some
+simple code examples that demonstrate how the API can be used.
 
+\subsection{Writing Payload}
+The primary task for users using self-propelled instrumentation is write payload
+functions that are invoked before or after each function call.
 \lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
 \lstset{numbers=left}
-\begin{lstlisting}[caption=Writing Payload]
-void payload(SpPoint* pt) {
+\begin{lstlisting}[caption=Writing payload functions]
+// Entry payload function that is invoked before each function call
+void entry_payload(SpPoint* pt) {
+  // Get function from point
   SpFunction* func = sp::Callee(pt);
   if (func == NULL) return;
+
+  // If we encounter the system call exit, then print its argument
+  if (func->name().compare("exit") == 0) {
+    // Get argument
+    sp::ArgumentHandle h;
+    int* exit_code = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    printf("Exit Code: %d\n", *exit_code);
+  }
   sp::Propel(pt);
 }
+
+// Entry payload function that is invoked after each function call
+void exit_payload(SpPoint* pt) {
+  // Get function from point
+  SpFunction* func = sp::Callee(pt);
+  if (func == NULL) return;
+
+  // If we encounter the system call fork, then print its return value
+  if (func->name().compare("fork") == 0) {
+    pid_t child_pid = sp::ReturnValue(pt);
+    // Print child process id from parent process side
+    if (child_pid > 0) {
+      printf("Child process id: %d\n", child_pid);
+    }
+  }
+}
 \end{lstlisting}
+In the above code, we illustrate some common operations that users may want to
+do in entry payload function or exit payload function.
+Users can get CFG structures (e.g., function, block ...) from the argument {\em
+  pt}.
+Typically, there are some conditional branches to handle different functions,
+e.g., handling exit and fork in the above code.
+Users can also get arguments or return value for current function call.
 
 \subsection{Configuration}
+Users also need to provide the configuration code in the constructor function of
+the Agent shared library, which is mainly to register the user-provided payload
+functions.
 \lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
 \lstset{numbers=left}
-\begin{lstlisting}[caption=Configuration]
-TODO
+\begin{lstlisting}[caption=Configuration code]
+__attribute__((constructor))
+void MyAgent() {
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  // Register entry payload function
+  agent->SetInitEntry("entry_payload");
+  // Register exit payload function
+  agent->SetInitExit("exit_payload");
+  // Initiate instrumentation
+  agent->Go();
+}
 \end{lstlisting}
+The above code shows the minimum operations needed to configure self-propelled
+instrumentation.
+The major things to do in the configuration code are to create an Agent object
+that manages instrumentation, to register payload functions, and to initiate
+instrumentation.
 
 \subsection{Using Injector}
 
