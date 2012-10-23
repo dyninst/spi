@@ -402,6 +402,8 @@ IpcChecker::check(SpPoint* pt,
     char host[256];
     char service[256];
     if (sp::GetAddress((sockaddr_storage*)*addr, host, 256, service, 256)) {
+      fprintf(stderr, "== Call connect(), remote process at %s:%s ...\n",
+              host, service);
       char buf[1024];
       snprintf(buf, 1024,
                "<trace type=\"connect to\" time=\"%lu\">",
@@ -443,6 +445,8 @@ IpcChecker::check(SpPoint* pt,
       char service[256];
       char cmd[1024];
       if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
+        fprintf(stderr, "== Call send(), remote process at %s:%s ...\n",
+                host, service);
         
         char buf[1024];
         snprintf(buf, 1024,
@@ -660,6 +664,8 @@ bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
     if (ret == 0) {
       mist_->fork_init_run();
     } else if (ret > 0) {
+      fprintf(stderr, "== Call fork(), return child pid = %d...\n", ret);
+      
       char buf[1024];
       snprintf(buf, 1024,
                "<trace type=\"fork\" time=\"%lu\">%d",
