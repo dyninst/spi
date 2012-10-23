@@ -114,6 +114,7 @@ class GraphArtist:
         if self.static == True:
             logging.info('- Static = True')
             self.__dot.write_svg("%s/static.svg" % dest_dir)
+            self.__dot.write_raw("%s/static.dot" % dest_dir)
             return
         else:
             logging.info('- Static = False')
@@ -161,24 +162,27 @@ class GraphArtist:
         self.__dot = pydot.Dot(graph_type='digraph', graph_name='SecSTAR')
         
         # Draw the very first node
-        try:
-            eve = self.event_list[0]
-            cluster = self.__get_cluster(eve.host)
-            self.__get_node(eve.pidhost(), cluster)
-        except:
-            logging.error('No event')
-            os._exit(-1)
+#        try:
+#            eve = self.event_list[0]
+#            print eve.host, eve.pidhost()
+#            cluster = self.__get_cluster(eve.host)
+#            self.__get_node(eve.pidhost(), cluster)
+#        except:
+#            logging.error('No event')
+#            os._exit(-1)
 
         for eve in self.event_list:
             cluster = self.__get_cluster(eve.host)
-            #print eve
+#            print eve, eve.host, eve.pidhost()
             if eve.type == 'connect':
                 self.__get_node(eve.pidhost(), cluster)
-                self.__get_node(eve.trg_pidhost(), cluster)
+                trg_cluster = self.__get_cluster(eve.trg_host)
+                self.__get_node(eve.trg_pidhost(), trg_cluster)
                 self.__get_edge(eve.pidhost(), eve.trg_pidhost(), eve.type)
             elif eve.type == 'send':
                 self.__get_node(eve.pidhost(), cluster)
-                self.__get_node(eve.trg_pidhost(), cluster)
+                trg_cluster = self.__get_cluster(eve.trg_host)
+                self.__get_node(eve.trg_pidhost(), trg_cluster)
                 self.__get_edge(eve.pidhost(), eve.trg_pidhost(), eve.type)
             elif eve.type == 'fork' or eve.type == 'clone':
                 self.__get_node(eve.pidhost(), cluster)
@@ -392,7 +396,7 @@ class GraphArtist:
         Use self.cluster_map as cache
         """
         if host in self.__cluster_map: return self.__cluster_map[host]
-        cluster = pydot.Cluster("%d" % hash(host),label=host)
+        cluster = pydot.Cluster("%d" % abs(hash(host)),label=host)
         self.__dot.add_subgraph(cluster)
         self.__cluster_map[host] = cluster
         return cluster

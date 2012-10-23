@@ -450,7 +450,7 @@ IpcChecker::check(SpPoint* pt,
                  callee->name().c_str(), u_.GetUsec());
         u_.WriteTrace(buf);
 
-        sprintf(cmd, "/tmp/getpidfromport %s", service);
+        sprintf(cmd, "ssh %s \"/tmp/getpidfromport %s\"", host, service);
         char line[1024];
         FILE* fp = popen(cmd, "r");
         fgets(line, 1024, fp);
