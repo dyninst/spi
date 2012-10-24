@@ -907,4 +907,47 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   return true;
 }
 
+//////////////////////////////////////////////////////////////////////
+// Parse library that is instrumentable and not parsed yet
+bool
+SpParser::ParseDlExit(SpPoint* pt) {
+  SymtabSet unique_tabs;
+  sb::AddressLookup* al = g_parser->GetRuntimeSymtabs(unique_tabs);
+  if (!al) {
+    sp_perror("FAILED TO GET RUNTIME SYMTABS");
+  }
+
+  ph::AddrSpace* as = g_parser->mgr()->as();
+  assert(as);
+  StringSet orig_obj_names;
+  for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
+       ci != as->objMap().end(); ci++) {
+    sp::SpObject* obj = OBJ_CAST(ci->second);
+    // sp_print("%s", obj->name().c_str());
+    orig_obj_names.insert(obj->name());
+  }
+
+  for (SymtabSet::iterator si = unique_tabs.begin();
+       si != unique_tabs.end(); si++) {
+    sb::Symtab* sym = *si;
+    // sp_print("handling %s", sym->name().c_str());
+    if (!g_parser->CanInstrumentLib(sym->name().c_str())) {
+      // sp_print("Cannot instrument %s", sym->name().c_str());
+      continue;
+    } else if (orig_obj_names.find(sym->name()) == orig_obj_names.end()) {
+      // sp_print("Newly added library: %s", sym->name().c_str());
+      dt::Address load_addr = 0;
+      al->getLoadAddress(sym, load_addr);
+      SpObject* patch_obj = g_parser->CreateObject(sym, load_addr);
+      if (!patch_obj) {
+        sp_debug("FAILED TO CREATE PATCH OBJECT");
+        return false;
+      }
+      as->loadObject(patch_obj);
+      return true;
+    }
+  }
+  return true;
+}
+
 }

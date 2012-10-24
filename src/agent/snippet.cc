@@ -138,7 +138,8 @@ namespace sp {
     sp_debug("PAYLOAD ENTRY - at %lx", called_func);
     assert(g_context);
     if (g_context->IsIpcEnabled() ||
-        g_context->IsMultithreadEnabled()) {
+        g_context->IsMultithreadEnabled() ||
+        g_context->IsHandleDlopenEnabled()) {
       param_func = (long)entry_;
       called_func = (long)g_context->wrapper_entry();
     }
@@ -181,14 +182,18 @@ namespace sp {
       blob_size_ += emit_call_orig(blob_, blob_size_);
     }
 
-    if (g_context->IsIpcEnabled() || exit_) {
+    if (g_context->IsIpcEnabled() ||
+        g_context->IsHandleDlopenEnabled() ||
+        exit_) {
+
       // 6. save context
       blob_size_ += emit_save(blob_, blob_size_);
 
       // 7. Pass parameters
       param_func = 0;
       called_func = (long)exit_;
-      if (g_context->IsIpcEnabled()) {
+      if (g_context->IsIpcEnabled() ||
+          g_context->IsHandleDlopenEnabled()) {
         param_func = (long)exit_;
         called_func = (long)g_context->wrapper_exit();
       }

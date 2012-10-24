@@ -121,6 +121,9 @@ namespace sp {
         DumpInsns(void* addr,
                   size_t size);
 
+    AGENT_EXPORT static bool
+        ParseDlExit(SpPoint* pt);
+    
   protected:
     // Is this agent library injected (true) or preloaded (false)?
     bool injected_;

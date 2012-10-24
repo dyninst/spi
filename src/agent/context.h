@@ -86,6 +86,9 @@ class SpContext {
     bool IsIpcEnabled() const {
       return allow_ipc_;
     }
+    bool IsHandleDlopenEnabled() const {
+      return handle_dlopen_;
+    }
     bool IsMultithreadEnabled() const {
       return allow_multithread_;
     }
@@ -108,6 +111,7 @@ class SpContext {
     SpPropeller::ptr init_propeller_;
 
     bool allow_ipc_;
+    bool handle_dlopen_;
     bool allow_multithread_;
     bool directcall_only_;
 
@@ -123,6 +127,10 @@ class SpContext {
       allow_ipc_ = b;
     }
 
+    void EnableHandleDlopen(bool b) {
+      handle_dlopen_ = b;
+    }
+    
     void EnableMultithread(bool b) {
       allow_multithread_ = b;
     }

@@ -73,6 +73,7 @@ namespace sp {
     AGENT_EXPORT void EnableDirectcallOnly(const bool yes_or_no);
     AGENT_EXPORT void EnableTrapOnly(const bool yes_or_no);
     AGENT_EXPORT void EnableIpc(const bool yes_or_no);
+    AGENT_EXPORT void EnableHandleDlopen(const bool yes_or_no);
     AGENT_EXPORT void EnableMultithread(const bool yes_or_no);
 
     // Getters
@@ -116,6 +117,9 @@ namespace sp {
     AGENT_EXPORT bool IsMultithreadEnabled() const {
       return allow_multithread_;
     }
+    AGENT_EXPORT bool IsHandleDlopenEnabled() const {
+      return handle_dlopen_;
+    }
 
     AGENT_EXPORT SpContext* context() const {
       return context_;
@@ -139,6 +143,7 @@ namespace sp {
     bool allow_ipc_;
     bool trap_only_;
     bool allow_multithread_;
+    bool handle_dlopen_;
 
     StringSet  libs_to_inst_;
     StringSet  funcs_not_to_inst_;

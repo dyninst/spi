@@ -62,6 +62,12 @@ wrapper_entry(sp::SpPoint* pt,
       return;
     }
   }
+
+  /*
+    if (!sp::SpParser::ParseDlExit(pt)) {
+    return;
+  }
+  */
   entry(pt);
 }
 
@@ -71,7 +77,18 @@ wrapper_entry(sp::SpPoint* pt,
 void
 wrapper_exit(sp::SpPoint* pt,
              sp::PayloadFunc_t exit) {
-  if (!sp::SpIpcMgr::BeforeExit(pt)) return;
+  // Handle IPC stuffs
+  if (sp::g_context->IsIpcEnabled()) {
+    if (!sp::SpIpcMgr::BeforeExit(pt)) {
+      return;
+    }
+  }
+
+  // Handle dlopen
+  if (!sp::SpParser::ParseDlExit(pt)) {
+    return;
+  }
+  
   exit(pt);
 }
 

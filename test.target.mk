@@ -98,6 +98,7 @@ UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(ST_DIR)/cpp_systest.cc \
             $(ST_DIR)/gcc_systest.cc \
             $(ST_DIR)/multithread_systest.cc \
+            $(ST_DIR)/dlopen_systest.cc \
             $(ST_DIR)/pipe_systest.cc \
             $(ST_DIR)/tcp_systest1.cc \
             $(ST_DIR)/tcp_systest2.cc \
@@ -162,6 +163,7 @@ MUTATEE_SRCS  = $(ME_DIR)/tcp_client.c \
                 $(ME_DIR)/libcall.c \
                 $(ME_DIR)/multithread.c \
                 $(ME_DIR)/stripped.c \
+                $(ME_DIR)/dlopen_mutatee.c \
 
 MUTATEE_CPP_SRCS  = $(ME_DIR)/cpp_prog.cc \
 
@@ -213,6 +215,7 @@ TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
            $(TG_DIR)/chrome_test_agent.cc \
            $(TG_DIR)/payload_test_agent.cc \
            $(TG_DIR)/ipc_test_agent.cc \
+           $(TG_DIR)/dlopen_test_agent.cc \
            $(TG_DIR)/gcc_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
            $(TG_DIR)/print_test_agent.cc \

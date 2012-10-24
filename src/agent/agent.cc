@@ -84,6 +84,7 @@ namespace sp {
     allow_multithread_ = false;
     trap_only_ = false;
     parse_only_ = false;
+    handle_dlopen_ = false;
     directcall_only_ = false;
   }
 
@@ -134,6 +135,11 @@ namespace sp {
   void
   SpAgent::EnableIpc(const bool b) {
     allow_ipc_ = b;
+  }
+
+  void
+  SpAgent::EnableHandleDlopen(const bool b) {
+    handle_dlopen_ = b;
   }
 
   void
@@ -280,13 +286,14 @@ namespace sp {
     
     g_context->EnableDirectcallOnly(directcall_only_);
     g_context->EnableIpc(allow_ipc_);
+    g_context->EnableHandleDlopen(handle_dlopen_);
     g_context->EnableMultithread(allow_multithread_);
     if (allow_ipc_) {
       // SpIpcMgr will be deleted in the destructor of SpContext
       g_context->SetIpcMgr(new SpIpcMgr());
     }
-    if (allow_ipc_ || allow_multithread_) {
-      sp_debug("ALLOW IPC OR MULTITHREADED");
+    if (allow_ipc_ || allow_multithread_ || handle_dlopen_) {
+      sp_debug("ALLOW IPC OR MULTITHREADED OR HANDLE_DLOPEN");
       void* wrapper_entry =
           (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
       assert(wrapper_entry);
