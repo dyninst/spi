@@ -3,15 +3,224 @@
 % In both user and developer manual
 \subsection{Public Interface}
 \subsubsection{Class Agent}
+\textbf{Declared in}: src/agent/agent.h
+
+\begin{apient}
+void SetInitEntry(string);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void SetInitExit(string);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void SetLibrariesToInstrument(const StringSet& libs);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void SetFuncsNotToInstrument(const StringSet& funcs);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void EnableParseOnly(const bool yes_or_no);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void EnableIpc(const bool yes_or_no);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void EnableHandleDlopen(const bool yes_or_no);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void EnableMultithread(const bool yes_or_no);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void Go();
+\end{apient}
+\apidesc{
+}
+
 \subsubsection{Class SpPoint}
+\textbf{Declared in}: src/agent/patchapi/point.h
+
+\begin{apient}
+bool tailcall();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpBlock* GetBlock() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpObject* GetObject() const;
+\end{apient}
+\apidesc{
+}
+
+
 \subsubsection{Class SpObject}
+\textbf{Declared in}: src/agent/patchapi/object.h
+
+\begin{apient}
+std::string name() const;
+\end{apient}
+\apidesc{
+}
+
+
 \subsubsection{Class SpFunction}
+\textbf{Declared in}: src/agent/patchapi/cfg.h
+
+\begin{apient}
+SpObject* GetObject() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+std::string GetMangledName();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+std::string GetPrettyName();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+std::string name();
+\end{apient}
+\apidesc{
+}
+
 \subsubsection{Class SpBlock}
+\textbf{Declared in}: src/agent/patchapi/cfg.h
+
+\begin{apient}
+SpObject* GetObject() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+in::Instruction::Ptr orig_call_insn() const;
+\end{apient}
+\apidesc{
+}
+
 \subsubsection{Class SpEdge}
+\textbf{Declared in}: src/agent/patchapi/cfg.h
+
+
 \subsubsection{Utility Functions}
+\textbf{Declared in}: src/agent/payload.h
+
+Utility functions are used when writing payload functions.
+
+\begin{apient}
+SpFunction* Callee(SpPoint* pt);
+\end{apient}
+\apidesc{
+Returns an instance of SpFunction for current function call. 
+The argument \emph{pt} represents the instrumentation point for current function
+call.
+If it fails, it returns NULL.
+}
+
+\begin{apient}
+bool IsInstrumentable(SpPoint* pt);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void Propel(SpPoint* pt);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool IsIpcWrite(SpPoint*); 
+bool IsIpcRead(SpPoint*); 
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+struct ArgumentHandle;
+void* PopArgument(SpPoint* pt,
+                  ArgumentHandle* h,
+                  size_t size);
+\end{apient}
+\apidesc{
+}
 
 % In developer manual only
 \subsection{Private Interface}
+\subsubsection{Class SpParser}
+\textbf{Declared in}: src/agent/parser.h
+
+\begin{apient}
+SpObject* exe() const;
+\end{apient}
+\apidesc{
+}
+
+\subsubsection{Class SpContext}
+\textbf{Declared in}: src/agent/context.h
+
+\subsubsection{Class SpEvent}
+\textbf{Declared in}: src/agent/event.h
+
+\subsubsection{Class SpPropeller}
+\textbf{Declared in}: src/agent/propeller.h
+
+\subsubsection{Class SpSnippet}
+\textbf{Declared in}: src/agent/snippet.h
+
 \subsubsection{Class SpAddrSpace}
+\textbf{Declared in}: src/agent/patchapi/addr\_space.h
+
+\subsubsection{Class SpInstrumenter}
+\textbf{Declared in}: src/agent/patchapi/instrumenter.h
+
+\subsubsection{Inst Workers}
+\textbf{Declared in}: src/agent/inst\_workers/
+
+\subsubsection{Class SpThreadMgr}
+\textbf{Declared in}: src/agent/thread\_mgr.h
+
 \subsubsection{Class IpcMgr}
+\textbf{Declared in}: src/agent/ipc/ipc\_mgr.h
+
+\subsubsection{Class SpChannel}
+\textbf{Declared in}: src/agent/ipc/channel.h
+
+\subsubsection{IPC Workers}
+\textbf{Declared in}: src/agent/ipc/ipc\_workers/
 

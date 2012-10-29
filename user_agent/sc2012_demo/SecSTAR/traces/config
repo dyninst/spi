@@ -1,3 +1,5 @@
 SERVER=grilled
 CLIENT=feta
+#SERVER=bleu
+#CLIENT=bleu
 WEBSERVER=~/public/html/vis

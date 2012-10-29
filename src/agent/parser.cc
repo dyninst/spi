@@ -911,6 +911,10 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
 // Parse library that is instrumentable and not parsed yet
 bool
 SpParser::ParseDlExit(SpPoint* pt) {
+
+  ph::PatchFunction* f = sp::Callee(pt);
+  if (f && f->name().compare("dlopen") != 0) return true;
+
   SymtabSet unique_tabs;
   sb::AddressLookup* al = g_parser->GetRuntimeSymtabs(unique_tabs);
   if (!al) {
@@ -947,6 +951,7 @@ SpParser::ParseDlExit(SpPoint* pt) {
       return true;
     }
   }
+
   return true;
 }
 

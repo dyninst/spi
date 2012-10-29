@@ -63,12 +63,7 @@ wrapper_entry(sp::SpPoint* pt,
     }
   }
 
-  /*
-    if (!sp::SpParser::ParseDlExit(pt)) {
-    return;
-  }
-  */
-  entry(pt);
+  if (entry) entry(pt);
 }
 
 
@@ -85,11 +80,12 @@ wrapper_exit(sp::SpPoint* pt,
   }
 
   // Handle dlopen
-  if (!sp::SpParser::ParseDlExit(pt)) {
-    return;
+  if (sp::g_context->IsHandleDlopenEnabled()) {
+    if (!sp::SpParser::ParseDlExit(pt)) {
+      return;
+    }
   }
-  
-  exit(pt);
+  if (exit) exit(pt);
 }
 
 

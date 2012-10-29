@@ -1,6 +1,10 @@
-AGENT_SRCS     =
+AGENT_FLAGS   += -I/usr/include/libxml2
 
-include ../../../make.config
-include ../make.config
-include ../../../make.flag.tmpl
-include	../../make.module.tmpl
+AGENT_LDFLAGS += -lxml2
+
+AGENT_SRCS    +=
+
+include ../../../config.mk
+include ../config.mk
+include ../../../common.flag.mk
+include	../../target.mk

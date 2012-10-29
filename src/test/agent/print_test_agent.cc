@@ -11,8 +11,8 @@ void test_entry(SpPoint* pt) {
   SpFunction* f = Callee(pt);
   if (!f) return;
   //sp_print("%s", f->GetPrettyName().c_str());
-  sp_print("%s", f->name().c_str());
-  //fprintf(stderr, "%s", f->name().c_str());
+  //sp_print("%s", f->name().c_str());
+  fprintf(stderr, "%s\n", f->name().c_str());
   //sp_print("%s", f->GetMangledName().c_str());
 
   sp::Propel(pt);
@@ -21,14 +21,15 @@ void test_entry(SpPoint* pt) {
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  // agent->EnableHandleDlopen(true);
   StringSet libs_to_inst;
   libs_to_inst.insert("libtest1.so");
-  /*
+
   libs_to_inst.insert("mod_staticfile.so");
   libs_to_inst.insert("mod_chunked.so");
   libs_to_inst.insert("mod_dirlisting.so");
   libs_to_inst.insert("mod_indexfile.so");
-  */
+
   agent->SetLibrariesToInstrument(libs_to_inst);
   agent->SetInitEntry("test_entry");
   agent->Go();

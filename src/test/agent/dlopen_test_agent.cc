@@ -21,7 +21,7 @@ void test_exit(SpPoint* pt) {
   if (f->name().compare("dlopen") == 0) {
     AddrSpace* as = pt->GetObject()->addrSpace();
     // This should be 1
-    printf("%lu", as->objMap().size() - num_objs);
+    printf("%lu", (unsigned long)as->objMap().size() - num_objs);
   }  
 }
 

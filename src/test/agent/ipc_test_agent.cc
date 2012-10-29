@@ -9,7 +9,7 @@ void test_entry(SpPoint* pt) {
   SpFunction* f = Callee(pt);
   if (!f) return;
 
-  //	sp_print("entry func: %s @ pid=%d", f->name().c_str(), getpid());
+  //sp_print("entry func: %s @ pid=%d", f->name().c_str(), getpid());
 
 	if (IsIpcWrite(pt)) {
 		sp_print("Write: %s @ pid=%d w/ addr %lx",
@@ -26,7 +26,7 @@ void test_entry(SpPoint* pt) {
 void test_exit(SpPoint* pt) {
   SpFunction* f = Callee(pt);
   if (!f) return;
-	// sp_print("exit func: %s @ pid=%d", f->name().c_str(), getpid());
+	sp_print("exit func: %s @ pid=%d", f->name().c_str(), getpid());
 
 	if (IsIpcWrite(pt)) {
 		long size = sp::ReturnValue(pt);
