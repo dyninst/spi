@@ -298,13 +298,9 @@ TEST_F(TcpTest1, inject) {
   const char* hostname = "localhost";
   FILE* fp = popen(cmd.c_str(), "r");
   char buf[256];
-
   tcp_client(hostname, INJECT);
-  tcp_client(hostname);
-  EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
   EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
   EXPECT_STREQ(buf, "AGINJECTED\n");
-
   system("killall tcp_server4.exe");
 }
 

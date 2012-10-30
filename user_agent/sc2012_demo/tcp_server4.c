@@ -35,7 +35,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 int main(void) {
-
+  fprintf(stderr, "Start server PID=%d\n", getpid());
   int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
   struct addrinfo hints, *servinfo, *p;
   struct sockaddr_storage their_addr; // connector's address information
@@ -117,7 +117,7 @@ int main(void) {
     if (!fork()) { // this is the child process
       close(sockfd); // child doesn't need the listener
 
-      // fprintf(stderr, "Fork PID=%d to handle request\n", getpid());
+      fprintf(stderr, "Fork PID=%d to handle request\n", getpid());
 
       if (send(new_fd, "Hello, world!\n", 14, 0) == -1)
 				perror("send");

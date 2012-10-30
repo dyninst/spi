@@ -30,7 +30,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-  // fprintf(stderr, "Start client PID=%d\n", getpid());
+  fprintf(stderr, "Start client PID=%d\n", getpid());
   
   int sockfd, numbytes;  
   char buf[MAXDATASIZE];
@@ -77,12 +77,12 @@ int main(int argc, char *argv[])
   inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);
 
-  // fprintf(stderr, "Get content: ", s);
+  fprintf(stderr, "Get content: ", s);
   freeaddrinfo(servinfo); // all done with this structure
 
   while ((numbytes = recv(sockfd, buf, MAXDATASIZE, 0)) != 0 && numbytes != -1) {
     buf[numbytes] = '\0'; 
-		printf("%s",buf);
+		fprintf(stderr, "%s",buf);
   }
 	// system("/usr/sbin/lsof -i TCP");
   close(sockfd);

@@ -4,4 +4,4 @@ export SP_AGENT_DIR=`pwd`/../../$PLATFORM
 rm -f /tmp/*.xml
 cp -f ../../x86_64-unknown-linux2.4/getpidfromport /tmp/getpidfromport
 
-$SP_DIR/$PLATFORM/test_mutatee/tcp_server4.exe
+../../$PLATFORM/tcp_server4.exe

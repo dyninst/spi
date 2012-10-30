@@ -146,7 +146,7 @@ SpTcpWorker::Inject(SpChannel* c,
   cmd_exe += "injector";
 
   // IP and Port
-  snprintf(cmd, 1024, " %s %s ", remote_ip, remote_port);
+  snprintf(cmd, 1024, " port %s ", remote_port);
   cmd_exe += cmd;
 
   // Agent path

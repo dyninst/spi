@@ -1,2 +1,0 @@
-getpidfromport:	../getpidfromport.C
-								g++ -o getpidfromport ../getpidfromport.C 

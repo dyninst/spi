@@ -52,20 +52,20 @@ namespace sp {
   // IPC Manager, which is an all-in-one manager for inter-process support.
 
   class SpIpcMgr {
-  public:
+ public:
     SpIpcMgr();
     ~SpIpcMgr();
 
     // Get channel from fd
     // If channel doesn't exist, construct one
     // Return NULL if failed to create one channel
-    SpChannel* get_channel(int fd,
-                           ChannelRW rw);
+    SpChannel* GetChannel(int fd,
+                          ChannelRW rw);
 
     // Get a worker according to the file descriptor.
     // Return the worker if the file descriptor is for supported IPC;
     // otherwise, return NULL.
-    SpIpcWorkerDelegate* get_worker(int fd);
+    SpIpcWorkerDelegate* GetWorker(int fd);
 
     // Get parameters from "write" functions.
     // Input Param : pt -- the call point from which we get the function
@@ -74,22 +74,22 @@ namespace sp {
     // Output Param: c_out -- the character to write, if NULL, then skip it
     // Output Param: size_out -- the size of the buffer, if NULL, then skip it
     // Output Param: sa -- sockaddr for connect(), if NULL, then skip it
-    void get_write_param(SpPoint* pt,
-                         int* fd_out,
-                         void** buf_out,
-                         char* c_out,
-                         size_t* size_out,
-                         sockaddr** sa_out);
+    void GetWriteParam(SpPoint* pt,
+                       int* fd_out,
+                       void** buf_out,
+                       char* c_out,
+                       size_t* size_out,
+                       sockaddr** sa_out);
 
     // Get parameters from "read" functions.
     // Input Param : pt -- the call point from which we get the function
     // Output Param: fd_out -- file descriptor, if it is NULL, then skip it
     // Output Param: buf_out -- the buffer to write, if NULL, then skip it
     // Output Param: size_out -- the size of the buffer, if NULL, then skip
-    void get_read_param(SpPoint* pt,
-                        int* fd_out,
-                        void** buf_out,
-                        size_t* size_out);
+    void GetReadParam(SpPoint* pt,
+                      int* fd_out,
+                      void** buf_out,
+                      size_t* size_out);
 
 
     // See if the function is a fork
@@ -115,7 +115,7 @@ namespace sp {
     SpTcpWorker* tcp_worker() const { return tcp_worker_; }
     SpUdpWorker* udp_worker() const { return udp_worker_; }
 
-  protected:
+ protected:
 
     // IPC workers
     SpPipeWorker* pipe_worker_;

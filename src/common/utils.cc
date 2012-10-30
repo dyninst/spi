@@ -196,6 +196,7 @@ GetInodeFromFileDesc(const int fd) {
 bool
 PidUsesInode(const int pid,
              const ino_t inode) {
+  fprintf(stderr, "*** pid=%d uses inode=%lu?\n", pid, inode);
   DIR *dir;
   ino_t temp_node;
   struct dirent *de;
@@ -217,6 +218,7 @@ PidUsesInode(const int pid,
       }
       buffer[size] = '\0';
 
+      fprintf(stderr, "***buffer=%s\n", buffer);
       if (sscanf(buffer, "pipe:[%lu]", &temp_node) == 1 &&
           temp_node == inode) {
         // Anonymous pipe
@@ -290,6 +292,8 @@ GetPidsFromAddrs(const char* const rem_ip,
   // Convert port string to int
   int rem_port_int = atoi(rem_port);
 
+  fprintf(stderr, "*** look for port: %d / %x -> remote: %d / %x\n", rem_port_int, rem_port_int, 8001, 8001);
+  
   // Read /proc/net/tcp for
   FILE* tcp_fp = fopen("/proc/net/tcp", "r");
   char line[2048];
@@ -298,6 +302,7 @@ GetPidsFromAddrs(const char* const rem_ip,
     sp_perror("Failed to read headline of /proc/net/tcp");
   }
   while (fgets(line, 2048, tcp_fp) != NULL) {
+    fprintf(stderr, line);
     int iloc_ip, iloc_port, irem_ip, irem_port;
     if (sscanf(line, "%*u: %08X:%04X %08X:%04X %*02X %*08X:%*08X "
                "%*02X:%*08X %*08X %*u %*d %u",
@@ -305,10 +310,13 @@ GetPidsFromAddrs(const char* const rem_ip,
       sp_perror("Failed to read a line in /proc/net/tcp");
     }
     if (iloc_port == rem_port_int) break;
+    else inode = -1;
   }
   fclose(tcp_fp);
   if (inode == -1) return;
 
+  fprintf(stderr, "***inode=%d\n", inode);
+  
   // Iterate all pids
   DIR *dir;
   int pid;

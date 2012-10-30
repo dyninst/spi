@@ -8,4 +8,4 @@ export SP_AGENT_DIR=`pwd`/../../$PLATFORM
 
 cp -f ../../x86_64-unknown-linux2.4/getpidfromport /tmp/getpidfromport
 
-LD_PRELOAD="$AGENT" $SP_DIR/$PLATFORM/test_mutatee/tcp_client.exe $SERVER
+LD_PRELOAD="$AGENT" ../../$PLATFORM/tcp_client.exe $SERVER

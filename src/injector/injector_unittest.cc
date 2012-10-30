@@ -80,7 +80,7 @@ TEST_F(InjectorTest, pid_inject) {
 	sprintf(pid_str, "%d", pid_);
 
 	string cmd = injector_path_;
-	cmd += " ";
+	cmd += " pid ";
 	cmd += pid_str;
   cmd += " ";
   cmd += getenv("SP_DIR");
@@ -109,7 +109,7 @@ TEST_F(InjectorTest, pid_complex_agent_inject) {
 	sprintf(pid_str, "%d", pid_);
 
 	string cmd = injector_path_;
-	cmd += " ";
+	cmd += " pid ";
 	cmd += pid_str;
   cmd += " ";
   cmd += getenv("SP_DIR");
@@ -133,7 +133,7 @@ TEST_F(InjectorTest, pid_complex_agent_inject) {
 TEST_F(InjectorTest, network_inject) {
 	string cmd = injector_path_;
 	cmd += " ";
-	cmd += "127.0.0.1 ";
+	cmd += "port ";
 	cmd += "3490 ";        // The only thing we use for injection
 	cmd += " ";
   cmd += getenv("SP_DIR");
@@ -161,7 +161,7 @@ TEST_F(InjectorTest, dup_inject) {
 	sprintf(pid_str, "%d", pid_);
 
 	string cmd = injector_path_;
-	cmd += " ";
+	cmd += " pid ";
 	cmd += pid_str;
 	cmd += " ";
   cmd += getenv("SP_DIR");

@@ -82,12 +82,12 @@ SpIpcMgr::~SpIpcMgr() {
 // Output Param: size_out -- the size of the buffer, if NULL, then skip it
 // Output Param: sa_out -- sockaddr for connect(), if NULL, then skip it
 void
-SpIpcMgr::get_write_param(SpPoint* pt,
-                          int* fd_out,
-                          void** buf_out,
-                          char* c_out,
-                          size_t* size_out,
-                          sockaddr** sa_out) {
+SpIpcMgr::GetWriteParam(SpPoint* pt,
+                        int* fd_out,
+                        void** buf_out,
+                        char* c_out,
+                        size_t* size_out,
+                        sockaddr** sa_out) {
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) return;
 
@@ -101,6 +101,19 @@ SpIpcMgr::get_write_param(SpPoint* pt,
     if (buf_out) *buf_out = *buf;
     size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
     if (size_out) *size_out = *size;
+
+    sp_debug("IPC GOT WRITE -- %s => fd = %d", f->name().c_str(), *fd_out);
+  }
+
+  else if (f->name().compare("writev") == 0) {
+
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+
+    // const struct iovec *iov
+    // sp::PopArgument(pt, &h, sizeof(void*));
+    // int* iovcnt = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    // fprintf(stderr, "iovcnt: %d\n", *iovcnt);
 
     sp_debug("IPC GOT WRITE -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
@@ -150,7 +163,7 @@ SpIpcMgr::get_write_param(SpPoint* pt,
 
     sp_debug("IPC GOT sendfile -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
-  
+
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -161,10 +174,10 @@ SpIpcMgr::get_write_param(SpPoint* pt,
 // Output Param: buf_out -- the buffer to write, if NULL, then skip it
 // Output Param: size_out -- the size of the buffer, if NULL, then skip it
 void
-SpIpcMgr::get_read_param(SpPoint* pt,
-                         int* fd_out,
-                         void** buf_out,
-                         size_t* size_out) {
+SpIpcMgr::GetReadParam(SpPoint* pt,
+                       int* fd_out,
+                       void** buf_out,
+                       size_t* size_out) {
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) return;
   // sp_print("%s", f->name().c_str());
@@ -177,6 +190,19 @@ SpIpcMgr::get_read_param(SpPoint* pt,
     if (buf_out) *buf_out = *buf;
     size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
     if (size_out) *size_out = *size;
+
+    sp_debug("IPC GOT READ -- %s => fd = %d", f->name().c_str(), *fd_out);
+  }
+
+  else if (f->name().compare("readv") == 0) {
+
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+
+    // const struct iovec *iov
+    // sp::PopArgument(pt, &h, sizeof(void*));
+    // int* iovcnt = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    // fprintf(stderr, "iovcnt: %d\n", *iovcnt);
 
     sp_debug("IPC GOT READ -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
@@ -250,7 +276,7 @@ char SpIpcMgr::start_tracing(int fd) {
 // Get a worker according to the file descriptor.
 // Return the worker if the file descriptor is for supported IPC;
 // otherwise, return NULL.
-SpIpcWorkerDelegate* SpIpcMgr::get_worker(int fd) {
+SpIpcWorkerDelegate* SpIpcMgr::GetWorker(int fd) {
   // PIPE
   if (IsPipe(fd)) {
     sp_debug("PIPE FD - fd = %d", fd);
@@ -272,7 +298,6 @@ SpIpcWorkerDelegate* SpIpcMgr::get_worker(int fd) {
 }
 
 //////////////////////////////////////////////////////////////////////
-
 // Will be called before user-specified entry-payload function.
 bool
 SpIpcMgr::BeforeEntry(SpPoint* pt) {
@@ -286,15 +311,11 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
 
   // Sender-side
-  // Detect initiation of communication
   int fd = -1;
   sockaddr* sa = NULL;
-  ipc_mgr->get_write_param(pt, &fd, NULL, NULL, NULL, &sa);
+  ipc_mgr->GetWriteParam(pt, &fd, NULL, NULL, NULL, &sa);
   SpIpcWorkerDelegate* worker = NULL;
-  if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
-
-    // Enable tracing for current process
-    // worker->SetStartTracing(1);
+  if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
 
     SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
     if (c) {
@@ -305,28 +326,21 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       // not inject the library again.
       worker->Inject(c);
 
-      /*
-      // Enable tracing for remote process
-      if (Callee(pt)->name().compare("connect") != 0) {
-        sp_print("*** %s", Callee(pt)->name().c_str());
-        worker->SetStartTracing(1, c);
-      }
-      else
-        sp_print("A connect, don't send oob for now");
-      */
       pt->SetChannel(c);
+    } else {
+      sp_debug("FAILED TO CREATE CHANNEL - for write");
     }
+
     return true;
   }
 
   // Receiver-side
   fd = -1;
   worker = NULL;
-  ipc_mgr->get_read_param(pt, &fd, NULL, NULL);
-
-  if (fd != -1 && (worker = ipc_mgr->get_worker(fd))) {
+  ipc_mgr->GetReadParam(pt, &fd, NULL, NULL);
+  if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
     SpChannel* c = worker->GetChannel(fd, SP_READ);
-    
+
     if (c) {
       pt->SetChannel(c);
     } else {
@@ -363,9 +377,6 @@ SpIpcMgr::BeforeExit(SpPoint* pt) {
     sleep(5);
     SpChannel* c = ipc_mgr->pipe_worker()->GetChannel(fd, SP_WRITE);
     ipc_mgr->pipe_worker()->SetStartTracing(0, c);
-  }
-  // Detect connect for tcp
-  else {
   }
 
   return true;

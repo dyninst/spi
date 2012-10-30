@@ -36,8 +36,8 @@ void test_entry(SpPoint* pt) {
   }
   */  
   for (int i = 0; i < level; i++)
-    fprintf(stdout, " ");
-  sp_print("%lx: %s / %s",
+    fprintf(stderr, " ");
+  fprintf(stderr, "%lx: %s / %s\n",
            pt->snip()->GetSavedReg(d64::rsp),
            f->name().c_str(),
            f->GetMangledName().c_str());
