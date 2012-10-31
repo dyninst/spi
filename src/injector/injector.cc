@@ -439,6 +439,7 @@ SpInjector::GetResolvedLibPath(const std::string &filename,
 
   // Search paths from mutatee's environment variables
   libPathStr = strdup(getenv("LD_LIBRARY_PATH"));
+
   libPath = strtok(libPathStr, ":");
   while (libPath != NULL) {
     libPaths.push_back(std::string(libPath));
@@ -483,9 +484,12 @@ SpInjector::GetResolvedLibPath(const std::string &filename,
   libPaths.push_back("/usr/lib64");
   libPaths.push_back("/lib");
   libPaths.push_back("/lib64");
+
   std::string sp_path = getenv("SP_DIR");
+  
   sp_path += "/";
   sp_path += getenv("PLATFORM");
+
   libPaths.push_back(sp_path);
   for (unsigned int i = 0; i < libPaths.size(); i++) {
     std::string str = libPaths[i] + "/" + filename;
@@ -514,6 +518,7 @@ SpInjector::GetResolvedLibPath(const std::string &filename,
   }
   paths.clear();
   std::copy(vpaths.begin(), vpaths.end(), inserter(paths, paths.begin()));
+
   return ( 0 < paths.size() );
 }
 

@@ -402,8 +402,8 @@ IpcChecker::check(SpPoint* pt,
     char host[256];
     char service[256];
     if (sp::GetAddress((sockaddr_storage*)*addr, host, 256, service, 256)) {
-      fprintf(stderr, "== Call connect(), remote process at %s:%s ...\n",
-              host, service);
+      fprintf(stderr, "INSTRUMENTATION(PID=%d): connect() to %s:%s ...\n",
+              getpid(), host, service);
       char buf[1024];
       snprintf(buf, 1024,
                "<trace type=\"connect to\" time=\"%lu\">",
@@ -445,8 +445,8 @@ IpcChecker::check(SpPoint* pt,
       char service[256];
       char cmd[1024];
       if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
-        fprintf(stderr, "== Call send(), remote process at %s:%s ...\n",
-                host, service);
+        fprintf(stderr, "INSTRUMENTATION(pid=%d): send() to %s:%s ...\n",
+                getpid(), host, service);
         
         char buf[1024];
         snprintf(buf, 1024,
@@ -664,7 +664,8 @@ bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
     if (ret == 0) {
       mist_->fork_init_run();
     } else if (ret > 0) {
-      fprintf(stderr, "== Call fork(), return child pid = %d...\n", ret);
+      fprintf(stderr, "INSTRUMENTATION(pid=%d): fork() child pid = %d...\n",
+              getpid(), ret);
       
       char buf[1024];
       snprintf(buf, 1024,
@@ -774,6 +775,8 @@ bool ExitChecker::check(SpPoint* pt,
       callee->name().compare("_exit") == 0 ) {
     ArgumentHandle h;
     int* exit_code = (int*)PopArgument(pt, &h, sizeof(uid_t));
+    fprintf(stderr, "INSTRUMENTATION(pid=%d): exit() with exit code = %d...\n",
+            getpid(), *exit_code);
     char buf[1024];
     snprintf(buf, 1024,
              "<trace type=\"%s\" time=\"%lu\">%d",

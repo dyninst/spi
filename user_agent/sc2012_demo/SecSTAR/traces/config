@@ -1,5 +1,5 @@
-SERVER=grilled
-CLIENT=feta
+SERVER=localhost
+CLIENT=localhost
 #SERVER=bleu
 #CLIENT=bleu
-WEBSERVER=~/public/html/vis
+WEBSERVER=/var/www

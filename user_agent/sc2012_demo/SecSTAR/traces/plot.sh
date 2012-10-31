@@ -1,5 +1,7 @@
 source config
 
+mkdir -p data
+
 echo "=== Plotting ==="
 if ls /tmp/*.xml &> /dev/null; then
 		rm -f data/*.xml

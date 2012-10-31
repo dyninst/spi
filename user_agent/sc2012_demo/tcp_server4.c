@@ -44,7 +44,13 @@ int main(void) {
   int yes=1;
   char s[INET6_ADDRSTRLEN];
   int rv;
-
+  /*
+  uid_t orig_euid = geteuid();
+  if (seteuid(0) == -1) {
+    perror("Seteuid error");
+    return 0;
+  }
+  */
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;//IPv4
   hints.ai_socktype = SOCK_STREAM;
@@ -113,7 +119,12 @@ int main(void) {
 							get_in_addr((struct sockaddr *)&their_addr),
 							s, sizeof s);
     // printf("server: got connection from %s\n", s);
-
+    /*
+    if (seteuid(orig_euid) == -1) {
+      perror("Seteuid error");
+      return 0;
+    }
+    */
     if (!fork()) { // this is the child process
       close(sockfd); // child doesn't need the listener
 

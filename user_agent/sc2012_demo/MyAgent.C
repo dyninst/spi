@@ -28,6 +28,8 @@ void mist_exit(SpPoint* pt) {
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  fprintf(stderr, "INSTRUMENTATION(pid=%d): libagent.so loaded in %s\n",
+          getpid(), sp::GetExeName().c_str());
   agent->SetInitEntry("mist_entry");
   agent->SetInitExit("mist_exit");
   agent->EnableIpc(true);

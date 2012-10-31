@@ -38,7 +38,11 @@ int main(int argc, char *argv[]) {
   // Networking mode: We inject to processes w/ known ip/port
   else if (strcmp(argv[1], "port") == 0) {
     // sp_print("Network mode");
-    
+    /*
+    if (seteuid(0) == -1) {
+      // TODO
+    }
+    */
     // XXX: currently, we only look at the port number
     //      so we don't do error checking for the time being
     const char* lib_name = argv[3];
