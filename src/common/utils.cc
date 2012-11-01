@@ -292,30 +292,39 @@ GetPidsFromAddrs(const char* const rem_ip,
   // Convert port string to int
   int rem_port_int = atoi(rem_port);
 
-  // fprintf(stderr, "*** look for port: %d / %x -> remote: %d / %x\n", rem_port_int, rem_port_int, 8001, 8001);
+  fprintf(stderr, "*** look for port: %d / %x or %d / %x -> remote: %d / %x\n",
+          rem_port_int, rem_port_int, rem_port_int+2, rem_port_int+2, 8001, 8001);
   
   // Read /proc/net/tcp for
-  FILE* tcp_fp = fopen("/proc/net/tcp", "r");
-  char line[2048];
   int inode = -1;
-  if (fgets(line, 2048, tcp_fp) == NULL) {
-    sp_perror("Failed to read headline of /proc/net/tcp");
-  }
-  while (fgets(line, 2048, tcp_fp) != NULL) {
-    // fprintf(stderr, line);
-    int iloc_ip, iloc_port, irem_ip, irem_port;
-    if (sscanf(line, "%*u: %08X:%04X %08X:%04X %*02X %*08X:%*08X "
-               "%*02X:%*08X %*08X %*u %*d %u",
-               &iloc_ip, &iloc_port, &irem_ip, &irem_port, &inode) != 5) {
-      sp_perror("Failed to read a line in /proc/net/tcp");
+  int tried = 0;
+  do {
+    FILE* tcp_fp = fopen("/proc/net/tcp", "r");
+    char line[2048];
+    if (fgets(line, 2048, tcp_fp) == NULL) {
+      sp_perror("Failed to read headline of /proc/net/tcp");
     }
-    if (iloc_port == rem_port_int) break;
-    else inode = -1;
-  }
-  fclose(tcp_fp);
-  if (inode == -1) return;
-
-  // fprintf(stderr, "***inode=%d\n", inode);
+    while (fgets(line, 2048, tcp_fp) != NULL) {
+      fprintf(stderr, line);
+      int iloc_ip, iloc_port, irem_ip, irem_port;
+      if (sscanf(line, "%*u: %08X:%04X %08X:%04X %*02X %*08X:%*08X "
+                 "%*02X:%*08X %*08X %*u %*d %u",
+                 &iloc_ip, &iloc_port, &irem_ip, &irem_port, &inode) != 5) {
+        sp_perror("Failed to read a line in /proc/net/tcp");
+      }
+      if (iloc_port == rem_port_int) break;
+      else inode = -1;
+    }
+    fclose(tcp_fp);
+    fprintf(stderr, "***inode=%d\n", inode);
+    if (inode == -1) return;
+    if (inode == 0 && tried < 5) {
+      sleep(1000000);
+      ++tried;
+    }
+    else break;
+  } while (1);
+  
   
   // Iterate all pids
   DIR *dir;

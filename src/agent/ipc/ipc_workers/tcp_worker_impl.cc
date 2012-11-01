@@ -200,9 +200,10 @@ SpTcpWorker::CreateChannel(int fd,
   c->type = SP_TCP;
   c->inode = GetInodeFromFileDesc(fd);
 
+  sp_debug("CREATE CHANNEL -- for fd=%d", fd);
   // connect, we can get remote ip/port from arg
   if (arg != NULL) {
-
+    sp_debug("GET ADDR from sockaddr_storage");
     // Get local ip / port
     char host[256];
     char service[64];
@@ -226,6 +227,8 @@ SpTcpWorker::CreateChannel(int fd,
 
   // send/write
   else if (rw == SP_WRITE || rw == SP_READ) {
+    sp_debug("GET ADDR from getpeername");
+    
     // Get remote ip / port
     if (GetRemoteAddress(fd, &c->remote)) {
       char host[256];

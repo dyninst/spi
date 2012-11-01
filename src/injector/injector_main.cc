@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   if (argc != 4) {
     sp_print("usage1: %s pid PID LIB_NAME\n", argv[0]);
     sp_print("    example: %s pid 2345 /tmp/myagent.so\n", argv[0]);
-    sp_print("usage2: %s port REMOTE_PORT LIB_NAME\n",
+    sp_print("usage2: %s port LOCAL_PORT LIB_NAME\n",
              argv[0]);
     sp_print("    example: %s port 8080 "
              "/tmp/myagent.so\n", argv[0]);
