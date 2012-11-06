@@ -1,0 +1,8 @@
+2012-09-25 13:51:07 (trace) (log.c:166) server started
+2012-09-25 13:51:49 (error) (server.c:936) fdevent_poll failed: Inappropriate ioctl for device
+2012-09-25 13:53:17 (trace) (log.c:166) server started
+2012-09-25 13:55:00 (trace) (log.c:166) server started
+2012-09-25 13:56:29 (trace) (log.c:166) server started
+2012-09-25 13:56:43 (trace) (log.c:166) server started
+2012-09-25 13:56:45 (trace) (server.c:813) [note] graceful shutdown started by UID=0, PID=0
+2012-09-25 13:56:45 (trace) (server.c:1778) server stopped by UID=0, PID=0

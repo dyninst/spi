@@ -1,0 +1,2 @@
+export LD_LIBRARY_PATH=/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/i386-unknown-linux2.4:/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/i386-unknown-linux2.4/test_mutatee:/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/dyninst/dyninst/../i386-unknown-linux2.4/lib:./:$LD_LIBRARY_PATH
+/afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/i386-unknown-linux2.4/injector.exe $1 $2 $3 $4 $5

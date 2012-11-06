@@ -1,0 +1,52 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Abstraction}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Agent}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Injector}{section.2}% 4
+\BOOKMARK [1][-]{section.3}{How it works}{}% 5
+\BOOKMARK [2][-]{subsection.3.1}{Building Agent}{section.3}% 6
+\BOOKMARK [2][-]{subsection.3.2}{Injection}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.3}{Initialisation}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.4}{Initial Instrumentation}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.5}{Instrumentation Propagation}{section.3}% 10
+\BOOKMARK [3][-]{subsubsection.3.5.1}{Intra-process propagation}{subsection.3.5}% 11
+\BOOKMARK [3][-]{subsubsection.3.5.2}{Inter-process propagation}{subsection.3.5}% 12
+\BOOKMARK [1][-]{section.4}{Examples}{}% 13
+\BOOKMARK [2][-]{subsection.4.1}{Writing Payload}{section.4}% 14
+\BOOKMARK [2][-]{subsection.4.2}{Configuration}{section.4}% 15
+\BOOKMARK [2][-]{subsection.4.3}{Using Injector}{section.4}% 16
+\BOOKMARK [2][-]{subsection.4.4}{Extending SPI}{section.4}% 17
+\BOOKMARK [3][-]{subsubsection.4.4.1}{Parser}{subsection.4.4}% 18
+\BOOKMARK [3][-]{subsubsection.4.4.2}{Event}{subsection.4.4}% 19
+\BOOKMARK [3][-]{subsubsection.4.4.3}{AddrSpace}{subsection.4.4}% 20
+\BOOKMARK [3][-]{subsubsection.4.4.4}{CFG}{subsection.4.4}% 21
+\BOOKMARK [3][-]{subsubsection.4.4.5}{Point}{subsection.4.4}% 22
+\BOOKMARK [3][-]{subsubsection.4.4.6}{Instrumentation Workers}{subsection.4.4}% 23
+\BOOKMARK [3][-]{subsubsection.4.4.7}{IPC Workers}{subsection.4.4}% 24
+\BOOKMARK [1][-]{section.5}{Class Reference}{}% 25
+\BOOKMARK [2][-]{subsection.5.1}{Public Interface}{section.5}% 26
+\BOOKMARK [3][-]{subsubsection.5.1.1}{Class Agent}{subsection.5.1}% 27
+\BOOKMARK [3][-]{subsubsection.5.1.2}{Class SpPoint}{subsection.5.1}% 28
+\BOOKMARK [3][-]{subsubsection.5.1.3}{Class SpObject}{subsection.5.1}% 29
+\BOOKMARK [3][-]{subsubsection.5.1.4}{Class SpFunction}{subsection.5.1}% 30
+\BOOKMARK [3][-]{subsubsection.5.1.5}{Class SpBlock}{subsection.5.1}% 31
+\BOOKMARK [3][-]{subsubsection.5.1.6}{Class SpEdge}{subsection.5.1}% 32
+\BOOKMARK [3][-]{subsubsection.5.1.7}{Utility Functions}{subsection.5.1}% 33
+\BOOKMARK [2][-]{subsection.5.2}{Private Interface}{section.5}% 34
+\BOOKMARK [3][-]{subsubsection.5.2.1}{Class SpParser}{subsection.5.2}% 35
+\BOOKMARK [3][-]{subsubsection.5.2.2}{Class SpContext}{subsection.5.2}% 36
+\BOOKMARK [3][-]{subsubsection.5.2.3}{Class SpEvent}{subsection.5.2}% 37
+\BOOKMARK [3][-]{subsubsection.5.2.4}{Class SpPropeller}{subsection.5.2}% 38
+\BOOKMARK [3][-]{subsubsection.5.2.5}{Class SpSnippet}{subsection.5.2}% 39
+\BOOKMARK [3][-]{subsubsection.5.2.6}{Class SpAddrSpace}{subsection.5.2}% 40
+\BOOKMARK [3][-]{subsubsection.5.2.7}{Class SpInstrumenter}{subsection.5.2}% 41
+\BOOKMARK [3][-]{subsubsection.5.2.8}{Inst Workers}{subsection.5.2}% 42
+\BOOKMARK [3][-]{subsubsection.5.2.9}{Class SpThreadMgr}{subsection.5.2}% 43
+\BOOKMARK [3][-]{subsubsection.5.2.10}{Class IpcMgr}{subsection.5.2}% 44
+\BOOKMARK [3][-]{subsubsection.5.2.11}{Class SpChannel}{subsection.5.2}% 45
+\BOOKMARK [3][-]{subsubsection.5.2.12}{IPC Workers}{subsection.5.2}% 46
+\BOOKMARK [1][-]{appendix.A}{Installation}{}% 47
+\BOOKMARK [2][-]{subsection.A.1}{Getting the source}{appendix.A}% 48
+\BOOKMARK [2][-]{subsection.A.2}{Configuration}{appendix.A}% 49
+\BOOKMARK [2][-]{subsection.A.3}{Building}{appendix.A}% 50
+\BOOKMARK [1][-]{appendix.B}{Testing}{}% 51
+\BOOKMARK [1][-]{appendix.C}{Directory Organization}{}% 52

@@ -1,0 +1,75 @@
+digraph SecSTAR {
+subgraph cluster_2016039413625036039 {
+label="192.168.8.133";
+"26873@192.168.8.133" [style=invisible, color=white, tooltip="pid=26873, exe=condor_master, user=condor, ppid=26847, parent_exe=sh", label=m, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"26878@192.168.8.133" [style=filled, color=white, tooltip="pid=26878, exe=condor_master, user=condor, ppid=26873, parent_exe=condor_master", label=m, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"26880@192.168.8.133" [style=filled, color=white, tooltip="pid=26880, exe=condor_collector, user=condor, ppid=26878, parent_exe=condor_master", label=c, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"26887@192.168.8.133" [style=filled, color=white, tooltip="pid=26887, exe=condor_negotiator, user=condor, ppid=26878, parent_exe=condor_master", label=n, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+}
+
+"26873@192.168.8.133" -> "26878@192.168.8.133"  [color=black, style=invis, penwidth=1.0];
+"26878@192.168.8.133" -> "26880@192.168.8.133"  [color=black, style=dotted, penwidth=1.0];
+"26878@192.168.8.133" -> "26880@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+subgraph cluster_2016039413625036032 {
+label="192.168.8.134";
+"27943@192.168.8.134" [style=invisible, color=white, tooltip="pid=27943, exe=condor_master, user=condor, ppid=27910, parent_exe=sh", label=m, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"27945@192.168.8.134" [style=filled, color=white, tooltip="pid=27945, exe=condor_master, user=condor, ppid=27943, parent_exe=condor_master", label=m, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"27947@192.168.8.134" [style=filled, color=white, tooltip="pid=27947, exe=condor_startd, user=condor, ppid=27945, parent_exe=condor_master", label=s, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"27978@192.168.8.134" [style=invisible, color=white, tooltip="pid=27978, exe=condor_mips, user=condor, ppid=27947, parent_exe=condor_startd", label=i, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"27981@192.168.8.134" [style=invisible, color=white, tooltip="pid=27981, exe=condor_kflops, user=condor, ppid=27947, parent_exe=condor_startd", label=k, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"28004@192.168.8.134" [style=filled, color=white, tooltip="pid=28004, exe=condor_procd, user=root, ppid=27947, parent_exe=condor_startd", label=p, shape=circle, fillcolor=red, fontcolor=white, penwidth=1.0];
+"28007@192.168.8.134" [style=filled, color=white, tooltip="pid=28007, exe=condor_starter, user=condor, ppid=27947, parent_exe=condor_startd", label=t, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"28025@192.168.8.134" [style=filled, color=blue, tooltip="pid=28025, exe=condor_starter, user=root, ppid=28007, parent_exe=condor_starter", label=t, shape=circle, fillcolor=red, fontcolor=white, penwidth=3.0];
+"28027@192.168.8.134" [style=invisible, color=white, tooltip="pid=28027, exe=condor_exec.exe, user=wenbin, ppid=28007, parent_exe=condor_starter", label=e, shape=circle, fillcolor=green, fontcolor=white, penwidth=1.0];
+"28031@192.168.8.134" [style=invisible, color=white, tooltip="pid=28031, exe=rm, user=root, ppid=28007, parent_exe=condor_starter", label=r, shape=circle, fillcolor=red, fontcolor=white, penwidth=1.0];
+}
+
+"27943@192.168.8.134" -> "27945@192.168.8.134"  [color=black, style=invis, penwidth=1.0];
+"27945@192.168.8.134" -> "27947@192.168.8.134"  [color=black, style=dotted, penwidth=1.0];
+"27945@192.168.8.134" -> "26880@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+subgraph cluster_2016039413625036033 {
+label="192.168.8.135";
+"29500@192.168.8.135" [style=invisible, color=white, tooltip="pid=29500, exe=condor_master, user=condor, ppid=29467, parent_exe=sh", label=m, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"29505@192.168.8.135" [style=filled, color=white, tooltip="pid=29505, exe=condor_master, user=condor, ppid=29500, parent_exe=condor_master", label=m, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"29507@192.168.8.135" [style=filled, color=white, tooltip="pid=29507, exe=condor_schedd, user=condor, ppid=29505, parent_exe=condor_master", label=h, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"29515@192.168.8.135" [style=filled, color=white, tooltip="pid=29515, exe=condor_procd, user=root, ppid=29507, parent_exe=condor_schedd", label=p, shape=circle, fillcolor=red, fontcolor=white, penwidth=1.0];
+"29548@192.168.8.135" [style=filled, color=white, tooltip="pid=29548, exe=condor_schedd, user=condor, ppid=29507, parent_exe=condor_schedd", label=h, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+"29560@192.168.8.135" [style=invisible, color=white, tooltip="pid=29560, exe=condor_submit, user=wenbin, ppid=29559, parent_exe=sh", label=u, shape=circle, fillcolor=green, fontcolor=white, penwidth=1.0];
+"29566@192.168.8.135" [style=filled, color=white, tooltip="pid=29566, exe=condor_shadow, user=wenbin, ppid=29507, parent_exe=condor_schedd", label=a, shape=circle, fillcolor=green, fontcolor=white, penwidth=1.0];
+"29590@192.168.8.135" [style=invisible, color=white, tooltip="pid=29590, exe=condor_schedd, user=condor, ppid=29507, parent_exe=condor_schedd", label=h, shape=circle, fillcolor=deeppink1, fontcolor=white, penwidth=1.0];
+}
+
+"29500@192.168.8.135" -> "29505@192.168.8.135"  [color=black, style=invis, penwidth=1.0];
+"29505@192.168.8.135" -> "29507@192.168.8.135"  [color=black, style=dotted, penwidth=1.0];
+"29505@192.168.8.135" -> "26880@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"26880@192.168.8.133" -> "26878@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"26880@192.168.8.133" -> "26880@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"26878@192.168.8.133" -> "26887@192.168.8.133"  [color=black, style=dotted, penwidth=1.0];
+"29507@192.168.8.135" -> "29515@192.168.8.135"  [color=black, style=dotted, penwidth=1.0];
+"26887@192.168.8.133" -> "26878@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"26887@192.168.8.133" -> "26880@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"29507@192.168.8.135" -> "26880@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"29507@192.168.8.135" -> "29505@192.168.8.135"  [color=black, style=solid, penwidth=1.0];
+"27947@192.168.8.134" -> "27978@192.168.8.134"  [color=black, style=invis, penwidth=1.0];
+"27947@192.168.8.134" -> "27945@192.168.8.134"  [color=black, style=solid, penwidth=1.0];
+"27947@192.168.8.134" -> "26880@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"27947@192.168.8.134" -> "27981@192.168.8.134"  [color=black, style=invis, penwidth=1.0];
+"29507@192.168.8.135" -> "29548@192.168.8.135"  [color=black, style=dotted, penwidth=1.0];
+"26887@192.168.8.133" -> "29507@192.168.8.135"  [color=black, style=solid, penwidth=1.0];
+"26887@192.168.8.133" -> "27947@192.168.8.134"  [color=black, style=solid, penwidth=1.0];
+"29560@192.168.8.135" -> "29507@192.168.8.135"  [color=black, style=invis, penwidth=1.0];
+"29507@192.168.8.135" -> "26887@192.168.8.133"  [color=black, style=solid, penwidth=1.0];
+"29507@192.168.8.135" -> "27947@192.168.8.134"  [color=black, style=solid, penwidth=1.0];
+"29507@192.168.8.135" -> "29566@192.168.8.135"  [color=black, style=dotted, penwidth=1.0];
+"29566@192.168.8.135" -> "27947@192.168.8.134"  [color=black, style=solid, penwidth=1.0];
+"29566@192.168.8.135" -> "29507@192.168.8.135"  [color=black, style=solid, penwidth=1.0];
+"27947@192.168.8.134" -> "27947@192.168.8.134"  [color=black, style=solid, penwidth=1.0];
+"27947@192.168.8.134" -> "28004@192.168.8.134"  [color=black, style=dotted, penwidth=1.0];
+"27947@192.168.8.134" -> "28007@192.168.8.134"  [color=black, style=dotted, penwidth=1.0];
+"28007@192.168.8.134" -> "29566@192.168.8.135"  [color=black, style=solid, penwidth=1.0];
+"28007@192.168.8.134" -> "28025@192.168.8.134"  [color=black, style=dotted, penwidth=1.0];
+"28007@192.168.8.134" -> "27947@192.168.8.134"  [color=black, style=solid, penwidth=1.0];
+"28007@192.168.8.134" -> "28027@192.168.8.134"  [color=black, style=invis, penwidth=1.0];
+"28007@192.168.8.134" -> "28031@192.168.8.134"  [color=black, style=invis, penwidth=1.0];
+"29507@192.168.8.135" -> "29590@192.168.8.135"  [color=black, style=invis, penwidth=1.0];
+}

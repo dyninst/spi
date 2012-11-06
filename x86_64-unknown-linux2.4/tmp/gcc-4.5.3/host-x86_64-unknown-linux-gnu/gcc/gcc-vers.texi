@@ -1,0 +1,5 @@
+@set version-GCC 4.5.3
+@clear DEVELOPMENT
+@set srcdir /afs/cs.wisc.edu/p/paradyn/development/wenbin/spi/spi/x86_64-unknown-linux2.4/tmp/gcc-4.5.3/host-x86_64-unknown-linux-gnu/gcc/../.././gcc
+@set VERSION_PACKAGE (GCC) 
+@set BUGURL @uref{http://gcc.gnu.org/bugs.html}

@@ -1,0 +1,11 @@
+asnprintf.o: asnprintf.c ../src/config.h vasnprintf.h \
+ /usr/lib/gcc/x86_64-redhat-linux/4.4.6/include/stdarg.h \
+ /usr/lib/gcc/x86_64-redhat-linux/4.4.6/include/stddef.h
+
+../src/config.h:
+
+vasnprintf.h:
+
+/usr/lib/gcc/x86_64-redhat-linux/4.4.6/include/stdarg.h:
+
+/usr/lib/gcc/x86_64-redhat-linux/4.4.6/include/stddef.h:

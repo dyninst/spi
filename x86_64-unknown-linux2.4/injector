@@ -1,0 +1,2 @@
+export LD_LIBRARY_PATH=/afs/cs.wisc.edu/p/paradyn/development/salinisk/spi/x86_64-unknown-linux2.4/:/afs/cs.wisc.edu/p/paradyn/development/salinisk/spi/x86_64-unknown-linux2.4//test_mutatee:/afs/cs.wisc.edu/p/paradyn/development/salinisk/linidyninst/dyninst/../x86_64-unknown-linux2.4//lib:./:$LD_LIBRARY_PATH
+/afs/cs.wisc.edu/p/paradyn/development/salinisk/spi/x86_64-unknown-linux2.4//injector.exe $1 $2 $3 $4 $5
