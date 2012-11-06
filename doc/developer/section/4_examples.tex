@@ -3,7 +3,8 @@ To illustrate the ideas of Self-propelled instrumentation, we present some
 simple code examples that demonstrate how the API can be used.
 
 \subsection{Writing Payload}
-The primary task for users using self-propelled instrumentation is write payload
+The primary task for users using self-propelled instrumentation is write
+payload
 functions that are invoked before or after each function call.
 \lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
 \lstset{numbers=left}
@@ -49,7 +50,8 @@ e.g., handling exit and fork in the above code.
 Users can also get arguments or return value for current function call.
 
 \subsection{Configuration}
-Users also need to provide the configuration code in the constructor function of
+Users also need to provide the configuration code in the constructor
+function of
 the Agent shared library, which is mainly to register the user-provided payload
 functions.
 \lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
@@ -73,6 +75,17 @@ that manages instrumentation, to register payload functions, and to initiate
 instrumentation.
 
 \subsection{Using Injector}
+The injector can be used to inject the agent shared library into a
+process. It can also be injected to monitor all the processes running on
+a specific port. The executable version of injector can be found inside
+$\$SP\_DIR/\$PLATFORM$. To instrument the function calls inside a particular
+process with process id $pid$, use the following command \\
+\$./injector pid $pid$ LIB\_NAME \\
+Similarly to instrument all the processes running on a specific port $port$,
+use the following command \\
+\$./injector port $port$ LIB\_NAME
+
+
 
 \subsection{Extending SPI}
 \subsubsection{Parser}
@@ -82,3 +95,4 @@ instrumentation.
 \subsubsection{Point}
 \subsubsection{Instrumentation Workers}
 \subsubsection{IPC Workers}
+
