@@ -100,7 +100,8 @@ Self-propelled Instrumentation}.
 \end{figure}
 
 Similar to intra-process propagation, inter-process propagation also
-instruments all the function calls inside an instrumenting function, but the
+instruments all the function calls inside an instrumenting function, with
+the difference that
 called function lies in a different process or host. So the instrumentation
 engine, which gets called before every function call of the instrumenting
 function, identifies that the called function is an inter-process function. It
