@@ -1,5 +1,36 @@
-\section{Testing}
+\section{Testing and Debugging}
+This section covers the testing framework and some debugging tricks of
+self-propelled instrumentation.
+\subsection{Testing}
+We rely on Google C++ Testing Framework for testing, whose source code is
+included in self-propelled instrumentation's project directory, that is,
+\$SP\_DIR/src/test/gmock.
 
+There are two types of tests in the project, unit tests and system tests.
+
+Each source code file is associated with a unit test suite, consisting of a set
+of test cases to test component units.
+The unit test suite code is located within the same folder of the source code it
+tests (mostly in \$SP\_DIR/src/agent, \$SP\_DIR/src/injector, and
+\$SP\_DIR/src/common), and the unit test suite file name has a suffix
+``_unittest''.
+For example, if a source code file name is agent.cc, then its unit test suite
+file name is agent_unittest.cc.
+
+System tests are located in \$SP\_DIR/src/test, which test the complete system.
+There are application programs for testing.
+The application programs that are written by self-propelled instrumentation
+developers are located in \$SP\_DIR/src/test/mutatee.
+Those that are real external programs (e.g., unix core utilities) are downloaded
+by the script in \$SP\_DIR/scripts/build_mutatees.sh that is invoked implicitly
+by Makefile.
+
+To run tests, the current working directory need to be the building directory
+\$SP\_DIR/\$PLATFORM, and we invoke test/\$TEST_NAME.exe to run a test.
+For example, we can run test/coreutils_systest.exe to run the system test for
+instrumenting unix core utilities, or run test/injector_unittest.exe to run the system test for 
+
+\subsection{Debugging}
 % Two type of tests
 % 1. Unit test
 % 2. system test
