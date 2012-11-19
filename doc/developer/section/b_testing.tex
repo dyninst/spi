@@ -13,21 +13,21 @@ of test cases to test component units.
 The unit test suite code is located within the same folder of the source code it
 tests (mostly in \$SP\_DIR/src/agent, \$SP\_DIR/src/injector, and
 \$SP\_DIR/src/common), and the unit test suite file name has a suffix
-``_unittest''.
+``\_unittest''.
 For example, if a source code file name is agent.cc, then its unit test suite
-file name is agent_unittest.cc.
+file name is agent\_unittest.cc.
 
 System tests are located in \$SP\_DIR/src/test, which test the complete system.
 There are application programs for testing.
 The application programs that are written by self-propelled instrumentation
 developers are located in \$SP\_DIR/src/test/mutatee.
 Those that are real external programs (e.g., unix core utilities) are downloaded
-by the script in \$SP\_DIR/scripts/build_mutatees.sh that is invoked implicitly
+by the script in \$SP\_DIR/scripts/build\_mutatees.sh that is invoked implicitly
 by Makefile.
 
 To run tests, the current working directory need to be the building directory
 \$SP\_DIR/\$PLATFORM, and we invoke test/\$TEST\_NAME.exe to run a test.
-For example, we can run test/coreutils_systest.exe to run the system test for
+For example, we can run test/coreutils\_systest.exe to run the system test for
 instrumenting unix core utilities, or run test/injector\_unittest.exe to run the
 system test for injector.
 
