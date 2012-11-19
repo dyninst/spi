@@ -26,12 +26,35 @@ by the script in \$SP\_DIR/scripts/build_mutatees.sh that is invoked implicitly
 by Makefile.
 
 To run tests, the current working directory need to be the building directory
-\$SP\_DIR/\$PLATFORM, and we invoke test/\$TEST_NAME.exe to run a test.
+\$SP\_DIR/\$PLATFORM, and we invoke test/\$TEST\_NAME.exe to run a test.
 For example, we can run test/coreutils_systest.exe to run the system test for
-instrumenting unix core utilities, or run test/injector_unittest.exe to run the system test for 
+instrumenting unix core utilities, or run test/injector\_unittest.exe to run the
+system test for injector.
 
 \subsection{Debugging}
-% Two type of tests
-% 1. Unit test
-% 2. system test
 
+We provide several useful environment variables to assist debugging.
+\begin{itemize}
+\item SP\_DEBUG: If this environment variable is set, then the execution of
+  self-propelled instrumentation would print out detailed debug information to
+  the stderr.
+\item SP\_COREDUMP: If this environment variable is set, then it enables core
+  dump when segfault happens.
+\item SP\_DEBUG: enables printing out debugging messages
+\item SP\_TEST\_RELOCINSN: If this environment variable is set, then self-propelled
+  instrumentation only uses instruction relocation instrumentation worker
+\item SP\_TEST\_RELOCBLK: If this environment variable is set, then self-propelled
+  instrumentation only uses call block relocation instrumentation worker
+\item SP\_TEST\_SPRING: If this environment variable is set, then self-propelled
+  instrumentation only uses sprint block instrumentation worker
+\item SP\_TEST\_TRAP: If this environment variable is set, then self-propelled
+  instrumentation only uses trap instrumentation worker.
+\item SP\_NO\_TAILCALL: If this environment variable is set, then self-propelled
+  instrumentation will not instrument tail calls.
+\item SP\_LIBC\_MALLOC: If this environment variable is set, then on x86\_64,
+  self-propelled instrumentation will always use libc malloc, instead of using
+  our customized memory allocator to find nearby buffers.
+\item SP\_NO\_LIBC\_MALLOC: If this environment variable is set, then on
+  x86\_64, self-propelled instrumentation will not use libc malloc when no any
+  nearby buffer is found.
+\end{itemize}

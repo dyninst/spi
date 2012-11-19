@@ -46,6 +46,10 @@ variable is set. If you are using bash shell, then open ~/.bashrc file and check
 if LD\_LIBRARY\_PATH is already present. If not, then LD\_LIBRARY\_PATH variable
 should be set in a way that it includes {\$DYNINST\_ROOT}/lib directories.  If
 you are using C shell, then do the above mentioned tasks in ~/.cshrc file.
+
+If you want to use inter-process propagation, then you should also set the
+environment variable SP\_AGENT\_DIR to be the full path of the agent shared
+library that will be injected on every machine involved.
  
 \subsection{Building}
 Once config.mk is set, you are ready to build self-propelled
@@ -53,12 +57,20 @@ instrumentation. Move to PLATFORM directory and execute the command
 \textit{make}. This will build libagent.so, injector, test-cases and
 test-programs. Other make commands for custom building are as follows:
 
-\begin{table}[h]
-\begin{tabular}{l c l}
-make spi&:& build injector and libagent.so \\
-make injector\_exe&:& build injector \\
-make agent\_lib&: &build libagent.so  \\
-\end{tabular}
-\end{table}
+\begin{itemize}
+\item make spi: build injector and libagent.so.
+\item make injector\_exe: build injector.
+\item make agent\_lib: build libagent.so.
+\item make unittest: build unittests.
+\item make mutatee: build simple mutatees.
+\item make external_mutatee: build real world mutatees, including unix core
+  utilities and gcc.
+\item make test: equivalent to make unittest + make mutatee + make
+  external_mutatee
+\item make clean_test: clean test stuffs.
+\item make clean: only clean core self-propelled stuffs, excluding dependency.
+\item make clean_all: clean everything, including dependency.
+\item make clean_objs: clean core self-propelled objs.
+\end{itemize}
 
 That is it! Now, you are all set to use Self propelled intrumentation.

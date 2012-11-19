@@ -9,54 +9,89 @@
 void SetInitEntry(string);
 \end{apient}
 \apidesc{
+
+Sets the entry payload function name. By default, the entry payload function is
+``default_entry'', which simply prints out all executed functions' name.
+
 }
 
 \begin{apient}
 void SetInitExit(string);
 \end{apient}
 \apidesc{
+
+Sets the exit payload function name. By default, there is not exit payload
+function.
+
 }
 
 \begin{apient}
 void SetLibrariesToInstrument(const StringSet& libs);
 \end{apient}
 \apidesc{
+
+Sets the set of names of libraries loaded in the application process that will
+be instrumented. By default, we only instrument the executable binary code and
+don't instrument loaded shared libraries.
+
 }
 
 \begin{apient}
 void SetFuncsNotToInstrument(const StringSet& funcs);
 \end{apient}
 \apidesc{
+Sets the set of names of functions in the application process that will
+NOT be instrumented. By default, we instrument all functions.
 }
 
 \begin{apient}
 void EnableParseOnly(const bool yes_or_no);
 \end{apient}
 \apidesc{
+
+Enables or disables ParseOnly option. If yes\_or\_no is true, then after parsing
+the binary code, we don't do instrumentation; otherwise, instrumentation is
+conducted after parsing. By default, ParseOnly option is disabled.
+
 }
 
 \begin{apient}
 void EnableIpc(const bool yes_or_no);
 \end{apient}
 \apidesc{
+
+Enable or disable inter-process instrumentation propagation. By default,
+inter-process instrumentation propagation is disabled.
+
 }
 
 \begin{apient}
 void EnableHandleDlopen(const bool yes_or_no);
 \end{apient}
 \apidesc{
+
+Enable or disable propagating instrumentation to library loaded via dlopen. By
+default, it is disabled.
+
 }
 
 \begin{apient}
 void EnableMultithread(const bool yes_or_no);
 \end{apient}
 \apidesc{
+
+Enable or disable propagating instrumentation across thread. By default, it is
+disabled.
+
 }
 
 \begin{apient}
 void Go();
 \end{apient}
 \apidesc{
+
+Starts initial instrumentation.
+
 }
 
 \subsubsection{Class SpPoint}
@@ -66,18 +101,25 @@ void Go();
 bool tailcall();
 \end{apient}
 \apidesc{
+
+Indicates whether or not the function call at this point is a tail call.
+
 }
 
 \begin{apient}
 SpBlock* GetBlock() const;
 \end{apient}
 \apidesc{
+
+Returns the call block at this point.
+
 }
 
 \begin{apient}
 SpObject* GetObject() const;
 \end{apient}
 \apidesc{
+Returns the binary object at this point.
 }
 
 
@@ -88,8 +130,11 @@ SpObject* GetObject() const;
 std::string name() const;
 \end{apient}
 \apidesc{
+Returns the binary object's name.
 }
 
+This class inherits PatchAPI::PatchObject. Please refer to PatchAPI document for
+the complete list of methods.
 
 \subsubsection{Class SpFunction}
 \textbf{Declared in}: src/agent/patchapi/cfg.h
@@ -98,25 +143,32 @@ std::string name() const;
 SpObject* GetObject() const;
 \end{apient}
 \apidesc{
+Returns the binary object containing this function.
 }
 
 \begin{apient}
 std::string GetMangledName();
 \end{apient}
 \apidesc{
+Returns the mangled name of this function.
 }
 
 \begin{apient}
 std::string GetPrettyName();
 \end{apient}
 \apidesc{
+Returns the demangled name of this function.
 }
 
 \begin{apient}
 std::string name();
 \end{apient}
 \apidesc{
+Returns the demangled name of this function, the same as calling GetPrettyName().
 }
+
+This class inherits PatchAPI::PatchFunction. Please refer to PatchAPI document
+for the complete list of methods.
 
 \subsubsection{Class SpBlock}
 \textbf{Declared in}: src/agent/patchapi/cfg.h
@@ -125,17 +177,27 @@ std::string name();
 SpObject* GetObject() const;
 \end{apient}
 \apidesc{
+Returns the binary object containing this block.
 }
 
 \begin{apient}
 in::Instruction::Ptr orig_call_insn() const;
 \end{apient}
 \apidesc{
+
+Returns an InstructionAPI::Instruction instance of the call instruction in this
+block.
+
 }
+
+This class inherits PatchAPI::PatchBlock. Please refer to PatchAPI document for
+the complete list of methods.
 
 \subsubsection{Class SpEdge}
 \textbf{Declared in}: src/agent/patchapi/cfg.h
 
+This class inherits PatchAPI::PatchEdge. Please refer to PatchAPI document for
+the complete list of methods.
 
 \subsubsection{Utility Functions}
 \textbf{Declared in}: src/agent/payload.h
@@ -156,19 +218,28 @@ If it fails, it returns NULL.
 bool IsInstrumentable(SpPoint* pt);
 \end{apient}
 \apidesc{
+Indicates whether or not the point is instrumentable.
 }
 
 \begin{apient}
 void Propel(SpPoint* pt);
 \end{apient}
 \apidesc{
+
+Propagates instrumentation to callees of the function called at the specified
+point {\em pt}.
+
 }
 
 \begin{apient}
-bool IsIpcWrite(SpPoint*); 
-bool IsIpcRead(SpPoint*); 
+bool IsIpcWrite(SpPoint* pt); 
+bool IsIpcRead(SpPoint* pt); 
 \end{apient}
 \apidesc{
+
+Indicates whether or not the function called at the specified point is a
+inter-process communication write / read function.
+
 }
 
 \begin{apient}
@@ -178,6 +249,22 @@ void* PopArgument(SpPoint* pt,
                   size_t size);
 \end{apient}
 \apidesc{
+
+Gets a pointer to an argument of the function call at the specified point {\em
+  pt}.
+All arguments passed to the function call are in a stack associated with the
+ArgumentHandle structure {\em h}. 
+Leftmost argument is at the top of the stack.
+The {\em size} parameter specifies the size of the argument that is about to be
+popped.
+
+}
+
+\begin{apient}
+long ReturnValue(SpPoint* pt);
+\end{apient}
+\apidesc{
+Returns the return value of the function call at the specified point {\em pt}.
 }
 
 % In developer manual only
@@ -186,7 +273,80 @@ void* PopArgument(SpPoint* pt,
 \textbf{Declared in}: src/agent/parser.h
 
 \begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
 SpObject* exe() const;
+\end{apient}
+\apidesc{
+Returns the executable's binary object.
+}
+
+\begin{apient}
+PatchAPI::PatchMgrPtr Parse();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+PatchAPI::PatchMgrPtr Parse();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+string agent_name()
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool injected()
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void GetFrame(long* pc, long* sp, long* bp)
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpFunction* FindFunction(dt::Address absolute_addr);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpFunction* FindFunction(string func_name_without_path);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool FindFunction(string func_name_without_path, FuncSet* found_funcs);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpFunction* callee(SpPoint* point, bool parse_indirect = false);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+string DumpInsns(void* addr, size_t size);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+static bool ParseDlExit(SpPoint* pt);
 \end{apient}
 \apidesc{
 }
@@ -194,29 +354,394 @@ SpObject* exe() const;
 \subsubsection{Class SpContext}
 \textbf{Declared in}: src/agent/context.h
 
+\begin{apient}
+static SpContext* Create();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+string init_entry_name() const
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+string init_exit_name() const
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void GetCallStack(FuncSet* func_set);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void GetCallStack(FuncSet* func_set);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool IsMultithreadEnabled() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool IsHandleDlopenEnabled() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool IsDirectcallOnlyEnabled() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpPropeller::ptr init_propeller() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+PayloadFunc init_entry() const;
+PayloadFunc init_exit() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+PayloadFunc wrapper_exit() const;
+PayloadFunc wrapper_entry() const;
+\end{apient}
+\apidesc{
+}
+
 \subsubsection{Class SpEvent}
 \textbf{Declared in}: src/agent/event.h
+
+\begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+virtual void RegisterEvent();
+\end{apient}
+\apidesc{
+}
+
+\subsubsection{Class AsyncEvent}
+\textbf{Declared in}: src/agent/event.h
+
+\begin{apient}
+static ptr Create(int signum = SIGALRM,
+                  int sec = 5);
+\end{apient}
+\apidesc{
+}
+
+\subsubsection{Class SyncEvent}
+\textbf{Declared in}: src/agent/event.h
+
+\begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+}
+
+\subsubsection{Class FuncEvent}
+\textbf{Declared in}: src/agent/event.h
+
+\begin{apient}
+static ptr Create(StringSet& funcs);
+\end{apient}
+\apidesc{
+}
+
+\subsubsection{Class CallEvent}
+\textbf{Declared in}: src/agent/event.h
+
+\begin{apient}
+static ptr Create(StringSet& funcs);
+\end{apient}
+\apidesc{
+}
+
+\subsubsection{Class CombEvent}
+\textbf{Declared in}: src/agent/event.h
+
+\begin{apient}
+static ptr Create(EventSet& events);
+\end{apient}
+\apidesc{
+}
 
 \subsubsection{Class SpPropeller}
 \textbf{Declared in}: src/agent/propeller.h
 
+\begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool go(SpFunction* func,
+        PayloadFunc entry,
+        PayloadFunc exit,
+        SpPoint* pt = NULL,
+        StringSet* inst_calls = NULL);
+\end{apient}
+\apidesc{
+}
+
 \subsubsection{Class SpSnippet}
 \textbf{Declared in}: src/agent/snippet.h
+
+\begin{apient}
+static ptr create(SpFunction* f,
+                  SpPoint* pt,
+                  PayloadFunc entry,
+                  PayloadFunc exit);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+char* BuildBlob(const size_t est_size,
+                const bool reloc = false);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+size_t GetBlobSize() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpBlock* FindSpringboard();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+char* RelocateSpring(SpBlock* spring_blk);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+size_t GetRelocSpringSize() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+dt::Address GetSavedReg(dt::MachRegister reg);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+long GetRetVal();
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void* PopArgument(ArgumentHandle* h, size_t size);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+PayloadFunc entry() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+PayloadFunc exit() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpPoint* point() const;
+\end{apient}
+\apidesc{
+}
+
 
 \subsubsection{Class SpAddrSpace}
 \textbf{Declared in}: src/agent/patchapi/addr\_space.h
 
-\subsubsection{Class SpInstrumenter}
-\textbf{Declared in}: src/agent/patchapi/instrumenter.h
+\begin{apient}
+bool SetMemoryPermission(dt::Address addr,
+                         size_t length,
+                         int perm);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void InitMemoryAllocator();
+\end{apient}
+\apidesc{
+}
 
 \subsubsection{Inst Workers}
-\textbf{Declared in}: src/agent/inst\_workers/
+
+\textbf{Class InstWorkerDelegate}
+
+\textbf{Declared in}: src/agent/inst\_workers/inst_worker_delegate.h
+
+\begin{apient}
+virtual bool run(SpPoint* pt);
+\end{apient}
+\apidesc{
+Instrument a point.
+}
+
+\begin{apient}
+virtual bool undo(SpPoint* pt);
+\end{apient}
+\apidesc{
+Uninstrument a point.
+}
+
+\begin{apient}
+virtual bool save(SpPoint* pt);
+\end{apient}
+\apidesc{
+Save code that will be modified for a point.
+}
+
+\begin{apient}
+virtual InstallMethod install_method() const;
+\end{apient}
+\apidesc{
+Returns the method of instrumentation installation.
+}
+
+\textbf{Class RelocCallInsnWorker}
+
+\textbf{Declared in}: src/agent/inst\_workers/callinsn_worker_impl.h
+
+\textbf{Class RelocCallBlockWorker}
+
+\textbf{Declared in}: src/agent/inst\_workers/callblk_worker_impl.h
+
+\textbf{Class SpringboardWorker}
+
+\textbf{Declared in}: src/agent/inst\_workers/spring_worker_impl.h
+
+\textbf{Class TrapWorker}
+
+\textbf{Declared in}: src/agent/inst\_workers/trap_worker_impl.h
+
 
 \subsubsection{Class SpThreadMgr}
 \textbf{Declared in}: src/agent/thread\_mgr.h
 
+\begin{apient}
+static bool BeforeEntry(SpPoint*);
+\end{apient}
+\apidesc{
+}
+
 \subsubsection{Class IpcMgr}
 \textbf{Declared in}: src/agent/ipc/ipc\_mgr.h
+
+\begin{apient}
+SpChannel* GetChannel(int fd,
+                      ChannelRW rw);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpIpcWorkerDelegate* GetWorker(int fd);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void GetWriteParam(SpPoint* pt,
+                   int* fd_out,
+                   void** buf_out,
+                   char* c_out,
+                   size_t* size_out,
+                   sockaddr** sa_out);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+void GetReadParam(SpPoint* pt,
+                  int* fd_out,
+                  void** buf_out,
+                  size_t* size_out);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool is_fork(const char* f);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+bool is_popen(const char* f);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+char start_tracing(int fd);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+static bool BeforeEntry(SpPoint*);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+static bool BeforeExit(SpPoint*);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpPipeWorker* pipe_worker() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpTcpWorker* tcp_worker() const;
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+SpUdpWorker* udp_worker() const;
+\end{apient}
+\apidesc{
+}
 
 \subsubsection{Class SpChannel}
 \textbf{Declared in}: src/agent/ipc/channel.h
@@ -224,3 +749,51 @@ SpObject* exe() const;
 \subsubsection{IPC Workers}
 \textbf{Declared in}: src/agent/ipc/ipc\_workers/
 
+\textbf{Class SpIpcWorkerDelegate}
+
+\textbf{Declared in}: src/agent/ipc/ipc\_workers/ipc\_worker\_delegate.h
+
+\begin{apient}
+virtual void SetStartTracing(char yes_or_no,
+                             SpChannel* c);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+virtual void SetStartTracing(char yes_or_no);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+virtual char start_tracing(int fd);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+virtual bool Inject(SpChannel*, char* agent_path = NULL);
+\end{apient}
+\apidesc{
+}
+
+\begin{apient}
+virtual SpChannel* GetChannel(int fd,
+                              ChannelRW rw,
+                              void* arg = NULL);
+\end{apient}
+\apidesc{
+}
+
+\textbf{Class SpPipeWorker}
+
+\textbf{Declared in}: src/agent/ipc/ipc\_workers/pipe\_worker\_impl.h
+
+\textbf{Class SpTcpWorker}
+
+\textbf{Declared in}: src/agent/ipc/ipc\_workers/tcp\_worker\_impl.h
+
+\textbf{Class SpUdpWorker}
+
+\textbf{Declared in}: src/agent/ipc/ipc\_workers/udp\_worker\_impl.h
