@@ -54,6 +54,7 @@ SpChannel*
 SpIpcWorkerDelegate::GetChannel(int fd,
                                 ChannelRW rw,
                                 void* arg) {
+  /*
   // Look up cache.
   if (rw == SP_WRITE) {
     if (channel_map_write_.find(fd) != channel_map_write_.end()) {
@@ -69,7 +70,7 @@ SpIpcWorkerDelegate::GetChannel(int fd,
     if (channel_map_read_.find(fd) != channel_map_read_.end())
       return channel_map_read_[fd];
   }
-
+  */
   // Construct one channel.
   SpChannel* c = CreateChannel(fd, rw, arg);
   if (!c) return NULL;
