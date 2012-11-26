@@ -150,7 +150,7 @@ int tcp_server(int family, TestCmd cmd = OOB) {
         // set out of band
         channel->fd = new_fd;
         SpTcpWorker worker;
-        worker.SetStartTracing(1, channel);
+        worker.SetRemoteStartTracing(1, channel);
       }
 
       if (send(new_fd, "world", 5, 0) == -1)
@@ -233,7 +233,7 @@ std::string tcp_client(const char *hostname, TestCmd cmd = GET_CHANNEL) {
   std::string out;
   while ((numbytes = recv(sockfd, buf, 1, 0)) != 0 && numbytes != -1) {
     if (cmd == OOB) {
-      if (tcp_worker.start_tracing(sockfd)) out += buf[0];
+      if (tcp_worker.CanStartTracing(sockfd)) out += buf[0];
     }
     else {
       out += buf[0];

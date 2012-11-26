@@ -29,6 +29,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <sys/ioctl.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
 
@@ -50,7 +51,7 @@ SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
 //////////////////////////////////////////////////////////////////////
 
 void
-SpTcpWorker::SetStartTracing(char yes_or_no,
+SpTcpWorker::SetRemoteStartTracing(char yes_or_no,
                              SpChannel* c) {
   sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
   assert(c);
@@ -61,6 +62,9 @@ SpTcpWorker::SetStartTracing(char yes_or_no,
     if (send(c->fd, &mark_byte, sizeof(mark_byte), MSG_OOB) < 0) {
       perror("send");
       sp_perror("OUT-OF-BAND - failed to send oob byte");
+    } else {
+      sp_debug("OUT-OF-BAND - mark=%d sent", mark_byte);
+      // fprintf(stderr, "OUT-OF-BAND - mark=%d sent\n", mark_byte);
     }
   }
 }
@@ -68,31 +72,34 @@ SpTcpWorker::SetStartTracing(char yes_or_no,
 //////////////////////////////////////////////////////////////////////
 
 void
-SpTcpWorker::SetStartTracing(char yes_or_no) {
+SpTcpWorker::SetLocalStartTracing(char yes_or_no) {
   start_tracing_ = yes_or_no;
 }
 
 //////////////////////////////////////////////////////////////////////
-// If tcpworker has more than one read-channel, and it is not allowed to
-// start tracing, then we need to wait for OOB msg
 char
-SpTcpWorker::start_tracing(int fd) {
+SpTcpWorker::CanStartTracing(int fd) {
 
-  if (IsTcp(fd) && !start_tracing_) {
-    fd_set rset, xset;
-    FD_ZERO(&rset);
-    FD_ZERO(&xset);
-    for (; ;) {
-      FD_SET(fd, &rset);
-      FD_SET(fd, &xset);
-      select(fd+1, &rset, NULL, &xset, NULL);
-      if (FD_ISSET(fd, &xset)) {
-        uint8_t mark = 0;
-        recv(fd, &mark, sizeof(mark), MSG_OOB);
-        if (mark != 0) start_tracing_ = 1;
-        break;
-      }
+  if (start_tracing_) {
+    // fprintf(stderr, "OK to trace\n");
+    return start_tracing_;
+  }
+  
+  int at_mark = 0;
+  if (ioctl(fd, SIOCATMARK, &at_mark) < 0) {
+    sp_debug("ioctl(SIOCATMARK) error");
+    return 0;
+  }
+  if (at_mark) {
+    uint8_t mark = 0;
+    if (recv(fd, &mark, sizeof(mark), MSG_OOB) < 0) {
+      sp_debug("Recv OOB error");
+      return 0;
     }
+    sp_debug("GOT mark at_mark=%d, mark=%d", at_mark, mark);
+    // fprintf(stderr, "GOT mark at_mark=%d, mark=%d\n", at_mark, mark);
+    start_tracing_ = 1;
+    return 1;
   }
   return start_tracing_;
 }

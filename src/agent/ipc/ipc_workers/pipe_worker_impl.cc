@@ -87,23 +87,23 @@ SpPipeWorker::TracingInternal(char** start_tracing) {
 //////////////////////////////////////////////////////////////////////
 
 void
-SpPipeWorker::SetStartTracing(char yes_or_no,
-                              SpChannel* c) {
+SpPipeWorker::SetRemoteStartTracing(char yes_or_no,
+                                    SpChannel* c) {
   start_tracing_[c->remote_pid] = yes_or_no;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void
-SpPipeWorker::SetStartTracing(char yes_or_no) {
+SpPipeWorker::SetLocalStartTracing(char yes_or_no) {
   start_tracing_[getpid()] = yes_or_no;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 char
-SpPipeWorker::start_tracing(int fd) {
-  sp_print("pipeworker:start_tracing");
+SpPipeWorker::CanStartTracing(int fd) {
+  sp_print("pipeworker:start_tracing: %d", start_tracing_[getpid()]);
   return start_tracing_[getpid()];
 }
 

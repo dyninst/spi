@@ -50,17 +50,17 @@ namespace sp {
     // This set_* function is used by the sender-end process, to determine
     // whether or not the process who owns this worker instance can start
     // tracing
-    virtual void SetStartTracing(char yes_or_no,
-                                 SpChannel* c) = 0;
+    virtual void SetRemoteStartTracing(char yes_or_no,
+                                       SpChannel* c) = 0;
 
     // This is used by the process who owns this worker instance
-    virtual void SetStartTracing(char yes_or_no) = 0;
+    virtual void SetLocalStartTracing(char yes_or_no) = 0;
 
     // Query if it's okay to trace on local end of the channel:
     // 1. For Write-channel, it always return 1 (true)
     // 2. For Read-channel, it should be synchronized by remote process
     // Used by the process who owns this Worker instance.
-    virtual char start_tracing(int fd) = 0;
+    virtual char CanStartTracing(int fd) = 0;
 
     // Inject the agent shared library to the other end of a channel
     virtual bool Inject(SpChannel*, char* agent_path = NULL) = 0;

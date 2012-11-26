@@ -40,18 +40,18 @@ namespace sp {
 
 //////////////////////////////////////////////////////////////////////
 void
-SpUdpWorker::SetStartTracing(char yes_or_no,
-                             SpChannel* c) {
+SpUdpWorker::SetRemoteStartTracing(char yes_or_no,
+                                   SpChannel* c) {
 }
 
 ////////////////////////////////////////////////////////////////////// 
 void
-SpUdpWorker::SetStartTracing(char yes_or_no) {
+SpUdpWorker::SetLocalStartTracing(char yes_or_no) {
 }
 
 ////////////////////////////////////////////////////////////////////// 
 char
-SpUdpWorker::start_tracing(int fd) {
+SpUdpWorker::CanStartTracing(int fd) {
   return 0;
 }
 

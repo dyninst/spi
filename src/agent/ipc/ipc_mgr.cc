@@ -265,7 +265,7 @@ SpIpcMgr::GetCloseParam(SpPoint* pt,
 
 // See if the function is a fork
 bool
-SpIpcMgr::is_fork(const char* f) {
+SpIpcMgr::IsFork(const char* f) {
   if (strcmp(f, "fork") == 0) return true;
   return false;
 }
@@ -274,7 +274,7 @@ SpIpcMgr::is_fork(const char* f) {
 
 // See if the function is a popen
 bool
-SpIpcMgr::is_popen(const char* f) {
+SpIpcMgr::IsPopen(const char* f) {
   if (strcmp(f, "popen") == 0) return true;
   return false;
 }
@@ -285,12 +285,8 @@ SpIpcMgr::is_popen(const char* f) {
 // This is used in the user-defined payload function.
 // Return 1 if it is allowed to execute payload code (for tracing);
 // otherwise, 0 is returned.
-char SpIpcMgr::start_tracing(int fd) {
-  for (WorkerSet::iterator wi = worker_set_.begin();
-       wi != worker_set_.end(); wi++) {
-    if ((*wi)->start_tracing(fd)) return 1;
-  }
-  return 0;
+char SpIpcMgr::CanStartTracing(int fd) {
+  return GetWorker(fd)->CanStartTracing(fd);
 }
 
 // Get a worker according to the file descriptor.
@@ -345,7 +341,6 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   sockaddr* sa = NULL;
   ipc_mgr->GetWriteParam(pt, &fd, NULL, NULL, NULL, &sa);
   if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
-
     SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
     if (c) {
 
@@ -354,8 +349,8 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       // whether the agent.so library is already injected. If so, it will
       // not inject the library again.
       worker->Inject(c);
-
       pt->SetChannel(c);
+      worker->SetRemoteStartTracing(1, c);
     } else {
       sp_debug("FAILED TO CREATE CHANNEL - for write");
     }
@@ -391,21 +386,21 @@ SpIpcMgr::BeforeExit(SpPoint* pt) {
 
   // Detect fork for pipe
   sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
-  if (ipc_mgr->is_fork(f->name().c_str())) {
+  if (ipc_mgr->IsFork(f->name().c_str())) {
     long pid = sp::ReturnValue(pt);
     // Receiver
     if (pid == 0) {
-      ipc_mgr->pipe_worker()->SetStartTracing(0);
+      ipc_mgr->pipe_worker()->SetLocalStartTracing(0);
     }
   }
   // Detect popen for pipe
-  else if (ipc_mgr->is_popen(f->name().c_str())) {
+  else if (ipc_mgr->IsPopen(f->name().c_str())) {
     FILE* fp = (FILE*)sp::ReturnValue(pt);
     int fd = fileno(fp);
     // XXX: magic?? This is a very artificial way to wait for fork done
     sleep(5);
     SpChannel* c = ipc_mgr->pipe_worker()->GetChannel(fd, SP_WRITE);
-    ipc_mgr->pipe_worker()->SetStartTracing(0, c);
+    ipc_mgr->pipe_worker()->SetRemoteStartTracing(0, c);
   }
 
   return true;

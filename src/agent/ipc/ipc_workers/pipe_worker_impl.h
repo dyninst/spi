@@ -43,11 +43,11 @@ namespace sp {
     SpPipeWorker();
     ~SpPipeWorker();
 
-    virtual void SetStartTracing(char yes_or_no,
-                                 SpChannel* c);
-    virtual void SetStartTracing(char yes_or_no);
+    virtual void SetRemoteStartTracing(char yes_or_no,
+                                       SpChannel* c);
+    virtual void SetLocalStartTracing(char yes_or_no);
 
-    virtual char start_tracing(int fd);
+    virtual char CanStartTracing(int fd);
     virtual bool Inject(SpChannel*,
                         char* agent_path = NULL);
 

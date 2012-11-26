@@ -257,8 +257,8 @@ IsIpcRead(SpPoint* pt) {
   SP_LOCK(ISIPCREAD);
   c = pt->channel();
 
-  // if (c && c->rw == SP_READ && StartTracingNolock(c->fd)) {
-  if (c && c->rw == SP_READ) {
+  if (c && c->rw == SP_READ && StartTracingNolock(c->fd)) {
+    // if (c && c->rw == SP_READ) {
     ret = true;
     if (CalleeNolock(pt)->name().compare("accept") == 0) {
       sp_debug("Accept skip");
@@ -278,7 +278,7 @@ static char
 StartTracingNolock(int fd) {
 
   sp::SpIpcMgr* ipc_mgr = g_context->ipc_mgr();
-  char ret = ipc_mgr->start_tracing(fd);
+  char ret = ipc_mgr->CanStartTracing(fd);
 
   return ret;
 }
