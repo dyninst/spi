@@ -74,6 +74,11 @@ namespace sp {
                                   ChannelRW rw,
                                   void* arg = NULL);
 
+    // Close IPC channel of a file descriptor.
+    // Input Param: fd -- the file descriptor
+    virtual void CloseChannel(int fd);
+
+    
     virtual ~SpIpcWorkerDelegate() {}
  protected:
     // fd-to-SpChannel mapping

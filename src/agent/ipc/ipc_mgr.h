@@ -91,6 +91,9 @@ namespace sp {
                       void** buf_out,
                       size_t* size_out);
 
+    // Get parameters from "close" functions.
+    void GetCloseParam(SpPoint* pt,
+                       int* fd_out);
 
     // See if the function is a fork
     bool is_fork(const char* f);

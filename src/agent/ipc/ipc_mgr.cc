@@ -243,6 +243,26 @@ SpIpcMgr::GetReadParam(SpPoint* pt,
 
 //////////////////////////////////////////////////////////////////////
 
+// Get parameters from "close" functions.
+// Input Param : pt -- the call point from which we get the function
+// Output Param: fd_out -- file descriptor, if it is NULL, then skip it
+void
+SpIpcMgr::GetCloseParam(SpPoint* pt,
+                        int* fd_out) {
+  
+  ph::PatchFunction* f = sp::Callee(pt);
+  if (!f) return;
+
+  ArgumentHandle h;
+  if (f->name().compare("close") == 0) {
+    int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
+    if (fd_out) *fd_out = *fd;
+    sp_debug("CLOSE -- %s fd = %d", f->name().c_str(), *fd_out);
+  }
+}
+
+//////////////////////////////////////////////////////////////////////
+
 // See if the function is a fork
 bool
 SpIpcMgr::is_fork(const char* f) {
@@ -310,11 +330,20 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
 
   sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
 
-  // Sender-side
+  // Both sender-side and receiver-side
   int fd = -1;
+  SpIpcWorkerDelegate* worker = NULL;
+  ipc_mgr->GetCloseParam(pt, &fd);
+  if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
+    
+    worker->CloseChannel(fd);
+    return true;
+  }
+  
+  // Sender-side
+  fd = -1;
   sockaddr* sa = NULL;
   ipc_mgr->GetWriteParam(pt, &fd, NULL, NULL, NULL, &sa);
-  SpIpcWorkerDelegate* worker = NULL;
   if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
 
     SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
