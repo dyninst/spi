@@ -105,9 +105,9 @@ namespace sp {
     AGENT_EXPORT SpFunction*
         FindFunction(dt::Address absolute_addr);
     AGENT_EXPORT SpFunction*
-        FindFunction(string func_name_without_path);
+        FindFunction(string func_name);
     AGENT_EXPORT bool
-        FindFunction(string func_name_without_path,
+        FindFunction(string func_name,
                      FuncSet* found_funcs);
 
     AGENT_EXPORT SpFunction*

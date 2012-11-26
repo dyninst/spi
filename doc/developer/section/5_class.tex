@@ -1,7 +1,7 @@
 \section{Class Reference}
 
 % In both user and developer manual
-\subsection{Public Interface}
+\subsection{Interfaces for Users}
 \subsubsection{Class Agent}
 \textbf{Declared in}: src/agent/agent.h
 
@@ -268,7 +268,7 @@ Returns the return value of the function call at the specified point {\em pt}.
 }
 
 % In developer manual only
-\subsection{Private Interface}
+\subsection{Interfaces for Developers}
 \subsubsection{Class SpParser}
 \textbf{Declared in}: src/agent/parser.h
 
@@ -276,6 +276,7 @@ Returns the return value of the function call at the specified point {\em pt}.
 static ptr Create();
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a SpParser instance.
 }
 
 \begin{apient}
@@ -288,67 +289,91 @@ Returns the executable's binary object.
 \begin{apient}
 PatchAPI::PatchMgrPtr Parse();
 \end{apient}
-\apidesc{
-}
-
-\begin{apient}
-PatchAPI::PatchMgrPtr Parse();
-\end{apient}
-\apidesc{
-}
+\apidesc{ The major parsing method, which builds CFG data structures to assist
+  instrumentation.  }
 
 \begin{apient}
 string agent_name()
 \end{apient}
 \apidesc{
+Returns the agent library's full path name.
 }
 
 \begin{apient}
 bool injected()
 \end{apient}
 \apidesc{
+
+  Indicates whether or not this agent library is injected in the middle of
+  running current process.
+
 }
 
 \begin{apient}
 void GetFrame(long* pc, long* sp, long* bp)
 \end{apient}
 \apidesc{
+
+  Get the values of three registers (pc, sp, and bp) of the call frame where the
+  agent is injected. The three arguments are output arguments.
+
 }
 
 \begin{apient}
 SpFunction* FindFunction(dt::Address absolute_addr);
 \end{apient}
 \apidesc{
+
+  Returns the function that contains the address {\em absolute_addr}.
+  It returns NULL if no function is found.
 }
 
 \begin{apient}
-SpFunction* FindFunction(string func_name_without_path);
+SpFunction* FindFunction(string pretty_name);
 \end{apient}
 \apidesc{
+
+  Returns one of the functions that have the demangled function name.
+  It returns NULL if no function is found.
 }
 
 \begin{apient}
-bool FindFunction(string func_name_without_path, FuncSet* found_funcs);
+bool FindFunction(string func_name, FuncSet* found_funcs);
 \end{apient}
 \apidesc{
+
+  Get all the functions that have the demangled function name.
+
 }
 
 \begin{apient}
 SpFunction* callee(SpPoint* point, bool parse_indirect = false);
 \end{apient}
 \apidesc{
+
+  Returns the callee at the given call {\em point}.
+  If {\em parse\_indirect} is false and the call instruction is an indirect call
+  instruction, then we skip parsing it and return NULL immediately.
+  If the callee is not found, NULL is returned.
 }
 
 \begin{apient}
 string DumpInsns(void* addr, size_t size);
 \end{apient}
 \apidesc{
+
+  Returns a nice textual representation of all instructions at the memory area of [{\em
+    addr}, {\em addr} + size].
+
 }
 
 \begin{apient}
 static bool ParseDlExit(SpPoint* pt);
 \end{apient}
 \apidesc{
+
+  Detects the dlopen function call, and parses the library that is just loaded.
+  It is invoked immediately after the dlopen function call is returned.
 }
 
 \subsubsection{Class SpContext}
@@ -358,6 +383,8 @@ static bool ParseDlExit(SpPoint* pt);
 static SpContext* Create();
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a SpContext instance.
+
 }
 
 \begin{apient}
@@ -429,6 +456,8 @@ PayloadFunc wrapper_entry() const;
 static ptr Create();
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a SpEvent instance.
+
 }
 
 \begin{apient}
@@ -445,6 +474,8 @@ static ptr Create(int signum = SIGALRM,
                   int sec = 5);
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a AsyncEvent instance.
+
 }
 
 \subsubsection{Class SyncEvent}
@@ -454,6 +485,8 @@ static ptr Create(int signum = SIGALRM,
 static ptr Create();
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a SyncEvent instance.
+
 }
 
 \subsubsection{Class FuncEvent}
@@ -463,6 +496,8 @@ static ptr Create();
 static ptr Create(StringSet& funcs);
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a FuncEvent instance.
+
 }
 
 \subsubsection{Class CallEvent}
@@ -472,6 +507,8 @@ static ptr Create(StringSet& funcs);
 static ptr Create(StringSet& funcs);
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a CallEvent instance.
+
 }
 
 \subsubsection{Class CombEvent}
@@ -481,6 +518,8 @@ static ptr Create(StringSet& funcs);
 static ptr Create(EventSet& events);
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a CombEvent instance.
+
 }
 
 \subsubsection{Class SpPropeller}
@@ -490,6 +529,8 @@ static ptr Create(EventSet& events);
 static ptr Create();
 \end{apient}
 \apidesc{
+Creates a Boost shared pointer pointing to a SpPropeller instance.
+
 }
 
 \begin{apient}

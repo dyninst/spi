@@ -75,15 +75,25 @@ that manages instrumentation, to register payload functions, and to initiate
 instrumentation.
 
 \subsection{Using Injector}
-The injector can be used to inject the agent shared library into a
-process. It can also be injected to monitor all the processes running on
-a specific port. The executable version of injector can be found inside
-$\$SP\_DIR/\$PLATFORM$. To instrument the function calls inside a particular
-process with process id $pid$, use the following command \\
-\$./injector pid $pid$ LIB\_NAME \\
-Similarly to instrument all the processes running on a specific port $port$,
-use the following command \\
-\$./injector port $port$ LIB\_NAME
+The injector can be used to inject the agent shared library into a process. It
+can also be injected to monitor all the processes running on a specific
+port. The injector executable can be found inside $\$SP\_DIR/\$PLATFORM$. To
+instrument a particular process with process id $pid$, use the following command
+
+\apidesc{
+
+./injector pid $pid$ LIB\_NAME
+
+}
+
+Similarly, to instrument all the processes running on a specific port $port$,
+use the following command
+
+\apidesc{
+
+./injector port $port$ LIB\_NAME
+
+}
 
 
 

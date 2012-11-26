@@ -8,6 +8,7 @@ Injector in details.
 \subsection{Agent}
 
 % For user / developer manual
+\subsubsection{User-level Abstractions}
 \begin{itemize}
 \item Agent. It manages the configuration and does instrumentation. An Agent
   instance is created in the init function of the {\em Agent} shared library.
@@ -32,6 +33,8 @@ Injector in details.
   Point.
 
 % For developer / Use PatchAPI
+\subsubsection{Developer-level Abstractions}
+
 \item AddressSpace. It represents the address space of the process. It contains
   a set of Objects in the process. Also, it implements some memory management
   primitives used by the instrumentation engine.
@@ -60,6 +63,7 @@ Injector in details.
 \subsection{Injector}
 % For user / developer manual
 % Two types of injection: process start and hijack
+\subsubsection{User-level Abstractions}
 
 Injector is provided as a command. 
 There are two types of injections.
@@ -69,6 +73,8 @@ The other is to inject the {\em Agent} in the middle of a running process.
 
 % For developer manual
 % Two types of injection: process start and hijack
+\subsubsection{Developer-level Abstractions}
+
 The first type of Injector relies on dynamic linker (i.e., setting the
 environment variable LD\_PRELOAD to the path of an {\em Agent} shared library).
 The second type uses ProcControlAPI to force an application process to invoke

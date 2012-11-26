@@ -6,6 +6,8 @@ DEP=spi.tex \
 
 $(MAIN).pdf: $(DEP)
 	$(TEX) $(MAIN)
+	bibtex $(MAIN)
+	$(TEX) $(MAIN)
 	$(TEX) $(MAIN)
 
 clean:
