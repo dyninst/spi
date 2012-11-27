@@ -12,11 +12,19 @@ void test_entry(SpPoint* pt) {
   if (!f) return;
 
 	if (IsIpcWrite(pt)) {
+    /*
 		sp_print("Write: %s @ pid=%d w/ addr %lx",
+            f->name().c_str(), getpid(), f->addr());
+    */
+		fprintf(stderr, "Write: %s @ pid=%d w/ addr %lx\n",
             f->name().c_str(), getpid(), f->addr());
 	}
 	else if (IsIpcRead(pt)) {
+    /*
 		sp_print("Read: %s @ pid=%d w/ addr %lx",
+             f->name().c_str(), getpid(), f->addr());
+    */
+		fprintf(stderr, "Read: %s @ pid=%d w/ addr %lx\n",
              f->name().c_str(), getpid(), f->addr());
 	}
   /*
@@ -36,10 +44,12 @@ void test_exit(SpPoint* pt) {
   
 	if (IsIpcWrite(pt)) {
 		long size = sp::ReturnValue(pt);
-		sp_print("Write size: %ld @ pid=%d", size, getpid());
+		// sp_print("Write size: %ld @ pid=%d", size, getpid());
+		fprintf(stderr, "Write size: %ld @ pid=%d\n", size, getpid());
 	} else if (IsIpcRead(pt)) {
 		long size = sp::ReturnValue(pt);
-		sp_print("Read size: %ld @ pid=%d", size, getpid());
+		// sp_print("Read size: %ld @ pid=%d", size, getpid());
+		fprintf(stderr, "Read size: %ld @ pid=%d\n", size, getpid());
 	}
 }
 

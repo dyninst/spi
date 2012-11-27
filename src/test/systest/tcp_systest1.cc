@@ -292,18 +292,6 @@ TEST_F(TcpTest1, get_channel_ipv4) {
   }
 }
 
-TEST_F(TcpTest1, inject) {
-  string cmd = mutatee_prefix_ + "test_mutatee/tcp_server4.exe";
-
-  const char* hostname = "localhost";
-  FILE* fp = popen(cmd.c_str(), "r");
-  char buf[256];
-  tcp_client(hostname, INJECT);
-  EXPECT_TRUE(fgets(buf, 256, fp) != NULL);
-  EXPECT_STREQ(buf, "AGINJECTED\n");
-  system("killall tcp_server4.exe");
-}
-
 // Out-of-band mechanism
 TEST_F(TcpTest1, oob) {
   pid_t pid = fork();
@@ -322,22 +310,4 @@ TEST_F(TcpTest1, oob) {
   wait(&status);
 }
 
-#if 0
-TEST_F(TcpTest1, inject_remote) {
-  pid_t pid = fork();
-  if (pid == 0) {
-    system("ssh localhost tcp_server6.exe");
-    sleep(5);
-  } // Child as server
-
-  else if (pid > 0) {
-    const char* hostname = "wasabi";
-    tcp_client(hostname, INJECT);
-    system("ssh wasabi killall tcp_server6.exe");
-    kill(pid, SIGKILL);
-    int status;
-    wait(&status);
-  }
-}
-#endif
 }

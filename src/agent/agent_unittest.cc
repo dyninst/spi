@@ -77,11 +77,12 @@ TEST_F(AgentTest, customized_setting) {
   funcs_not_to_inst.insert("std::");
   funcs_not_to_inst.insert("gcc::");
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
-  
+  EXPECT_TRUE(agent->init_event() == init_event);
+
   agent->Go();
 
   EXPECT_TRUE(agent->parser() == parser);
-  EXPECT_TRUE(agent->init_event() == init_event);
+  EXPECT_TRUE(agent->init_event() != init_event);
   EXPECT_TRUE(agent->fini_event() == fini_event);
   EXPECT_STREQ(agent->init_entry().c_str(), "wrapper_entry");
   EXPECT_STREQ(agent->init_exit().c_str(), "wrapper_exit");
@@ -98,6 +99,7 @@ TEST_F(AgentTest, customized_setting) {
   EXPECT_FALSE(parser->CanInstrumentFunc("std::string"));
   EXPECT_FALSE(parser->CanInstrumentFunc("gcc::abc"));
   EXPECT_TRUE(parser->CanInstrumentFunc("strlen"));
+
 }
 
 

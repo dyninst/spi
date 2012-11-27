@@ -102,8 +102,6 @@ UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(ST_DIR)/pipe_systest.cc \
             $(ST_DIR)/tcp_systest1.cc \
             $(ST_DIR)/tcp_systest2.cc \
-#            $(ST_DIR)/tcp_systest3.cc \
-#            $(ST_DIR)/tcp_systest4.cc \
 
 UT_OBJS   = $(addprefix $(TEST_OBJS_DIR)/, $(notdir $(UT_SRCS:%.cc=%.o)))
 UT_OBJS  += $(TEST_OBJS_DIR)/common_unittest.o
@@ -111,7 +109,8 @@ UT_EXES   = $(addprefix $(TEST_EXES_DIR)/, $(notdir $(UT_SRCS:%.cc=%.exe)))
 
 UT_ONESTOP_EXE = $(SP_DIR)/$(PLATFORM)/all_tests
 
-unittests: $(UT_EXES) $(UT_ONESTOP_EXE)
+#unittests: $(UT_EXES) $(UT_ONESTOP_EXE)
+unittests: $(UT_EXES)
 
 $(UT_OBJS): $(TEST_OBJS_DIR)/%.o : %.cc
 	@echo Compiling $*.o

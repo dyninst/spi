@@ -78,18 +78,4 @@ TEST_F(ContextTest, customized_setting) {
 
 }
 
-TEST_F(ContextTest, customized_setting_parse_only) {
-  sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  MockEvent::ptr event = MockEvent::Create();
-  agent->SetInitEvent(event);
-
-  ASSERT_TRUE(agent);
-  agent->EnableParseOnly(true);
-
-  agent->Go();
-
-  ASSERT_FALSE(agent->context());
-
-}
-
 }

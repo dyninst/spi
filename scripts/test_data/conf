@@ -1,0 +1,16 @@
+server.document-root = "./tmp/web"
+
+server.port = 8001
+mimetype.assign = (
+  ".html" => "text/html",
+  ".txt" => "text/plain",
+  ".css" => "text/css",
+  ".e" => "text/plain",
+  ".jpg" => "image/jpeg",
+  ".png" => "image/png" ,
+  "svg"    =>    "image/svg+xml"
+)
+
+server.max-worker = 0
+static-file.exclude-extensions = ( ".fcgi", ".php", ".rb", "~", ".inc" )
+index-file.names = ( "index.html" )

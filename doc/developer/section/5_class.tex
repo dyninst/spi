@@ -391,55 +391,67 @@ Creates a Boost shared pointer pointing to a SpContext instance.
 string init_entry_name() const
 \end{apient}
 \apidesc{
+  Returns initial entry payload function's demangled name.
 }
 
 \begin{apient}
 string init_exit_name() const
 \end{apient}
 \apidesc{
+  Returns initial exit payload function's demangled name.
 }
 
 \begin{apient}
+typedef std::set<SpFunction*> FuncSet;
 void GetCallStack(FuncSet* func_set);
 \end{apient}
 \apidesc{
+  Get a set of functions in the call stack, when the agent library is injected.
+  {\em func\_set} is the output argument.
 }
 
-\begin{apient}
-void GetCallStack(FuncSet* func_set);
-\end{apient}
-\apidesc{
-}
 
 \begin{apient}
 bool IsMultithreadEnabled() const;
 \end{apient}
 \apidesc{
+  Indicates whether instrumentation propagation across thread boundary is supported.
 }
 
 \begin{apient}
 bool IsHandleDlopenEnabled() const;
 \end{apient}
 \apidesc{
+  Indicates whether parsing newly loaded shared library is supported.
 }
 
 \begin{apient}
 bool IsDirectcallOnlyEnabled() const;
 \end{apient}
 \apidesc{
+
+  Indicates whether or not self-propelled instrumentation only instruments
+  direct function call.
+
 }
 
 \begin{apient}
 SpPropeller::ptr init_propeller() const;
 \end{apient}
 \apidesc{
+  Returns an instance of SpPropeller.
 }
 
 \begin{apient}
+typedef void* PayloadFunc;
 PayloadFunc init_entry() const;
 PayloadFunc init_exit() const;
 \end{apient}
 \apidesc{
+
+  Returns the start address of user-provided entry payload function or exit
+  payload function.
+
 }
 
 \begin{apient}
@@ -447,10 +459,19 @@ PayloadFunc wrapper_exit() const;
 PayloadFunc wrapper_entry() const;
 \end{apient}
 \apidesc{
+
+  Returns the start address of the wrapper of entry payload function or exit
+  payload function.
+  
 }
 
-\subsubsection{Class SpEvent}
+\subsubsection{Events}
 \textbf{Declared in}: src/agent/event.h
+
+This is a collection of events that specify when and how to do initial
+instrumentation.
+
+\textbf{Class SpEvent}
 
 \begin{apient}
 static ptr Create();

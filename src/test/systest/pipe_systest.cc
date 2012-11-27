@@ -15,6 +15,7 @@ class PipeSystest : public testing::Test {
   public:
   PipeSystest() {
     mutatee_prefix_ = " LD_LIBRARY_PATH=test_mutatee:tmp/lib:$LD_LIBRARY_PATH ";
+    mutatee_prefix_ += " SP_AGENT_DIR=$SP_DIR/$PLATFORM/test_agent ";
     preload_prefix_ = " LD_PRELOAD=$SP_DIR/$PLATFORM/test_agent/ipc_test_agent.so ";
 	}
 
@@ -27,99 +28,72 @@ class PipeSystest : public testing::Test {
 
 	virtual void TearDown() {
 	}
+
+  void test_result(const char* filename) {
+    bool inst = false;
+    char line[1024];
+    FILE* fp = fopen(filename, "r");
+    while (fgets(line, 1024, fp)) {
+      if (strstr(line, "Read size:")) {
+        inst = true;
+        break;
+      }
+      if (strstr(line, "Write size:")) {
+        inst = true;
+        break;
+      }
+    }
+    ASSERT_TRUE(inst);
+    fclose(fp);
+  }
 };
 
 TEST_F(PipeSystest, pipe1_preload_before_fork) {
   string cmd;
-  cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe1.exe";
+  cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe1.exe >& /tmp/pipe1.log";
   // system(cmd.c_str());
 
   FILE* fp = popen(cmd.c_str(), "r");
-  char buf[1024];
-  int count = 0;
-  while (fgets(buf, 1024, fp) != NULL) {
-    // printf(buf);
-    ++count;
+  PidSet client_pid_set;
+  GetPidsFromFileDesc(fileno(fp), client_pid_set);
+  if (client_pid_set.size() > 0) {
+    int status;
+    wait(&status);
   }
-  // printf("count: %d\n", count);
-  EXPECT_TRUE(count > 200);
   pclose(fp);
+  test_result("/tmp/pipe1.log");
 }
 
 TEST_F(PipeSystest, pipe2_preload_after_fork) {
   string cmd;
-  cmd = mutatee_prefix_ + " test_mutatee/pipe2.exe";
+  cmd = mutatee_prefix_ + " test_mutatee/pipe2.exe >& /tmp/pipe2.log";
   //  system(cmd.c_str());
 
   FILE* fp = popen(cmd.c_str(), "r");
-  char buf[1024];
-  int count = 0;
-  while (fgets(buf, 1024, fp) != NULL) {
-    // printf(buf);
-    ++count;
+  PidSet client_pid_set;
+  GetPidsFromFileDesc(fileno(fp), client_pid_set);
+  if (client_pid_set.size() > 0) {
+    int status;
+    wait(&status);
   }
-  // printf("count: %d\n", count);
-  EXPECT_TRUE(count > 200);
   pclose(fp);
+  test_result("/tmp/pipe2.log");
 }
 
 TEST_F(PipeSystest, pipe3_preload_before_popen) {
   string cmd;
-  cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe3.exe";
+  cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe3.exe >& /tmp/pipe3.log";
   // system(cmd.c_str());
 
   FILE* fp = popen(cmd.c_str(), "r");
-  char buf[1024];
-  int count = 0;
-  while (fgets(buf, 1024, fp) != NULL) {
-    // printf(buf);
-    ++count;
+  PidSet client_pid_set;
+  GetPidsFromFileDesc(fileno(fp), client_pid_set);
+  if (client_pid_set.size() > 0) {
+    int status;
+    wait(&status);
   }
-  // printf("count: %d\n", count);
-  EXPECT_TRUE(count > 80);
   pclose(fp);
+  test_result("/tmp/pipe3.log");
 }
 
-// XXX: This doesn't work right now!
-#if 0
-TEST_F(PipeSystest, pipe4_preload_after_popen) {
-  string cmd;
-  cmd = mutatee_prefix_ + " test_mutatee/pipe4.exe";
-  system(cmd.c_str());
-  /*
-  FILE* fp = popen(cmd.c_str(), "r");
-  char buf[1024];
-  int count = 0;
-  while (fgets(buf, 1024, fp) != NULL) {
-    // printf(buf);
-    ++count;
-  }
-  // printf("count: %d\n", count);
-  EXPECT_TRUE(count > 200);
-  pclose(fp);
-  */
-}
-
-TEST_F(PipeSystest, pipe5_fifo) {
-
-  struct stat s;
-  if (stat("/tmp/myFIFO", &s) == -1) {
-    system("mkfifo /tmp/myFIFO > /dev/null");
-  }
-
-  pid_t pid = fork();
-
-  if (pid == 0) {
-    string cmd;
-    cmd = mutatee_prefix_ + preload_prefix_ + " test_mutatee/pipe5.exe";
-    system(cmd.c_str());
-    exit(0);
-  }
-  else if (pid > 0) {
-    string cmd;
-    cmd = mutatee_prefix_ + "test_mutatee/pipe5server.exe";
-    system(cmd.c_str());
-  }
-}
-#endif
 }

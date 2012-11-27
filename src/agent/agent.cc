@@ -244,10 +244,12 @@ namespace sp {
     parser_->Parse();
     assert(g_parser->mgr());
 
-    // We may stop here after parsing
+    // We use default event, which does nothing on initial instrumentation
     if (parse_only_) {
       sp_debug("PARSE ONLY - exit after parsing, without instrumentation");
-      return;
+      sp::SpEvent::ptr init_event = sp::SpEvent::Create();
+      init_event_  = init_event;
+      // return;
     }
 
     // Prepare context

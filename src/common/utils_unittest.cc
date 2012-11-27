@@ -35,7 +35,8 @@ TEST_F(UtilsTest, GetPidsFromAddrs1) {
   if (server_ == NULL) {
     sp_perror("Failed to start tcp_server");
   }
-  
+
+  sleep(3);
   PidSet pid_set;
   GetPidsFromAddrs("127.0.0.1", "3490", pid_set);
   EXPECT_TRUE(pid_set.size() == 1);
