@@ -329,11 +329,11 @@ SpFunction* FindFunction(dt::Address absolute_addr);
 }
 
 \begin{apient}
-SpFunction* FindFunction(string pretty_name);
+SpFunction* FindFunction(string mangled_name);
 \end{apient}
 \apidesc{
 
-  Returns one of the functions that have the demangled function name.
+  Returns one of the functions that have the mangled function name.
   It returns NULL if no function is found.
 }
 
@@ -468,10 +468,12 @@ PayloadFunc wrapper_entry() const;
 \subsubsection{Events}
 \textbf{Declared in}: src/agent/event.h
 
-This is a collection of events that specify when and how to do initial
-instrumentation.
+This is a collection of events that trigger initial instrumentation.
 
 \textbf{Class SpEvent}
+
+It is the base class of all event classes. This event does not trigger any
+instrumentation.
 
 \begin{apient}
 static ptr Create();
@@ -485,10 +487,12 @@ Creates a Boost shared pointer pointing to a SpEvent instance.
 virtual void RegisterEvent();
 \end{apient}
 \apidesc{
+It registers the event to agent. This function is called in Agent::Go().
 }
 
-\subsubsection{Class AsyncEvent}
-\textbf{Declared in}: src/agent/event.h
+\textbf{Class AsyncEvent}
+
+It is the asynchronous event that will happen when specified signal occurs.
 
 \begin{apient}
 static ptr Create(int signum = SIGALRM,
@@ -497,10 +501,18 @@ static ptr Create(int signum = SIGALRM,
 \apidesc{
 Creates a Boost shared pointer pointing to a AsyncEvent instance.
 
+The argument {\em signum} specifies the signal number, and the argument {\em
+  sec} is only effective when signum is SIGALRM.
+
 }
 
-\subsubsection{Class SyncEvent}
-\textbf{Declared in}: src/agent/event.h
+\textbf{Class SyncEvent}
+
+It is the synchronous event that will do instrumentation immediately.
+If the agent library is loaded via LD\_PRELOAD, then it instruments main()
+function immediately.
+If the agent library is injected via injector, then it instruments all functions
+in the call stack when the agent library is loaded.
 
 \begin{apient}
 static ptr Create();
@@ -510,36 +522,43 @@ Creates a Boost shared pointer pointing to a SyncEvent instance.
 
 }
 
-\subsubsection{Class FuncEvent}
-\textbf{Declared in}: src/agent/event.h
+\textbf{Class FuncEvent}
+
+It instruments all of the specified functions immediately.
 
 \begin{apient}
 static ptr Create(StringSet& funcs);
 \end{apient}
 \apidesc{
 Creates a Boost shared pointer pointing to a FuncEvent instance.
-
+The argument {\em funcs} specifies a set of demangled names of functions that
+are going to be instrumented.  
 }
 
-\subsubsection{Class CallEvent}
-\textbf{Declared in}: src/agent/event.h
+\textbf{Class CallEvent}
+
+It installs instrumentation at all call sites of specified functions immediately.
 
 \begin{apient}
 static ptr Create(StringSet& funcs);
 \end{apient}
 \apidesc{
 Creates a Boost shared pointer pointing to a CallEvent instance.
+The argument {\em funcs} specifies a set of demangled names of function calls
+that are going to be instrumented.
 
 }
 
-\subsubsection{Class CombEvent}
-\textbf{Declared in}: src/agent/event.h
+\textbf{Class CombEvent}
+
+It is a compound event that can combine all the above events.
 
 \begin{apient}
 static ptr Create(EventSet& events);
 \end{apient}
 \apidesc{
 Creates a Boost shared pointer pointing to a CombEvent instance.
+The argument {\em events} specifies a set of events.
 
 }
 
@@ -562,6 +581,14 @@ bool go(SpFunction* func,
         StringSet* inst_calls = NULL);
 \end{apient}
 \apidesc{
+
+  It propagates instrumentation to callees of specified function {\em func}.
+  The arguments {\em entry} and {\em exit} specify the payload functions to be
+  installed for those callees.  
+  The argument {\em point} is the point where {\em func} is invoked.
+  The argument {\em inst_calls} specifies all function calls that need to be
+  instrumented, which is used only in CallEvent.
+
 }
 
 \subsubsection{Class SpSnippet}
@@ -574,6 +601,7 @@ static ptr create(SpFunction* f,
                   PayloadFunc exit);
 \end{apient}
 \apidesc{
+  Creates a Boost shared pointer pointing to a SpSnippet instance.
 }
 
 \begin{apient}
