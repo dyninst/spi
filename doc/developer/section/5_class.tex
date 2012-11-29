@@ -209,7 +209,7 @@ SpFunction* Callee(SpPoint* pt);
 \end{apient}
 \apidesc{
 Returns an instance of SpFunction for current function call. 
-The argument \emph{pt} represents the instrumentation point for current function
+The parameter \emph{pt} represents the instrumentation point for current function
 call.
 If it fails, it returns NULL.
 }
@@ -250,12 +250,12 @@ void* PopArgument(SpPoint* pt,
 \end{apient}
 \apidesc{
 
-Gets a pointer to an argument of the function call at the specified point {\em
+Gets a pointer to an parameter of the function call at the specified point {\em
   pt}.
-All arguments passed to the function call are in a stack associated with the
+All parameters passed to the function call are in a stack associated with the
 ArgumentHandle structure {\em h}. 
-Leftmost argument is at the top of the stack.
-The {\em size} parameter specifies the size of the argument that is about to be
+Leftmost parameter is at the top of the stack.
+The {\em size} parameter specifies the size of the parameter that is about to be
 popped.
 
 }
@@ -269,6 +269,27 @@ Returns the return value of the function call at the specified point {\em pt}.
 
 % In developer manual only
 \subsection{Interfaces for Developers}
+\subsubsection{Class SpInjector}
+\textbf{Declared in}: src/injector/injector.h
+
+\begin{apient}
+static ptr Create(Dyninst::PID pid);
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a SpInjector instance.
+The parameter {\em pid} specifies the pid of the remote process that will be
+injected.
+
+}
+
+\begin{apient}
+bool Inject(const char* lib_name);
+\end{apient}
+\apidesc{
+Injects a library with {\em lib\_name}.
+}
+
+
 \subsubsection{Class SpParser}
 \textbf{Declared in}: src/agent/parser.h
 
@@ -315,7 +336,7 @@ void GetFrame(long* pc, long* sp, long* bp)
 \apidesc{
 
   Get the values of three registers (pc, sp, and bp) of the call frame where the
-  agent is injected. The three arguments are output arguments.
+  agent is injected. The three parameters are output parameters.
 
 }
 
@@ -407,7 +428,7 @@ void GetCallStack(FuncSet* func_set);
 \end{apient}
 \apidesc{
   Get a set of functions in the call stack, when the agent library is injected.
-  {\em func\_set} is the output argument.
+  {\em func\_set} is the output parameter.
 }
 
 
@@ -501,7 +522,7 @@ static ptr Create(int signum = SIGALRM,
 \apidesc{
 Creates a Boost shared pointer pointing to a AsyncEvent instance.
 
-The argument {\em signum} specifies the signal number, and the argument {\em
+The parameter {\em signum} specifies the signal number, and the parameter {\em
   sec} is only effective when signum is SIGALRM.
 
 }
@@ -531,7 +552,7 @@ static ptr Create(StringSet& funcs);
 \end{apient}
 \apidesc{
 Creates a Boost shared pointer pointing to a FuncEvent instance.
-The argument {\em funcs} specifies a set of demangled names of functions that
+The parameter {\em funcs} specifies a set of demangled names of functions that
 are going to be instrumented.  
 }
 
@@ -544,7 +565,7 @@ static ptr Create(StringSet& funcs);
 \end{apient}
 \apidesc{
 Creates a Boost shared pointer pointing to a CallEvent instance.
-The argument {\em funcs} specifies a set of demangled names of function calls
+The parameter {\em funcs} specifies a set of demangled names of function calls
 that are going to be instrumented.
 
 }
@@ -558,7 +579,7 @@ static ptr Create(EventSet& events);
 \end{apient}
 \apidesc{
 Creates a Boost shared pointer pointing to a CombEvent instance.
-The argument {\em events} specifies a set of events.
+The parameter {\em events} specifies a set of events.
 
 }
 
@@ -583,10 +604,10 @@ bool go(SpFunction* func,
 \apidesc{
 
   It propagates instrumentation to callees of specified function {\em func}.
-  The arguments {\em entry} and {\em exit} specify the payload functions to be
+  The parameters {\em entry} and {\em exit} specify the payload functions to be
   installed for those callees.  
-  The argument {\em point} is the point where {\em func} is invoked.
-  The argument {\em inst_calls} specifies all function calls that need to be
+  The parameter {\em point} is the point where {\em func} is invoked.
+  The parameter {\em inst_calls} specifies all function calls that need to be
   instrumented, which is used only in CallEvent.
 
 }
@@ -609,66 +630,87 @@ char* BuildBlob(const size_t est_size,
                 const bool reloc = false);
 \end{apient}
 \apidesc{
+
+  Returns a pointer to a blob of code snippet, which contains relocated code and
+  invocations to payload functions.
+  The parameter {\em est_size} specifies the estimate size to allocate the buffer
+  for the code snippet.  
+  The parameter {\em reloc} indicates whether or not we need to relocate a call
+  block.
+
 }
 
 \begin{apient}
 size_t GetBlobSize() const;
 \end{apient}
 \apidesc{
+  Returns the code snippet's size.
 }
 
 \begin{apient}
 SpBlock* FindSpringboard();
 \end{apient}
 \apidesc{
+  Returns a springboard block.
 }
 
 \begin{apient}
 char* RelocateSpring(SpBlock* spring_blk);
 \end{apient}
 \apidesc{
+
+  Relocates the basic block {\em spring\_blk} that is used as springboard block,
+  and returns the buffer containing the relocated springboard block.
+
 }
 
 \begin{apient}
 size_t GetRelocSpringSize() const;
 \end{apient}
 \apidesc{
+  Returns the relocated springboard block size.
 }
 
 \begin{apient}
-dt::Address GetSavedReg(dt::MachRegister reg);
+Dyninst::Address GetSavedReg(Dyninst::MachRegister reg);
 \end{apient}
 \apidesc{
+  Returns the value of a saved register {\em reg}.
 }
 
 \begin{apient}
 long GetRetVal();
 \end{apient}
 \apidesc{
+  Returns the return value of current function call.
 }
 
 \begin{apient}
 void* PopArgument(ArgumentHandle* h, size_t size);
 \end{apient}
 \apidesc{
+  Pops an parameter of current function call.
 }
 
 \begin{apient}
 PayloadFunc entry() const;
 \end{apient}
 \apidesc{
+  Returns entry payload function's address.
 }
 
 \begin{apient}
 PayloadFunc exit() const;
 \end{apient}
 \apidesc{
+  Returns exit payload function's address.
 }
 
 \begin{apient}
 SpPoint* point() const;
 \end{apient}
 \apidesc{
+  Returns the function call point where this code snippet is installed.
 }
 
 
@@ -681,32 +723,45 @@ bool SetMemoryPermission(dt::Address addr,
                          int perm);
 \end{apient}
 \apidesc{
+  Sets the permission of a range of memory area [{\em addr}, {\em addr} + length).
+  The parameter {\em perm} is the same as the {\em prot} parameter in {\em mmap}
+  system call (i.e., PROT_READ, PROT_WRITE, PROT_EXEC ... or combination of them
+  PROT_READ | PROT_WRITE ...).
+
 }
 
 \begin{apient}
 void InitMemoryAllocator();
 \end{apient}
 \apidesc{
+  Initiates the customized memory allocator.
 }
 
 \subsubsection{Inst Workers}
+
+This is a collection of instrumentation workers that install payload functions
+to function call points.
 
 \textbf{Class InstWorkerDelegate}
 
 \textbf{Declared in}: src/agent/inst\_workers/inst\_worker\_delegate.h
 
+This is the base class of instrumentation worker. Details of the instrumentation
+engine can be found in Section~\ref{sec:intrainst}.
+
 \begin{apient}
 virtual bool run(SpPoint* pt);
 \end{apient}
 \apidesc{
-Instrument a point.
+Instruments a point.
 }
 
 \begin{apient}
 virtual bool undo(SpPoint* pt);
 \end{apient}
 \apidesc{
-Uninstrument a point.
+Uninstruments a point.
+(For now, this is not implemented yet.)
 }
 
 \begin{apient}
@@ -717,52 +772,84 @@ Save code that will be modified for a point.
 }
 
 \begin{apient}
+typedef enum {
+  SP_NONE,
+  SP_TRAP,      
+  SP_RELOC_INSN,
+  SP_RELOC_BLK, 
+  SP_SPRINGBOARD
+} InstallMethod;
 virtual InstallMethod install_method() const;
 \end{apient}
 \apidesc{
-Returns the method of instrumentation installation.
+Returns the method of instrumentation installation. 
 }
 
 \textbf{Class RelocCallInsnWorker}
 
 \textbf{Declared in}: src/agent/inst\_workers/callinsn\_worker\_impl.h
 
+This is to relocate a call instruction then install instrumentation.
+
 \textbf{Class RelocCallBlockWorker}
 
 \textbf{Declared in}: src/agent/inst\_workers/callblk\_worker\_impl.h
+
+This is to relocate a call block then install instrumentation.
 
 \textbf{Class SpringboardWorker}
 
 \textbf{Declared in}: src/agent/inst\_workers/spring\_worker\_impl.h
 
+This is to use springboard mechanism then install instrumentation.
+
 \textbf{Class TrapWorker}
 
 \textbf{Declared in}: src/agent/inst\_workers/trap\_worker\_impl.h
 
+This is to use trap instruction to install instrumentation.
 
 \subsubsection{Class SpThreadMgr}
 \textbf{Declared in}: src/agent/thread\_mgr.h
+
+This manages the instrumentation propagation across thread boundary.
 
 \begin{apient}
 static bool BeforeEntry(SpPoint*);
 \end{apient}
 \apidesc{
+  This does the inter-thread instrumentation propagation.
 }
 
 \subsubsection{Class IpcMgr}
 \textbf{Declared in}: src/agent/ipc/ipc\_mgr.h
 
+This manages inter-process instrumentation propagation.
+
 \begin{apient}
+typedef enum {
+  SP_READ,
+  SP_WRITE,
+  SP_NORW
+} ChannelRW;
 SpChannel* GetChannel(int fd,
                       ChannelRW rw);
 \end{apient}
 \apidesc{
+
+  Returns a communication channel from a socket file descriptor {\em fd} with a
+  specific channel type {\em rw} (i.e., write-only or read-only channel).
+
 }
 
 \begin{apient}
 SpIpcWorkerDelegate* GetWorker(int fd);
 \end{apient}
 \apidesc{
+
+  Returns an IPC worker according to a given file descriptor {\em fd} (i.e., TCP
+  or pipe).
+
 }
 
 \begin{apient}
@@ -774,6 +861,11 @@ void GetWriteParam(SpPoint* pt,
                    sockaddr** sa_out);
 \end{apient}
 \apidesc{
+
+  It fetches the arguments passed to the ``write'' function called at a point
+  {\em pt}. The ``write'' function includes {\em write}, {\em send}, {\em
+    fwrite}, ...
+
 }
 
 \begin{apient}
@@ -783,89 +875,186 @@ void GetReadParam(SpPoint* pt,
                   size_t* size_out);
 \end{apient}
 \apidesc{
+
+  It fetches the arguments passed to the ``read'' function called at a point
+  {\em pt}. The ``read'' function includes {\em read}, {\em recv}, {\em
+    fread}, ...
+
 }
 
 \begin{apient}
-bool is_fork(const char* f);
+bool is_fork(const char* func_name);
 \end{apient}
 \apidesc{
+
+  Is the given function {\em func\_name} a {\em fork}?
+
 }
 
 \begin{apient}
-bool is_popen(const char* f);
+bool IsPopen(const char* f);
 \end{apient}
 \apidesc{
+
+  Is the given function {\em func\_name} a {\em popen}?
+
 }
 
 \begin{apient}
-char start_tracing(int fd);
+char CanStartTracing(int fd);
 \end{apient}
 \apidesc{
+
+ See if current process is allowed to execute the payload code
+ This is used in the user-defined payload function.
+ Return 1 if it is allowed to execute payload code (for tracing);
+ otherwise, 0 is returned.
+
 }
 
 \begin{apient}
 static bool BeforeEntry(SpPoint*);
 \end{apient}
 \apidesc{
+
+  Will be called before user-specified entry-payload function to do
+  inter-process propagation.
+
 }
 
 \begin{apient}
 static bool BeforeExit(SpPoint*);
 \end{apient}
 \apidesc{
+
+  Will be called before user-specified entry-payload function to support
+  inter-process propagation.
+
 }
 
 \begin{apient}
 SpPipeWorker* pipe_worker() const;
 \end{apient}
 \apidesc{
+
+  Returns the pipe worker that does inter-process propagation for pipe
+  mechanism.
+
 }
 
 \begin{apient}
 SpTcpWorker* tcp_worker() const;
 \end{apient}
 \apidesc{
+
+  Returns the tcp worker that does inter-process propagation for tcp
+  mechanism.
+
 }
 
 \begin{apient}
 SpUdpWorker* udp_worker() const;
 \end{apient}
 \apidesc{
+
+  Returns the udp worker that does inter-process propagation for udp
+  mechanism. 
+  (This hasn't been implemented yet.)
+
 }
 
 \subsubsection{Class SpChannel}
 \textbf{Declared in}: src/agent/ipc/channel.h
 
+\begin{apient}
+struct SpChannel {
+  SpChannel() :
+  type(SP_UNKNOWN), injected(false), local_pid(-1), remote_pid(-1),
+    remote_injected(false), inode(-1), fd(-1), rw(SP_WRITE) {}
+
+  ChannelType type;      // Channel type
+  bool injected;         // Already injected?
+  pid_t local_pid;       // Sender's pid
+  pid_t remote_pid;      // Receiver's pid
+  bool remote_injected;  // Agent is already injected to receiver?
+  ino_t inode;           // System-wide inode number
+  int fd;                // local fd that represents this channel
+  ChannelRW rw;          // Read or Write?
+};
+
+struct PipeChannel : public SpChannel {
+  PipeChannel() : SpChannel() {}
+};
+
+struct TcpChannel : public SpChannel {
+  TcpChannel() :
+  SpChannel() {}
+  sockaddr_storage local;
+  sockaddr_storage remote;
+
+  pid_t GetRemotePid();
+  std::string GetLocalHost();
+  std::string GetRemoteHost();
+  int GetLocalPort();
+  int GetRemotePort();
+};
+\end{apient}
+
+
 \subsubsection{IPC Workers}
 \textbf{Declared in}: src/agent/ipc/ipc\_workers/
+
+This is a collection of IPC workers, each of which does inter-process
+propagation for one type of IPC mechanism.
 
 \textbf{Class SpIpcWorkerDelegate}
 
 \textbf{Declared in}: src/agent/ipc/ipc\_workers/ipc\_worker\_delegate.h
 
+This is the base class for IPC worker.
+
 \begin{apient}
-virtual void SetStartTracing(char yes_or_no,
-                             SpChannel* c);
+virtual void SetRemoteStartTracing(char yes_or_no,
+                                   SpChannel* c);
 \end{apient}
 \apidesc{
+
+  This decides whether or not the user-defined logic in payload function code of
+  the remote process can run.
+  If the parameter {\em yes\_or\_no} is 0, then the remote process on the other
+  end of channel {\em c} cannot use the user-defined logic in payload function;
+  otherwise, the remote process can run the user-defined logic.
+
 }
 
 \begin{apient}
-virtual void SetStartTracing(char yes_or_no);
+virtual void SetLocalStartTracing(char yes_or_no);
 \end{apient}
 \apidesc{
+  This decides whether or not the user-defined logic in payload function code
+  of current process can run.
+  If the parameter {\em yes\_or\_no} is 0, then the current process cannot use
+  the user-defined logic in payload function; otherwise, the remote process can
+  run the user-defined logic.
+
 }
 
 \begin{apient}
-virtual char start_tracing(int fd);
+virtual char CanStartTracing(int fd);
 \end{apient}
 \apidesc{
+   Query if it's okay to trace on local end of the channel:
+   For Write-channel, it always return 1 (true);
+   2. For Read-channel, it should be synchronized by remote process
+   This is used by the process who owns this Worker instance.
+
 }
 
 \begin{apient}
-virtual bool Inject(SpChannel*, char* agent_path = NULL);
+virtual bool Inject(SpChannel* c, char* agent_path = NULL);
 \end{apient}
 \apidesc{
+  Inject the agent shared library to the other end of a channel {\em c}.
 }
 
 \begin{apient}
@@ -874,16 +1063,25 @@ virtual SpChannel* GetChannel(int fd,
                               void* arg = NULL);
 \end{apient}
 \apidesc{
+   Returns a communication channel from a file descriptor {\em fd}.
+   Returns NULL if not a valid IPC channel.
 }
 
 \textbf{Class SpPipeWorker}
 
 \textbf{Declared in}: src/agent/ipc/ipc\_workers/pipe\_worker\_impl.h
 
+This handles inter-process propagation via pipe mechanism.
+
 \textbf{Class SpTcpWorker}
 
 \textbf{Declared in}: src/agent/ipc/ipc\_workers/tcp\_worker\_impl.h
 
+This handles inter-process propagation via TCP mechanism.
+
 \textbf{Class SpUdpWorker}
 
 \textbf{Declared in}: src/agent/ipc/ipc\_workers/udp\_worker\_impl.h
+
+This handles inter-process propagation via UDP mechanism.
+(Not implemented yet.)

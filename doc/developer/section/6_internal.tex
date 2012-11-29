@@ -9,22 +9,28 @@ Current implementation is on Linux.
 
 % Use dlopen
 % Shared memory
+The injector works in the following steps:
+\begin{itemize}
+  \item xx
+\end{itemize}
+
 \subsection{Agent}
 \subsubsection{Parsing}
 % Online parsing
 \subsubsection{Initial Instrumentation}
 % injector vs preload
-\subsubsection{Intra-process Propagation}
+\subsubsection{Intra-process Propagation} \label{sec:intrainst}
 % Layout of snippet
+% Strategy of instrumentation, reloc insn, reloc block, springboard, trap
 \subsubsection{Inter-process Propagation}
 % Pipe
 % TCP
+\subsubsection{Inter-thread Propagation}
 \subsubsection{x86\_64 Issues}
-% Memory allocator
+% Memory allocator, long jump
+% PC register thing
+
 \subsubsection{Miscellaneous}
-
-% Propagation across thread
-
 % Parsing library
 
 % Thread-safe, locking

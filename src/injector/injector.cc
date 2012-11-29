@@ -485,6 +485,15 @@ SpInjector::GetResolvedLibPath(const std::string &filename,
   libPaths.push_back("/lib");
   libPaths.push_back("/lib64");
 
+  if (getenv("SP_DIR") == NULL) {
+    sp_perror("Please set SP_DIR environment variable to the root "
+              "directory of self-propelled instrumentation!");
+  }
+  if (getenv("PLATFORM") == NULL) {
+    sp_perror("Please set PLATFORM environment variable to "
+              "\'i386-unknown-linux2.4\' for x86 Linux or"
+              "\'x86_64-unknown-linux2.4\' for x86-64 Linux!");
+  }
   std::string sp_path = getenv("SP_DIR");
   
   sp_path += "/";

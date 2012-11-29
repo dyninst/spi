@@ -1,3 +1,4 @@
+-------
 Install
 -------
 1. Copy example-make.config to be "config.mk".
@@ -9,7 +10,7 @@ Install
   - DYNLINK: true for building shared library for agent, otherwise for building
     static library
 
-
+---------------------
 Environment variables
 ---------------------
 1. FOR DEBUGGING
@@ -26,11 +27,15 @@ Environment variables
 2. FOR RUNTIME
 PLATFORM: 'i386-unknown-linux2.4' for x86 or 'x86_64-unknown-linux2.4' for
           x86-64
+SP_DIR: the root directory of self-propelled instrumentation.
+SP_AGENT_DIR: the directory path of agent shared library that will be injected.
 
+---------------------
 Shared memory id used
 ---------------------
 1. 1986: for communication between injector process and user process
 
+--------------
 Make arguments
 --------------
 - For testing
@@ -52,3 +57,9 @@ Make arguments
   - make clean: only clean core self-propelled stuffs, excluding dependency
   - make clean_all: clean everything, including dependency
   - make clean_objs: clean core self-propelled objs
+
+---
+SSH
+---
+- To run test suite:
+  - make "ssh localhost" work without typing in password
