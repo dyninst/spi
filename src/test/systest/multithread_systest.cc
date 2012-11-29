@@ -32,6 +32,8 @@ TEST_F(MultithreadTest, simple) {
   cmd = "LD_LIBRARY_PATH=test_mutatee:$LD_LIBRARY_PATH ";
   cmd += "LD_PRELOAD=test_agent/multithread_test_agent.so ";
 	cmd += "test_mutatee/multithread.exe";
+  //  system(cmd.c_str());
+
 	FILE* fp = popen(cmd.c_str(), "r");
 	char buf[1024];
   int count = 0;
@@ -41,6 +43,7 @@ TEST_F(MultithreadTest, simple) {
   }
   pclose(fp);
   EXPECT_TRUE(count > 40);
+
 }
 
 }

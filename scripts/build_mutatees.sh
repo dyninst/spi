@@ -33,21 +33,6 @@ if [ ! -f $BINDIR/ls.exe ]; then
 
 fi
 
-#--------------------------------------------
-# gcc
-#--------------------------------------------
-GCCPATH=$SP_DIR/scripts/test_data/$PLATFORM/test_exes/cc1.exe
-GCCLIBPATH=$SP_DIR/scripts/test_data/$PLATFORM/test_libs/*
-
-if [ ! -f $BINDIR/cc1.exe ]; then
-  cp -f $GCCPATH $BINDIR/cc1.exe
-  cp -f $GCCLIBPATH $SP_DIR/$PLATFORM/tmp/lib
-fi
-
-mkdir -p $DATADIR
-if [ ! -f $DATADIR/200.i ]; then
-  cp $SRC_DATADIR/200.i $DATADIR/200.i
-fi
 
 #--------------------------------------------
 # IPC test: lighttpd and wget

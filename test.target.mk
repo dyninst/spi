@@ -94,9 +94,7 @@ UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
             $(AG_DIR)/context_unittest.cc \
             $(AG_DIR)/parser_unittest.cc \
             $(ST_DIR)/coreutils_systest.cc \
-            $(ST_DIR)/chrome_systest.cc \
             $(ST_DIR)/cpp_systest.cc \
-            $(ST_DIR)/gcc_systest.cc \
             $(ST_DIR)/multithread_systest.cc \
             $(ST_DIR)/dlopen_systest.cc \
             $(ST_DIR)/pipe_systest.cc \
@@ -109,8 +107,8 @@ UT_EXES   = $(addprefix $(TEST_EXES_DIR)/, $(notdir $(UT_SRCS:%.cc=%.exe)))
 
 UT_ONESTOP_EXE = $(SP_DIR)/$(PLATFORM)/all_tests
 
-#unittests: $(UT_EXES) $(UT_ONESTOP_EXE)
-unittests: $(UT_EXES)
+unittests: $(UT_EXES) $(UT_ONESTOP_EXE)
+#unittests: $(UT_EXES)
 
 $(UT_OBJS): $(TEST_OBJS_DIR)/%.o : %.cc
 	@echo Compiling $*.o
@@ -205,17 +203,14 @@ mutatees: mutatee_libs mutatee_exes
 #==========================================================
 external_mutatees:
 	@bash ../scripts/build_mutatees.sh
-	@cp ../scripts/test_data/$(PLATFORM)/test_libs/* tmp/lib/
 
 #==========================================================
 # Test agents
 #==========================================================
 TG_SRCS  = $(TG_DIR)/count_test_agent.cc \
-           $(TG_DIR)/chrome_test_agent.cc \
            $(TG_DIR)/payload_test_agent.cc \
            $(TG_DIR)/ipc_test_agent.cc \
            $(TG_DIR)/dlopen_test_agent.cc \
-           $(TG_DIR)/gcc_test_agent.cc \
            $(TG_DIR)/inject_test_agent.cc \
            $(TG_DIR)/print_test_agent.cc \
            $(TG_DIR)/condor_test_agent.cc \

@@ -87,6 +87,7 @@ $(INJECTOR): $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS)
 	@$(GXX) -o $@ $(IJMAIN_OBJS) $(IJ_OBJS) $(UTILS_OBJS) $(IJ_LDFLAGS)
 	@rm -f injector
 	@echo "export LD_LIBRARY_PATH=$(SP_DIR)/$(PLATFORM):$(SP_DIR)/$(PLATFORM)/test_mutatee:$(DYNINST_DIR)/../$(PLATFORM)/lib:$(DYNINST_DIR)/../lib:./:\$$LD_LIBRARY_PATH" > injector
+	@echo "export SP_DIR=$(SP_DIR)" >> injector
 	@echo "$(SP_DIR)/$(PLATFORM)/$(INJECTOR) \$$1 \$$2 \$$3 \$$4 \$$5" >> injector
 	@chmod 755 injector
 #---------------- 
@@ -226,4 +227,17 @@ msg: agent_lib injector_exe
 	@echo " $(SP_DIR) "
 	@echo ""
 
-debug:
+help:
+	@echo "make options:"
+	@echo "-- make: build everything"
+	@echo "-- make all: build everything"
+	@echo "-- make test: build testsuite"
+	@echo "-- make spi: build injector and agent library"
+	@echo "-- make injector_exe: build injector"
+	@echo "-- make agent_lib: build agent library"
+	@echo "-- make depend: build dependencies"
+	@echo "-- make clean: clean all but dependencies and external testing mutatees"
+	@echo "-- make clean_objs: clean all object files"
+	@echo "-- make clean_all: clean all but external testing mutatees"
+
+
