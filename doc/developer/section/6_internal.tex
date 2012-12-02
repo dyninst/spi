@@ -7,12 +7,48 @@ Current implementation is on Linux.
 
 \subsection{Injector}
 
-% Use dlopen
-% Shared memory
-The injector works in the following steps:
+The main injection procedure, which has two main steps:
 \begin{itemize}
-  \item xx
+\item Force an application process to execute {\em do\_dlopen} or {\em
+    \_\_libc\_dlopen\_mode} functions in libc.so to load shared library
+  libijagent.so. We use ProccontrolAPI's IRPC mechanism to remotely invoke
+  functions.
+\item Force an application process to execute {\em ij\_agent} function in
+  libijagent.so to load the user-specified shared library. In this step, we have
+  to pass parameters from injector to the application process by IPC mechanism,
+  where we use shared memory in current implementation and the shared memory id
+  is 1986. If the application also notifies the injector via shared memory
+  whether the library loading is successful.
 \end{itemize}
+
+Here are some design rationales:
+
+\textbf{Why don't we directly use do\_dlopen or \_\_libc\_dlopen\_mode to load
+  user-specified shared library?}  Because do\_dlopen is not a public function,
+which is unsafe to use.  Oftentimes, do\_dlopen causes the application process
+to crash, e.g., the library is not found. On the other hand, dlopen is safe to
+use, which would not causes the application process to crash.
+
+\textbf{To follow up the above question, since dlopen is safe to use, why don't
+  we directly call dlopen to load user-specified library?}  We are not allowed
+to do so. libc.so has sanity check on calling dlopen. If we call dlopen using
+IRPC, dlopen would fail, although it won't crash injectee process. In sum, the
+benefit of providing a level of indirection is, we can use unsafe do\_dlopen
+function to load a controlled library libijagent.so, from libijagent.so, we use
+safe dlopen function to load uncontrolled user-provided library.
+
+
+\textbf{Why sometimes we may use \_\_libc\_dlopen\_mode?} Because ... if libc is
+stripped, then we cannot find do\_open, but we can still find
+\_\_libc\_dlopen\_mode.
+
+
+\textbf{Why we use IPC mechanism to pass parameters to ij\_agent in
+  libijagent.so?}  ij\_agent is a function that calls dlopen. After dlopen is
+invoked, we want to check whether the loading is successful. Even when dlopen
+fails, we also want to know the error message. Therefore, we need to do IPC for
+error report or checking return value. In this case, why don't we have an easy
+and uniformed way to pass argument and check return value?
 
 \subsection{Agent}
 \subsubsection{Parsing}
