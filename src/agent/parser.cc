@@ -909,6 +909,7 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
 
 //////////////////////////////////////////////////////////////////////
 // Parse library that is instrumentable and not parsed yet
+// TODO: Should hook up memory allocator
 bool
 SpParser::ParseDlExit(SpPoint* pt) {
 

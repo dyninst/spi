@@ -72,7 +72,7 @@ In particular, for SyncEvent, we make the semantics to be ``do initial
 instrumentation right away''. We handle this in two cases. If the agent library
 is injected via an injector, we instrument all functions in the call stack when
 injection happens, using StackwalkerAPI. If the agent library is loaded at the
-beginning of running a application process via setting LD_PRELOAD environment
+beginning of running a application process via setting LD\_PRELOAD environment
 variable, then we instrument {\em main} function.
 
 
@@ -114,12 +114,43 @@ workers in order:
 \end{itemize}
 
 \subsubsection{Inter-process Propagation}
-The current implementation of inter-process propagation supports two IPC
-(inter-process communication) mechanisms, pipe and tcp.
+Inter-process propagation is managed by SpIpcMgr class, which relies on IPC
+(inter-process communication) workers to handle different IPC mechanisms.  The
+current implementation of inter-process propagation supports two IPC mechanisms,
+pipe and tcp.
 
-% Pipe
+Generally, inter-process propagation works by following these steps:
+\begin{itemize}
+\item Process A detects the initialization of communication (e.g., {\em
+    connect}, {\em write}, {\em send} ...) and finds the approapriate IPC worker
+  for further processing.
+\item The IPC worker of Process A creates a write channel that knows the Process
+  A is talking to Process B right now. Then, the IPC worker of Process A injects
+  the agent library specified by the environment variable SP\_AGENT\_DIR to
+  Process B.
+\item The IPC worker of Process A synchronizes the message receiving event in
+  Process B to the according send event in Process A that triggers cross-process
+  propagation. If we don't do this, then the user-defined logic may trace
+  delayed arriving message in Process B that are sent before the instrumentation
+  in Process A.
+\item For each read event or message receiving event (e.g., {\em recv}, {\em
+    read} ...), Process B needs to check whether or not it can start executing
+  the user-defined logic in the payload function, which is done by invoking {\em
+    StartTracing} or {\em IsIpcRead} in the payload function by users.
+\end{itemize}
 
-% TCP
+Different IPC workers have different implementations for detecting the
+initialization of communication, injecting agent to remote process, and
+synchronizing message receiving event with sending event.
+
+For injecting agent to remote process, the pipe worker directly invoke injector
+to inject the agent library to the process on the same machine, while the tcp
+worker uses ssh to remotely invoke injector on the remote machine to find PID of
+the remote process from port number and to injector the agent library to the
+remote process.
+
+For synchronizing message receiving event with send event, the pipe worker uses
+shared memory, while the tcp worker uses TCP OOB (out-of-band) mechanism.
 
 \subsubsection{Inter-thread Propagation}
 
@@ -131,10 +162,44 @@ the function's callees.
 
 
 \subsubsection{x86\_64 Issues}
-% Memory allocator, long jump
-% PC register thing
+There are two issues related to x86\_64 specific implementation of intra-process
+propagation.
 
-\subsubsection{Miscellaneous}
-% Parsing library
+The first issue is we need to pay special attention to the instructions using
+RIP register, because when we relocate such instructions, the RIP value changes
+accordingly. For details, search ``RIP'' or ``use\_pc'' in
+src/agent/snippet-x86\_64.cc.
 
-% Thread-safe, locking
+The second issue is that we have a customized memory allocator to allocate
+buffer to a snippet. The goal is to bring the snippet as close to the original
+call instruction as possible, so that we can generate smaller jump instruction
+and increase our chance to use RelocCallInsnWorker that performs best amongst
+all instrumentation workers. The basic idea for the customized memory allocator
+is as follows:
+\begin{itemize}
+\item After parsing, for each object, we bind a huge free memory area before the
+  starting address of this object, where we actually use {\em mmap} to reserve
+  such free memory area.
+\item For each mmap-ed memory area, we create a free list for small buffers of
+  size 256 bytes, a free list for medium buffers of size 512 bytes, and a free
+  list for large buffers of size 4096 bytes. All small buffers account for 80\%
+  of size in each mmap-ed memory area, all medium buffers for 10\%, and all
+  large buffers for 5\%. In this way, each object would have three free lists.
+\item When invoking SpAddrSpace::malloc, we first get the object that contains
+  the call instruction, then we see whether the memory allocation can be
+  satisfied in the small buffer free list, the medium buffer free list, and the
+  huge buffer free list in order. If the memory allocation cannot be satisfied
+  in free lists, then we resort to use {\em malloc} (on 32-bit Linux, we always
+  use {\em malloc}).
+\end{itemize}
+
+\subsubsection{Parsing Newly Loaded Library}
+
+When detecting a function call is {\em dlopen}, we would parse the newly loaded
+library.
+
+\subsubsection{Thread-safe}
+
+To ensure operations in the payload function are thread-safe, we implicitly
+protect the public interfaces with locks. The implementation of the lock can be
+found in src/common/utils.cc.

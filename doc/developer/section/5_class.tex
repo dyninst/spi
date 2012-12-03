@@ -15,6 +15,7 @@ Sets the entry payload function name. By default, the entry payload function is
 
 }
 
+
 \begin{apient}
 void SetInitExit(string);
 \end{apient}
@@ -43,6 +44,7 @@ void SetFuncsNotToInstrument(const StringSet& funcs);
 Sets the set of names of functions in the application process that will
 NOT be instrumented. By default, we instrument all functions.
 }
+
 
 \begin{apient}
 void EnableParseOnly(const bool yes_or_no);
@@ -146,6 +148,7 @@ SpObject* GetObject() const;
 Returns the binary object containing this function.
 }
 
+
 \begin{apient}
 std::string GetMangledName();
 \end{apient}
@@ -179,6 +182,7 @@ SpObject* GetObject() const;
 \apidesc{
 Returns the binary object containing this block.
 }
+
 
 \begin{apient}
 in::Instruction::Ptr orig_call_insn() const;
@@ -345,7 +349,7 @@ SpFunction* FindFunction(dt::Address absolute_addr);
 \end{apient}
 \apidesc{
 
-  Returns the function that contains the address {\em absolute_addr}.
+  Returns the function that contains the address {\em absolute\_addr}.
   It returns NULL if no function is found.
 }
 
@@ -366,6 +370,7 @@ bool FindFunction(string func_name, FuncSet* found_funcs);
   Get all the functions that have the demangled function name.
 
 }
+
 
 \begin{apient}
 SpFunction* callee(SpPoint* point, bool parse_indirect = false);
@@ -543,6 +548,7 @@ Creates a Boost shared pointer pointing to a SyncEvent instance.
 
 }
 
+
 \textbf{Class FuncEvent}
 
 It instruments all of the specified functions immediately.
@@ -607,10 +613,13 @@ bool go(SpFunction* func,
   The parameters {\em entry} and {\em exit} specify the payload functions to be
   installed for those callees.  
   The parameter {\em point} is the point where {\em func} is invoked.
-  The parameter {\em inst_calls} specifies all function calls that need to be
+  The parameter {\em inst\_calls} specifies all function calls that need to be
   instrumented, which is used only in CallEvent.
 
 }
+
+
+
 
 \subsubsection{Class SpSnippet}
 \textbf{Declared in}: src/agent/snippet.h
@@ -633,7 +642,7 @@ char* BuildBlob(const size_t est_size,
 
   Returns a pointer to a blob of code snippet, which contains relocated code and
   invocations to payload functions.
-  The parameter {\em est_size} specifies the estimate size to allocate the buffer
+  The parameter {\em est\_size} specifies the estimate size to allocate the buffer
   for the code snippet.  
   The parameter {\em reloc} indicates whether or not we need to relocate a call
   block.
