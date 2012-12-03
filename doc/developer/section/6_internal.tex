@@ -52,16 +52,84 @@ and uniformed way to pass argument and check return value?
 
 \subsection{Agent}
 \subsubsection{Parsing}
-% Online parsing
+
+When Agent library is loaded, it needs to parse the binary code into PatchAPI
+CFG (Control Flow Graph) structures that are used in later instrumentation.
+
+The parsing is done in {\em SpParser::Parse}, which consists of these steps:
+\begin{itemize}
+\item Parse binary code into SymtabAPI::Symtab objects.
+\item Use SymtabAPI::Symtab objects to create SpObject (subclass of
+  PatchAPI::PatchObject) objects, which indirectly relies on {\em
+    ParseAPI::parse} to do the runtime parsing.
+\end{itemize}
+
 \subsubsection{Initial Instrumentation}
-% injector vs preload
+
+Initial instrumentation is encapsulated in SpEvent series classes. 
+
+In particular, for SyncEvent, we make the semantics to be ``do initial
+instrumentation right away''. We handle this in two cases. If the agent library
+is injected via an injector, we instrument all functions in the call stack when
+injection happens, using StackwalkerAPI. If the agent library is loaded at the
+beginning of running a application process via setting LD_PRELOAD environment
+variable, then we instrument {\em main} function.
+
+
 \subsubsection{Intra-process Propagation} \label{sec:intrainst}
-% Layout of snippet
-% Strategy of instrumentation, reloc insn, reloc block, springboard, trap
+
+The instrumentation is to transfer control from original binary code in an
+application process to a snippet of code that is built by self-propelled
+instrumentation. This snippet of code contains these things in order:
+\begin{itemize}
+\item Relocated code, which may be a relocated call instruction or a relocated
+  call block, depending on what instrumentation worker is used.
+\item Context saving code, which saves registers in the stack.
+\item Code to invoke an entry payload function.
+\item Context restoring code, which restores registers from the stack.
+\item Code to invoke the original function being instrumented.
+\item Context saving code, which saves registers in the stack (OPTIONAL).
+\item Code to invoke an exit payload function (OPTIONAL).
+\item Context restoring code, which restores registers from the stack (OPTIONAL).
+\item Code to jump back to the original code.
+\end{itemize}
+
+To install instrumentation to a function call, we try these instrumentation
+workers in order:
+\begin{itemize}
+\item RelocCallInsnWorker: Relocates call instruction and replaces the call
+  instruction with a jump instruction. This may fail because a jump instruction
+  may be larger than a call instruction.
+\item RelocCallBlockWorker: Relocates call block and replaces the call block with
+  a jump instruction. This may fail because a jump instruction may be larger
+  than a call block.
+\item SpringboardWorker: Relocates call block C and replaces the call block with
+  a short jump that transfers control to a nearby block as springboard block
+  S. Relocates S and replace S with two jump instructions, one of which jumps to
+  the relocated S (denoted as S'), and the other jumps to the snippet. To sum
+  up, C -> S -> S' -> S -> snippet -> C. This may fail because a springboard
+  block that is large enough to place two long jumps may not be found.
+\item TrapWorker: Relocates call instruction and replaces it with a trap
+  instruction.
+\end{itemize}
+
 \subsubsection{Inter-process Propagation}
+The current implementation of inter-process propagation supports two IPC
+(inter-process communication) mechanisms, pipe and tcp.
+
 % Pipe
+
 % TCP
+
 \subsubsection{Inter-thread Propagation}
+
+The inter-thread instrumentation propagation is implemented in the SpThreadMgr
+class. The basic idea is, when detecting {\em pthread\_create}, we get its first
+argument, which is the address for the routine that will be run on a new thread.
+Next, we find a function according to this function address, then we instrument
+the function's callees.
+
+
 \subsubsection{x86\_64 Issues}
 % Memory allocator, long jump
 % PC register thing
