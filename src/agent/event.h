@@ -60,7 +60,7 @@ class CombEvent : public SpEvent {
     typedef SHARED_PTR(CombEvent) ptr;
     static ptr Create(EventSet& events) {
       return ptr(new CombEvent(events)); }
-    void RegisterEvent();
+    virtual void RegisterEvent();
   protected:
     CombEvent(EventSet&);
     EventSet events_;
