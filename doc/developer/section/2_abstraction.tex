@@ -10,54 +10,56 @@ Injector in details.
 % For user / developer manual
 \subsubsection{User-level Abstractions}
 \begin{itemize}
-\item Agent. It manages the configuration and does instrumentation. An Agent
-  instance is created in the init function of the {\em Agent} shared library.
-\item Event. It specifies what kind of initial instrumentation should be done
-  once the {\em Agent} shared library is loaded. 
-  Currently, there are three types of Event: 1) instrumenting all callees in {\em
-  main} function right away; 2) instrumenting all callees of specified functions
-  right away; 3) instrumenting specified function calls right away.
-\item Payload function. It contains user-specified code. 
-  From user's perspective, a payload function will be invoke before or after each
-  function call in the process.
-  There are two types of payload functions, {\em entry payload} that is invoked
-  before each function call and {\em exit payload} that is invoked after each
-  function call.
-\item Point. It represents an instrumentation point at current function call and
-  is used in Payload function.
-\item Control Flow Graph (CFG) structures. CFG structures include Object,
-  Function, Block, and Edge. An Object represents a binary file (i.e., an
-  executable or a shared library), and contains a set of functions. A Function
-  contains a set of Blocks. A Block is a basic block. An Edge connects two
-  Blocks. Users can get related CFG structures of current function call from
+\item \textbf{Agent}. It manages the configuration and does instrumentation. An
+  Agent instance is created in the init function of the {\em Agent} shared
+  library.
+\item \textbf{Event}. It specifies when the initial instrumentation should be
+  done after the {\em Agent} shared library is loaded.  Currently, there are
+  four types of Event: 1) instrumenting all callees in {\em main} function right
+  away; 2) instrumenting all callees of specified functions right away; 3)
+  instrumenting specified function calls right away; 4) instrumenting all
+  callees in {\em main} after a given amount of time.
+\item \textbf{Payload function}. It contains user-specified code.  From user's
+  perspective, a payload function will be invoke before or after each function
+  call in the process.  There are two types of payload functions, {\em entry
+    payload} that is invoked before each function call and {\em exit payload}
+  that is invoked after each function call.
+\item \textbf{Point}. It represents an instrumentation point at current function
+  call and is used in Payload function.
+\item \textbf{Control Flow Graph (CFG) structures}. CFG structures include
+  Object, Function, Block, and Edge. An Object represents a binary file (i.e.,
+  an executable or a shared library), and contains a set of functions. A
+  Function contains a set of Blocks. A Block is a basic block. An Edge connects
+  two Blocks. Users can get related CFG structures of current function call from
   Point.
 
 % For developer / Use PatchAPI
 \subsubsection{Developer-level Abstractions}
 
-\item AddressSpace. It represents the address space of the process. It contains
-  a set of Objects in the process. Also, it implements some memory management
-  primitives used by the instrumentation engine.
-\item Parser. It represents a binary code parser that parses binary code into
-  structural CFG structures, i.e., Object, Function, Block, and Edge.
-\item Propeller. It manages intra-process instrumentation propagation, where it
-  finds function call Points inside current function and uses Instrumenter to
-  insert Snippets at these points.
-\item Snippet. It represents a patch area that contains function calls to the
-  Payload function and the relocated function call or the relocated call block.
-\item Instrumenter. It is the instrumentation engine that uses a set of
+\item \textbf{AddressSpace}. It represents the address space of the process. It
+  contains a set of Objects in the process. Also, it implements some memory
+  management primitives used by the instrumentation engine.
+\item \textbf{Parser}. It represents a binary code parser that parses binary
+  code into structural CFG structures, i.e., Object, Function, Block, and Edge.
+\item \textbf{Propeller}. It manages intra-process instrumentation propagation,
+  where it finds function call Points inside current function and uses
+  Instrumenter to insert Snippets at these points.
+\item \textbf{Snippet}. It represents a patch area that contains function calls
+  to the Payload function and the relocated function call or the relocated call
+  block.
+\item \textbf{Instrumenter}. It is the instrumentation engine that uses a set of
   Instrumentation Workers to insert Snippets to function call points.
-\item Instrumentation Worker. It represents a mechanism of installing
+\item \textbf{Instrumentation Worker}. It represents a mechanism of installing
   instrumentation. Currently, four types of Instrumentation Workers are
   implemented: 1) relocating original function call instruction; 2) relocating
   original call block; 3) relocating nearby large springboard block; 4) using
   trap instruction.
-\item IpcMgr. It manages inter-process instrumentation propagation by creating
-  Channels and using IPC Workers.
-\item Channel. It represents a unidirectional communication channel, containing
-  local process name and remote process name.
-\item IPC Worker. It implements inter-process instrumentation propagation for a
-  particular IPC mechanism (e.g., TCP, UDP, pipe).
+\item \textbf{IpcMgr}. It manages inter-process instrumentation propagation by
+  creating Channels and using IPC Workers.
+\item \textbf{Channel}. It represents a unidirectional communication channel,
+  containing local process name and remote process name.
+\item \textbf{IPC Worker}. It implements inter-process instrumentation
+  propagation for a particular IPC mechanism (e.g., TCP, UDP, pipe).
 \end{itemize}
 
 \subsection{Injector}

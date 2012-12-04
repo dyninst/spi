@@ -2,19 +2,17 @@
 \label{sec-intro}
 
 Self-propelled instrumentation is a binary instrumentation technique that
-dynamically injects a fragment of code into an application process on
-demand.
+dynamically injects a fragment of code into an application process.
 The instrumentation is inserted ahead of the control flow within the process and
 is propagated into other processes, following communication events, crossing
-host boundaries, and collecting a distributed function-level trace of the
-execution.
+host boundaries, and collecting function-level trace data of the execution.
 
 Self-propelled instrumentation contains two major components, {\em Agent} and
 {\em Injector}.
 {\em Agent} is a shared library that automatically inserts and propagates a
 piece of payload code at function call events in a running process, where the
-payload code contains user-defined logic, such as generating trace data for
-later inspection.
+payload code contains user-defined logic, such as generating trace data to files 
+for later inspection.
 The instrumentation would propel itself within the process by following control
 flow and across thread boundaries, process boundaries, or even host boundaries
 by following communication flow.

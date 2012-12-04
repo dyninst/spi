@@ -29,7 +29,7 @@ successfully is to look at memory maps file of the application process, i.e.,
 
 \subsection{Initialization} %changed configuration to initialisation as
 
-The initialisation code is executed right away when {\em Agent} shared library
+The initialization code is executed right away when {\em Agent} shared library
 is loaded into the application process.
 It tells self-propelled instrumentation what are payload functions provided by
 users, how would initial instrumentation be done, whether or not to enable
@@ -38,13 +38,13 @@ inter-process instrumentation propagation etc.
 \subsection{Initial Instrumentation}
 Once the configuration code in the {\em Agent shared library} finishes execution
 inside the application process, the initial instrumentation would be performed
-right away, e.g., instrumenting all function calls inside the {\em main}
-function.
+when certain event is triggered (e.g., after 5 seconds) or be performed right
+away (e.g., instrumenting all function calls inside the {\em main} function).
 
 \subsection{Instrumentation Propagation}
-When one of the initial instrumentation gets executed, then instrumentation
-propagates itself either within the process by following control flow, or across
-process boundaries by following communication flow.
+When the initial instrumentation gets executed, then instrumentation propagates
+itself either within the process by following control flow, or across process
+boundaries by following communication flow.
 
 \subsubsection{Intra-process propagation}
 \begin{figure}[ht]
@@ -54,16 +54,17 @@ process boundaries by following communication flow.
    \label{fig:intrainst}
 \end{figure}
 
-Instrumenting all the function calls inside {\em main} function internally calls
-the instrumentation engine, before each function call is made.
-Instrumentation engine, in turn, propagates the instrumentation to the called
-functions by instrumenting all the function calls inside the called function.
 
-The instrumentation engine also executes payload function either before or after
-running the instrumented function call depending on whether it is an entry
-payload or exit payload function.
+Figure~\ref{fig:intrainst} shows an example of intra-process instrumentation
+propagation from step 3 to step 5.
 
-The workflow is visualized in Figure~\ref{fig:intrainst}.
+In the example, a wrapper function {\em instrument} is invoked right before an
+original function call {\em foo}.  The funciton {\em instrument} relies on the
+instrumentation engine in the agent library to execute user-provided payload
+function and to propagate instrumentation by instrumenting callees inside
+function {\em foo}, which include {\em connect} in the example. By this point,
+an invocation of {\em instrument} is inserted before {\em connect}. In this way,
+instrumentation propagates from a caller to its callees.
 
 \subsubsection{Inter-process propagation}
 \begin{figure}[ht]
@@ -75,10 +76,8 @@ The workflow is visualized in Figure~\ref{fig:intrainst}.
 
 For inter-process instrumentation propagation, the instrumentation engine
 identifies communication initiation functions like {\em connect}, {\em send}, or
-{\em write} and figures out the target host.
-The instrumentation engine then contacts to the SPI daemon of the target host on
-the other end of communication, which injects the agent shared library automatically
-into the target process. 
-Then the usual process of \textit{initialisation} and \textit{initial
-  instrumentation} goes on inside the target process. 
-The workflow is visualized in Figure~\ref{fig:interinst}
+{\em write} and figures out the remote host.  The instrumentation engine then
+contacts to the SPI daemon of the remote host on the other end of communication,
+which injects the agent shared library automatically into the target process.
+Then the intra-process propagation is performed inside the remote process The
+workflow is visualized in Figure~\ref{fig:interinst}

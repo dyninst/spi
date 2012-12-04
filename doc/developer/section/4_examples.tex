@@ -25,7 +25,7 @@ void entry_payload(SpPoint* pt) {
   sp::Propel(pt);
 }
 
-// Entry payload function that is invoked after each function call
+// Exit payload function that is invoked after each function call
 void exit_payload(SpPoint* pt) {
   // Get function from point
   SpFunction* func = sp::Callee(pt);
