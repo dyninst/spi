@@ -6,23 +6,25 @@
 \textbf{Declared in}: src/agent/agent.h
 
 \begin{apient}
-void SetInitEntry(string);
+void SetInitEntry(string funcd_name);
 \end{apient}
 \apidesc{
 
-Sets the entry payload function name. By default, the entry payload function is
-``default\_entry'', which simply prints out all executed functions' name.
+  Sets the entry payload function. The payload function should be linked to the
+  agent library or should be in the agent library. By default, the entry payload
+  function is ``default\_entry'', which simply prints out all executed
+  functions' name.
 
 }
 
 
 \begin{apient}
-void SetInitExit(string);
+void SetInitExit(string func_name);
 \end{apient}
 \apidesc{
 
-Sets the exit payload function name. By default, there is not exit payload
-function.
+  Sets the exit payload function. By default, there is not exit payload
+  function.
 
 }
 
@@ -31,9 +33,9 @@ void SetLibrariesToInstrument(const StringSet& libs);
 \end{apient}
 \apidesc{
 
-Sets the set of names of libraries loaded in the application process that will
-be instrumented. By default, we only instrument the executable binary code and
-don't instrument loaded shared libraries.
+  Sets the set of names of libraries loaded in the application process that will
+  be instrumented. By default, we only instrument the executable binary code and
+  don't instrument loaded shared libraries.
 
 }
 
@@ -41,8 +43,10 @@ don't instrument loaded shared libraries.
 void SetFuncsNotToInstrument(const StringSet& funcs);
 \end{apient}
 \apidesc{
-Sets the set of names of functions in the application process that will
-NOT be instrumented. By default, we instrument all functions.
+
+  Sets the set of names of functions in the application process that will NOT be
+  instrumented. By default, we instrument all functions.
+
 }
 
 
@@ -51,9 +55,10 @@ void EnableParseOnly(const bool yes_or_no);
 \end{apient}
 \apidesc{
 
-Enables or disables ParseOnly option. If yes\_or\_no is true, then after parsing
-the binary code, we don't do instrumentation; otherwise, instrumentation is
-conducted after parsing. By default, ParseOnly option is disabled.
+  Enables or disables ParseOnly option. If yes\_or\_no is true, then after
+  parsing the binary code, we don't do instrumentation; otherwise,
+  instrumentation is conducted after parsing. By default, ParseOnly option is
+  disabled.
 
 }
 
@@ -62,8 +67,8 @@ void EnableIpc(const bool yes_or_no);
 \end{apient}
 \apidesc{
 
-Enable or disable inter-process instrumentation propagation. By default,
-inter-process instrumentation propagation is disabled.
+  Enables or disables inter-process instrumentation propagation. By default,
+  inter-process instrumentation propagation is disabled.
 
 }
 
@@ -72,8 +77,8 @@ void EnableHandleDlopen(const bool yes_or_no);
 \end{apient}
 \apidesc{
 
-Enable or disable propagating instrumentation to library loaded via dlopen. By
-default, it is disabled.
+  Enables or disables propagating instrumentation to library loaded via
+  dlopen. By default, it is disabled.
 
 }
 
@@ -82,8 +87,8 @@ void EnableMultithread(const bool yes_or_no);
 \end{apient}
 \apidesc{
 
-Enable or disable propagating instrumentation across thread. By default, it is
-disabled.
+  Enables or disables propagating instrumentation across thread. By default, it
+  is disabled.
 
 }
 
@@ -92,7 +97,7 @@ void Go();
 \end{apient}
 \apidesc{
 
-Starts initial instrumentation.
+  Starts initial instrumentation.
 
 }
 
@@ -212,10 +217,11 @@ Utility functions are used when writing payload functions.
 SpFunction* Callee(SpPoint* pt);
 \end{apient}
 \apidesc{
-Returns an instance of SpFunction for current function call. 
-The parameter \emph{pt} represents the instrumentation point for current function
-call.
-If it fails, it returns NULL.
+
+  Returns an instance of SpFunction for current function call.  The parameter
+  \emph{pt} represents the instrumentation point for current function call.  If
+  it fails (e.g., cannot find a function), it returns NULL.
+
 }
 
 \begin{apient}
@@ -345,7 +351,7 @@ void GetFrame(long* pc, long* sp, long* bp)
 }
 
 \begin{apient}
-SpFunction* FindFunction(dt::Address absolute_addr);
+SpFunction* FindFunction(Dyninst::Address absolute_addr);
 \end{apient}
 \apidesc{
 
@@ -525,7 +531,7 @@ static ptr Create(int signum = SIGALRM,
                   int sec = 5);
 \end{apient}
 \apidesc{
-Creates a Boost shared pointer pointing to a AsyncEvent instance.
+Creates a Boost shared pointer pointing to an AsyncEvent instance.
 
 The parameter {\em signum} specifies the signal number, and the parameter {\em
   sec} is only effective when signum is SIGALRM.
@@ -624,15 +630,6 @@ bool go(SpFunction* func,
 \subsubsection{Class SpSnippet}
 \textbf{Declared in}: src/agent/snippet.h
 
-\begin{apient}
-static ptr create(SpFunction* f,
-                  SpPoint* pt,
-                  PayloadFunc entry,
-                  PayloadFunc exit);
-\end{apient}
-\apidesc{
-  Creates a Boost shared pointer pointing to a SpSnippet instance.
-}
 
 \begin{apient}
 char* BuildBlob(const size_t est_size,

@@ -7,7 +7,7 @@ Current implementation is on Linux.
 
 \subsection{Injector}
 
-The main injection procedure, which has two main steps:
+The main injection procedure has two main steps:
 \begin{itemize}
 \item Force an application process to execute {\em do\_dlopen} or {\em
     \_\_libc\_dlopen\_mode} functions in libc.so to load shared library
@@ -72,7 +72,7 @@ In particular, for SyncEvent, we make the semantics to be ``do initial
 instrumentation right away''. We handle this in two cases. If the agent library
 is injected via an injector, we instrument all functions in the call stack when
 injection happens, using StackwalkerAPI. If the agent library is loaded at the
-beginning of running a application process via setting LD\_PRELOAD environment
+beginning of running an application process via setting LD\_PRELOAD environment
 variable, then we instrument {\em main} function.
 
 
@@ -107,7 +107,7 @@ workers in order:
   a short jump that transfers control to a nearby block as springboard block
   S. Relocates S and replace S with two jump instructions, one of which jumps to
   the relocated S (denoted as S'), and the other jumps to the snippet. To sum
-  up, C -> S -> S' -> S -> snippet -> C. This may fail because a springboard
+  up, C -> S -> S' -> S -> snippet -> C. This may fail because a nearby springboard
   block that is large enough to place two long jumps may not be found.
 \item TrapWorker: Relocates call instruction and replaces it with a trap
   instruction.
@@ -146,7 +146,7 @@ synchronizing message receiving event with sending event.
 For injecting agent to remote process, the pipe worker directly invoke injector
 to inject the agent library to the process on the same machine, while the tcp
 worker uses ssh to remotely invoke injector on the remote machine to find PID of
-the remote process from port number and to injector the agent library to the
+the remote process from port number and to inject the agent library to the
 remote process.
 
 For synchronizing message receiving event with send event, the pipe worker uses
@@ -195,8 +195,8 @@ is as follows:
 
 \subsubsection{Parsing Newly Loaded Library}
 
-When detecting a function call is {\em dlopen}, we would parse the newly loaded
-library.
+When detecting a function call to be {\em dlopen}, we would parse the newly
+loaded library.
 
 \subsubsection{Thread-safe}
 

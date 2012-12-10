@@ -69,10 +69,9 @@ void MyAgent() {
 }
 \end{lstlisting}
 The above code shows the minimum operations needed to configure self-propelled
-instrumentation.
-The major things to do in the configuration code are to create an Agent object
-that manages instrumentation, to register payload functions, and to initiate
-instrumentation.
+instrumentation.  The major things to do in the configuration code are to create
+an Agent object that manages configurations, registers payload functions, and
+initiates instrumentation.
 
 \subsection{Using Injector}
 The injector can be used to inject the agent shared library into a process. It
@@ -104,12 +103,12 @@ instrumentation.
 \lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
 \lstset{numbers=left}
 \begin{lstlisting}[caption=Use customized parser]
-// Extend SpParser and override the Parse() method to customize parsing logic
+// Extend SpParser and override the Parse() method to customize the parsing logic
 class  MyParser : public SpParser {
   public:
     typedef SHARED_PTR(MyParser) ptr;
     AGENT_EXPORT static ptr Create() { return ptr(new MyParser); }
-    AGENT_EXPORT virtual ph::PatchMgrPtr Parse() {
+    AGENT_EXPORT virtual PatchAPI::PatchMgrPtr Parse() {
       // Implement your own parsing logic
     }
 };
@@ -138,7 +137,7 @@ class  MyEvent : public SpEvent {
   public:
     typedef SHARED_PTR(MyEvent) ptr;
     static ptr Create() { return ptr(new MyEvent()); }
-    virtual void RegisterEvent()
+    virtual void RegisterEvent() {}
 };
 
 // Register the customized event to self-propelled instrumentation
@@ -162,7 +161,7 @@ the agent library by using {\em SpAgent::SetInitEvent} method.
 class MyInstWorker : public InstWorkerDelegate {
   public:
 		// Instrument a point
-		virtual bool run(SpPoint* pt) {}
+    virtual bool run(SpPoint* pt) {}
 
 		// Uninstrument a point
 		virtual bool undo(SpPoint* pt) {}

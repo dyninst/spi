@@ -27,7 +27,7 @@ by Makefile.
 
 To run tests, the current working directory need to be the building directory
 \$SP\_DIR/\$PLATFORM, and we invoke test/\$TEST\_NAME.exe to run a test.
-For example, we can run test/coreutils\_systest.exe to run the system test for
+For example, we can execute test/coreutils\_systest.exe to run the system test for
 instrumenting unix core utilities, or run test/injector\_unittest.exe to run the
 system test for injector.
 
@@ -40,7 +40,6 @@ We provide several useful environment variables to assist debugging.
   the stderr.
 \item SP\_COREDUMP: If this environment variable is set, then it enables core
   dump when segfault happens.
-\item SP\_DEBUG: enables printing out debugging messages
 \item SP\_TEST\_RELOCINSN: If this environment variable is set, then self-propelled
   instrumentation only uses instruction relocation instrumentation worker
 \item SP\_TEST\_RELOCBLK: If this environment variable is set, then self-propelled
