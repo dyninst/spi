@@ -1,0 +1,441 @@
+% In developer manual only
+\subsection{Class SpInjector}
+\textbf{Declared in}: src/injector/injector.h
+
+\begin{apient}
+static ptr Create(Dyninst::PID pid);
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a SpInjector instance.
+The parameter {\em pid} specifies the pid of the remote process that will be
+injected.
+
+}
+
+\begin{apient}
+bool Inject(const char* lib_name);
+\end{apient}
+\apidesc{
+Injects a library with {\em lib\_name}.
+}
+
+
+\subsection{Class SpParser}
+\textbf{Declared in}: src/agent/parser.h
+
+\begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a SpParser instance.
+}
+
+\begin{apient}
+SpObject* exe() const;
+\end{apient}
+\apidesc{
+Returns the executable's binary object.
+}
+
+\begin{apient}
+PatchAPI::PatchMgrPtr Parse();
+\end{apient}
+\apidesc{ The major parsing method, which builds CFG data structures to assist
+  instrumentation.  }
+
+\begin{apient}
+string agent_name()
+\end{apient}
+\apidesc{
+Returns the agent library's full path name.
+}
+
+\begin{apient}
+bool injected()
+\end{apient}
+\apidesc{
+
+  Indicates whether or not this agent library is injected in the middle of
+  running current process.
+
+}
+
+\begin{apient}
+void GetFrame(long* pc, long* sp, long* bp)
+\end{apient}
+\apidesc{
+
+  Get the values of three registers (pc, sp, and bp) of the call frame where the
+  agent is injected. The three parameters are output parameters.
+
+}
+
+\begin{apient}
+SpFunction* FindFunction(Dyninst::Address absolute_addr);
+\end{apient}
+\apidesc{
+
+  Returns the function that contains the address {\em absolute\_addr}.
+  It returns NULL if no function is found.
+}
+
+\begin{apient}
+SpFunction* FindFunction(string mangled_name);
+\end{apient}
+\apidesc{
+
+  Returns one of the functions that have the mangled function name.
+  It returns NULL if no function is found.
+}
+
+\begin{apient}
+bool FindFunction(string func_name, FuncSet* found_funcs);
+\end{apient}
+\apidesc{
+
+  Get all the functions that have the demangled function name.
+
+}
+
+
+\begin{apient}
+SpFunction* callee(SpPoint* point, bool parse_indirect = false);
+\end{apient}
+\apidesc{
+
+  Returns the callee at the given call {\em point}.
+  If {\em parse\_indirect} is false and the call instruction is an indirect call
+  instruction, then we skip parsing it and return NULL immediately.
+  If the callee is not found, NULL is returned.
+}
+
+\begin{apient}
+string DumpInsns(void* addr, size_t size);
+\end{apient}
+\apidesc{
+
+  Returns a nice textual representation of all instructions at the memory area of [{\em
+    addr}, {\em addr} + size].
+
+}
+
+\begin{apient}
+static bool ParseDlExit(SpPoint* pt);
+\end{apient}
+\apidesc{
+
+  Detects the dlopen function call, and parses the library that is just loaded.
+  It is invoked immediately after the dlopen function call is returned.
+}
+
+\subsection{Class SpContext}
+\textbf{Declared in}: src/agent/context.h
+
+\begin{apient}
+static SpContext* Create();
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a SpContext instance.
+
+}
+
+\begin{apient}
+string init_entry_name() const
+\end{apient}
+\apidesc{
+  Returns initial entry payload function's demangled name.
+}
+
+\begin{apient}
+string init_exit_name() const
+\end{apient}
+\apidesc{
+  Returns initial exit payload function's demangled name.
+}
+
+\begin{apient}
+typedef std::set<SpFunction*> FuncSet;
+void GetCallStack(FuncSet* func_set);
+\end{apient}
+\apidesc{
+  Get a set of functions in the call stack, when the agent library is injected.
+  {\em func\_set} is the output parameter.
+}
+
+
+\begin{apient}
+bool IsMultithreadEnabled() const;
+\end{apient}
+\apidesc{
+  Indicates whether instrumentation propagation across thread boundary is supported.
+}
+
+\begin{apient}
+bool IsHandleDlopenEnabled() const;
+\end{apient}
+\apidesc{
+  Indicates whether parsing newly loaded shared library is supported.
+}
+
+\begin{apient}
+bool IsDirectcallOnlyEnabled() const;
+\end{apient}
+\apidesc{
+
+  Indicates whether or not self-propelled instrumentation only instruments
+  direct function call.
+
+}
+
+\begin{apient}
+SpPropeller::ptr init_propeller() const;
+\end{apient}
+\apidesc{
+  Returns an instance of SpPropeller.
+}
+
+\begin{apient}
+typedef void* PayloadFunc;
+PayloadFunc init_entry() const;
+PayloadFunc init_exit() const;
+\end{apient}
+\apidesc{
+
+  Returns the start address of user-provided entry payload function or exit
+  payload function.
+
+}
+
+\begin{apient}
+PayloadFunc wrapper_exit() const;
+PayloadFunc wrapper_entry() const;
+\end{apient}
+\apidesc{
+
+  Returns the start address of the wrapper of entry payload function or exit
+  payload function.
+  
+}
+
+\subsection{Events}
+\textbf{Declared in}: src/agent/event.h
+
+This is a collection of events that trigger initial instrumentation.
+
+\textbf{Class SpEvent}
+
+It is the base class of all event classes. This event does not trigger any
+instrumentation.
+
+\begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a SpEvent instance.
+
+}
+
+\begin{apient}
+virtual void RegisterEvent();
+\end{apient}
+\apidesc{
+It registers the event to agent. This function is called in Agent::Go().
+}
+
+\textbf{Class AsyncEvent}
+
+It is the asynchronous event that will happen when specified signal occurs.
+
+\begin{apient}
+static ptr Create(int signum = SIGALRM,
+                  int sec = 5);
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to an AsyncEvent instance.
+
+The parameter {\em signum} specifies the signal number, and the parameter {\em
+  sec} is only effective when signum is SIGALRM.
+
+}
+
+\textbf{Class SyncEvent}
+
+It is the synchronous event that will do instrumentation immediately.
+If the agent library is loaded via LD\_PRELOAD, then it instruments main()
+function immediately.
+If the agent library is injected via injector, then it instruments all functions
+in the call stack when the agent library is loaded.
+
+\begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a SyncEvent instance.
+
+}
+
+
+\textbf{Class FuncEvent}
+
+It instruments all of the specified functions immediately.
+
+\begin{apient}
+static ptr Create(StringSet& funcs);
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a FuncEvent instance.
+The parameter {\em funcs} specifies a set of demangled names of functions that
+are going to be instrumented.  
+}
+
+\textbf{Class CallEvent}
+
+It installs instrumentation at all call sites of specified functions immediately.
+
+\begin{apient}
+static ptr Create(StringSet& funcs);
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a CallEvent instance.
+The parameter {\em funcs} specifies a set of demangled names of function calls
+that are going to be instrumented.
+
+}
+
+\textbf{Class CombEvent}
+
+It is a compound event that can combine all the above events.
+
+\begin{apient}
+static ptr Create(EventSet& events);
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a CombEvent instance.
+The parameter {\em events} specifies a set of events.
+
+}
+
+\subsection{Class SpPropeller}
+\textbf{Declared in}: src/agent/propeller.h
+
+\begin{apient}
+static ptr Create();
+\end{apient}
+\apidesc{
+Creates a Boost shared pointer pointing to a SpPropeller instance.
+
+}
+
+\begin{apient}
+bool go(SpFunction* func,
+        PayloadFunc entry,
+        PayloadFunc exit,
+        SpPoint* pt = NULL,
+        StringSet* inst_calls = NULL);
+\end{apient}
+\apidesc{
+
+  It propagates instrumentation to callees of specified function {\em func}.
+  The parameters {\em entry} and {\em exit} specify the payload functions to be
+  installed for those callees.  
+  The parameter {\em point} is the point where {\em func} is invoked.
+  The parameter {\em inst\_calls} specifies all function calls that need to be
+  instrumented, which is used only in CallEvent.
+
+}
+
+
+
+
+\subsection{Class SpSnippet}
+\textbf{Declared in}: src/agent/snippet.h
+
+
+\begin{apient}
+char* BuildBlob(const size_t est_size,
+                const bool reloc = false);
+\end{apient}
+\apidesc{
+
+  Returns a pointer to a blob of code snippet, which contains relocated code and
+  invocations to payload functions.
+  The parameter {\em est\_size} specifies the estimate size to allocate the buffer
+  for the code snippet.  
+  The parameter {\em reloc} indicates whether or not we need to relocate a call
+  block.
+
+}
+
+\begin{apient}
+size_t GetBlobSize() const;
+\end{apient}
+\apidesc{
+  Returns the code snippet's size.
+}
+
+\begin{apient}
+SpBlock* FindSpringboard();
+\end{apient}
+\apidesc{
+  Returns a springboard block.
+}
+
+\begin{apient}
+char* RelocateSpring(SpBlock* spring_blk);
+\end{apient}
+\apidesc{
+
+  Relocates the basic block {\em spring\_blk} that is used as springboard block,
+  and returns the buffer containing the relocated springboard block.
+
+}
+
+\begin{apient}
+size_t GetRelocSpringSize() const;
+\end{apient}
+\apidesc{
+  Returns the relocated springboard block size.
+}
+
+\begin{apient}
+Dyninst::Address GetSavedReg(Dyninst::MachRegister reg);
+\end{apient}
+\apidesc{
+  Returns the value of a saved register {\em reg}.
+}
+
+\begin{apient}
+long GetRetVal();
+\end{apient}
+\apidesc{
+  Returns the return value of current function call.
+}
+
+\begin{apient}
+void* PopArgument(ArgumentHandle* h, size_t size);
+\end{apient}
+\apidesc{
+  Pops an parameter of current function call.
+}
+
+\begin{apient}
+PayloadFunc entry() const;
+\end{apient}
+\apidesc{
+  Returns entry payload function's address.
+}
+
+\begin{apient}
+PayloadFunc exit() const;
+\end{apient}
+\apidesc{
+  Returns exit payload function's address.
+}
+
+\begin{apient}
+SpPoint* point() const;
+\end{apient}
+\apidesc{
+  Returns the function call point where this code snippet is installed.
+}
+

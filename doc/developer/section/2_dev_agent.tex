@@ -1,0 +1,26 @@
+\begin{itemize}
+\item \textbf{AddressSpace}. It represents the address space of the process. It
+  contains a set of Objects in the process. Also, it implements some memory
+  management primitives used by the instrumentation engine.
+\item \textbf{Parser}. It represents a binary code parser that parses binary
+  code into structural CFG structures, i.e., Object, Function, Block, and Edge.
+\item \textbf{Propeller}. It manages intra-process instrumentation propagation,
+  where it finds function call Points inside current function and uses
+  Instrumenter to insert Snippets at these points.
+\item \textbf{Snippet}. It represents a patch area that contains function calls
+  to the Payload function and the relocated function call or the relocated call
+  block.
+\item \textbf{Instrumenter}. It is the instrumentation engine that uses a set of
+  Instrumentation Workers to insert Snippets to function call points.
+\item \textbf{Instrumentation Worker}. It represents a mechanism of installing
+  instrumentation. Currently, four types of Instrumentation Workers are
+  implemented: 1) relocating original function call instruction; 2) relocating
+  original call block; 3) relocating nearby large springboard block; 4) using
+  trap instruction.
+\item \textbf{IpcMgr}. It manages inter-process instrumentation propagation by
+  creating Channels and using IPC Workers.
+\item \textbf{Channel}. It represents a unidirectional communication channel,
+  containing local process name and remote process name.
+\item \textbf{IPC Worker}. It implements inter-process instrumentation
+  propagation for a particular IPC mechanism (e.g., TCP, UDP, pipe).
+\end{itemize}

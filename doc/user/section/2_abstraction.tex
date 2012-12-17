@@ -1,0 +1,52 @@
+\section{Abstraction}
+Self-propelled instrumentation has two major components, {\em Agent} that is a
+shared library injected into an application process's address space, and {\em
+  Injector} that injects {\em Agent}.
+The following subsections describe the lower level components in Agent and
+Injector in details.
+
+\subsection{Agent}
+
+\begin{itemize}
+\item \textbf{Agent}. It manages the configuration and does instrumentation. An
+  Agent instance is created in the init function of the {\em Agent} shared
+  library.
+\item \textbf{Event}. It specifies when the initial instrumentation should be
+  done after the {\em Agent} shared library is loaded.  Currently, there are
+  four types of Event: 1) instrumenting all callees in {\em main} function right
+  away; 2) instrumenting all callees of specified functions right away; 3)
+  instrumenting specified function calls right away; 4) instrumenting all
+  callees in {\em main} after a given amount of time.
+\item \textbf{Payload function}. It contains user-specified code.  From user's
+  perspective, a payload function will be invoke before or after each function
+  call in the process.  There are two types of payload functions, {\em entry
+    payload} that is invoked before each function call and {\em exit payload}
+  that is invoked after each function call.
+\item \textbf{Point}. It represents an instrumentation point at current function
+  call and is used in Payload function.
+\item \textbf{Control Flow Graph (CFG) structures}. CFG structures include
+  Object, Function, Block, and Edge. An Object represents a binary file (i.e.,
+  an executable or a shared library), and contains a set of functions. A
+  Function contains a set of Blocks. A Block is a basic block. An Edge connects
+  two Blocks. Users can get related CFG structures of current function call from
+  Point.
+\end{itemize}
+
+\input{section/2_dev_agent}
+
+
+
+\subsection{Injector}
+% For user / developer manual
+% Two types of injection: process start and hijack
+
+Injector is provided as a command. 
+There are two types of injections.
+One is to inject the {\em Agent} shared library at the very beginning of a
+process.
+The other is to inject the {\em Agent} in the middle of a running process.
+
+% For developer manual
+% Two types of injection: process start and hijack
+\input{section/2_dev_injector}
+

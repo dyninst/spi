@@ -54,8 +54,8 @@
         row sep=12pt
         ] at ($(origin)+(0.75in,-3.0in)$)
     {
-        \fontsize{48}{56}\selectfont PatchAPI \\ \\ \\ \\ \\
-        \fontsize{48}{56}\selectfont Programmer's Guide \\
+        \fontsize{36}{48}\selectfont Self-propelled Instrumentation \\ \\ \\
+        \fontsize{36}{48}\selectfont Programmer's Manual \\
     };
 
     \node [anchor=west,font=\sffamily] (title1) at ($(origin)+(0.75in,-3.0in)$)
@@ -157,5 +157,15 @@
 \clearpage
 
 \input{section/1_intro}
+\input{section/2_abstraction}
+\input{section/3_how_it_works}
+\input{section/4_examples}
+\input{section/5_class}
+
+\appendix
+\input{section/a_install}
+
+\bibliographystyle{abbrv}
+\bibliography{../developer/ref}
 
 \end{document}

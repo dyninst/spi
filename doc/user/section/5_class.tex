@@ -1,0 +1,279 @@
+\section{Class Reference}
+
+% In both user and developer manual
+\subsection{Class Agent}
+\textbf{Declared in}: src/agent/agent.h
+
+\begin{apient}
+void SetInitEntry(string funcd_name);
+\end{apient}
+\apidesc{
+
+  Sets the entry payload function. The payload function should be linked to the
+  agent library or should be in the agent library. By default, the entry payload
+  function is ``default\_entry'', which simply prints out all executed
+  functions' name.
+
+}
+
+
+\begin{apient}
+void SetInitExit(string func_name);
+\end{apient}
+\apidesc{
+
+  Sets the exit payload function. By default, there is not exit payload
+  function.
+
+}
+
+\begin{apient}
+void SetLibrariesToInstrument(const StringSet& libs);
+\end{apient}
+\apidesc{
+
+  Sets the set of names of libraries loaded in the application process that will
+  be instrumented. By default, we only instrument the executable binary code and
+  don't instrument loaded shared libraries.
+
+}
+
+\begin{apient}
+void SetFuncsNotToInstrument(const StringSet& funcs);
+\end{apient}
+\apidesc{
+
+  Sets the set of names of functions in the application process that will NOT be
+  instrumented. By default, we instrument all functions.
+
+}
+
+
+\begin{apient}
+void EnableParseOnly(const bool yes_or_no);
+\end{apient}
+\apidesc{
+
+  Enables or disables ParseOnly option. If yes\_or\_no is true, then after
+  parsing the binary code, we don't do instrumentation; otherwise,
+  instrumentation is conducted after parsing. By default, ParseOnly option is
+  disabled.
+
+}
+
+\begin{apient}
+void EnableIpc(const bool yes_or_no);
+\end{apient}
+\apidesc{
+
+  Enables or disables inter-process instrumentation propagation. By default,
+  inter-process instrumentation propagation is disabled.
+
+}
+
+\begin{apient}
+void EnableHandleDlopen(const bool yes_or_no);
+\end{apient}
+\apidesc{
+
+  Enables or disables propagating instrumentation to library loaded via
+  dlopen. By default, it is disabled.
+
+}
+
+\begin{apient}
+void EnableMultithread(const bool yes_or_no);
+\end{apient}
+\apidesc{
+
+  Enables or disables propagating instrumentation across thread. By default, it
+  is disabled.
+
+}
+
+\begin{apient}
+void Go();
+\end{apient}
+\apidesc{
+
+  Starts initial instrumentation.
+
+}
+
+\subsection{Class SpPoint}
+\textbf{Declared in}: src/agent/patchapi/point.h
+
+\begin{apient}
+bool tailcall();
+\end{apient}
+\apidesc{
+
+Indicates whether or not the function call at this point is a tail call.
+
+}
+
+\begin{apient}
+SpBlock* GetBlock() const;
+\end{apient}
+\apidesc{
+
+Returns the call block at this point.
+
+}
+
+\begin{apient}
+SpObject* GetObject() const;
+\end{apient}
+\apidesc{
+Returns the binary object at this point.
+}
+
+
+\subsection{Class SpObject}
+\textbf{Declared in}: src/agent/patchapi/object.h
+
+\begin{apient}
+std::string name() const;
+\end{apient}
+\apidesc{
+Returns the binary object's name.
+}
+
+This class inherits PatchAPI::PatchObject. Please refer to PatchAPI document for
+the complete list of methods.
+
+\subsection{Class SpFunction}
+\textbf{Declared in}: src/agent/patchapi/cfg.h
+
+\begin{apient}
+SpObject* GetObject() const;
+\end{apient}
+\apidesc{
+Returns the binary object containing this function.
+}
+
+
+\begin{apient}
+std::string GetMangledName();
+\end{apient}
+\apidesc{
+Returns the mangled name of this function.
+}
+
+\begin{apient}
+std::string GetPrettyName();
+\end{apient}
+\apidesc{
+Returns the demangled name of this function.
+}
+
+\begin{apient}
+std::string name();
+\end{apient}
+\apidesc{
+Returns the demangled name of this function, the same as calling GetPrettyName().
+}
+
+This class inherits PatchAPI::PatchFunction. Please refer to PatchAPI document
+for the complete list of methods.
+
+\subsection{Class SpBlock}
+\textbf{Declared in}: src/agent/patchapi/cfg.h
+
+\begin{apient}
+SpObject* GetObject() const;
+\end{apient}
+\apidesc{
+Returns the binary object containing this block.
+}
+
+
+\begin{apient}
+in::Instruction::Ptr orig_call_insn() const;
+\end{apient}
+\apidesc{
+
+Returns an InstructionAPI::Instruction instance of the call instruction in this
+block.
+
+}
+
+This class inherits PatchAPI::PatchBlock. Please refer to PatchAPI document for
+the complete list of methods.
+
+\subsection{Class SpEdge}
+\textbf{Declared in}: src/agent/patchapi/cfg.h
+
+This class inherits PatchAPI::PatchEdge. Please refer to PatchAPI document for
+the complete list of methods.
+
+\subsection{Utility Functions}
+\textbf{Declared in}: src/agent/payload.h
+
+Utility functions are used when writing payload functions.
+
+\begin{apient}
+SpFunction* Callee(SpPoint* pt);
+\end{apient}
+\apidesc{
+
+  Returns an instance of SpFunction for current function call.  The parameter
+  \emph{pt} represents the instrumentation point for current function call.  If
+  it fails (e.g., cannot find a function), it returns NULL.
+
+}
+
+\begin{apient}
+bool IsInstrumentable(SpPoint* pt);
+\end{apient}
+\apidesc{
+Indicates whether or not the point is instrumentable.
+}
+
+\begin{apient}
+void Propel(SpPoint* pt);
+\end{apient}
+\apidesc{
+
+Propagates instrumentation to callees of the function called at the specified
+point {\em pt}.
+
+}
+
+\begin{apient}
+bool IsIpcWrite(SpPoint* pt); 
+bool IsIpcRead(SpPoint* pt); 
+\end{apient}
+\apidesc{
+
+Indicates whether or not the function called at the specified point is a
+inter-process communication write / read function.
+
+}
+
+\begin{apient}
+struct ArgumentHandle;
+void* PopArgument(SpPoint* pt,
+                  ArgumentHandle* h,
+                  size_t size);
+\end{apient}
+\apidesc{
+
+Gets a pointer to an parameter of the function call at the specified point {\em
+  pt}.
+All parameters passed to the function call are in a stack associated with the
+ArgumentHandle structure {\em h}. 
+Leftmost parameter is at the top of the stack.
+The {\em size} parameter specifies the size of the parameter that is about to be
+popped.
+
+}
+
+\begin{apient}
+long ReturnValue(SpPoint* pt);
+\end{apient}
+\apidesc{
+Returns the return value of the function call at the specified point {\em pt}.
+}
+
+\input{section/5_dev}

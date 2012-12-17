@@ -1,0 +1,121 @@
+
+
+\subsection{Extending SPI}
+This subsection discusses some code examples to extend self-propelled
+instrumentation.
+\subsubsection{Parser}
+\lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
+\lstset{numbers=left}
+\begin{lstlisting}[caption=Use customized parser]
+// Extend SpParser and override the Parse() method to customize the parsing logic
+class  MyParser : public SpParser {
+  public:
+    typedef SHARED_PTR(MyParser) ptr;
+    AGENT_EXPORT static ptr Create() { return ptr(new MyParser); }
+    AGENT_EXPORT virtual PatchAPI::PatchMgrPtr Parse() {
+      // Implement your own parsing logic
+    }
+};
+
+// Register the customized parser to self-propelled instrumentation
+__attribute__((constructor))
+void MyAgent() {
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  MyParser::ptr parser = MyParser::Create();
+  agent->SetParser(parser);
+  ...
+}
+\end{lstlisting}
+The above code first extends SpParser to implement a customized parser for
+parsing binary code into CFG structures. Developers mainly need to implement the
+{\em Parse} method. Next, we register the customized parser in the agent library
+by using {\em SpAgent::SetParser} method.
+
+\subsubsection{Event}
+\lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
+\lstset{numbers=left}
+\begin{lstlisting}[caption=Use customized event]
+// Extend SpEvent and override the RegisterEvent() method to do 
+// initial instrumentation
+class  MyEvent : public SpEvent {
+  public:
+    typedef SHARED_PTR(MyEvent) ptr;
+    static ptr Create() { return ptr(new MyEvent()); }
+    virtual void RegisterEvent() {}
+};
+
+// Register the customized event to self-propelled instrumentation
+__attribute__((constructor))
+void MyAgent() {
+  sp::SpAgent::ptr agent = sp::SpAgent::Create();
+  MyEvent::ptr event = MyEvent::Create();
+  agent->SetInitEvent(event);
+  ...
+}
+\end{lstlisting}
+The above code first extends SpEvent to implement the {\em RegisterEvent} method
+that does initial instrumentation. Next, we register the customized event in
+the agent library by using {\em SpAgent::SetInitEvent} method.
+
+\subsubsection{Instrumentation Workers}
+\lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
+\lstset{numbers=left}
+\begin{lstlisting}[caption=Use customized instrumentation worker]
+// Extend InstWorkerDelegate to build a customized instrumentation worker
+class MyInstWorker : public InstWorkerDelegate {
+  public:
+		// Instrument a point
+    virtual bool run(SpPoint* pt) {}
+
+		// Uninstrument a point
+		virtual bool undo(SpPoint* pt) {}
+
+		// Save code that will be modified for a point
+		virtual bool save(SpPoint* pt) {}
+
+		// How to install instrumentation?
+		virtual InstallMethod install_method() {}
+};
+
+// Register MyInstWorker in the instrumenter
+SpInstrumenter::SpInstrumenter(ph::AddrSpace* as) {
+  ...
+	workers_.push_back(new SpringboardWorker);
+	workers_.push_back(new TrapWorker);
+	workers_.push_back(new MyInstWorker);
+  ...
+}
+\end{lstlisting}
+
+
+\subsubsection{IPC Workers}
+\lstset{language=[GNU]C++,basicstyle=\fontfamily{fvm}\selectfont\small}
+\lstset{numbers=left}
+\begin{lstlisting}[caption=Use customized IPC worker]
+class  MyIpcWorker : public SpIpcWorkerDelegate {
+  public:
+    virtual void SetRemoteStartTracing(char yes_or_no,
+                                       SpChannel* c) {}
+    virtual void SetLocalStartTracing(char yes_or_no) {}
+    virtual char CanStartTracing(int fd) {}
+    virtual bool Inject(SpChannel*, char* agent_path = NULL) {}
+    virtual SpChannel* GetChannel(int fd,
+                                  ChannelRW rw,
+                                  void* arg = NULL) {}
+    virtual void CloseChannel(int fd) {}
+};
+
+// Register MyIpcWorker to self-propelled instrumentation
+SpIpcMgr::SpIpcMgr() {
+  ...
+  pipe_worker_ = new SpPipeWorker;
+  worker_set_.insert(pipe_worker_);
+
+  tcp_worker_ = new SpTcpWorker;
+  worker_set_.insert(tcp_worker_);
+  
+  my_ipc_worker_ = new MyIpcWorker;
+  worker_set_.insert(my_ipc_worker_);
+  ...
+}
+\end{lstlisting}
