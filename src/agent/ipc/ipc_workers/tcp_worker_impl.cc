@@ -148,9 +148,9 @@ SpTcpWorker::Inject(SpChannel* c,
   } else {
     cmd[0] = '\0';
   }
-  
   cmd_exe += cmd;
-  cmd_exe += "injector";
+  cmd_exe += "test_mutatee/../injector.exe";
+  //sp_debug("Salini inserted: cmd_exe = %s", cmd_exe.c_str());
 
   // IP and Port
   snprintf(cmd, 1024, " port %s ", remote_port);
@@ -165,8 +165,9 @@ SpTcpWorker::Inject(SpChannel* c,
     }
     cmd_exe += cmd;
     assert(g_parser);
-    snprintf(cmd, 1024, "%s%s", cmd,
-             sp_filename((char*)g_parser->agent_name().c_str()));
+//    snprintf(cmd,1024,"%s","libagent.so");
+ snprintf(cmd, 1024, "%s%s", cmd,
+         sp_filename((char*)g_parser->agent_name().c_str()));
     cmd_exe += cmd;
   } else {
     snprintf(cmd, 1024, "%s%s", cmd, agent_path);
