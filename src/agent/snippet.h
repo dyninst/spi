@@ -37,6 +37,7 @@
 
 #include "common/common.h"
 #include "agent/payload.h"
+#include "Buffer.h"
 
 namespace sp {
 
@@ -96,7 +97,7 @@ namespace sp {
     static bool UsePC(in::Instruction::Ptr);
 
     // XXX: to make inheritence happen
-    virtual bool generate(ph::Point *, ph::Buffer &) { return true; }
+    virtual bool generate(ph::Point *, Dyninst::Buffer &) { return true; }
     
   protected:
     SpFunction* func_;
