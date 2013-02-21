@@ -38,6 +38,7 @@
 #include "symtabAPI/h/AddrLookup.h"
 
 #include "proccontrol/src/int_process.h"
+#include "proccontrol/src/loadLibrary/injector.h"
 #include "common/common.h"
 #include "injector/injector.h"
 
@@ -215,8 +216,17 @@ typedef struct {
 
 bool
 SpInjector::Inject(const char* lib_name) {
+  
+   if( proc_->addLibrary(lib_name))
+    {
+        sp_print("INJECTED");
+        return true;
+    }
+    sp_print("NOT INJECTED");
+    return false;
+}
 
-  // Verify the existence of lib_name
+/*  // Verify the existence of lib_name
   char* abs_lib_name = realpath(lib_name, NULL);
   if (!abs_lib_name)
     sp_perror("Injector [pid = %5d] - cannot locate library %s.",
@@ -276,7 +286,7 @@ SpInjector::Inject(const char* lib_name) {
   }
   // proc_->detach();
   return true;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////// 
 // Invoke ijagent function in libijagent.so, which in turn invokes dlopen

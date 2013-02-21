@@ -141,9 +141,9 @@ SpParser::GetRuntimeSymtabs(sp::SymtabSet& symtabs) {
     //   - true: injected by other process (libijagent.so is loaded)
     //   - false: preloaded
     
-    if (sym->name().find("libijagent.so") != string::npos) {
+/*    if (sym->name().find("libijagent.so") != string::npos) {
       injected_ = true;
-    }
+    }*/
   }
   return al;
 }

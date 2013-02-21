@@ -107,8 +107,16 @@ namespace sp {
   void
   SyncEvent::RegisterEvent() {
     bool fail_preload = false;
-    if (!g_parser->injected()) {
+    /* Determine if the function is injected or preloaded by looking
+       at the call stack size. If the call stack size is zero then
+       the agent is preloaded. If the call stack size is greater 
+       than zero, then the agent is injected */
+      FuncSet call_stack;
+      g_context->GetCallStack(&call_stack);
+      sp_debug("CALLSTACK - %lu calls in the call stack",
+               (unsigned long)call_stack.size());
 
+      if (call_stack.size()<=0)  {
       sp_debug("PRELOAD - preload agent.so, and instrument main()");
 
       SpFunction* f = g_parser->FindFunction("main");
@@ -122,13 +130,9 @@ namespace sp {
       }
     } // LD_PRELOAD mode
 
-    if (g_parser->injected() || fail_preload) {
 
+    if ( call_stack.size()>0  || fail_preload) {
       // Instrument all functions in the call stack.
-      FuncSet call_stack;
-      g_context->GetCallStack(&call_stack);
-      sp_debug("CALLSTACK - %lu calls in the call stack",
-               (unsigned long)call_stack.size());
       for (FuncSet::iterator i = call_stack.begin(); 
            i != call_stack.end(); i++) {
         SpFunction* f = *i;
@@ -139,7 +143,7 @@ namespace sp {
         if (f->name().compare("main") == 0) {
           break;
         }
-      } // Call stack
+      } // Iterate through all the functions int the Call stack
     } // Injection mode
   }
 
