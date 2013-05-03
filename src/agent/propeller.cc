@@ -67,7 +67,11 @@ namespace sp {
 
     sp_debug("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
-
+	
+    if(func->name().find("std::")!=std::string::npos) {
+	sp_debug("libstdc++ functions: stop propelling");
+	return true;
+    }
     // 1. Find points according to type
     Points pts;
     ph::PatchMgrPtr mgr = g_parser->mgr();
