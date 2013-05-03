@@ -170,6 +170,17 @@ namespace sp {
                         std::string name,
                         bool mangled,
                         sp::FuncSet* func_set);
+    bool FindPltFunc(sp::SpObject* obj,
+                        std::string name,
+                        bool mangled,
+                        sp::FuncSet* func_set,dt::Address pltFuncAddr,
+			dt::Address objLoadAddr); 
+    bool hasBeenBound(const sb::relocationEntry &entry,
+        dt::Address base_addr,
+        sp::FuncSet* func_set);
+
+    //Get the load address of the symbol from AddressTranslat::createAddressTranslator
+   // dt::Address getLoadAddress(sb::Symtab* sym);
 
   };
 

@@ -147,6 +147,19 @@ SpParser::GetRuntimeSymtabs(sp::SymtabSet& symtabs) {
   }
   return al;
 }
+//Get the load address of the particular object
+/*dt::Address SpParser::getLoadAddress(sb::Symtab* sym)
+{
+	dt::Address load_addr=0;
+	//dt::SymbolReaderFactory *symfactory= getSymtabReaderFactory();
+	
+	//translate=AddressTranslate::createAddressTranslator(&procreader,symfactory,executable_);
+	return load_addr;
+} 
+*/
+
+
+
 
 // Create a bunch of PatchObjects from Symtabs
 bool
@@ -160,6 +173,7 @@ SpParser::CreatePatchobjs(sp::SymtabSet& unique_tabs,
     sb::Symtab* sym = *i;
     dt::Address load_addr = 0;
     al->getLoadAddress(sym, load_addr);
+  //  sp_debug("Load Address for the object %s is %lx",sym->name().c_str(),load_addr);
 
     // Parsing binary objects is very time consuming. We avoid
     // parsing the libraries that are either well known (e.g., libc,
@@ -299,10 +313,11 @@ SpParser::CreateObjectFromRuntime(sb::Symtab* sym,
     }
   */
 
-  dt::Address real_load_addr =
-      load_addr ? load_addr : scs->loadAddress();
-  // sp_print("load_addr: %lx, scs->loadAddress: %lx", load_addr,
-  //         scs->loadAddress());
+// dt::Address real_load_addr =
+  // load_addr ? load_addr : scs->loadAddress();
+  dt::Address real_load_addr=load_addr;	
+   sp_debug("Symbol %s: load_addr: %lx, scs->loadAddress: %lx", sym->name().c_str(),load_addr,
+           scs->loadAddress());
   SpObject* obj =  new sp::SpObject(co,
                                     load_addr,
                                     new SpCFGMaker,
@@ -834,15 +849,15 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   // Two cases to skip:
   // 1. Not in inst_lib list
   // 2. In inst_lib, lib is libc, but function is not __libc_start_main
-  if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
-    sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+ if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
+    sp_debug("Find Function: SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
     return false;
   }
 
   if (obj->name().find("libc-") != std::string::npos &&
       strcmp(name.c_str(), "__libc_start_main") != 0) {
-    sp_debug("SKIP - lib %s and non __libc_start_main",
-             sp_filename(obj->name().c_str()));
+    sp_debug("Find function: SKIP - lib %s and non __libc_start_main for the function %s",
+             sp_filename(obj->name().c_str()),name.c_str());
     return false;
   }
   
@@ -889,9 +904,12 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
     sb::Region* region = sym->findEnclosingRegion((*fit)->addr());
     assert(region);
     if (region->getRegionName().compare(".plt") == 0) {
-      sp_debug("A PLT, SKIP - %s at %lx", name.c_str(),
-               (*fit)->addr() - obj->load_addr());
-      continue;
+      sp_debug("A PLT - %s at function address %lx in object  %s with object load address %lx", name.c_str(),
+               (*fit)->addr(), sym->name().c_str(),obj->load_addr());
+     /* if(FindPltFunc(obj, name, true, func_set, (*fit)->addr(),obj->load_addr()) == true) 
+	return true; 
+      else*/
+     	 continue;
     }
 
     
@@ -906,6 +924,85 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
 
   return true;
 }
+/////////////////////////////////////////////////////////////////////
+//find the appropriate call target of a function in plt stub
+// The source code is obtained from Dynisnt and modified accordingly
+////////////////////////////////////////////////////////////////////
+bool
+SpParser::FindPltFunc(sp::SpObject* obj,
+                         std::string name,
+                         bool mangled,
+                         sp::FuncSet* func_set,dt::Address pltFuncAddr, 
+			 dt::Address objLoadAddr ) {
+
+  //Get the relocation information for this image
+  sb::Symtab* symtab = obj->symtab();
+  assert(symtab);
+  std::vector<sb::relocationEntry> fbt;
+  if (!symtab->getFuncBindingTable(fbt)) {
+      sp_debug("No relocation information for this Symtab");
+      return false;
+  }
+ //Get the code Source of this symtab
+/*  pe::CodeObject* co = obj->co();
+  assert(co);
+  pe::CodeSource* srcCS = co->cs();
+*/
+  
+  for (u_int i = 0; i < fbt.size(); i++) {
+            if (fbt[i].target_addr() == pltFuncAddr) {
+		 sp_debug("Plt function address %lx", pltFuncAddr);
+                // check to see if this function has been bound yet
+                if (hasBeenBound(fbt[i],objLoadAddr,func_set)) {
+		   sp_debug("GOT %s from FindPltFunc, Object - %s",
+           			  name.c_str(), symtab->name().c_str());
+                    return true;
+                }
+            }
+        }
+	return false;
+}
+/////////////////////////////////////////////////////////////////////
+//check to see if the function in the plt stub has already been
+//resolved or bounded
+////////////////////////////////////////////////////////////////////
+// modeled after dynPCProcess-x86.C, PCProcess::hasBeenBound
+bool SpParser::hasBeenBound(const sb::relocationEntry &entry,
+        dt::Address base_addr,
+        sp::FuncSet* func_set)
+{
+    
+    dt::Address got_entry = entry.rel_addr() + base_addr;
+   // dt::Address bound_addr = 0;
+    sp_debug("function relative address %lx, object base address %lx, got_entry %lx",entry.rel_addr(),base_addr,got_entry);
+    //unsigned tmp = 0;
+
+    //Read the value in the address got_entry
+  //  dt::Address *bound_add_pointer=(dt::Address *)got_entry;
+   // sp_debug("bound address pointer %p", bound_add_pointer);
+   // bound_addr=*bound_add_pointer;
+ // bound_addr=got_entry;
+  //  bound_addr = (entry.target_addr()+6+base_addr); 
+    sp_debug("Bound address %lx ", got_entry);//bound_addr);
+        // the callee function has been bound by the runtime linker
+        // find function and return
+	SpFunction* func=FindFunction(got_entry);//bound_addr);
+        if (func==NULL) {
+            sp_debug("hasBeenBound: FindFunction failed");
+            return false;
+        } else {
+		sp_debug("Function from FindFunction(Address) %s",func->name().c_str());
+		  func_set->insert(func);
+            return true;
+        }
+    
+
+    return false;
+}
+
+
+
+
 
 //////////////////////////////////////////////////////////////////////
 // Parse library that is instrumentable and not parsed yet
