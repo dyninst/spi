@@ -282,9 +282,10 @@ namespace sp {
     assert(buf);
     char* p = buf + offset;
 
-    // Case 1: we are lucky to use relative call instruction.
-    dt::Address retaddr = (dt::Address)p+5;
-    dt::Address rel_addr = (callee - retaddr);
+          dt::Address retaddr = (dt::Address)p+5;
+      dt::Address rel_addr = (callee - retaddr);
+
+// Case 1: we are lucky to use relative call instruction.
     if (sp::IsDisp32(rel_addr)) {
 
       // call `callee`
@@ -297,27 +298,20 @@ namespace sp {
     // Case 2: we have to use indirect call, because the function is
     // too far away.
     else {
-      // Use %r15, because r15 is callee-saved
+      // Use %r11, because r11 is caller-saved
 
-      // push r15
-      *p++ = 0x41;
-      *p++ = 0x57;
-
-      // movq call_addr, %r15
+      // movq call_addr, %r11
       *p++ = 0x49;
-      *p++ = 0xbf;
+      *p++ = 0xbb;
       long* call_addr = (long*)p;
       *call_addr = callee;
       p += sizeof(long);
 
-      // call %r15
+      // call %r11
       *p++ = 0x41;
       *p++ = 0xff;
-      *p++ = 0xd7;
+      *p++ = 0xd3;
 
-      // pop r15
-      *p++ = 0x41;
-      *p++ = 0x5f;
     }
 
     return (p - (buf + offset));
