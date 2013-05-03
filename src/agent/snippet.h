@@ -139,6 +139,9 @@ namespace sp {
     size_t emit_call_orig(char* buf, size_t offset);
     size_t emit_save_sp(char* buf, size_t offset);
     size_t emit_jump_abs(long trg, char* buf, size_t offset, bool abs = false);
+    size_t emit_save_fp_registers(char* buf, size_t offset);
+    size_t emitXMMRegsSaveRestore(char* buf, size_t off, bool isRestore);
+    size_t emit_restore_fp_registers(char* buf, size_t offset);               
 
     // relocate
     size_t reloc_block(SpBlock* blk,

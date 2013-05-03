@@ -66,6 +66,9 @@ namespace sp {
       indirect = true;
     }
 
+    //Save floating point registers
+ //    p+=emit_save_fp_registers(p,0);
+
     // Saved for direct/indirect call
     *p++ = 0x57; // push rdi
     *p++ = 0x56; // push rsi
@@ -76,10 +79,13 @@ namespace sp {
     *p++ = 0x41; // push r9
     *p++ = 0x51;
     *p++ = 0x50; // push rax
+    *p++ = 0x50; // push one more register(anything) to make the stack 
+		 // 16 byte aligned, for saving floating point registers
 
     // Save stack pointer at this point, for future lookup for other
     // saved registers at runtime.
     p += emit_save_sp(p, 0);
+
 
     // Saved for indirect call only
     if (indirect) {
@@ -98,9 +104,74 @@ namespace sp {
       *p++ = 0x57;
       *p++ = 0x55; // push rbp
     }
+    //Save floating point registers
+     p+=emit_save_fp_registers(p,0);
 
     return (p - (buf + offset));
   }
+	
+   // Save floating point registers
+  size_t
+  SpSnippet::emit_save_fp_registers(char* buf,
+                       size_t offset) {
+    assert(buf);
+    char* p = buf + offset;
+    
+    //Idea is to shift the stack pointer down(by 136 bytes, then 
+    //copy RSP to RAX, then use RAX+8 as an index to save the  
+   // floating point registers. 
+    *p++ = 0x48;  //lea -0x88(%rsp),%rsp - with rex prefix
+    *p++ = 0x8d;
+    *p++ = 0xa4;
+    *p++ = 0x24;
+    *p++ = 0x78;
+    *p++ = 0xff;
+    *p++ = 0xff;
+    *p++ = 0xff;
+	
+    *p++ = 0x48; //mov %rsp,%rax
+    *p++ = 0x8b;
+    *p++ = 0xc4;
+
+    *p++ = 0x48;  //add %RAX,0x8
+    *p++ = 0x05;
+    *p++ = 0x08;
+    *p++ = 0x00;
+    *p++ = 0x00;
+    *p++ = 0x00;
+
+    //Now save all floating point regs
+    p+=emitXMMRegsSaveRestore(p,0,false);
+
+     return (p - (buf+offset));	
+	
+}
+//This function code is borrowed from Dyninst
+ size_t SpSnippet::emitXMMRegsSaveRestore(char* buf, size_t off, bool isRestore) {
+      // Quick hack time: save at +0 to +0x70 (so occupying 0..0x80)
+      // and 0..7
+      assert(buf);
+      char* p = buf+off;
+      for (unsigned xmm_reg = 0; xmm_reg <= 7; ++xmm_reg) {
+         unsigned char offset = xmm_reg * 16;
+         *p++ = 0x66; *p++ = 0x0f; 
+         if (isRestore) 
+            *p++ = 0x6f;
+         else 
+            *p++ = 0x7f;
+   
+         if (xmm_reg == 0) {
+            *p++ = 0x00;
+         }
+         else {
+            unsigned char modrm = 0x40 + (0x8 * xmm_reg);
+           *p++ = modrm;
+           *p++ = offset;
+         }
+      }
+     return (p - (buf+off));
+
+}
 
   // Restore context after calling payload
   size_t
@@ -114,6 +185,8 @@ namespace sp {
       indirect = true;
     }
 
+    //Restore floating point regsiters
+    p += emit_restore_fp_registers(p,0);
     // Restored for indirect call
     if (indirect) {
       *p++ = 0x5d; // pop rbp
@@ -131,8 +204,10 @@ namespace sp {
       *p++ = 0x41; // pop r10
       *p++ = 0x5a;
     }
+	
 
     // Restored for direct/indirect call
+    *p++ = 0x58 ; //pop rax (to make the stack 16 byte aligned)
     *p++ = 0x58; // pop rax
     *p++ = 0x41; // pop r9
     *p++ = 0x59;
@@ -142,9 +217,46 @@ namespace sp {
     *p++ = 0x5a; // pop rdx
     *p++ = 0x5e; // pop rsi
     *p++ = 0x5f; // pop rdi
-
+	
+    //Restore floating point regsiters
+//    p += emit_restore_fp_registers(p,0);
+  
     return (p - (buf + offset));
   }
+  
+  // Restore floating point registers
+  size_t
+  SpSnippet::emit_restore_fp_registers(char* buf,
+                       size_t offset) {
+    assert(buf);
+    char* p = buf + offset;
+
+    *p++ = 0x48;  //mov %rsp, %rax
+    *p++ = 0x8b;
+    *p++ = 0xc4;
+ 
+    *p++ = 0x48;  //add %RAX,0x8
+    *p++ = 0x05;
+    *p++ = 0x08;
+    *p++ = 0x00;
+    *p++ = 0x00;
+    *p++ = 0x00; 
+    p+=emitXMMRegsSaveRestore(p,0,true); // restore fp registers
+    
+    *p++ = 0x48;  //lea 0x88(%rsp), %rsp
+    *p++ = 0x8d;
+    *p++ = 0xa4;
+    *p++ = 0x24;
+    *p++ = 0x88;
+    *p++ = 0x00; 
+    *p++ = 0x00;
+    *p++ = 0x00;
+
+    return (p - (buf+offset));
+
+}
+
+
 
   // Save stack pionter, for two purposes
   // 1. Resolve indirect call during runtime
@@ -377,13 +489,13 @@ namespace sp {
   SpSnippet::GetSavedReg(dt::MachRegister reg) {
 
 #define RAX (0)
-#define R9 (8)
-#define R8 (16)
-#define RCX (24)
-#define RDX (32)
-#define RSI (40)
-#define RDI (48)
-#define RSP (56)
+#define R9 (16)
+#define R8 (24)
+#define RCX (32)
+#define RDX (40)
+#define RSI (48)
+#define RDI (56)
+#define RSP (64)
 
 #define R10 (-8)
 #define R11 (-16)
