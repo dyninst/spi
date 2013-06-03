@@ -80,12 +80,12 @@ SpIpcWorkerDelegate::GetChannel(int fd,
     c->rw = SP_WRITE;
     channel_map_write_[fd] = c;
     sp_debug("WRITE CHANNEL @ pid = %d - get a WRITE channel with"
-             " inode %ld for fd %d", getpid(), GetInodeFromFileDesc(fd), fd);
+             " inode %ld for fd %d with remote pid %d", getpid(), GetInodeFromFileDesc(fd), fd, c->remote_pid);
   } else {
     c->rw = SP_READ;
     channel_map_read_[fd] = c;
     sp_debug("READ CHANNEL @ pid = %d - get a READ channel with"
-             " inode %ld for fd %d", getpid(), GetInodeFromFileDesc(fd), fd);
+             " inode %ld for fd %d with remote pid %d", getpid(), GetInodeFromFileDesc(fd), fd, c->remote_pid);
   }
   c->fd = fd;
   return c;

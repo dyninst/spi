@@ -40,7 +40,6 @@
 #include "patchAPI/h/PatchMgr.h"
 
 FILE*         g_debug_fp = NULL;
-FILE*  g_error_fp = NULL;
 FILE*  g_output_fp= NULL;
 
 namespace sp {
@@ -65,11 +64,7 @@ namespace sp {
         sp_perror("ERROR: failed to setup core dump ability\n");
       }
     }
-	
-   char error_file[255],output_file[255];
-     snprintf(error_file,255,"/tmp/spi-error-%d", getpid());
-     g_error_fp=fopen(error_file , "w");
-
+     char output_file[255];	
      snprintf(output_file,255,"/tmp/spi-output-%d", getpid());
      g_output_fp=fopen(output_file , "w");
 

@@ -185,6 +185,7 @@ ino_t
 GetInodeFromFileDesc(const int fd) {
   struct stat s;
   if (fstat(fd, &s) != -1) {
+    sp_debug("Inode of the file descriptor %d is %ld",fd, s.st_ino);
     return s.st_ino;
   }
   return -1;
@@ -196,7 +197,7 @@ GetInodeFromFileDesc(const int fd) {
 bool
 PidUsesInode(const int pid,
              const ino_t inode) {
-  // fprintf(stderr, "*** pid=%d uses inode=%lu?\n", pid, inode);
+  sp_debug( "*** pid=%d uses inode=%lu?\n", pid, inode);
   DIR *dir;
   ino_t temp_node;
   struct dirent *de;
@@ -222,11 +223,13 @@ PidUsesInode(const int pid,
       if (sscanf(buffer, "pipe:[%lu]", &temp_node) == 1 &&
           temp_node == inode) {
         // Anonymous pipe
+        sp_debug("PidUsesInode : Anonymous pipe");
         closedir(dir);
         return true;
       } else if (sscanf(buffer, "socket:[%lu]", &temp_node) == 1 &&
                  temp_node == inode) {
         // Tcp
+ 	sp_debug("PidUsesInode: A TCP");
         closedir(dir);
         return true;
       } else {
@@ -234,6 +237,7 @@ PidUsesInode(const int pid,
         struct stat s;
         if (stat(buffer, &s) != -1) {
           if (s.st_ino == inode) {
+	    sp_debug("A named pipe");
             closedir(dir);
             return true;
           }
@@ -259,6 +263,7 @@ GetPidsFromFileDesc(const int fd,
 
   struct dirent *de;
   char *ep;
+  const ino_t fd_inode=GetInodeFromFileDesc(fd);
   while ((de = readdir(dir)) != 0) {
 
     if (isdigit(de->d_name[0])) {
@@ -267,7 +272,7 @@ GetPidsFromFileDesc(const int fd,
         sp_perror("ERROR: strtol failed on %s\n", de->d_name);
       }
       if (pid != getpid() &&
-          PidUsesInode(pid, GetInodeFromFileDesc(fd))) {
+          PidUsesInode(pid,fd_inode )) {
         sp_debug("GET PID FOR PIPE: pid - %d", pid);
         pid_set.insert(pid);
       }
@@ -617,7 +622,7 @@ GetExeName() {
   proc_path += "/proc/";
   proc_path += Dyninst::itos(getpid());
   proc_path += "/cmdline";
-
+  sp_debug("Process id of the current process is %d",getpid());
   std::string content = GetFileText(proc_path.c_str());
 
   // The format for /proc/pid/cmdline is:
@@ -640,6 +645,30 @@ GetFileText(const char* filename) {
   } else {
     return "";
   }
+}
+////////////////////////////////////////////////////////////////////
+//Check if a process already contains the library
+bool
+ProcessHasLibrary(int pid, std::string lib)
+{
+   char maps_file[256];
+   sprintf(maps_file, "/proc/%d/maps", pid);
+   std::ifstream fp;
+   fp.open(maps_file);
+   if (!fp) {
+     sp_perror("FAILED to open /proc/%d/maps file %s", pid, maps_file);
+   }
+   
+  std::string line;
+  while(std::getline(fp,line))
+  {
+      if(line.find(lib) != std::string::npos)
+      { 
+	sp_debug("Agent shared library is already injected into the process");
+	return true;
+      }
+ }
+ return false;
 }
 
 // ------------------------------------------------------------------- 

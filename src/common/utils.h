@@ -98,6 +98,9 @@ namespace sp {
   // Gets full path of the executable file
   COMMON_EXPORT std::string GetExeName();
 
+  //check if a library is already present in the process
+  COMMON_EXPORT bool ProcessHasLibrary(int pid, std::string lib);
+
   // IPC stuffs
   COMMON_EXPORT bool IsPipe(const int fd);
   COMMON_EXPORT bool IsTcp(const int fd);

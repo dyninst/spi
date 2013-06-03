@@ -116,7 +116,7 @@ namespace sp {
     for (unsigned i=0; i<stackwalk.size(); i++) {
       string s;
       stackwalk[i].getName(s);
-
+      sp_debug("Function %d : %s", i,s.c_str());
       FuncSet found_funcs;
       g_parser->FindFunction(s, &found_funcs);
       for (FuncSet::iterator fi = found_funcs.begin();
