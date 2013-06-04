@@ -217,6 +217,12 @@ typedef struct {
 bool
 SpInjector::Inject(const char* lib_name) {
   
+    if(ProcessHasLibrary(proc_->getPid(), "libmyagent"))
+   {
+     sp_debug("Process %d already has library %s already", proc_->getPid(),lib_name);
+     return true;
+   }
+
    if( proc_->addLibrary(lib_name))
     {
         sp_print("INJECTED");

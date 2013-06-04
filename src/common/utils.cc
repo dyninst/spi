@@ -641,6 +641,30 @@ GetFileText(const char* filename) {
     return "";
   }
 }
+////////////////////////////////////////////////////////////////////
+//Check if a process already contains the library
+bool
+ProcessHasLibrary(int pid, std::string lib)
+{
+   char maps_file[256];
+   sprintf(maps_file, "/proc/%d/maps", pid);
+   std::ifstream fp;
+   fp.open(maps_file);
+   if (!fp) {
+     sp_perror("FAILED to open /proc/%d/maps file %s", pid, maps_file);
+   }
+
+  std::string line;
+  while(std::getline(fp,line))
+  {
+      if(line.find(lib) != std::string::npos)
+      {
+        sp_debug("Agent shared library is already injected into the process");
+        return true;
+      }
+ }
+ return false;
+}
 
 // ------------------------------------------------------------------- 
 // Serialization utilities
