@@ -37,7 +37,7 @@ COMMON_LDFLAGS   += -ldynElf
 COMMON_LDFLAGS   += -L$(DYNINST_DIR)/common/$(PLATFORM)
 COMMON_LDFLAGS   += -lcommon
 
-COMMON_LDFLAGS   += -lpthread
+COMMON_LDFLAGS   += -lpthread -lthread_db
 
 
 
