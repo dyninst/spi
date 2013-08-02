@@ -35,6 +35,7 @@
 
 #include "agent/context.h"
 #include "agent/ipc/ipc_workers/tcp_worker_impl.h"
+#include <fcntl.h>
 
 namespace sp {
 
@@ -53,20 +54,23 @@ SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
 void
 SpTcpWorker::SetRemoteStartTracing(char yes_or_no,
                              SpChannel* c) {
+
+  /*if(c->send_oob)
+	return;
+  c->send_oob=true;
   sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
   assert(c);
   // Sanity check
   if (c && IsTcp(c->fd)) {
-    uint8_t mark_byte = (getpid() & 0xFF) | 1;
-    sp_debug("OOB MARK - sending %x via fd=%d", mark_byte, c->fd);
-    if (send(c->fd, &mark_byte, sizeof(mark_byte), MSG_OOB) < 0) {
+    //int mark_byte = (getpid() & 0xFF) | 1;
+    sp_debug("OOB MARK \"S\" - sending via fd=%d", c->fd);
+    if (send(c->fd, "S", 1, MSG_OOB) < 0) {
       perror("send");
       sp_perror("OUT-OF-BAND - failed to send oob byte");
     } else {
-      sp_debug("OUT-OF-BAND - mark=%d sent", mark_byte);
-      // fprintf(stderr, "OUT-OF-BAND - mark=%d sent\n", mark_byte);
+      sp_print("OUT-OF-BAND - mark \"S\" sent");
     }
-  }
+  }*/
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -80,7 +84,7 @@ SpTcpWorker::SetLocalStartTracing(char yes_or_no) {
 char
 SpTcpWorker::CanStartTracing(int fd) {
 
-  if (start_tracing_) {
+  /*if (start_tracing_) {
     // fprintf(stderr, "OK to trace\n");
     return start_tracing_;
   }
@@ -100,7 +104,7 @@ SpTcpWorker::CanStartTracing(int fd) {
     // fprintf(stderr, "GOT mark at_mark=%d, mark=%d\n", at_mark, mark);
     start_tracing_ = 1;
     return 1;
-  }
+  }*/
   return start_tracing_;
 }
 
@@ -149,7 +153,7 @@ SpTcpWorker::Inject(SpChannel* c,
     cmd[0] = '\0';
   }
   cmd_exe += cmd;
-  cmd_exe += "test_mutatee/../injector.exe";
+  cmd_exe += "injector.exe";
   //sp_debug("Salini inserted: cmd_exe = %s", cmd_exe.c_str());
 
   // IP and Port
@@ -179,21 +183,29 @@ SpTcpWorker::Inject(SpChannel* c,
     sp_debug("LOCAL MACHINE TCP");
   } else {
     // For remote machine, ssh injector
-    cmd_exe += "\" >> /tmp/injector_log";
+    cmd_exe += "\" 2>&1 |tee /tmp/injector_log";
   }
 
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
 
   // Execute the command
   FILE* fp = popen(cmd_exe.c_str(), "r");
+  if(fp==NULL)
+  {
+        sp_debug("Popen error");
+        return false;
+  }
   char line[1024];
-  fgets(line, 1024, fp);
-  fgets(line, 1024, fp);
-  if (strstr(line, "INJECTED") != NULL) {
+  while(fgets(line,sizeof(line),fp)) {
+  if (strstr(line, "SUCCESS") != NULL) {
+    sp_debug("Injected");
     c->injected = true;
+    break;
+  }
+
   }
   pclose(fp);
-
+  sp_debug("Popen finished Returning %d",c->injected?1 :0);
   return c->injected;
 }
 
@@ -207,7 +219,7 @@ SpTcpWorker::CreateChannel(int fd,
   c->local_pid = getpid();
   c->type = SP_TCP;
   c->inode = GetInodeFromFileDesc(fd);
-
+  fcntl(fd, F_SETOWN, getpid());
   sp_debug("CREATE CHANNEL -- for fd=%d", fd);
   // connect, we can get remote ip/port from arg
   if (arg != NULL) {

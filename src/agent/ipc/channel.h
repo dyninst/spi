@@ -59,7 +59,7 @@ typedef enum {
 struct SpChannel {
   SpChannel() :
   type(SP_UNKNOWN), injected(false), local_pid(-1), remote_pid(-1),
-    remote_injected(false), inode(-1), fd(-1), rw(SP_WRITE) {}
+    remote_injected(false), inode(-1), fd(-1), rw(SP_WRITE) ,send_oob(false),byte_count(0){}
 
   ChannelType type;      // Channel type
   bool injected;         // Already injected?
@@ -69,6 +69,8 @@ struct SpChannel {
   ino_t inode;           // System-wide inode number
   int fd;                // local fd that represents this channel
   ChannelRW rw;          // Read or Write?
+  bool send_oob;
+  int byte_count;
 };
 
 

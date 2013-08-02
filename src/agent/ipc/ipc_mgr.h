@@ -95,6 +95,8 @@ namespace sp {
     void GetCloseParam(SpPoint* pt,
                        int* fd_out);
 
+    //fcntl SETOWN to the socket descriptor if any
+    void fcntlReturnParam(SpPoint* pt);
     // See if the function is a fork
     bool IsFork(const char* f);
 

@@ -52,7 +52,6 @@
 
 namespace sp {
 
-
 // -------------------------------------------------------------------
 // Timer for profiling
 // -------------------------------------------------------------------
@@ -196,7 +195,7 @@ GetInodeFromFileDesc(const int fd) {
 bool
 PidUsesInode(const int pid,
              const ino_t inode) {
-  // fprintf(stderr, "*** pid=%d uses inode=%lu?\n", pid, inode);
+//  sp_print("*** pid=%d uses inode=%lu?\n", pid, inode);
   DIR *dir;
   ino_t temp_node;
   struct dirent *de;
@@ -213,12 +212,12 @@ PidUsesInode(const int pid,
       snprintf(name, kLenStringBuffer, "/proc/%u/fd/%s", pid, de->d_name);
       int size = -1;
       if ((size = readlink(name, buffer, kLenStringBuffer)) < 0) {
-        perror("PidUsesInode: readlink error");
+        sp_print("PidUsesInode: readlink error");
         return false;
       }
       buffer[size] = '\0';
 
-      // fprintf(stderr, "***buffer=%s\n", buffer);
+  //    sp_print("***buffer=%s\n", buffer);
       if (sscanf(buffer, "pipe:[%lu]", &temp_node) == 1 &&
           temp_node == inode) {
         // Anonymous pipe
@@ -275,6 +274,43 @@ GetPidsFromFileDesc(const int fd,
   }
   closedir(dir);
 }
+/////////////////////////////////////////////////////////////////////
+//Get the sockets opened by a pid
+////////////////////////////////////////////////////////////////////
+void GetSocketDescFromPid(int pid, SocketSet& socket_set)
+{
+  DIR *dir;
+  ino_t temp_node;
+  struct dirent *de;
+  char name[kLenStringBuffer];
+  char buffer[kLenStringBuffer];
+  snprintf(name, kLenStringBuffer, "/proc/%u/fd", pid);
+  if ((dir = opendir(name)) == 0) {
+    return ;
+  }
+  while ((de = readdir(dir)) != 0) {
+    if (isdigit(de->d_name[0])) {
+      int dir=atoi(de->d_name);
+      snprintf(name, kLenStringBuffer, "/proc/%u/fd/%s", pid, de->d_name);
+      int size = -1;
+      if ((size = readlink(name, buffer, kLenStringBuffer)) < 0) {
+        sp_debug("GetSocketDescFromPid: readlink error");
+      }
+      else {
+        buffer[size] = '\0';
+        if (sscanf(buffer, "socket:[%lu]", &temp_node) == 1){
+        // Tcp
+        socket_set.insert(dir);
+        sp_debug("%d uses Socket %d",pid,dir);
+       }
+     }
+    }
+  }   // Iterate all processes
+  closedir(dir);
+  return ;
+
+}
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -291,7 +327,7 @@ GetPidsFromAddrs(const char* const rem_ip,
 
   // Convert port string to int
   int rem_port_int = atoi(rem_port);
-
+  sp_print("In GetPidsFromAddress: Remote ip_port is %d",rem_port_int);
   // fprintf(stderr, "*** look for port: %d / %x or %d / %x -> remote: %d / %x\n",
   //        rem_port_int, rem_port_int, rem_port_int+2, rem_port_int+2, 8001, 8001);
   
@@ -302,21 +338,26 @@ GetPidsFromAddrs(const char* const rem_ip,
     FILE* tcp_fp = fopen("/proc/net/tcp", "r");
     char line[2048];
     if (fgets(line, 2048, tcp_fp) == NULL) {
-      sp_perror("Failed to read headline of /proc/net/tcp");
+      sp_print("Failed to read headline of /proc/net/tcp");
     }
+//    sp_print("Iterating through all the ports from /proc/net/tcp to find the inode corresponding to the remote port");
     while (fgets(line, 2048, tcp_fp) != NULL) {
       // fprintf(stderr, line);
       int iloc_ip, iloc_port, irem_ip, irem_port;
       if (sscanf(line, "%*u: %08X:%04X %08X:%04X %*02X %*08X:%*08X "
                  "%*02X:%*08X %*08X %*u %*d %u",
                  &iloc_ip, &iloc_port, &irem_ip, &irem_port, &inode) != 5) {
-        sp_perror("Failed to read a line in /proc/net/tcp");
+        sp_print("Failed to read a line in /proc/net/tcp");
       }
-      if (iloc_port == rem_port_int) break;
+  //    sp_print("Port: %d", iloc_port);
+      if (iloc_port == rem_port_int){ 
+        sp_print("Found the port %d", iloc_port); 
+        break;
+      }
       else inode = -1;
     }
     fclose(tcp_fp);
-    // fprintf(stderr, "***inode=%d\n", inode);
+    sp_print( "***inode=%d", inode);
     if (inode == -1) return;
     if (inode == 0 && tried < 5) {
       sleep(1000000);
@@ -665,6 +706,34 @@ ProcessHasLibrary(int pid, std::string lib)
  }
  return false;
 }
+//------------------------------------------------------------------
+//Signal handler for SIGURG
+//-----------------------------------------------------------------
+void sig_urg_handler(int signo)
+{
+
+        int             n;
+        char    buff[100];
+ 	int connfd;
+	sp_debug("SIGURG received!!");
+        SocketSet socket_set;
+        GetSocketDescFromPid(getpid(),socket_set);
+        if(socket_set.size() > 0) {
+        for(SocketSet::iterator s=socket_set.begin(); s!=socket_set.end(); s++) {
+   	   connfd=*s;
+	   sp_debug("Socket: %d, trying to receive OOB", connfd);
+           if ((n = recv(connfd, buff, sizeof(buff)-1, MSG_OOB)) > 0) {
+		       buff[n] ='\0';
+		       sp_print("read OOB data %s",buff);
+	               break;
+	}
+       }
+    }
+   signal(SIGURG,sig_urg_handler);
+}
+
+
+
 
 // ------------------------------------------------------------------- 
 // Serialization utilities
@@ -774,5 +843,16 @@ void
 SetSegfaultSignal() {
   signal(SIGSEGV, sigseghandler);
 }
+//////////////////////////////////////////////////////////////////////
+
+bool 
+IsRecvLikeFunction(std::string func)
+{
+	if(func.compare("recv") == 0 )
+		return true;
+	return false;
+}
+
+
 
 }

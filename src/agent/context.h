@@ -46,6 +46,9 @@
 #include "agent/snippet.h"
 #include "agent/ipc/ipc_mgr.h"
 
+#include "stackwalk/h/frame.h"
+#include "stackwalk/h/walker.h"
+
 namespace sp {
 
 class SpContext {
@@ -95,6 +98,17 @@ class SpContext {
 
     void GetCallStack(FuncSet* func_set);
 
+    SpPoint* FindCallSitePointFromRetAddr(dt::Address ret);
+    char* FindExitInstAddrFromCallSitePoint(SpPoint*);
+   
+    //Table to store the non-instrumented functions and their return address
+   typedef std::map<SpPoint*,char*> PointRetAddrMap;
+   typedef std::map<dt::Address, SpPoint*> RetAddrCallPointMap;
+   PointRetAddrMap pt_ra_map_;
+   RetAddrCallPointMap ra_csp_map_;
+
+   dt::Address GetReturnAddress();
+
   protected:
 
     PayloadFunc init_entry_;
@@ -114,6 +128,10 @@ class SpContext {
     bool handle_dlopen_;
     bool allow_multithread_;
     bool directcall_only_;
+
+    //Stackwalking variables
+    sk::Walker *walker_;
+    std::vector<sk::Frame> stackwalk_;
 
     SpContext();
 

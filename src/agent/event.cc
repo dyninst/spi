@@ -124,6 +124,7 @@ namespace sp {
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
+
       } else {
         sp_debug("FAIL PRELOAD - try injection ...");
         fail_preload = true;
@@ -133,9 +134,11 @@ namespace sp {
 
     if ( call_stack.size()>0  || fail_preload) {
       // Instrument all functions in the call stack.
+      // Instrument all return points in the calls currently in the stack
       for (FuncSet::iterator i = call_stack.begin(); 
            i != call_stack.end(); i++) {
         SpFunction* f = *i;
+        sp_debug("Call stck function %s",f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
@@ -143,8 +146,14 @@ namespace sp {
         if (f->name().compare("main") == 0) {
           break;
         }
+	if (IsRecvLikeFunction(f->name())) { //.compare("recv") == 0) {
+		sp_debug("Recv like function on the stack");
+		//Modify the PC to start at a new location 
+	        g_context->init_propeller()->ModifyPC(f,g_context->init_exit());	
+	}
       } // Iterate through all the functions int the Call stack
     } // Injection mode
+ 
   }
 
 // ------------------------------------------------------------------- 

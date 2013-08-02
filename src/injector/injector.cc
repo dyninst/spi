@@ -214,21 +214,23 @@ typedef struct {
 // report or checking return value. In this case, why don't we have an easy and
 // uniformed way to pass argument and check return value?
 
-bool
+bool 
 SpInjector::Inject(const char* lib_name) {
-  
+    UpdateFrameInfo(); 
     if(ProcessHasLibrary(proc_->getPid(), "libmyagent"))
    {
-     sp_debug("Process %d already has library %s already", proc_->getPid(),lib_name);
+     sp_print("Process %d already has library %s already", proc_->getPid(),lib_name);
+     sp_print("INJECTED ALREADY");
      return true;
+
    }
 
    if( proc_->addLibrary(lib_name))
     {
-        sp_print("INJECTED");
+        sp_print("INJECTION SUCCESS");
         return true;
     }
-    sp_print("NOT INJECTED");
+    sp_print("INJECTION FAILED");
     return false;
 }
 

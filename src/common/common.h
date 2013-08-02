@@ -50,7 +50,6 @@ extern FILE* g_output_fp;
 extern FILE* g_debug_fp;
 extern FILE* g_error_fp;
 
-
 // Print facility
 #define sp_perror(...) do {\
 	char* nodir = basename((char*)__FILE__);							\

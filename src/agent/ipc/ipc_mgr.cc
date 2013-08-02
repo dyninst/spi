@@ -31,6 +31,7 @@
 
 #include <sys/shm.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include "agent/context.h"
 #include "agent/ipc/ipc_mgr.h"
@@ -41,7 +42,6 @@
 #include "agent/ipc/ipc_workers/udp_worker_impl.h"
 #include "common/utils.h"
 #include "injector/injector.h"
-
 namespace sp {
 
 // Global variables
@@ -163,7 +163,9 @@ SpIpcMgr::GetWriteParam(SpPoint* pt,
 
     sp_debug("IPC GOT sendfile -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
-
+/* if((*fd_out)!=-1) {
+   	fcntl((*fd_out), F_SETOWN,getpid() ==-1);
+ }*/ 
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -238,6 +240,9 @@ SpIpcMgr::GetReadParam(SpPoint* pt,
 
     sp_debug("IPC GOT ACCEPT -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
+/* if((*fd_out)!=-1) {
+        fcntl((*fd_out), F_SETOWN,getpid() ==-1);
+ }*/
 
 }
 
@@ -259,9 +264,36 @@ SpIpcMgr::GetCloseParam(SpPoint* pt,
     if (fd_out) *fd_out = *fd;
     sp_debug("CLOSE -- %s fd = %d", f->name().c_str(), *fd_out);
   }
+ /* if((*fd_out)!=-1) {
+        fcntl((*fd_out), F_SETOWN,getpid() ==-1);
+ }*/
 }
 
 //////////////////////////////////////////////////////////////////////
+// Get "socket" functions and fcntl to receive SIGURG signals
+// Input Param : pt -- the call point from which we get the function
+// Output Param: fd_out -- file descriptor, if it is NULL, then skip it
+void
+SpIpcMgr::fcntlReturnParam(SpPoint* pt) {
+
+  ph::PatchFunction* f = sp::Callee(pt);
+  if (!f) return;
+  int fd;
+  ArgumentHandle h;
+  if (f->name().compare("socket") == 0) {
+    fd = sp::ReturnValue(pt);
+    sp_debug("SOCKET -- %s fd = %d", f->name().c_str(), fd);
+  }
+  if (f->name().compare("accept") == 0) {
+    int fd = sp::ReturnValue(pt);
+    sp_debug("SOCKET -- %s fd = %d", f->name().c_str(), fd);
+  }
+ /* if(fd!=-1) {
+        fcntl(fd, F_SETOWN,getpid() ==-1);
+ }*/
+}
+
+
 
 // See if the function is a fork
 bool
@@ -331,7 +363,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   SpIpcWorkerDelegate* worker = NULL;
   ipc_mgr->GetCloseParam(pt, &fd);
   if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
-    
+    //connfd=fd;    
     worker->CloseChannel(fd);
     return true;
   }
@@ -341,6 +373,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   sockaddr* sa = NULL;
   ipc_mgr->GetWriteParam(pt, &fd, NULL, NULL, NULL, &sa);
   if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
+    //connfd=fd;
     SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
     if (c) {
 
@@ -348,9 +381,12 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       // Luckily, the SpInjector implementation will automatically detect
       // whether the agent.so library is already injected. If so, it will
       // not inject the library again.
-      worker->Inject(c);
+      if(worker->Inject(c))
+      {
       pt->SetChannel(c);
       worker->SetRemoteStartTracing(1, c);
+      }
+	
     } else {
       sp_debug("FAILED TO CREATE CHANNEL - for write");
     }
@@ -363,6 +399,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   worker = NULL;
   ipc_mgr->GetReadParam(pt, &fd, NULL, NULL);
   if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
+    //connfd=fd;
     SpChannel* c = worker->GetChannel(fd, SP_READ);
 
     if (c) {
@@ -371,7 +408,6 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       sp_debug("FAILED TO CREATE CHANNEL - for read");
     }
   }
-
   return true;
 }
 
@@ -381,11 +417,45 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
 bool
 SpIpcMgr::BeforeExit(SpPoint* pt) {
 
-  ph::PatchFunction* f = sp::Callee(pt);
+ ph::PatchFunction* f = sp::Callee(pt);
   if (!f) return false;
 
-  // Detect fork for pipe
+  // fcntl F_SETOWN socket descriptors returned, so that it can receive OOB packets
   sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
+
+   //Uncomment the following if you need byte counting for flow analysis
+/*  ipc_mgr->fcntlReturnParam(pt);
+  
+  //Bytecounting for tcp ipc functions for following the control flow
+  // Sender-side
+  int fd = -1;
+  SpIpcWorkerDelegate* worker = NULL;
+  sockaddr* sa = NULL;
+  ipc_mgr->GetWriteParam(pt, &fd, NULL, NULL, NULL, &sa);
+  if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
+    SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
+    if (c) {
+        int num_bytes=sp::ReturnValue(pt);
+	c->byte_count+=num_bytes;
+	sp_print("Num_bytes =%d cumulative =%d",num_bytes,c->byte_count);          
+    }
+  }
+
+  // Receiver-side
+  fd = -1;
+  worker = NULL;
+  ipc_mgr->GetReadParam(pt, &fd, NULL, NULL);
+  if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
+    //connfd=fd;
+    SpChannel* c = worker->GetChannel(fd, SP_READ);
+    if (c) {
+       int num_bytes=sp::ReturnValue(pt);
+        c->byte_count+=num_bytes;
+        sp_print("Num_bytes =%d cumulative =%d",num_bytes,c->byte_count);
+  }
+}
+ */
+  //Detect fork for pipe
   if (ipc_mgr->IsFork(f->name().c_str())) {
     long pid = sp::ReturnValue(pt);
     // Receiver

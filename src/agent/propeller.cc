@@ -35,10 +35,13 @@
 #include "agent/propeller.h"
 #include "agent/snippet.h"
 #include "common/utils.h"
+#include "agent/inst_workers/inst_worker_delegate.h" 
+#include "agent/inst_workers/trap_worker_impl.h"
 
 #include "patchAPI/h/Command.h"
 #include "patchAPI/h/PatchMgr.h"
 
+#include <signal.h>
 namespace sp {
 
   extern SpContext* g_context;
@@ -67,9 +70,9 @@ namespace sp {
 
     sp_debug("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
-	
+   
     if(func->name().find("std::")!=std::string::npos) {
-	sp_debug("libstdc++ functions: stop propelling");
+	sp_debug("TODO: libstdc++ functions: stop propelling");
 	return true;
     }
     // 1. Find points according to type
@@ -159,6 +162,38 @@ namespace sp {
     }
     return ret;
   }
+ 
+
+ //For all recv like functions which are on the stack, install a trap at the ret points 
+ // and modify the PC to go to the exit point instrumentation.
+  bool
+  SpPropeller::ModifyPC(SpFunction* func,
+                  PayloadFunc exit) {
+    assert(func);
+    sp_debug("Modify PC for the function %s",func->name().c_str());
+	
+    Points pts;
+    ph::PatchMgrPtr mgr = g_parser->mgr();
+    assert(mgr);
+    ph::PatchFunction* cur_func = NULL;
+    cur_func = g_parser->FindFunction(func->GetMangledName());
+
+    if (!cur_func) return false;
+    //1. Find all return points
+    next_ret_points(cur_func, mgr, pts);
+    sp_debug("No of return points for the function %s  is %lu", func->name().c_str(),pts.size());
+    
+    //2.. Replace all the return points associated with the function with a trap instruction
+    for(unsigned i=0; i<pts.size();i++) {
+		//Install a trap at the return points and modify the call 
+		SpPoint* p = PT_CAST(pts[i]);
+		TrapWorker* trap=new TrapWorker;
+	        trap->ReplaceReturnWithTrap(p);
+		//The trap handling code will take care of modifying the PC to the 
+		//corresponding instruction.Check in trap_worker_impl.cc
+    }
+    return true;
+  }
 
   // Find all PreCall points
   void
@@ -168,5 +203,14 @@ namespace sp {
     ph::Scope scope(cur_func);
     mgr->findPoints(scope, ph::Point::PreCall, back_inserter(pts));
   }
-
+  
+  //Find all function exit points
+  void
+  SpPropeller::next_ret_points(ph::PatchFunction* cur_func,
+	                   ph::PatchMgrPtr mgr,
+			   Points& pts) {
+   ph::Scope scope(cur_func);
+   mgr->findPoints(scope, ph::Point::FuncExit,back_inserter(pts));
+  }
+		 	   
 }

@@ -111,8 +111,9 @@ namespace sp {
 
     SpBlock* b = point_->GetBlock();
     assert(b);
+ 
 
-    sp_debug("RET_ADDR - is %lx for point %lx", ret_addr,
+    sp_debug("RET_ADDR - is %lx for point %lx ", ret_addr,
              (dt::Address)b->last());
 
     // 1. Relocate call block, if it's indirect call
@@ -186,8 +187,19 @@ namespace sp {
         g_context->IsHandleDlopenEnabled() ||
         exit_) {
 
+
+    SpFunction* callee = point_->callee();
+    if (callee)
+    {
+	char* ret_blob_address = blob_;
+	ret_blob_address += blob_size_;
+	g_context->pt_ra_map_[point_] = ret_blob_address;
+ 	g_context->ra_csp_map_[ret_addr] = point_;
+//	sp_debug("Point %lx exit point instrumentation address %lx return address %lx",(dt::Address)point_ , (dt::Address)ret_blob_address, ret_addr);	
+    } 
+
       // 6. save context
-      blob_size_ += emit_save(blob_, blob_size_);
+      blob_size_ += emit_save(blob_, blob_size_,false);
 
       // 7. Pass parameters
       param_func = 0;
@@ -204,7 +216,7 @@ namespace sp {
       blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
       // 8. Restore context
-      blob_size_ += emit_restore(blob_, blob_size_);
+      blob_size_ += emit_restore(blob_, blob_size_,false);
     }
 
     // 9. Jump back to ORIG_INSN_ADDR

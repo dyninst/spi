@@ -30,15 +30,16 @@
  */
 
 #include <sys/resource.h>
+#include <errno.h>
 
 #include "agent/agent.h"
 #include "agent/context.h"
 #include "agent/patchapi/addr_space.h"
 #include "common/utils.h"
 #include "injector/injector.h"
-
+#include <signal.h>
+#include <fcntl.h>
 #include "patchAPI/h/PatchMgr.h"
-
 FILE*         g_debug_fp = NULL;
 FILE*  g_error_fp = NULL;
 FILE*  g_output_fp= NULL;
@@ -73,7 +74,6 @@ namespace sp {
      snprintf(output_file,255,"/tmp/spi-output-%d", getpid());
      g_output_fp=fopen(output_file , "w");
 
-
     // Enalbe outputing debug info to /tmp/spi-$PID
     if (getenv("SP_FDEBUG")) {
       char fn[255];
@@ -82,7 +82,7 @@ namespace sp {
     }
     return ptr(new SpAgent());
   }
-
+ 
   SpAgent::SpAgent() {
 
     parser_ = SpParser::ptr();
@@ -190,6 +190,21 @@ namespace sp {
     // Init lock
     InitLock(&g_propel_lock);
 
+   		  
+    /*  Uncomment this if you need to do flow analysis
+    // Register a signal handler
+    signal(SIGURG, sig_urg_handler);
+    
+    //fcntl all the sockets which this process use
+    SocketSet socket_set; 
+    sp::GetSocketDescFromPid(getpid(),socket_set); 
+    if(socket_set.size() > 0) {
+	for(SocketSet::iterator s=socket_set.begin(); s!=socket_set.end(); s++) {
+		fcntl(*s, F_SETOWN,getpid());
+	}
+	
+    }
+    */
     // For quick debugging
     if (getenv("SP_DIRECTCALL_ONLY")) {
       directcall_only_ = true;
@@ -243,6 +258,7 @@ namespace sp {
     } else {
       sp_debug("JUMP + TRAP - Use jump and trap for instrumentation");
     }
+
 
     // Set up globally unique parser
     // The parser will be freed automatically, because it is a shared ptr

@@ -43,6 +43,7 @@ namespace sp {
 
 		virtual bool run(SpPoint* pt) OVERRIDE;
 		virtual bool undo(SpPoint* pt) OVERRIDE;
+		bool ReplaceReturnWithTrap(SpPoint*);	
 		virtual InstallMethod install_method() const OVERRIDE {
       return SP_TRAP;
     }
@@ -52,6 +53,7 @@ namespace sp {
 
 		virtual bool install(SpPoint* pt) OVERRIDE;
 		virtual size_t EstimateBlobSize(SpPoint* pt) OVERRIDE;
+		
 
 		// For trap handler
 		static void OnTrap(int sig, siginfo_t* info, void* c);

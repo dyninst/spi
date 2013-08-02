@@ -92,6 +92,7 @@ namespace sp {
     static dt::Address get_pre_signal_pc(void* context);
     static dt::Address GetFs(void* context);
     static dt::Address set_pc(dt::Address pc, void* context);
+    static dt::Address align_stack(void* context);
     static size_t jump_abs_size();
 
     static bool UsePC(in::Instruction::Ptr);
@@ -131,8 +132,8 @@ namespace sp {
                    dt::Address* out);
 
     // A bunch of code generation interfaces
-    size_t emit_save(char* buf, size_t offset);
-    size_t emit_restore( char* buf, size_t offset);
+    size_t emit_save(char* buf, size_t offset,bool save_fp=true);
+    size_t emit_restore( char* buf, size_t offset,bool restore_fp=true);
     size_t emit_fault(char* buf, size_t offset);
     size_t emit_pass_param(long point, long payload, char* buf, size_t offset);
     size_t emit_call_abs(long callee, char* buf, size_t offset, bool restore);
@@ -153,7 +154,6 @@ namespace sp {
                       char* buf);
 
   };
-
 }
 
 #endif /* _SPSNIPPET_H_ */

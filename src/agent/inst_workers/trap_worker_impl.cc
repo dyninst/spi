@@ -37,10 +37,15 @@
 #include "agent/parser.h"
 #include "agent/patchapi/object.h"
 
+#include "stackwalk/h/frame.h"
+#include "stackwalk/h/walker.h"
+
+#include<signal.h>
 namespace sp {
   extern SpContext* g_context;
 	extern SpAddrSpace* g_as;
 	extern SpParser::ptr g_parser;
+
 
 	// Used in trap handler, for mapping call instruction's address to snippet
   TrapWorker::InstMap TrapWorker::inst_map_;
@@ -134,28 +139,111 @@ namespace sp {
     return true;
   }
 
+  //Replace all return instructions with a trap instruction to 
+  // go to the exit point instrumentation
+  bool
+  TrapWorker::ReplaceReturnWithTrap(SpPoint* pt) {
+  
+   struct sigaction act;
+    act.sa_sigaction = TrapWorker::OnTrap;
+    act.sa_flags = SA_SIGINFO;
+    struct sigaction old_act;
+    sigaction(SIGTRAP, &act, &old_act);
+    
+   SpBlock* b = pt->GetBlock();
+   sp_debug("BEFORE INSTALL (%lu bytes) for return point %lx - {",
+             (unsigned long)b->size(),
+						 (unsigned long)b->last());
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
+																			 b->size()).c_str());
+    sp_debug("}");
+
+
+    char* ret_addr = (char*)b->last();
+		assert(ret_addr);
+    if (!ret_addr || (long)ret_addr < getpagesize()) {
+      return false;
+    }
+
+    char int3 = (char)0xcc;
+
+    // Overwrite int3 to the return point
+    int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
+		SpObject* obj = pt->GetObject();
+		assert(obj);
+		assert(g_as);
+
+    if (!g_as->SetMemoryPermission((dt::Address)ret_addr,
+                                   1, perm)) {
+      sp_debug("FAILED PERM - failed to change memory permission");
+      return false;
+    } else {
+      g_as->write(obj, (dt::Address)ret_addr, (dt::Address)&int3, 1);
+    }
+
+    sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
+             (unsigned long)b->size(),
+						 (unsigned long)b->last());
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
+																			 b->last() - b->start() +1).c_str());
+    sp_debug("}");
+
+    sp_debug("TRAP INSTALLED - successful for return insn %lx",
+						 (long)ret_addr);
+    return true;
+  }
+
   // We resort to trap to transfer control to patch area, when we are not
   // able to use jump-based implementation.
   void
   TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
     dt::Address pc = SpSnippet::get_pre_signal_pc(c) - 1;
 		assert(pc);
-
     InstMap& inst_map = TrapWorker::inst_map_;
     if (inst_map.find(pc) == inst_map.end()) {
-      sp_perror("NO BLOB - for this call insn at %lx", pc);
+	
+	dt::Address ret=g_context->GetReturnAddress();
+
+	if (ret != (dt::Address)0) {
+                
+          sp_debug("TRAP HANDLER - for ret insn %lx", ret);
+	
+	  //Find the call site point corresponding to the return address
+	  SpPoint* call_site_point =g_context->FindCallSitePointFromRetAddr(ret);
+	  if(!call_site_point)
+	 	sp_perror("A call site point has not been registered for the return address %lx",ret); 
+	  sp_debug("Got point %lx",(dt::Address)call_site_point); 
+
+          //Find the exit instrumentation address correspoding to the call point  
+       	  char* exit_snip_addr = g_context->FindExitInstAddrFromCallSitePoint(call_site_point);
+	  if(!exit_snip_addr)
+		sp_perror("Exit Instrumentation address cannot be found for the call site point %lx",(dt::Address)call_site_point);
+	  sp_debug("Got exit instrumentation address %lx",(dt::Address)exit_snip_addr);
+
+	  //The x86-64 needs its stack to be 16 byte aligned for accessing XMM registers	
+	  dt::Address esp=SpSnippet::align_stack(c);
+	  sp_debug("Stack pointer aligned at %lx",esp);
+
+	 //sp_debug("%s", g_parser->DumpInsns((void*)exit_snip_addr,150).c_str());
+	 sp_debug("Jump to exit point instrumentation at %lx ",(dt::Address)exit_snip_addr);
+	
+	 //Set pc to jump to the exit point instrumentation
+	  SpSnippet::set_pc((dt::Address)exit_snip_addr,c);
+		
+	}
     }
+    else {	
 
     // Get patch area's address
     SpSnippet::ptr sp_snip = inst_map[pc];
 		assert(sp_snip);
-
     char* blob = (char*)sp_snip->GetBlob();
     if (!blob || (long)blob < getpagesize()) {
       sp_debug("TRAP invalid BLOB - at %lx, blob is %lx",
                pc, (dt::Address)blob);
       return;
     }
+   
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
 		sp_debug("TRAP HANDLER - for call insn %lx", pc);
@@ -169,11 +257,11 @@ namespace sp {
       sp_perror("FAILED PERM - failed to change memory permission for blob");
     }
 
-		sp_debug("JUMP TO BLOB - at %lx", (dt::Address)blob);
-
+		sp_debug("JUMP TO BLOB - at %s Address %lx", blob,(dt::Address)blob);
     // Set pc to jump to patch area
     SpSnippet::set_pc((dt::Address)blob, c);
   }
+}
 
 	size_t
 	TrapWorker::EstimateBlobSize(SpPoint* pt) {

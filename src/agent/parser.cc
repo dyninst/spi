@@ -232,11 +232,13 @@ SpParser::CreateMgr(sp::PatchObjects& patch_objs) {
 
   SpInstrumenter* inst = sp::SpInstrumenter::create(as);
   assert(inst);
-
+  
+  
   ph::PatchMgrPtr mgr = ph::PatchMgr::create(as,
                                              inst,
                                              new SpPointMaker);
   assert(mgr);
+  
 
   // Load each parsed objects into address space
   for (PatchObjects::iterator i = patch_objs.begin();
@@ -251,6 +253,7 @@ SpParser::CreateMgr(sp::PatchObjects& patch_objs) {
   
   return mgr;
 }
+
 
 SpObject*
 SpParser::CreateObject(sb::Symtab* sym,
@@ -379,7 +382,6 @@ SpParser::Parse() {
   if (!mgr_) {
     sp_perror("FAILED TO CREATE PATCHMGR");
   }
-
   return mgr_;
 }
 
@@ -854,7 +856,7 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
     return false;
   }
 
-  if (obj->name().find("libc-") != std::string::npos &&
+  if ((strcmp(name.c_str(), "recv") != 0) && (strcmp(name.c_str(), "read") != 0) && obj->name().find("libc-") != std::string::npos &&
       strcmp(name.c_str(), "__libc_start_main") != 0) {
     sp_debug("Find function: SKIP - lib %s and non __libc_start_main for the function %s",
              sp_filename(obj->name().c_str()),name.c_str());

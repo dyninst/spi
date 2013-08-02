@@ -38,8 +38,6 @@
 #include "agent/propeller.h"
 #include "common/utils.h"
 
-#include "stackwalk/h/frame.h"
-#include "stackwalk/h/walker.h"
 
 #include <execinfo.h>
 
@@ -59,7 +57,8 @@ namespace sp {
       init_propeller_(SpPropeller::ptr()),
       allow_ipc_(false),
       allow_multithread_(false),
-      directcall_only_(false) {
+      directcall_only_(false),
+      walker_(sk::Walker::newWalker()) {
 
   }
 
@@ -95,12 +94,10 @@ namespace sp {
     if (func) sp_print("%s", func->name().c_str());
 
     sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
-    std::vector<sk::Frame> stackwalk;
-    sk::Walker *walker = sk::Walker::newWalker();
-    sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker);
-    walker->walkStackFromFrame(stackwalk, *f);
+    sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker_);
+    walker_->walkStackFromFrame(stackwalk_, *f);
     sp_debug("WALKED STACK - %ld function calls found",
-             (long)stackwalk.size());
+             (long)stackwalk_.size());
 
     /*
     char cmd[255];
@@ -113,10 +110,13 @@ namespace sp {
     pclose(fp);
     */
     
-    for (unsigned i=0; i<stackwalk.size(); i++) {
+    for (unsigned i=0; i<stackwalk_.size(); i++) {
       string s;
-      stackwalk[i].getName(s);
+      stackwalk_[i].getName(s);
 
+    //  sk::location_t loc = stackwalk_[i].getRALocation();    
+    //  sp_debug("Function %s RA Location = %lx RA= %lx " ,s.c_str(),loc.val.addr,stackwalk_[i].getRA());
+    
       FuncSet found_funcs;
       g_parser->FindFunction(s, &found_funcs);
       for (FuncSet::iterator fi = found_funcs.begin();
@@ -137,6 +137,38 @@ namespace sp {
       call_stack->insert(func);
       */
     }
+  }
+
+  //Get the return address of the first recv like function which is on the stack
+  dt::Address SpContext::GetReturnAddress()
+  {
+	for(unsigned i=0;i <stackwalk_.size() ;i++) {
+		string func;
+		stackwalk_[i].getName(func);
+		if(IsRecvLikeFunction(func.c_str())) {
+			sk::location_t location =stackwalk_[i+1].getRALocation();
+			sp_debug("Function %s Return Address on the stack  = %lx",func.c_str(),location.val.addr);
+			return (dt::Address) stackwalk_[i+1].getRA();
+		}
+	}
+	return (dt::Address)0; 
+  }
+
+  //The function name says it all
+  SpPoint* SpContext::FindCallSitePointFromRetAddr(dt::Address ret_addr)
+  {
+	if(ra_csp_map_.find(ret_addr) == ra_csp_map_.end())
+		return NULL;
+	else
+		return ra_csp_map_[ret_addr];
+  }
+  
+  char* SpContext::FindExitInstAddrFromCallSitePoint(SpPoint* pt)
+  {
+	if(pt_ra_map_.find(pt) == pt_ra_map_.end())	
+		return NULL;
+	else
+		return pt_ra_map_[pt];
   }
 
   SpContext::~SpContext() {

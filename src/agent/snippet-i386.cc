@@ -295,6 +295,17 @@ SpSnippet::set_pc(dt::Address pc,
   return pc;
 }
 
+//Used in trap handler to align the stack(pop return address of the stack)
+dt::Address
+SpSnippet::align_stack(void* context) {
+	assert(context);
+	ucontext_t* ctx = (ucontext_t*)context;
+	//Check the right displacement in stack for 32 bit
+	//Not necessary because in 32 bit stack should be just 4 byte aligned
+	ctx->uc_mcontext.gregs[REG_ESP]-=8;
+	return ctx->uc_mcontext.gregs[REG_ESP];
+}
+
 // Get the saved register, for resolving indirect call
 dt::Address
 SpSnippet::GetSavedReg(Dyninst::MachRegister reg) {

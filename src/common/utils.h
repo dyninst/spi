@@ -46,6 +46,7 @@
 namespace sp {
   typedef std::set<pid_t> PidSet;
   typedef std::set<std::string> StringSet;
+  typedef std::set<int> SocketSet;
 
 
   // Timer for profiling.
@@ -82,6 +83,10 @@ namespace sp {
   COMMON_EXPORT in_addr_t GetIpFromHostname(const char* const hostname,
                                             char* const ip,
                                             const size_t ip_len);
+  
+  //Get socket descriptors associated with a pid
+  COMMON_EXPORT void GetSocketDescFromPid(int pid, SocketSet& socket_set);
+
 
   // Get local machine's IPv4 ip address
   COMMON_EXPORT void GetIPv4Addr(char* ip_out,
@@ -132,6 +137,9 @@ namespace sp {
   COMMON_EXPORT pe::CodeObject* DeserializeCodeObject(const char* dir,
                                                       const char* file);
 
+  //SIG_URG signal handler
+  COMMON_EXPORT void sig_urg_handler(int signo);
+
   // Lock / unlock for multithreading
   typedef void* SpTid;
   enum {
@@ -156,6 +164,9 @@ namespace sp {
 
   // For debugging
   COMMON_EXPORT void SetSegfaultSignal();
+
+  //For finding all recv like functions
+  COMMON_EXPORT bool IsRecvLikeFunction(std::string);
 }
 
 #endif   // _SPUTILS_H_

@@ -52,11 +52,16 @@ namespace sp {
             PayloadFunc exit,
             SpPoint* pt = NULL,
             StringSet* inst_calls = NULL);
+   
+  
+   bool ModifyPC(SpFunction* func,
+		  PayloadFunc exit);
 
   protected:
     virtual void next_points(ph::PatchFunction* func,
                              ph::PatchMgrPtr mgr,
                              Points& pts);
+    virtual void next_ret_points(ph::PatchFunction* func,ph::PatchMgrPtr mgr, Points& pts);
   };
 
 }

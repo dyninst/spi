@@ -133,6 +133,7 @@ namespace sp {
     CodeObjects code_objs_;
 
     ph::PatchMgrPtr mgr_;
+    ph::PatchMgrPtr ret_mgr_;
     SpObject* exe_obj_;
     StringSet binaries_to_inst_;
     StringSet funcs_not_to_inst_;
