@@ -57,7 +57,7 @@ namespace sp {
   // Save context before calling payload
   size_t
   SpSnippet::emit_save(char* buf,
-                       size_t offset) {
+                       size_t offset,bool save_fp_regs) {
     assert(buf);
     char* p = buf + offset;
 
@@ -66,8 +66,6 @@ namespace sp {
       indirect = true;
     }
 
-    //Save floating point registers
- //    p+=emit_save_fp_registers(p,0);
 
     // Saved for direct/indirect call
     *p++ = 0x57; // push rdi
@@ -105,7 +103,9 @@ namespace sp {
       *p++ = 0x55; // push rbp
     }
     //Save floating point registers
-     p+=emit_save_fp_registers(p,0);
+    if(save_fp_regs) {
+	 p+=emit_save_fp_registers(p,0);
+    }
 
     return (p - (buf + offset));
   }
@@ -176,7 +176,7 @@ namespace sp {
   // Restore context after calling payload
   size_t
   SpSnippet::emit_restore(char* buf,
-                          size_t offset) {
+                          size_t offset, bool restore_fp_regs) {
     assert(buf);
     char* p = buf + offset;
 
@@ -186,7 +186,9 @@ namespace sp {
     }
 
     //Restore floating point regsiters
-    p += emit_restore_fp_registers(p,0);
+   if(restore_fp_regs) {
+        p += emit_restore_fp_registers(p,0);
+   }
     // Restored for indirect call
     if (indirect) {
       *p++ = 0x5d; // pop rbp
@@ -218,8 +220,6 @@ namespace sp {
     *p++ = 0x5e; // pop rsi
     *p++ = 0x5f; // pop rdi
 	
-    //Restore floating point regsiters
-//    p += emit_restore_fp_registers(p,0);
   
     return (p - (buf + offset));
   }
@@ -483,6 +483,17 @@ namespace sp {
     return pc;
   }
 
+//Used in trap handler to align the stack (pop return address of the stack)
+  dt::Address
+  SpSnippet::align_stack(void* context) {
+	assert(context);
+	ucontext_t* ctx = (ucontext_t*)context;
+	sp_debug("Inital Stack value is %lx",(dt::Address)ctx->uc_mcontext.gregs[REG_RSP]);
+	ctx->uc_mcontext.gregs[REG_RSP] -=8;
+	return ctx->uc_mcontext.gregs[REG_RSP];
+  }
+
+
 
   // Get the saved register, for resolving indirect call
   dt::Address
@@ -592,24 +603,43 @@ namespace sp {
      | 111 | rdi  |        | 1111 | r15  |
   */
 
-  // Get the displacement in an instruction
+  // Get the displacement in an instruction- copied and modified from Dyninst
+  // directory common/src/arch-x86.C
   static int*
   get_disp(in::Instruction::Ptr insn, char* insn_buf) {
     assert(insn);
     assert(insn_buf);
     int* disp = NULL;
+    // Some SIMD instructions have a mandatory 0xf2 prefix; 
+    // 0xf3 as well...
+    // Some 3-byte opcodes start with 0x66... skip
 
     int disp_offset = 0;
-    // Any REX?
+    if(insn->rawByte(disp_offset)==0x66) {
+	disp_offset++; 
+    }
+    if(insn->rawByte(disp_offset)==0xf2) {
+	disp_offset++;
+   }
+    else if(insn->rawByte(disp_offset)==0xf3) {
+	disp_offset++;
+    }
+
+    //Any REX instruction 
     if ((insn_buf[disp_offset] & 0xf0) == 0x40) {
-      ++disp_offset;
+        disp_offset++;
     }
-
-    // Any ESCAPE?
-    if (insn_buf[disp_offset] == 0x0f) {
-      ++disp_offset;
+    
+	
+    //And "0x0f is a 2 byte opcode" skip
+    if(insn_buf[disp_offset]==0x0f) {
+	disp_offset++;
+        // And the "0x38 or 0x3A is a 3-byte opcode" skip
+        if(insn_buf[disp_offset] == 0x38 || insn_buf[disp_offset] == 0x3A)  
+		disp_offset++;
     }
-
+    // Skip the instr opcode and the MOD/RM byte
+	
     // OPCODE
     ++disp_offset;
 
