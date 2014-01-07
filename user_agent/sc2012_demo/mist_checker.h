@@ -35,6 +35,7 @@ class MistChecker {
 class ProcInitChecker : public OneTimeChecker {
   public:
     virtual bool run();
+    ~ProcInitChecker() {}
   protected:
     // flag, privilege level
     // fork / exec, control flow, discuss w/ karl
@@ -45,6 +46,7 @@ class ProcInitChecker : public OneTimeChecker {
     void PrintEnv();
 
     void InitTraces();
+    MistUtils u_;
 };
 
 

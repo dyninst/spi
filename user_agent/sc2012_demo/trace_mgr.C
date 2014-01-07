@@ -30,6 +30,11 @@ TraceMgr::~TraceMgr() {
 // <?xml ... ?><process><head></head></process>
 void
 TraceMgr::WriteHeader(std::string header) {
+// fprintf(stderr, "In WriteHeader");
+ if(fp_ == NULL ) {
+	sp_print("File is not open"); 
+  	return;
+  }    
   WriteString(-17, header);
   WriteString("</head></process>");
 }
@@ -51,8 +56,48 @@ TraceMgr::WriteTrace(std::string trace) {
 void
 TraceMgr::WriteString(long pos,
                       std::string str) {
-  fseek(fp_, pos, SEEK_END);
-  fprintf(fp_, "%s", str.c_str());
+ if(fp_ == NULL ){
+	sp_print("File is not open");
+ 	return;
+ }
+        int fno = fileno(fp_);
+	char filename[100];
+	char proclnk[200];
+	int MAXSIZE =0xFFF,r; 
+        sprintf(proclnk, "/proc/self/fd/%d", fno);
+        r = readlink(proclnk, filename, MAXSIZE);
+        if (r < 0)
+        {
+            sp_print("failed to readlink\n");
+            exit(1);
+        }
+        filename[r] = '\0';
+     /*   sp_print("fp -> fno -> filename: %p -> %d -> %s\n",
+                fp_, fno, filename);
+ */
+  if( fseek(fp_,pos,SEEK_END) !=0 ){
+	perror("Fseek failed");
+	return;
+  }
+  if (fprintf(fp_, "%s", str.c_str())< 0 )
+   {
+	perror ("Fprintf failed");
+/*	int fno = fileno(fp_);
+ 	char filename[100];
+	char proclnk[200];
+	int MAXSIZE = 0xFFF,r;
+        sprintf(proclnk, "/proc/self/fd/%d", fno);
+        r = readlink(proclnk, filename, MAXSIZE);
+        if (r < 0)
+        {
+            printf("failed to readlink\n");
+            exit(1);
+        }
+        filename[r] = '\0';
+        printf("fp -> fno -> filename: %p -> %d -> %s\n",
+                fp_, fno, filename);*/
+	return;
+   }
   fflush(fp_);
   fsync(fileno(fp_));
 }
@@ -61,6 +106,11 @@ TraceMgr::WriteString(long pos,
 
 void
 TraceMgr::WriteString(std::string str) {
+//  fprintf(stderr, "In write string without pos");
+  if(fp_ ==NULL) {
+	sp_print("File is not open");
+ 	return;
+  }
   fprintf(fp_, "%s", str.c_str());
   fflush(fp_);
   fsync(fileno(fp_));
@@ -192,7 +242,8 @@ TraceMgr::OpenFile() {
   filename_ = trace_file_name;
   fp_ = fopen(trace_file_name, "w");
   if (fp_ == NULL) {
-    sp_perror("fail to open %s\n", trace_file_name);
+    fprintf(stderr, "fail to open %s\n", trace_file_name);
+    exit(-1);
   }
   setbuf(fp_, NULL);
 

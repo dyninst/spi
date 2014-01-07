@@ -29,18 +29,17 @@ ProcInitChecker::run() {
   // PrintEnv();
 
   InitTraces();
-
-	return true;
+  return true;
 }
 
 //////////////////////////////////////////////////
 
 void
 ProcInitChecker::PrintUserInfo() {
-  char entry[1024];
+  char entry[2048];
 
   // Real user
-  snprintf(entry, 1024,
+  snprintf(entry, 2048,
            "<real_user><name>%s</name><id>%d</id></real_user>",
            u_.get_user_name(getuid()).c_str(),
            getuid());
@@ -81,6 +80,7 @@ ProcInitChecker::PrintCurrentProc() {
   if (getcwd(buf, 256) != NULL) {
     snprintf(entry, 1024, "<working_dir>%s</working_dir>", buf);
     u_.WriteHeader(entry);
+//   u_.WriteTrace(entry);
   }
   
   // Host ip
@@ -123,7 +123,6 @@ ProcInitChecker::PrintProc(pid_t pid) {
   string exe;
   int c;
   while ((c = fgetc(fp)) != '\0' && c != -1) {
-    // sp_print("%c -- %d", (char)c, c);
     exe += (char)c;
   }
   exe += '\0';
@@ -402,7 +401,7 @@ IpcChecker::check(SpPoint* pt,
     char host[256];
     char service[256];
     if (sp::GetAddress((sockaddr_storage*)*addr, host, 256, service, 256)) {
-      fprintf(stderr, "INSTRUMENTATION(PID=%d): connect() to %s:%s ...\n",
+      sp_print("INSTRUMENTATION(PID=%d): connect() to %s:%s ...\n",
               getpid(), host, service);
       char buf[1024];
       snprintf(buf, 1024,
@@ -445,7 +444,7 @@ IpcChecker::check(SpPoint* pt,
       char service[256];
       char cmd[1024];
       if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
-        fprintf(stderr, "INSTRUMENTATION(pid=%d): send() to %s:%s ...\n",
+        sp_print("INSTRUMENTATION(pid=%d): send() to %s:%s ...\n",
                 getpid(), host, service);
         
         char buf[1024];
@@ -514,24 +513,28 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     // Output trace
     ArgumentHandle h;
     char** path = (char**)PopArgument(pt, &h, sizeof(char*));
-    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+  //  char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
     char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
 
     // Modify environment
     char buf[102400];
 
+//	snprintf(buf, 102400,
+  //         "<trace type=\"%s\" time=\"%lu\"><exec-name>%s</exe-name></trace>",
+    //         callee->name().c_str(), u_.GetUsec(), *path);	
+//	u_.WriteTrace(buf);
     // XXX: Magically set seteuid event, in case it is not captured before
-    snprintf(buf, 102400,
+   snprintf(buf, 102400,
              "<trace type=\"%s\" time=\"%lu\">%s</trace>"
              "<trace type=\"seteuid\" time=\"%lu\"><name>%s</name><id>%d</id>",
              callee->name().c_str(), u_.GetUsec(), *path,
              u_.GetUsec(), u_.get_user_name(geteuid()).c_str(), geteuid());
     
-    char cmd[102400];
+  /*  char cmd[102400];
     srand(time(0));
     snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exe-%d-seq-num", buf, getpid(), getpid(), rand());
     system(cmd);
-
+*/
     char** ptr = *envs;
     char **new_envs = (char**)malloc(1024*sizeof(char*));
     int cur = 0;
@@ -542,19 +545,22 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
 
     // TODO: make the absolute path portable!
     new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
+   // strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
+    strcpy(new_envs[cur], "LD_PRELOAD=/home/paradyn/spi/x86_64-unknown-linux2.4/libmyagent.so");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
+   // strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
+    strcpy(new_envs[cur], "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/paradyn/lib:/home/paradyn/spi/x86_64-unknown-linux2.4:");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "PLATFORM=x86_64-unknown-linux2.4");
     cur++;
+   // new_envs[cur] = (char*)malloc(2048);
+   // strcpy(new_envs[cur], "SP_TEST_RELOCINSN=1");
+   // cur++;
     new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "SP_TEST_RELOCINSN=1");
-    cur++;
-    new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
+    //strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
+    strcpy(new_envs[cur], "SP_AGENT_DIR=/home/paradyn/spi/x86_64-unknown-linux2.4");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
@@ -589,9 +595,8 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     // Execve!
     u_.ChangeTraceFile();
 
-    execve(*path, *argvs, new_envs);
-    system("touch /tmp/fail_execve");
-
+  //  execve(*path, *argvs, new_envs);
+  //  system("touch /tmp/fail_execve");
   } else if (callee->name().compare("execl") == 0 ||
              callee->name().compare("execlp") == 0 ||
              callee->name().compare("execle") == 0 ||
@@ -605,6 +610,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     snprintf(buf, 102400,
              "<trace type=\"%s\" time=\"%lu\">%s",
              callee->name().c_str(), u_.GetUsec(), *path);
+   // u_.WriteTrace(buf);
 
     char cmd[102400];
     srand(time(0));
@@ -622,10 +628,12 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     }
 
     new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
+    //strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
+    strcpy(new_envs[cur], "LD_PRELOAD=/home/paradyn/spi/x86_64-unknown-linux2.4/libmyagent.so");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
+//    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
+    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/paradyn/lib:/home/paradyn/spi/x86_64-unknown-linux2.4:");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "PLATFORM=x86_64-unknown-linux2.4");
@@ -634,7 +642,8 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     strcpy(new_envs[cur], "SP_TEST_RELOCINSN=1");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
+    //strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
+    strcpy(new_envs[cur], "SP_AGENT_DIR=/home/paradyn/spi/x86_64-unknown-linux2.4");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
@@ -653,7 +662,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
       fprintf(fp, "%s</trace></traces></process>", buf);
     }
     fclose(fp);
-    u_.ChangeTraceFile();
+    u_.ChangeTraceFile(); 
   }
 	return true;
 }
@@ -663,18 +672,23 @@ bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
     pid_t ret = ReturnValue(pt);
     if (ret == 0) {
       mist_->fork_init_run();
+      char buf[1024];
+      snprintf(buf, 1024,
+               "<trace type=\"fork\" time=\"%lu\">%d</trace>",
+               u_.GetUsec(), ret);
+      u_.WriteTrace(buf);
+
     } else if (ret > 0) {
-      fprintf(stderr, "INSTRUMENTATION(pid=%d): fork() child pid = %d...\n",
+      sp_print("INSTRUMENTATION(pid=%d): fork() child pid = %d...\n",
               getpid(), ret);
       
       char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"fork\" time=\"%lu\">%d",
+               "<trace type=\"fork\" time=\"%lu\">%d</trace>",
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
-      u_.WriteTrace("</trace>");
-      snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-fork-seq-num", buf, getpid());
-      system(buf);
+//      snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-fork-seq-num", buf, getpid());
+ //     system(buf);
     } else {
       char buf[1024];
       snprintf(buf, 1024,
@@ -686,7 +700,7 @@ bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
       system(buf);
     }
   }
-  
+ 
   return true;
 }
 
@@ -775,15 +789,17 @@ bool ExitChecker::check(SpPoint* pt,
       callee->name().compare("_exit") == 0 ) {
     ArgumentHandle h;
     int* exit_code = (int*)PopArgument(pt, &h, sizeof(uid_t));
-    fprintf(stderr, "INSTRUMENTATION(pid=%d): exit() with exit code = %d...\n",
+   fprintf (stderr,"INSTRUMENTATION(pid=%d): exit() with exit code = %d...\n",
             getpid(), *exit_code);
     char buf[1024];
     snprintf(buf, 1024,
              "<trace type=\"%s\" time=\"%lu\">%d",
              callee->name().c_str(), u_.GetUsec(),
              *exit_code);
+    fprintf(stderr,"Gonna write");
     u_.WriteTrace(buf);
     u_.WriteTrace("</trace>");
+    fprintf(stderr,"written");
   }
 
 	return true;

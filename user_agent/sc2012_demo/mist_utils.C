@@ -44,8 +44,9 @@ MistUtils::check_name(PatchFunction* c,
 
 string
 MistUtils::get_user_name(uid_t id) {
-  struct passwd* p = getpwuid(id);
-  if (p)  return p->pw_name;
+  struct passwd* p;
+  if((p = getpwuid(id)) != NULL )
+    return p->pw_name;
   return "";
 }
 
