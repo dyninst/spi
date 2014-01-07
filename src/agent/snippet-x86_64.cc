@@ -28,6 +28,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+//#define arch_x86_64
+//#define os_osf
+
 
 #include <stack>
 
@@ -79,6 +82,7 @@ namespace sp {
     *p++ = 0x50; // push rax
     *p++ = 0x50; // push one more register(anything) to make the stack 
 		 // 16 byte aligned, for saving floating point registers
+
 
     // Save stack pointer at this point, for future lookup for other
     // saved registers at runtime.
@@ -142,6 +146,9 @@ namespace sp {
 
     //Now save all floating point regs
     p+=emitXMMRegsSaveRestore(p,0,false);
+    
+    //hack: Align the stack pointer again(simply use push of any register)
+    *p++ =0x50;
 
      return (p - (buf+offset));	
 	
@@ -206,10 +213,16 @@ namespace sp {
       *p++ = 0x41; // pop r10
       *p++ = 0x5a;
     }
-	
+    //subtract 8 from rsp
+/*    *p++ = 0x48;
+    *p++ = 0x83;
+    *p++ = 0xec;
+    *p++ = 0x04;	*/
+  //  *p++ = 0x58;
+
 
     // Restored for direct/indirect call
-    *p++ = 0x58 ; //pop rax (to make the stack 16 byte aligned)
+   *p++ = 0x58 ; //pop rax (to make the stack 16 byte aligned)
     *p++ = 0x58; // pop rax
     *p++ = 0x41; // pop r9
     *p++ = 0x59;
@@ -230,6 +243,9 @@ namespace sp {
                        size_t offset) {
     assert(buf);
     char* p = buf + offset;
+
+    //hack: Align the stack pointer again(pop the register which is pushed) 
+    *p++ = 0x58;
 
     *p++ = 0x48;  //mov %rsp, %rax
     *p++ = 0x8b;
@@ -463,6 +479,104 @@ namespace sp {
     return (p - (buf + offset));
   }
 
+ //Salini: Copied from dyninstAPI/src/emit-x86.c and modified
+size_t 
+SpSnippet::emitMovImmToReg64(Register dest, long imm, bool is_64, char *buf, size_t offset)
+{
+  sp_debug("In emitMovImmtoReg64 with destination reg = %d, imm = %0x", dest, (unsigned int)imm);
+   char* p = buf + offset;  
+   Register tmp_dest = dest;
+ //  gen.markRegDefined(dest);
+   p += emitRex(is_64, NULL, NULL, &tmp_dest, p,0);
+   if (is_64) {
+      *p++ = static_cast<char>(0xB8 + tmp_dest);
+      *((long *)p) = imm;
+      p+= sizeof(long);
+   }
+    sp_debug("returning size of instruction from emitMovImm = %ld",(p-(buf+offset)));
+       return (p - (buf + offset));
+}
+
+
+
+size_t 
+SpSnippet::emitRex(bool is_64, Register* r, Register* x, Register* b, char *buf, size_t offset)
+{
+     char* p = buf + offset;
+    char rex = 0x40;
+
+    // need rex for 64-bit ops in most cases
+    if (is_64)
+       rex |= 0x08;
+
+    // need rex for use of new registers
+    // if a new register is used, we mask off the high bit before
+    // returning since we account for it in the rex prefix
+
+    // "R" register - extension to ModRM reg field
+    if (r && *r & 0x08) {
+       rex |= 0x04;
+       *r &= 0x07;
+    }
+
+    // "X" register - extension to SIB index field
+    if (x && *x & 0x08) {
+       rex |= 0x02;
+       *x &= 0x07;
+    }
+
+    // "B" register - extension to ModRM r/m field, SIB base field,
+    // or opcode reg field
+    if (b && *b & 0x08) {
+       rex |= 0x01;
+       *b &= 0x07;
+    }
+    sp_debug("Rex is %0x",rex);
+    // emit the rex, if needed
+    // (note that some other weird cases not covered here
+    //  need a "blank" rex, like using %sil or %dil)
+    if (rex & 0x0f)
+	*p++ = static_cast<char>(rex);
+   sp_debug("Returning rex value = %0x", *(p-1));
+   sp_debug("size of return instruction is %ld",(p-(buf+offset))); 
+
+    return (p-(buf+offset));
+}
+
+size_t 
+SpSnippet::emitPopReg64(Register dest, char* buf, size_t offset ) {
+
+   assert(buf);
+   char* p = buf + offset;
+   sp_debug("In emitPop Reg 64");
+   p+=emitRex(false,NULL,NULL,&dest,buf,offset);
+    *p++ = static_cast<char>(0x58+dest);
+   char *print = buf+offset;
+   for(int i=0 ; i< (p-(buf+offset)) ;i++)   
+     sp_debug("copied %0x",*(print+i)); 
+   sp_debug("size of return instruction is %ld",(p-(buf+offset))); 
+  return (p-(buf+offset));      
+}
+
+ size_t 
+ SpSnippet::emitPushReg64(Register src, 
+			  char* buf,
+			  size_t offset) {
+   assert(buf);
+    char* p = buf + offset;
+   sp_debug("In emitPush Reg 64");
+   p+= emitRex(false, NULL, NULL, &src, buf, offset);
+   *p++ = static_cast<char>(0x50+src);
+   char *print = buf+offset;
+   for(int i=0 ; i< (p-(buf+offset)) ;i++)   
+     sp_debug("copied %0x",*(print+i)); 
+   sp_debug("size of return instruction is %ld",(p-(buf+offset))); 
+  return (p-(buf+offset));      
+  // emitSimpleInsn(0x50+src, buf, offset);
+//   if (gen.rs()) gen.rs()->incStack(8);
+  }
+
+
 
   // Miscellaneous stuffs
 
@@ -605,7 +719,7 @@ namespace sp {
 
   // Get the displacement in an instruction- copied and modified from Dyninst
   // directory common/src/arch-x86.C
-  static int*
+ /* static int*
   get_disp(in::Instruction::Ptr insn, char* insn_buf) {
     assert(insn);
     assert(insn_buf);
@@ -649,7 +763,7 @@ namespace sp {
     disp = (int*)&insn_buf[disp_offset];
     return disp;
   }
-
+*/
   // This visitor visits a PC-sensitive call instruction
   class EmuVisitor : public in::Visitor {
   public:
@@ -737,7 +851,7 @@ namespace sp {
   // pop %r9
   //
 
-  static size_t
+/* static size_t
   emulate_pcsen(in::Instruction::Ptr insn,
                 in::Expression::Ptr e,
                 dt::Address a,
@@ -868,9 +982,66 @@ namespace sp {
 
     return (size_t)(p - buf);
   }
+*/
+bool SpSnippet::getTargetAddr (dt::Address a, in::Instruction::Ptr insn, dt::Address &targetAddr) {
 
-  static size_t
-  reloc_insn_internal(dt::Address a,
+    //first get the target address associated with this instruction
+    //Code copied from dynsintAPI/src/Relocation/Transformers/Movement-adhoc.C
+	
+  dt::Architecture fixme = insn->getArch();
+  if (fixme == Arch_ppc32) fixme = Arch_ppc64;
+  in::Expression::Ptr thePC(new in::RegisterAST(dt::MachRegister::getPC(insn->getArch())));
+  in::Expression::Ptr thePCFixme(new in::RegisterAST(dt::MachRegister::getPC(fixme)));
+
+  set<in::Expression::Ptr> mems;
+  insn->getMemoryReadOperands(mems);
+  insn->getMemoryWriteOperands(mems);
+  for (set<in::Expression::Ptr>::const_iterator iter = mems.begin();
+       iter != mems.end(); ++iter) {
+    in::Expression::Ptr exp = *iter;
+    if (exp->bind(thePC.get(), in::Result(in::u64, a + insn->size())) ||
+        exp->bind(thePCFixme.get(), in::Result(in::u64, a + insn->size()))) {
+      // Bind succeeded, eval to get targetAddr address
+	sp_debug("Bind succeeded");
+      in::Result res = exp->eval();
+      if (!res.defined) {
+        sp_debug("ERROR: failed bind/eval at %lx",a);
+        continue; 
+      }
+      assert(res.defined);
+      targetAddr = res.convert<dt::Address>();
+     return true;
+    }
+}
+   sp_debug("Didnt use PC to read memory");
+  // Didn't use the PC to read memory; thus we have to grind through
+  // all the operands. We didn't do this directly because the 
+  // memory-topping deref stops eval...
+  vector<in::Operand> operands;
+  insn->getOperands(operands);
+  for (vector<in::Operand>::iterator iter = operands.begin();
+       iter != operands.end(); ++iter) {
+ 	sp_debug("Inside for");
+    // If we can bind the PC, then we're in the operand
+    // we want.
+    in::Expression::Ptr exp = iter->getValue();
+    if (exp->bind(thePC.get(), in::Result(in::u64, a + insn->size())) ||
+        exp->bind(thePCFixme.get(), in::Result(in::u64, a + insn->size()))) {
+      // Bind succeeded, eval to get target address
+	sp_debug("Bind success");
+      in::Result res = exp->eval();
+      assert(res.defined);
+      targetAddr = res.convert<Address>();
+      return true;
+    }
+  }
+
+return false;
+}
+
+  
+  size_t
+  SpSnippet::reloc_insn_internal(dt::Address a,
                       in::Instruction::Ptr insn,
                       std::set<in::Expression::Ptr>& exp,
                       bool use_pc,
@@ -878,7 +1049,155 @@ namespace sp {
     assert(insn);
     assert(p);
     if (use_pc) {
-      // Deal with PC-sensitive instruction
+     // Deal with PC-sensitive instruction
+    //first get the target address associated with this instruction
+   dt::Address targetAddr=0;
+    sp_debug("READ USE PC: %s", g_parser->DumpInsns((void*)insn->ptr(),insn->size()).c_str());
+   if(!getTargetAddr(a, insn, targetAddr))
+	sp_debug("Cannot obtan target address");
+   sp_debug("found target address is %lx",targetAddr);	
+    //Salini:  copied and  modified from dynisntAPT/src/codegen-x86.C
+    instruction ins(insn->ptr());
+    const unsigned char *origInsn=ins.ptr();
+    unsigned insnType = ins.type();
+    unsigned insnSz = ins.size();
+    dt::Address from = (dt::Address)p;    
+     	
+    
+    bool is_data_abs64 = false;
+    unsigned nPrefixes = count_prefixes(insnType);
+    sp_debug("No of prefixes in the instruction is %u", nPrefixes);	
+    signed long newDisp  = targetAddr - from ; 
+   
+     sp_debug("New displacement is %lx", newDisp);
+   //count opcode bytes (1 or 2) 
+   unsigned nOpcodeBytes = 1;
+   if (*(origInsn + nPrefixes) == 0x0F) {
+      nOpcodeBytes = 2;
+       // 3-byte opcode support
+       if ((*(origInsn + nPrefixes) == 0x0F) && (*(origInsn + nPrefixes + 1) == 0x38 || *(origInsn + nPrefixes + 1) == 0x3A)) {
+          nOpcodeBytes = 3;
+       }
+   }
+ 
+   sp_debug("No of opcodes %u", nOpcodeBytes); 
+   Register pointer_reg = (Register)-1;
+
+   unsigned  char *newInsn = (unsigned char*)p;
+  
+ #if defined(arch_x86_64)        
+   if (!is_disp32(newDisp+insnSz) && !is_addr32(targetAddr)) {
+	sp_debug("Replacing with 64 bit");
+      // Case C: replace with 64-bit.
+      is_data_abs64 = true;
+      unsigned char mod_rm = *(origInsn + nPrefixes + nOpcodeBytes);
+      sp_debug("Mod rm is %0x",mod_rm);
+      pointer_reg = (mod_rm & 0x38) != 0 ? 0 : 3;
+      sp_debug("Pointer register value is %d",pointer_reg);	
+      newInsn += emitPushReg64(pointer_reg, (char*)newInsn,0);
+      newInsn += emitMovImmToReg64(pointer_reg, targetAddr, true, (char*)newInsn,0);
+      for(int i=0 ; i< (newInsn-(unsigned char*)p);i++)
+          sp_debug("Imm copy copied %0x",*(p+i));
+//      REGET_PTR(newInsn, gen);
+   }
+  #endif
+
+   const unsigned char* origInsnStart = origInsn;
+
+   // In other cases, we can rewrite the insn directly; in the 64-bit case, we
+   // still need to copy the insn, instead of copy_prefixes copy_prefixes(origInsn, newInsn, insnType);
+   for (unsigned u = 0; u < nPrefixes; u++)
+   {
+	 *newInsn++ = *origInsn++;
+	sp_debug("copied prefix %0x",*(newInsn-1)); 
+   }
+   from += nPrefixes;
+
+   if (*origInsn == 0x0F) {
+      *newInsn++ = *origInsn++;
+	sp_debug("copied opcode %0x",*(newInsn-1)); 
+       // 3-byte opcode support
+       if (*origInsn == 0x38 || *origInsn == 0x3A) {
+           *newInsn++ = *origInsn++;
+	sp_debug("copied opcode %0x",*(newInsn-1)); 
+       }
+   }
+
+   // And the normal opcode
+   sp_debug("Copying normal opcode %0x", *origInsn);
+   *newInsn++ = *origInsn++;
+   sp_debug("copied normal opcode %0x",*(newInsn-1)); 
+
+   if (is_data_abs64) {
+	sp_debug("data is abs_64");
+      // change ModRM byte to use [pointer_reg]: requires
+      // us to change last three bits (the r/m field)
+      // to the value of pointer_reg
+      unsigned char mod_rm = *origInsn++;
+      assert(pointer_reg != (Register)-1);
+      mod_rm = (mod_rm & 0xf8) + pointer_reg;
+      *newInsn++ = mod_rm;
+       sp_debug("copied modrm inside data_abs %0x",*(newInsn-1));
+
+   }
+   else if (is_disp32(newDisp+insnSz)) {
+	sp_debug("Displacement is 32 bit");
+      // Whee easy case
+      *newInsn++ = *origInsn++;
+	sp_debug("Copied %0x", *(newInsn-1));
+      // Size doesn't change....
+      *((int *)newInsn) = (int)(newDisp - insnSz);
+      newInsn += 4;
+	sp_debug("Copied %0x",*(newInsn-4));
+	sp_debug("Copied %0x",*(newInsn-3));
+	sp_debug("Copied %0x",*(newInsn-2));
+	sp_debug("Copied %0x",*(newInsn-1));
+   }
+  else if (is_addr32(targetAddr)) {
+	sp_debug("Target address is 32 bit");
+      assert(!is_disp32(newDisp+insnSz));
+      unsigned char mod_rm = *origInsn++;
+
+      // change ModRM byte to use SIB addressing (r/m == 4)
+      mod_rm = (mod_rm & 0xf8) + 4;
+      *newInsn++ = mod_rm;
+
+      // SIB == 0x25 specifies [disp32] addressing when mod == 0
+      *newInsn++ = 0x25;
+
+      // now throw in the displacement (the absolute 32-bit address)
+      *((int *)newInsn) = (int)(targetAddr);
+      newInsn += 4;
+   }
+   else {
+	sp_debug("Reaching what should not be reached");
+      // Should never be reached...
+      assert(0);
+   }
+
+   // there may be an immediate after the displacement for RIP-relative
+   // so we copy over the rest of the instruction here
+   origInsn += 4;
+   while (origInsn - origInsnStart < (int)insnSz) {
+      *newInsn++ = *origInsn++;
+       sp_debug("copied immediate after the displacement for RIP %0x",*(newInsn-1));
+
+   }
+
+  // SET_PTR(newInsn, gen);
+
+#if defined(arch_x86_64)
+   if (is_data_abs64) {
+      // Cleanup on aisle pointer_reg...
+      assert(pointer_reg != (Register)-1);
+      newInsn+=emitPopReg64(pointer_reg, (char*)newInsn, 0);
+   }
+#endif
+   return (newInsn-(unsigned char*)p);
+
+ 	
+/*
+//Salini
       char insn_buf[20];
       memcpy(insn_buf, insn->ptr(), insn->size());
       int* dis_buf = get_disp(insn, insn_buf);
@@ -899,7 +1218,7 @@ namespace sp {
         // General purpose: emulate the instruction
         size_t insn_size = emulate_pcsen(insn, *exp.begin(), a, p);
         return insn_size;
-      }
+      }*/
     } else {
       // For non-pc-sensitive and non-last instruction, just copy it
       memcpy(p, insn->ptr(), insn->size());
@@ -907,6 +1226,7 @@ namespace sp {
     }
   }
 
+  
   // Relocate an ordinary instruction
   //
   // The rule:
@@ -930,6 +1250,7 @@ namespace sp {
     // See if this instruction is a pc-sensitive instruction
     set<in::Expression::Ptr> opSet;
     bool use_pc = false;
+ 
 
     // Non-lea
     char* insn_buf = (char*)insn->ptr();

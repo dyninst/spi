@@ -32,12 +32,16 @@
 // Snippet to hold relocated code and the invocation of payload function.
 
 
+#define arch_x86_64
+#define os_osf
+
 #ifndef _SPSNIPPET_H_
 #define _SPSNIPPET_H_
 
 #include "common/common.h"
 #include "agent/payload.h"
 #include "Buffer.h"
+#include "common/h/arch.h"
 
 namespace sp {
 
@@ -142,6 +146,10 @@ namespace sp {
     size_t emit_jump_abs(long trg, char* buf, size_t offset, bool abs = false);
     size_t emit_save_fp_registers(char* buf, size_t offset);
     size_t emitXMMRegsSaveRestore(char* buf, size_t off, bool isRestore);
+    size_t emitPushReg64(Register src, char* buf, size_t offset);
+    size_t emitRex(bool is_64, Register* r, Register* x, Register* b, char *buf, size_t offset);
+    size_t emitPopReg64(Register dest, char* buf, size_t offset );
+    size_t emitMovImmToReg64(Register dest, long imm, bool is_64, char *buf, size_t offset);
     size_t emit_restore_fp_registers(char* buf, size_t offset);               
 
     // relocate
@@ -152,6 +160,11 @@ namespace sp {
                       in::Instruction::Ptr insn,
                       dt::Address last,
                       char* buf);
+    size_t reloc_insn_internal(dt::Address a,
+                      in::Instruction::Ptr insn,
+                      std::set<in::Expression::Ptr>& exp,
+                     bool use_pc,char* p);
+     bool getTargetAddr(dt::Address a, in::Instruction::Ptr insn, dt::Address &targetAddr);
 
   };
 }
