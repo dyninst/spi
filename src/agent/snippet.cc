@@ -199,7 +199,7 @@ namespace sp {
     } 
 
       // 6. save context
-      blob_size_ += emit_save(blob_, blob_size_,false);
+      blob_size_ += emit_save(blob_, blob_size_);
 
       // 7. Pass parameters
       param_func = 0;
@@ -216,7 +216,7 @@ namespace sp {
       blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
       // 8. Restore context
-      blob_size_ += emit_restore(blob_, blob_size_,false);
+      blob_size_ += emit_restore(blob_, blob_size_);
     }
 
     // 9. Jump back to ORIG_INSN_ADDR
