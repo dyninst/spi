@@ -117,7 +117,7 @@ SpTcpWorker::Inject(SpChannel* c,
                     char* agent_path) {
 
   if (c->injected) return true;
-  sp_debug("NO INJECTED -- start injection");
+  sp_debug("NO INJECTED(tcp) -- start injection");
 
   TcpChannel *tcp_channel = static_cast<TcpChannel*>(c);
   assert(tcp_channel);

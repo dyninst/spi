@@ -45,18 +45,18 @@
 // Some constants
 const int kLenStringBuffer = 255;
 
-//Since condor does not like outputting stuffs to g_error_fp or g_output_fp
-extern FILE* g_output_fp;
+//Since condor does not like outputting stuffs 
 extern FILE* g_debug_fp;
 extern FILE* g_error_fp;
+extern FILE* g_output_fp;
 
 // Print facility
 #define sp_perror(...) do {\
 	char* nodir = basename((char*)__FILE__);							\
-  fprintf(g_error_fp, "ERROR in %s [%d]: ", nodir, __LINE__); \
-  fprintf(g_error_fp, __VA_ARGS__); \
-  fprintf(g_error_fp, "\n"); \
-  ::exit(0);						 \
+  fprintf(g_debug_fp, "ERROR in %s [%d]: ", nodir, __LINE__); \
+  fprintf(g_debug_fp, __VA_ARGS__); \
+  fprintf(g_debug_fp, "\n"); \
+  fflush(g_debug_fp); \
 	} while(0)
 
 #define sp_print(...) do {\
@@ -65,7 +65,6 @@ extern FILE* g_error_fp;
   fflush(g_output_fp); \
 } while(0)
 
-extern FILE* g_debug_fp;
 
 #define sp_debug(...) do { \
   if (getenv("SP_DEBUG")) {   \

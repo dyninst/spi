@@ -58,18 +58,24 @@ SpInjector::Create(dt::PID pid) {
 ////////////////////////////////////////////////////////////////////// 
 SpInjector::SpInjector(dt::PID pid)
     : pid_(pid) {
-
+   
+  FILE* fp = fopen("/tmp/proc_control_debug","w");
+  pc::setDebugChannel(fp);
   proc_ = Process::attachProcess(pid);
   if (!proc_) {
-    sp_perror("Injector [pid = %5d] - Failed to attach to process %d.",
+    sp_debug("Injector [pid = %5d] - Failed to attach to process %d.",
               getpid(), pid);
+   exit(0);
   }
+  else
+	sp_debug("Attached the process %d successfully",pid);
   ThreadPool& thrs = proc_->threads();
-  thr_ = thrs.getInitialThread();
+  thr_ = thrs.getInitialThread();	
 }
 
 ////////////////////////////////////////////////////////////////////// 
 SpInjector::~SpInjector() {
+  sp_debug("Detaching the process");
   proc_->detach();
 }
 
@@ -224,7 +230,6 @@ SpInjector::Inject(const char* lib_name) {
      return true;
 
    }
-
    if( proc_->addLibrary(lib_name))
     {
         sp_print("INJECTION SUCCESS");
@@ -557,6 +562,7 @@ SpInjector::UpdateFrameInfo() {
   shm->pc = pc();
   shm->sp = sp();
   shm->bp = bp();
+  sp_debug("Updated frame info");
 }
 
 }

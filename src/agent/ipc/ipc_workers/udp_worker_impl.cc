@@ -59,6 +59,7 @@ SpUdpWorker::CanStartTracing(int fd) {
 bool
 SpUdpWorker::Inject(SpChannel* c,
                     char* agent_path) {
+   sp_debug("UDP connection-Not injected: TODO");
   return 0;
 }
 

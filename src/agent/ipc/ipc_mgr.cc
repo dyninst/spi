@@ -349,6 +349,7 @@ SpIpcWorkerDelegate* SpIpcMgr::GetWorker(int fd) {
 // Will be called before user-specified entry-payload function.
 bool
 SpIpcMgr::BeforeEntry(SpPoint* pt) {
+  
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) {
     sp_debug("CALLEE NOT FOUND - in BeforeEntry for call insn %lx",
@@ -381,12 +382,15 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       // Luckily, the SpInjector implementation will automatically detect
       // whether the agent.so library is already injected. If so, it will
       // not inject the library again.
-      if(worker->Inject(c))
+      if (worker->Inject(c))
       {
       pt->SetChannel(c);
       worker->SetRemoteStartTracing(1, c);
       }
-	
+      else
+      {
+	sp_debug("Not injected in ipc_mgr");
+      }
     } else {
       sp_debug("FAILED TO CREATE CHANNEL - for write");
     }
