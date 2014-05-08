@@ -568,14 +568,13 @@ SpParser::callee(SpPoint* pt,
         sp_debug("PARSED INDIRECT - %lx is %s in %s", b->last(),
                  sfunc->name().c_str(),
                  sfunc->GetObject()->name().c_str());
-        pt->SetCallee(sfunc);
         return sfunc;
       }
     }
 
     sp_debug("CANNOT FIND INDRECT CALL - for call insn %lx",
              b->last());
-    addr_callee_not_found_.insert(b->last());
+  //  addr_callee_not_found_.insert(b->last());
     return NULL;
   }
   
