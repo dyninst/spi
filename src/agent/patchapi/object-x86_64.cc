@@ -71,112 +71,22 @@ namespace sp {
 							 (long)m, (long)size);
 		}
 
-		const double small_buf_num_ratio = 0.80;
-		const size_t small_buf_size = 256;
+		small_freebufs_.base =base;
+		small_freebufs_. buf_size = size ;
 
-		const double mid_buf_num_ratio = 0.10;
-		const size_t mid_buf_size = 512;
-
-		const double big_buf_num_ratio = 0.05;
-		const size_t big_buf_size = 4096;
-
-		// For small free bufs
-		small_freebufs_.base = base;
-		small_freebufs_.buf_size = small_buf_size;
-
-		size_t offset = 0;
-		size_t small_buf_total_size_limit =
-        (size_t)(small_buf_num_ratio * (double)size);
-		for (; (offset + small_buf_size) < small_buf_total_size_limit;
-				 offset += small_buf_size) {
-			small_freebufs_.list.push_back(offset);
-		}
-
-		sp_debug("SMALL BUF (total %ld)- limit: %ld, offset: %ld, base %lx,"
-             " total_size %ld, buf_size %ld",
-						 (long)small_freebufs_.list.size(),
-             small_buf_total_size_limit,
-             (long)offset,
-						 (long)small_freebufs_.base,
-						 (long)small_freebufs_.buf_size * small_freebufs_.list.size(),
-						 (long)small_freebufs_.buf_size);
-
-		// For midium free bufs
-		mid_freebufs_.base = base;
-		mid_freebufs_.buf_size = mid_buf_size;
-
-		size_t mid_buf_total_size_limit =
-        (size_t)(mid_buf_num_ratio * (double)size) + offset;
-		for (; (offset + mid_buf_size) < mid_buf_total_size_limit;
-         offset += mid_buf_size) {
-			mid_freebufs_.list.push_back(offset);
-		}
-    
-		sp_debug("MID BUF (total %ld) - limit: %ld, offset: %ld, base %lx,"
-             " total_size %ld, buf_size %ld",
-						 (long)mid_freebufs_.list.size(),
-             mid_buf_total_size_limit,
-             (long)offset,
-						 (long)mid_freebufs_.base,
-						 (long)mid_freebufs_.buf_size * mid_freebufs_.list.size(),
-						 (long)mid_freebufs_.buf_size);
-
-
-		// For big free bufs
-		big_freebufs_.base = base;
-		big_freebufs_.buf_size = big_buf_size;
-
-    // size_t big_buf_total_size_limit = size;
-    size_t big_buf_total_size_limit = 
-        (size_t)(big_buf_num_ratio * (double)size) + offset;
-
-		for (; (offset + big_buf_size) < big_buf_total_size_limit;
-         offset += big_buf_size) {
-			big_freebufs_.list.push_back(offset);
-		}
-
-		sp_debug("BIG BUF (total %ld) - base %lx, total_size %ld, buf_size %ld",
-						 (long)big_freebufs_.list.size(),
-						 (long)big_freebufs_.base,
-						 (long)big_freebufs_.buf_size * big_freebufs_.list.size(),
-						 (long)big_freebufs_.buf_size);
-
-    sp_debug("Total size - %ld bytes <= %ld bytes",
-             (long)big_freebufs_.buf_size * big_freebufs_.list.size() +
-						 (long)mid_freebufs_.buf_size * mid_freebufs_.list.size() +
-						 (long)small_freebufs_.buf_size * small_freebufs_.list.size(),
-             size             
-             );
 	}
 
 	dt::Address
 	SpObject::AllocateBuffer(size_t size) {
 		dt::Address ret = 0;
 
-		if (small_freebufs_.list.size() > 0 &&
-				small_freebufs_.buf_size >= size) {
-			ret = small_freebufs_.list.front() + small_freebufs_.base;
-			alloc_bufs_[ret] = SMALL_BUF;
-			small_freebufs_.list.pop_front();
-      return ret;
-		}
+		if(small_freebufs_.buf_size >=size) {
+			ret =small_freebufs_.base +size ;
+			sp_debug("Returning %lu buffer",size);
+			small_freebufs_.base +=size + 1;		  
+			return ret;
 
-		if (mid_freebufs_.list.size() > 0 &&
-				mid_freebufs_.buf_size >= size) {
-			ret =	mid_freebufs_.list.front() + mid_freebufs_.base;
-			alloc_bufs_[ret] = MID_BUF;
-			mid_freebufs_.list.pop_front();
-      return ret;
 		}
-
-		if (big_freebufs_.list.size() > 0 &&
-				big_freebufs_.buf_size >= size) {
-			ret =	big_freebufs_.list.front() + big_freebufs_.base;
-			alloc_bufs_[ret] = BIG_BUF;
-			big_freebufs_.list.pop_front();
-      return ret;
-		}
-
     size_t ps = getpagesize();
     size = ((size + ps -1) & ~(ps - 1));
     if (::posix_memalign((void**)&ret, ps, size) == 0) {
