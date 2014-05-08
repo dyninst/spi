@@ -79,10 +79,16 @@ namespace sp {
     *p++ = 0x50;
     *p++ = 0x41; // push r9
     *p++ = 0x51;
-    *p++ = 0x50; // push rax
-    *p++ = 0x50; // push one more register(anything) to make the stack 
-		 // 16 byte aligned, for saving floating point registers
 
+ 
+    *p++ = 0x50; // push rax
+ 
+    //Store flags
+    *p++ = 0x9f ; //lahf # save the eflags byte into %ah
+    *p++ = 0x0f; *p++ = 0x90; *p++ = 0xc0; //seto %al  #save the overflow flag into %al
+    
+    *p++ = 0x50; // push rax again to store the eflags also, this makes the stack 
+		 // 16 byte aligned, for saving floating point registers
 
     // Save stack pointer at this point, for future lookup for other
     // saved registers at runtime.
@@ -90,7 +96,7 @@ namespace sp {
 
 
     // Saved for indirect call only
-    if (indirect) {
+   if (indirect) {
       *p++ = 0x41; // push r10 -- unused in C
       *p++ = 0x52;
       *p++ = 0x41; // push r11 -- for linker
@@ -105,7 +111,7 @@ namespace sp {
       *p++ = 0x41; // push r15
       *p++ = 0x57;
       *p++ = 0x55; // push rbp
-    }
+  }    
     //Save floating point registers
     if(save_fp_regs) {
 	 p+=emit_save_fp_registers(p,0);
@@ -197,7 +203,7 @@ namespace sp {
         p += emit_restore_fp_registers(p,0);
    }
     // Restored for indirect call
-    if (indirect) {
+    if (indirect) { 
       *p++ = 0x5d; // pop rbp
       *p++ = 0x41; // pop r15
       *p++ = 0x5f;
@@ -212,7 +218,7 @@ namespace sp {
       *p++ = 0x5b;
       *p++ = 0x41; // pop r10
       *p++ = 0x5a;
-    }
+   }
     //subtract 8 from rsp
 /*    *p++ = 0x48;
     *p++ = 0x83;
@@ -223,6 +229,11 @@ namespace sp {
 
     // Restored for direct/indirect call
    *p++ = 0x58 ; //pop rax (to make the stack 16 byte aligned)
+
+   //Restore flags
+    *p++ = 0x80; *p++ = 0xc0; *p++ =0x7f;  //add $0x7f, %al  #restore overflow flag from %al
+    *p++ = 0x9e ; //sahf  # restore %eflags byte from %ah   
+
     *p++ = 0x58; // pop rax
     *p++ = 0x41; // pop r9
     *p++ = 0x59;
@@ -613,7 +624,7 @@ SpSnippet::emitPopReg64(Register dest, char* buf, size_t offset ) {
   dt::Address
   SpSnippet::GetSavedReg(dt::MachRegister reg) {
 
-#define RAX (0)
+#define RAX (8)
 #define R9 (16)
 #define R8 (24)
 #define RCX (32)
@@ -1066,7 +1077,7 @@ return false;
     
     bool is_data_abs64 = false;
     unsigned nPrefixes = count_prefixes(insnType);
-    sp_debug("No of prefixes in the instruction is %u", nPrefixes);	
+ //   sp_debug("No of prefixes in the instruction is %u", nPrefixes);	
     signed long newDisp  = targetAddr - from ; 
    
      sp_debug("New displacement is %lx", newDisp);
@@ -1080,25 +1091,24 @@ return false;
        }
    }
  
-   sp_debug("No of opcodes %u", nOpcodeBytes); 
+   //sp_debug("No of opcodes %u", nOpcodeBytes); 
    Register pointer_reg = (Register)-1;
 
    unsigned  char *newInsn = (unsigned char*)p;
   
  #if defined(arch_x86_64)        
    if (!is_disp32(newDisp+insnSz) && !is_addr32(targetAddr)) {
-	sp_debug("Replacing with 64 bit");
+	//sp_debug("Replacing with 64 bit");
       // Case C: replace with 64-bit.
       is_data_abs64 = true;
       unsigned char mod_rm = *(origInsn + nPrefixes + nOpcodeBytes);
-      sp_debug("Mod rm is %0x",mod_rm);
+      //sp_debug("Mod rm is %0x",mod_rm);
       pointer_reg = (mod_rm & 0x38) != 0 ? 0 : 3;
-      sp_debug("Pointer register value is %d",pointer_reg);	
+      //sp_debug("Pointer register value is %d",pointer_reg);	
       newInsn += emitPushReg64(pointer_reg, (char*)newInsn,0);
       newInsn += emitMovImmToReg64(pointer_reg, targetAddr, true, (char*)newInsn,0);
-      for(int i=0 ; i< (newInsn-(unsigned char*)p);i++)
-          sp_debug("Imm copy copied %0x",*(p+i));
-//      REGET_PTR(newInsn, gen);
+   //   for(int i=0 ; i< (newInsn-(unsigned char*)p);i++)
+        //  sp_debug("Imm copy copied %0x",*(p+i));
    }
   #endif
 
@@ -1109,27 +1119,27 @@ return false;
    for (unsigned u = 0; u < nPrefixes; u++)
    {
 	 *newInsn++ = *origInsn++;
-	sp_debug("copied prefix %0x",*(newInsn-1)); 
+//	sp_debug("copied prefix %0x",*(newInsn-1)); 
    }
    from += nPrefixes;
 
    if (*origInsn == 0x0F) {
       *newInsn++ = *origInsn++;
-	sp_debug("copied opcode %0x",*(newInsn-1)); 
+//	sp_debug("copied opcode %0x",*(newInsn-1)); 
        // 3-byte opcode support
        if (*origInsn == 0x38 || *origInsn == 0x3A) {
            *newInsn++ = *origInsn++;
-	sp_debug("copied opcode %0x",*(newInsn-1)); 
+//	sp_debug("copied opcode %0x",*(newInsn-1)); 
        }
    }
 
    // And the normal opcode
-   sp_debug("Copying normal opcode %0x", *origInsn);
+ //  sp_debug("Copying normal opcode %0x", *origInsn);
    *newInsn++ = *origInsn++;
-   sp_debug("copied normal opcode %0x",*(newInsn-1)); 
+  // sp_debug("copied normal opcode %0x",*(newInsn-1)); 
 
    if (is_data_abs64) {
-	sp_debug("data is abs_64");
+//	sp_debug("data is abs_64");
       // change ModRM byte to use [pointer_reg]: requires
       // us to change last three bits (the r/m field)
       // to the value of pointer_reg
@@ -1137,21 +1147,21 @@ return false;
       assert(pointer_reg != (Register)-1);
       mod_rm = (mod_rm & 0xf8) + pointer_reg;
       *newInsn++ = mod_rm;
-       sp_debug("copied modrm inside data_abs %0x",*(newInsn-1));
+  //     sp_debug("copied modrm inside data_abs %0x",*(newInsn-1));
 
    }
    else if (is_disp32(newDisp+insnSz)) {
-	sp_debug("Displacement is 32 bit");
+//	sp_debug("Displacement is 32 bit");
       // Whee easy case
       *newInsn++ = *origInsn++;
-	sp_debug("Copied %0x", *(newInsn-1));
+//	sp_debug("Copied %0x", *(newInsn-1));
       // Size doesn't change....
       *((int *)newInsn) = (int)(newDisp - insnSz);
       newInsn += 4;
-	sp_debug("Copied %0x",*(newInsn-4));
-	sp_debug("Copied %0x",*(newInsn-3));
-	sp_debug("Copied %0x",*(newInsn-2));
-	sp_debug("Copied %0x",*(newInsn-1));
+//	sp_debug("Copied %0x",*(newInsn-4));
+//	sp_debug("Copied %0x",*(newInsn-3));
+//	sp_debug("Copied %0x",*(newInsn-2));
+//	sp_debug("Copied %0x",*(newInsn-1));
    }
   else if (is_addr32(targetAddr)) {
 	sp_debug("Target address is 32 bit");
@@ -1180,11 +1190,10 @@ return false;
    origInsn += 4;
    while (origInsn - origInsnStart < (int)insnSz) {
       *newInsn++ = *origInsn++;
-       sp_debug("copied immediate after the displacement for RIP %0x",*(newInsn-1));
+  //     sp_debug("copied immediate after the displacement for RIP %0x",*(newInsn-1));
 
    }
 
-  // SET_PTR(newInsn, gen);
 
 #if defined(arch_x86_64)
    if (is_data_abs64) {
@@ -1197,7 +1206,6 @@ return false;
 
  	
 /*
-//Salini
       char insn_buf[20];
       memcpy(insn_buf, insn->ptr(), insn->size());
       int* dis_buf = get_disp(insn, insn_buf);
