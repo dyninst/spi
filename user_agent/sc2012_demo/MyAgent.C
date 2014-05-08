@@ -15,7 +15,6 @@ void mist_entry(SpPoint* pt) {
 
   SpFunction* f = Callee(pt);
   if (!f) return;
-  sp_print("%s",f->name().c_str());
   g_mist.run(pt, f);
   sp::Propel(pt);
 }

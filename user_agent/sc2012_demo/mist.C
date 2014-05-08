@@ -9,12 +9,11 @@ namespace mist {
 
 Mist::Mist() {
   // Each init_checker is called only once when this agent is loaded
-  init_checkers_.insert(new ProcInitChecker);
-   
+  init_checkers_.insert(new ProcInitChecker);   
   // Each checker is called for each point
- // checkers_.insert(new IpcChecker);
+  checkers_.insert(new IpcChecker);
   checkers_.insert(new ForkChecker(this));
-//  checkers_.insert(new CloneChecker(this));
+  checkers_.insert(new CloneChecker(this));
 //  checkers_.insert(new ExitChecker);
 //  checkers_.insert(new ChangeIdChecker);
   
@@ -25,7 +24,7 @@ Mist::Mist() {
   checkers_.insert(new ThreadChecker);
    */
   // Each fini_checker is called only once when this agent is unloaded
-  fini_checkers_.insert(new ProcFiniChecker);
+ // fini_checkers_.insert(new ProcFiniChecker);
 //  init_run();
    record_params();
 
@@ -146,20 +145,20 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
 	if(f->name().compare(cur_func.func_name.c_str()) == 0 )
 	{
 		char buf[1024];
-		snprintf(buf, 1024,"<trace type=\"%s\" time=\"%lu\">",cur_func.desc.c_str(), u_.GetUsec());
+		snprintf(buf, 1024,"\n<trace type=\"%s\" time=\"%lu\">",cur_func.desc.c_str(), u_.GetUsec());
 		u_.WriteTrace(buf);
 		for(std::list<std::string>::iterator it=cur_func.other_paras.begin();it!=cur_func.other_paras.end();it++) {
 		   std::string para = *it;
 		   if(strcmp("exit-code",para.c_str()) == 0) {
 			ArgumentHandle h; 
 			int* exit_code = (int*)PopArgument(pt, &h, sizeof(uid_t));
-			snprintf(buf,1024,"<exit-code>%d</exit-code>",*exit_code);
+			snprintf(buf,1024,"\n\t<exit-code>%d</exit-code>",*exit_code);
 			u_.WriteTrace(buf);
 		   }
 		   if(strcmp("sockfd",para.c_str()) == 0) {
 		  	ArgumentHandle h;
 			int* sockfd = (int*)PopArgument(pt, &h, sizeof(int));
-			snprintf(buf,1024, "<sockfd>%d</sockfd>",*sockfd);
+			snprintf(buf,1024, "\n\t<sockfd>%d</sockfd>",*sockfd);
 			u_.WriteTrace(buf);
 		   }	
 		   if(strcmp("host-port",para.c_str()) == 0) {
@@ -169,7 +168,18 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
 			 char host[256];
 			 char service[256]; 
 			  if (sp::GetAddress((sockaddr_storage*)*addr, host, 256, service, 256)) {
-				snprintf(buf, 1024,"<host>%s</host><port>%s</port>",host,service);
+				snprintf(buf, 1024,"\n\t<host>%s</host><port>%s</port>",host,service);
+				u_.WriteTrace(buf); 
+			  }
+		   }
+		   if(strcmp("accept-host-port",para.c_str()) == 0) {
+			 ArgumentHandle h;
+			 PopArgument(pt, &h, sizeof(int));
+			 sockaddr** addr = (sockaddr**)PopArgument(pt, &h, sizeof(sockaddr*));
+			 char host[256];
+			 char service[256]; 
+      			 if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
+				snprintf(buf, 1024,"\n\t<host>%s</host><port>%s</port>",host,service);
 				u_.WriteTrace(buf); 
 			  }
 		   }
@@ -181,7 +191,7 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
                  	     char host[256]; 
                              char service[256];                                                                  
                               if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {   
-                                 snprintf(buf, 1024,"<host>%s</host><port>%s</port>",host,service); 
+                                 snprintf(buf, 1024,"\n\t<host>%s</host><port>%s</port>",host,service); 
                                  u_.WriteTrace(buf);
 		               }
   		       }
@@ -189,7 +199,7 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
 		  if(strcmp("uid-name",para.c_str()) == 0) {
 			ArgumentHandle h;
 			uid_t* uid = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));  
-			snprintf(buf, 1024,"<name>%s</name><id>%d</id>", u_.get_user_name(*uid).c_str(), *uid);
+			snprintf(buf, 1024,"\n\t<name>%s</name><id>%d</id>", u_.get_user_name(*uid).c_str(), *uid);
 		        u_.WriteTrace(buf); 
 			
 		  }
@@ -197,34 +207,34 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
            	  if(strcmp("gid-name",para.c_str()) == 0) {  		
 			ArgumentHandle h;
 			gid_t* gid = (gid_t*)PopArgument(pt, &h, sizeof(gid_t));
-			 snprintf(buf, 1024,"<group-name>%s</group-name><gid>%d</gid>", u_.get_group_name(*gid).c_str(), *gid);
+			 snprintf(buf, 1024,"\n\t<group-name>%s</group-name><gid>%d</gid>", u_.get_group_name(*gid).c_str(), *gid);
 			 u_.WriteTrace(buf);    
 		  }
   
 		 if(strcmp("cmd",para.c_str()) == 0) {
 			ArgumentHandle h;
 			char** cmd = (char**)PopArgument(pt,&h,sizeof(void*));
-			snprintf(buf,1024,"<cmd>%s</cmd>",*cmd);
+			snprintf(buf,1024,"\n\t<cmd>%s</cmd>",*cmd);
 			u_.WriteTrace(buf);			
 		 }
 		
 		if(strcmp("socket-id",para.c_str()) == 0) {                                                             
                          ArgumentHandle h;
                          int* socket = (int*)PopArgument(pt, &h, sizeof(int));                                   
-                         snprintf(buf, 1024,"<socket-id>%d</socket-id>",*socket);              
+                         snprintf(buf, 1024,"\n\t<socket-id>%d</socket-id>",*socket);              
                          u_.WriteTrace(buf);      
  		  }
 		 if(strcmp("file",para.c_str()) == 0 ) {
                          ArgumentHandle h;
                         char** filename = (char**)PopArgument(pt,&h,sizeof(void*));
-                        snprintf(buf,1024,"<file>%s</file>",*filename);
+                        snprintf(buf,1024,"\n\t<file>%s</file>",*filename);
                         u_.WriteTrace(buf);
 
                 }
 		if(strcmp("file",para.c_str()) == 0 ) {
                          ArgumentHandle h;
                         char** filename = (char**)PopArgument(pt,&h,sizeof(void*));
-                        snprintf(buf,1024,"<file>%s</file>",*filename);
+                        snprintf(buf,1024,"\n\t<file>%s</file>",*filename);
                         u_.WriteTrace(buf);
 
                 }
@@ -233,9 +243,9 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
                         ArgumentHandle h;
                         char** filename = (char**)PopArgument(pt,&h,sizeof(void*));
                         stat(*filename,&info);
-                        snprintf(buf,1024,"<owner> %d </owner>", info.st_uid);
+                        snprintf(buf,1024,"\n\t<owner> %d </owner>", info.st_uid);
                         u_.WriteTrace(buf);
-                        snprintf(buf,1024,"<group> %d </group>", info.st_gid);
+                        snprintf(buf,1024,"\n\t<group> %d </group>", info.st_gid);
                         u_.WriteTrace(buf);
                 }
                 if(strcmp("file-mode",para.c_str()) == 0) {
@@ -243,7 +253,7 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
                         ArgumentHandle h;
                         char** filename = (char**)PopArgument(pt,&h,sizeof(void*));
                         stat(*filename,&info);
-                        snprintf(buf,1024,"<mode> %lo</mode>",(unsigned long) info.st_mode);
+                        snprintf(buf,1024,"\n\t<mode> %lo</mode>",(unsigned long) info.st_mode);
                         u_.WriteTrace(buf);
                  }
 		if(strcmp("file-descriptor-filename",para.c_str()) == 0) {
@@ -268,20 +278,19 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
                          if(r >= 0) {
                                 filename[r]='\0';
                             //    snprintf(buf,1024,"<file-descriptor>%d</file-descriptor><file type=%s name= %s> </file>",*fd,filetype, filename);
- 	                        snprintf(buf,1024,"<file-descriptor>%d</file-descriptor><file name= \"%s\"> </file>",*fd, filename);
+ 	                        snprintf(buf,1024,"\n\t<file-descriptor>%d</file-descriptor><file name= \"%s\"> </file>",*fd, filename);
 
                                 u_.WriteTrace(buf);
                          }
+		
 		}
-
 
 	} 
 
-                       u_.WriteTrace("</trace>");
-              
+                       u_.WriteTrace("\n</trace>");
+            
                   } 
 
- 		
 }
 
   for (Checkers::iterator i = checkers_.begin();
@@ -298,21 +307,21 @@ void Mist::post_run(SpPoint* pt, SpFunction* f) {
         if(f->name().compare(cur_func.func_name.c_str()) == 0 )
         {
                 char buf[1024];
-                snprintf(buf, 1024,"<trace type=\"%s\" time=\"%lu\">",cur_func.desc.c_str(), u_.GetUsec());
+                snprintf(buf, 1024,"\n<trace type=\"%s\" time=\"%lu\">",cur_func.desc.c_str(), u_.GetUsec());
                 u_.WriteTrace(buf);
                 for(std::list<std::string>::iterator it=cur_func.other_paras.begin();it!=cur_func.other_paras.end();it++) {
                    std::string para = *it;
                    if(strcmp("socket-id",para.c_str()) == 0) {
                         ArgumentHandle h;
                         int socket = ReturnValue(pt);
-                        snprintf(buf,1024,"<sockfd>%d</sockfd>",socket);
+                        snprintf(buf,1024,"\n\t<sockfd>%d</sockfd>",socket);
                         u_.WriteTrace(buf);
                    }
 		
 		if(strcmp("file",para.c_str()) == 0 ) {
 			 ArgumentHandle h;
                         char** filename = (char**)PopArgument(pt,&h,sizeof(void*));
-                        snprintf(buf,1024,"<file>\"%s\"</file>",*filename);
+                        snprintf(buf,1024,"\n\t<file>\"%s\"</file>",*filename);
                         u_.WriteTrace(buf);
 
 		}
@@ -322,9 +331,9 @@ void Mist::post_run(SpPoint* pt, SpFunction* f) {
                         ArgumentHandle h;
                         char** filename = (char**)PopArgument(pt,&h,sizeof(void*));
                         stat(*filename,&info);
-                        snprintf(buf,1024,"<owner> %d </owner>", info.st_uid);
+                        snprintf(buf,1024,"\n\t<owner> %d </owner>", info.st_uid);
                         u_.WriteTrace(buf);
-                        snprintf(buf,1024,"<group> %d </group>", info.st_gid);
+                        snprintf(buf,1024,"\n\t<group> %d </group>", info.st_gid);
                         u_.WriteTrace(buf);
                                                 
                 }
@@ -333,20 +342,20 @@ void Mist::post_run(SpPoint* pt, SpFunction* f) {
                         ArgumentHandle h;
                         char** filename = (char**)PopArgument(pt,&h,sizeof(void*));
                         stat(*filename,&info);
-                        snprintf(buf,1024,"<mode> %lo</mode>",(unsigned long) info.st_mode);
+                        snprintf(buf,1024,"\n\t<mode> %lo</mode>",(unsigned long) info.st_mode);
                         u_.WriteTrace(buf);
                  }
 		if(strcmp("return-fd",para.c_str()) == 0 ) {
 			ArgumentHandle h;
 			int fd = ReturnValue(pt);
-			snprintf(buf,1024,"<file-descriptor>%d</file-descriptor>",fd);
+			snprintf(buf,1024,"\n\t<file-descriptor>%d</file-descriptor>",fd);
                         u_.WriteTrace(buf);
 		}
 		if(strcmp("return-pid",para.c_str()) == 0) {
 			ArgumentHandle h;
 			int pid = ReturnValue(pt);
 			if(pid >0) {
-			snprintf(buf,1024,"<child-process-id>%d</child-process-id>",pid);
+			snprintf(buf,1024,"\n\t<child-process-id>%d</child-process-id>",pid);
                         u_.WriteTrace(buf);
 			}
 			else {
@@ -382,7 +391,7 @@ void Mist::post_run(SpPoint* pt, SpFunction* f) {
 	
 		}*/
 	     }
-                       u_.WriteTrace("</trace>");
+                       u_.WriteTrace("\n</trace>");
 	}
 
   }

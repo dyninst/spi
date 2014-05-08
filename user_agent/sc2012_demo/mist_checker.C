@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include<signal.h>
 
 #include "mist.h"
 #include "mist_checker.h"
@@ -40,28 +41,28 @@ ProcInitChecker::PrintUserInfo() {
 
   // Real user
   snprintf(entry, 2048,
-           "<real_user><name>%s</name><id>%d</id></real_user>",
+           "\n\t<real_user><name>%s</name><id>%d</id></real_user>",
            u_.get_user_name(getuid()).c_str(),
            getuid());
   u_.WriteHeader(entry);
 
   // Effective user
   snprintf(entry, 1024,
-           "<effective_user><name>%s</name><id>%d</id></effective_user>",
+           "\n\t<effective_user><name>%s</name><id>%d</id></effective_user>",
            u_.get_user_name(geteuid()).c_str(),
            geteuid());
   u_.WriteHeader(entry);
   
   // Real group
   snprintf(entry, 1024,
-           "<real_group><name>%s</name><id>%d</id></real_group>",
+           "\n\t<real_group><name>%s</name><id>%d</id></real_group>",
            u_.get_group_name(getgid()).c_str(),
            getgid());
   u_.WriteHeader(entry);
 
   // Effective group
   snprintf(entry, 1024,
-           "<effective_group><name>%s</name><id>%d</id></effective_group>",
+           "\n\t<effective_group><name>%s</name><id>%d</id></effective_group>",
            u_.get_group_name(getegid()).c_str(),
            getegid());
   u_.WriteHeader(entry);
@@ -78,14 +79,14 @@ ProcInitChecker::PrintCurrentProc() {
   // Get working dir
   char buf[256];
   if (getcwd(buf, 256) != NULL) {
-    snprintf(entry, 1024, "<working_dir>%s</working_dir>", buf);
+    snprintf(entry, 1024, "\n\t<working_dir>%s</working_dir>", buf);
     u_.WriteHeader(entry);
 //   u_.WriteTrace(entry);
   }
   
   // Host ip
   sp::GetIPv4Addr(buf, 256);
-  snprintf(entry, 1024, "<host>%s</host>", buf);
+  snprintf(entry, 1024, "\n\t<host>%s</host>", buf);
   u_.WriteHeader(entry);
 }
 
@@ -95,7 +96,7 @@ ProcInitChecker::PrintCurrentProc() {
 void
 ProcInitChecker::PrintParentProc() {
   char entry[1024];
-  snprintf(entry, 1024, "<parent>");
+  snprintf(entry, 1024, "\n\t<parent>");
   u_.WriteHeader(entry);
   
   PrintProc(getppid());
@@ -112,7 +113,7 @@ ProcInitChecker::PrintProc(pid_t pid) {
   char entry[1024];
 
   // Get pid
-  snprintf(entry, 1024, "<pid>%d</pid>", pid);
+  snprintf(entry, 1024, "\n\t<pid>%d</pid>", pid);
   u_.WriteHeader(entry);
 
   // Get exe
@@ -127,7 +128,7 @@ ProcInitChecker::PrintProc(pid_t pid) {
   }
   exe += '\0';
 
-  snprintf(entry, 1024, "<exe_name>%s</exe_name>", exe.c_str());
+  snprintf(entry, 1024, "\n\t<exe_name>%s</exe_name>", exe.c_str());
   u_.WriteHeader(entry);
 
 #if 0
@@ -164,7 +165,7 @@ void
 ProcInitChecker::PrintEnv() {
 
   char entry[1024];
-  snprintf(entry, 1024, "<environment_vars>");
+  snprintf(entry, 1024, "\n\t<environment_vars>");
   u_.WriteHeader(entry);
 
   // Get environment variables
@@ -198,7 +199,7 @@ ProcInitChecker::PrintEnv() {
 void
 ProcInitChecker::InitTraces() {
   u_.WriteString(-10,
-                 "<traces></traces></process>");
+                 "\n<traces></traces>\n</process>");
 }
 
 #if 0
@@ -405,14 +406,14 @@ IpcChecker::check(SpPoint* pt,
               getpid(), host, service);
       char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"connect to\" time=\"%lu\">",
+               "\n<trace type=\"connect to\" time=\"%lu\">\n",
                u_.GetUsec());
       u_.WriteTrace(buf);
       snprintf(buf, 1024,
-               "<host>%s</host><port>%s</port>",
+               "\t<host>%s</host><port>%s</port>\n",
                host, service);
       u_.WriteTrace(buf);
-      u_.WriteTrace("</trace>");
+      u_.WriteTrace("</trace>\n");
     } 
   } else if (callee->name().compare("accept") == 0) {
     ArgumentHandle h;
@@ -424,14 +425,14 @@ IpcChecker::check(SpPoint* pt,
       if (sp::GetAddress((sockaddr_storage*)&addr, host, 256, service, 256)) {
         char buf[1024];
         snprintf(buf, 1024,
-                 "<trace type=\"accept from\" time=\"%lu\">",
+                 "\n<trace type=\"accept from\" time=\"%lu\">\n",
                  u_.GetUsec());
         u_.WriteTrace(buf);
         snprintf(buf, 1024,
-                 "<host>%s</host><port>%s</port>",
+                 "\t<host>%s</host><port>%s</port>\n",
                  host, service);
         u_.WriteTrace(buf);
-        u_.WriteTrace("</trace>");
+        u_.WriteTrace("</trace>\n");
       }
     }
   } else  if (callee->name().compare("send") == 0) {
@@ -460,8 +461,8 @@ IpcChecker::check(SpPoint* pt,
         pclose(fp);
         
         snprintf(buf, 1024,
-                 "<host>%s</host><pid>%s</pid>",
-                 host, line);
+                 "<host>%s</host>",
+                 host);
         u_.WriteTrace(buf);
         u_.WriteTrace("</trace>");
 
@@ -509,40 +510,42 @@ ForkChecker::ForkChecker(Mist* mist) : mist_(mist) {
 }
 
 bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
+//  sp_print("shalz: In fork %s",callee->name().c_str());
   if (callee->name().compare("execve") == 0) {
+    sp_print("shal: In execve");
     // Output trace
     ArgumentHandle h;
     char** path = (char**)PopArgument(pt, &h, sizeof(char*));
-  //  char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
     char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
 
     // Modify environment
     char buf[102400];
 
-//	snprintf(buf, 102400,
-  //         "<trace type=\"%s\" time=\"%lu\"><exec-name>%s</exe-name></trace>",
-    //         callee->name().c_str(), u_.GetUsec(), *path);	
-//	u_.WriteTrace(buf);
     // XXX: Magically set seteuid event, in case it is not captured before
    snprintf(buf, 102400,
              "<trace type=\"%s\" time=\"%lu\">%s</trace>"
-             "<trace type=\"seteuid\" time=\"%lu\"><name>%s</name><id>%d</id>",
+             "<trace type=\"seteuid\" time=\"%lu\"><name>%s</name><id>%d</id>\n</trace>\n",
              callee->name().c_str(), u_.GetUsec(), *path,
              u_.GetUsec(), u_.get_user_name(geteuid()).c_str(), geteuid());
-    
-  /*  char cmd[102400];
+//	sp_print("trace-execve: %s",buf);
+  u_.WriteTrace(buf);
+/*    char cmd[102400];
     srand(time(0));
     snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exe-%d-seq-num", buf, getpid(), getpid(), rand());
     system(cmd);
 */
-    char** ptr = *envs;
     char **new_envs = (char**)malloc(1024*sizeof(char*));
     int cur = 0;
+    char** ptr = *envs;
+    if(ptr!=NULL) {
     while (*ptr != NULL) {
-      new_envs[cur++] = *ptr;
+      new_envs[cur] = *ptr;
+      sp_print("%s",new_envs[cur]);
+      cur++;
       ptr++;
     }
-
+}
     // TODO: make the absolute path portable!
     new_envs[cur] = (char*)malloc(2048);
    // strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
@@ -555,9 +558,9 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "PLATFORM=x86_64-unknown-linux2.4");
     cur++;
-   // new_envs[cur] = (char*)malloc(2048);
-   // strcpy(new_envs[cur], "SP_TEST_RELOCINSN=1");
-   // cur++;
+ /*   new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_FDEBUG=1");
+    cur++;*/
     new_envs[cur] = (char*)malloc(2048);
     //strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
     strcpy(new_envs[cur], "SP_AGENT_DIR=/home/paradyn/spi/x86_64-unknown-linux2.4");
@@ -568,14 +571,18 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "SP_LSOF=/usr/bin/lsof");
     cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_NO_TAILCALL=1");
+    cur++;
     new_envs[cur] = NULL;
     cur++;
     
-    u_.CloseTrace();
+    	
+ //  u_.CloseTrace();
     
+#if 0 
     // XXX: a temporary fix for the broken u_.WriteTrace
     FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");
-    
     if (fp) {
       fseek(fp, -19, SEEK_END);
       fprintf(fp, "%s</trace></traces></process>", buf);
@@ -584,6 +591,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
       char trace_file_name[255];
       unsigned long seq = MistUtils::GetUsec();
       snprintf(trace_file_name, 255, "/tmp/%d-%.14lu.xml", getpid(), seq);
+      sp_debug("trace name: %s",trace_file_name);
       fp = fopen(trace_file_name, "w");
       if (fp) {
         fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><process>"
@@ -591,56 +599,60 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
         fclose(fp);
       }
     }
-
+#endif
     // Execve!
     u_.ChangeTraceFile();
-
-  //  execve(*path, *argvs, new_envs);
-  //  system("touch /tmp/fail_execve");
-  } else if (callee->name().compare("execl") == 0 ||
+    execve(*path, *argvs, new_envs);
+    system("touch /tmp/fail_execve"); 
+  }
+ else if (callee->name().compare("execl") == 0 ||
              callee->name().compare("execlp") == 0 ||
+             callee->name().compare("exec") == 0 ||
              callee->name().compare("execle") == 0 ||
              callee->name().compare("execv") == 0 ||
              callee->name().compare("execvp") == 0) {
     // Output trace
+   sp_print("shal: in other than execve");
     ArgumentHandle h;
     char** path = (char**)PopArgument(pt, &h, sizeof(char*));
 
     char buf[102400];
     snprintf(buf, 102400,
-             "<trace type=\"%s\" time=\"%lu\">%s",
+             "<trace type=\"%s\" time=\"%lu\">%s</trace>",
              callee->name().c_str(), u_.GetUsec(), *path);
-   // u_.WriteTrace(buf);
+ //   sp_print("Trace %s",buf);
+    u_.WriteTrace(buf);
 
-    char cmd[102400];
+  /*  char cmd[102400];
     srand(time(0));
     snprintf(cmd, 102400, "echo \"%s at %d\" > /tmp/%d-exel-%d-seq-num", buf, getpid(), getpid(), rand());
     system(cmd);
-    
-    u_.CloseTrace();
+    */
+  //  u_.CloseTrace();
 
     char **ptr = environ;
     char **new_envs = (char**)malloc(1024*sizeof(char*));
     int cur = 0;
+    if(ptr!=NULL) {
     while (*ptr != NULL) {
       new_envs[cur++] = *ptr;
       ptr++;
     }
-
+    }
     new_envs[cur] = (char*)malloc(2048);
     //strcpy(new_envs[cur], "LD_PRELOAD=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4/libmyagent.so");
     strcpy(new_envs[cur], "LD_PRELOAD=/home/paradyn/spi/x86_64-unknown-linux2.4/libmyagent.so");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
 //    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/wenbin/soft/lib:/home/wenbin/devel/dyninst/x86_64-unknown-linux2.4/lib:/home/wenbin/devel/spi/x86_64-unknown-linux2.4/test_agent:/home/wenbin/devel/spi/x86_64-unknown-linux2.4");
-    strcpy(new_envs[cur], "LD_LIBRARY_PATH=/home/paradyn/lib:/home/paradyn/spi/x86_64-unknown-linux2.4:");
+    strcpy(new_envs[cur], "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/paradyn/lib:/home/paradyn/spi/x86_64-unknown-linux2.4:");
     cur++;
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "PLATFORM=x86_64-unknown-linux2.4");
     cur++;
-    new_envs[cur] = (char*)malloc(2048);
-    strcpy(new_envs[cur], "SP_TEST_RELOCINSN=1");
-    cur++;
+  /*  new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_FEDBUG=1");
+    cur++;*/
     new_envs[cur] = (char*)malloc(2048);
     //strcpy(new_envs[cur], "SP_AGENT_DIR=/home/wenbin/devel/spi/user_agent/mist_tool/x86_64-unknown-linux2.4");
     strcpy(new_envs[cur], "SP_AGENT_DIR=/home/paradyn/spi/x86_64-unknown-linux2.4");
@@ -651,18 +663,25 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     new_envs[cur] = (char*)malloc(2048);
     strcpy(new_envs[cur], "SP_LSOF=/usr/bin/lsof");
     cur++;
+    new_envs[cur] = (char*)malloc(2048);
+    strcpy(new_envs[cur], "SP_NO_TAILCALL=1");
+    cur++;
     new_envs[cur] = NULL;
     cur++;
     environ = new_envs;
+	
     
+   
     // XXX: a temporary fix for the broken u_.WriteTrace
-    FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");
+/*    FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");
     if (fp) {
       fseek(fp, -19, SEEK_END);
       fprintf(fp, "%s</trace></traces></process>", buf);
     }
     fclose(fp);
-    u_.ChangeTraceFile(); 
+*/
+
+  u_.ChangeTraceFile(); 
   }
 	return true;
 }
@@ -672,11 +691,11 @@ bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
     pid_t ret = ReturnValue(pt);
     if (ret == 0) {
       mist_->fork_init_run();
-      char buf[1024];
+/*      char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"fork\" time=\"%lu\">%d</trace>",
-               u_.GetUsec(), ret);
-      u_.WriteTrace(buf);
+               "<trace type=\"fork\" time=\"%lu\">%d %d</trace>\n",
+               u_.GetUsec(),getpid(), ret );
+      u_.WriteTrace(buf);*/
 
     } else if (ret > 0) {
       sp_print("INSTRUMENTATION(pid=%d): fork() child pid = %d...\n",
@@ -684,7 +703,7 @@ bool ForkChecker::post_check(SpPoint* pt, SpFunction* callee) {
       
       char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"fork\" time=\"%lu\">%d</trace>",
+               "<trace type=\"fork\" time=\"%lu\">%d</trace>\n",
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
 //      snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-fork-seq-num", buf, getpid());
@@ -738,20 +757,19 @@ bool CloneChecker::post_check(SpPoint* pt,
       */
       char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"clone\" time=\"%lu\">%d",
+               "<trace type=\"clone\" time=\"%lu\">%d</trace>",
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
-      u_.WriteTrace("</trace>");
       // mist_->fork_init_run();
     } else {
-      char buf[1024];
+     /* char buf[1024];
       snprintf(buf, 1024,
                "<trace type=\"failed clone\" time=\"%lu\">%d",
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
       u_.WriteTrace("</trace>");
       snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-failed-clone-seq-num", buf, getpid());
-      system(buf);
+      system(buf);*/
     }
   }
 

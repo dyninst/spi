@@ -30,7 +30,6 @@ TraceMgr::~TraceMgr() {
 // <?xml ... ?><process><head></head></process>
 void
 TraceMgr::WriteHeader(std::string header) {
-// fprintf(stderr, "In WriteHeader");
  if(fp_ == NULL ) {
 	sp_print("File is not open"); 
   	return;
@@ -47,8 +46,6 @@ void
 TraceMgr::WriteTrace(std::string trace) {
   trace += "</traces></process>";
   WriteString(-19, trace);
-  fflush(fp_);
-  fsync(fileno(fp_));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -69,12 +66,9 @@ TraceMgr::WriteString(long pos,
         if (r < 0)
         {
             sp_print("failed to readlink\n");
-            exit(1);
+	    return;
         }
         filename[r] = '\0';
-     /*   sp_print("fp -> fno -> filename: %p -> %d -> %s\n",
-                fp_, fno, filename);
- */
   if( fseek(fp_,pos,SEEK_END) !=0 ){
 	perror("Fseek failed");
 	return;
@@ -82,38 +76,19 @@ TraceMgr::WriteString(long pos,
   if (fprintf(fp_, "%s", str.c_str())< 0 )
    {
 	perror ("Fprintf failed");
-/*	int fno = fileno(fp_);
- 	char filename[100];
-	char proclnk[200];
-	int MAXSIZE = 0xFFF,r;
-        sprintf(proclnk, "/proc/self/fd/%d", fno);
-        r = readlink(proclnk, filename, MAXSIZE);
-        if (r < 0)
-        {
-            printf("failed to readlink\n");
-            exit(1);
-        }
-        filename[r] = '\0';
-        printf("fp -> fno -> filename: %p -> %d -> %s\n",
-                fp_, fno, filename);*/
 	return;
    }
-  fflush(fp_);
-  fsync(fileno(fp_));
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void
 TraceMgr::WriteString(std::string str) {
-//  fprintf(stderr, "In write string without pos");
   if(fp_ ==NULL) {
 	sp_print("File is not open");
  	return;
   }
   fprintf(fp_, "%s", str.c_str());
-  fflush(fp_);
-  fsync(fileno(fp_));
 }
 
 ////////////////////////////////////////////////////////////////////// 
@@ -136,8 +111,7 @@ TraceMgr::XMLEncode(std::string& data) {
 
 void
 TraceMgr::CloseTrace() {
-  fflush(fp_);
-  fsync(fileno(fp_));
+   fflush(fp_);
   fclose(fp_);
 }
 
@@ -238,12 +212,12 @@ TraceMgr::OpenFile() {
 
   // Construct trace file name
   char trace_file_name[255];
-  snprintf(trace_file_name, 255, "/tmp/%d-%.14lu.xml", getpid(), seq);
+  snprintf(trace_file_name, 255, "/tmp/spi/%d-%.14lu.xml", getpid(), seq);
   filename_ = trace_file_name;
-  fp_ = fopen(trace_file_name, "w");
+  fp_ = fopen(trace_file_name, "w+");
   if (fp_ == NULL) {
     fprintf(stderr, "fail to open %s\n", trace_file_name);
-    exit(-1);
+    return;
   }
   setbuf(fp_, NULL);
 
