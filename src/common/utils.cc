@@ -184,7 +184,6 @@ ino_t
 GetInodeFromFileDesc(const int fd) {
   struct stat s;
   if (fstat(fd, &s) != -1) {
-    sp_debug("Inode of the file descriptor %d is %ld",fd, s.st_ino);
     return s.st_ino;
   }
   return -1;
@@ -196,6 +195,7 @@ GetInodeFromFileDesc(const int fd) {
 bool
 PidUsesInode(const int pid,
              const ino_t inode) {
+//  sp_print("*** pid=%d uses inode=%lu?\n", pid, inode);
   DIR *dir;
   ino_t temp_node;
   struct dirent *de;
@@ -221,13 +221,11 @@ PidUsesInode(const int pid,
       if (sscanf(buffer, "pipe:[%lu]", &temp_node) == 1 &&
           temp_node == inode) {
         // Anonymous pipe
-        sp_debug("PidUsesInode : Anonymous pipe");
         closedir(dir);
         return true;
       } else if (sscanf(buffer, "socket:[%lu]", &temp_node) == 1 &&
                  temp_node == inode) {
         // Tcp
- 	sp_debug("PidUsesInode: A TCP");
         closedir(dir);
         return true;
       } else {
@@ -235,7 +233,6 @@ PidUsesInode(const int pid,
         struct stat s;
         if (stat(buffer, &s) != -1) {
           if (s.st_ino == inode) {
-	    sp_debug("A named pipe");
             closedir(dir);
             return true;
           }
@@ -261,7 +258,6 @@ GetPidsFromFileDesc(const int fd,
 
   struct dirent *de;
   char *ep;
-  const ino_t fd_inode=GetInodeFromFileDesc(fd);
   while ((de = readdir(dir)) != 0) {
 
     if (isdigit(de->d_name[0])) {
@@ -270,7 +266,7 @@ GetPidsFromFileDesc(const int fd,
         sp_perror("ERROR: strtol failed on %s\n", de->d_name);
       }
       if (pid != getpid() &&
-          PidUsesInode(pid,fd_inode )) {
+          PidUsesInode(pid, GetInodeFromFileDesc(fd))) {
         sp_debug("GET PID FOR PIPE: pid - %d", pid);
         pid_set.insert(pid);
       }
@@ -635,19 +631,20 @@ IsIllegalProgram() {
   illegal_exes.insert("cp");
   illegal_exes.insert("netstat");
 
-  std::string proc_path = "";
+/*  std::string proc_path = "";
   proc_path += "/proc/";
   proc_path += Dyninst::itos(getpid());
   proc_path += "/cmdline";
 
   std::string content = GetFileText(proc_path.c_str());
   char* exe_name = sp_filename(content.c_str());
-  sp_debug("exe: %s", exe_name);
+  sp_debug("exe: %s", exe_name); */
+  std::string exe_name = GetExeName();
 
   for (StringSet::iterator si = illegal_exes.begin();
        si != illegal_exes.end(); si++) {
     // sp_debug("comparing: %s", (*si).c_str());
-    if ((*si).compare(exe_name) == 0) return true;
+    if ((*si).compare(exe_name.c_str()) == 0) return true;
   }
   return false;
 }
@@ -655,18 +652,19 @@ IsIllegalProgram() {
 //////////////////////////////////////////////////////////////////////
 
 // Gets current process's executable's full path name
-// TODO: examine it!!!! possibly cmdline would be empty if it is forked
 std::string
 GetExeName() {
-  std::string proc_path = "";
-  proc_path += "/proc/";
-  proc_path += Dyninst::itos(getpid());
-  proc_path += "/cmdline";
-  sp_debug("Process id of the current process is %d",getpid());
-  std::string content = GetFileText(proc_path.c_str());
+  char exe[kLenStringBuffer];
+  char link[kLenStringBuffer];
+  int size = -1;
+  snprintf(link,kLenStringBuffer,"/proc/%d/exe",getpid());
+  if((size = readlink(link,exe,kLenStringBuffer)) < 0) {
+        sp_perror("Cannot find the Executable name from /proc/pid/exe");
+    } 
+   exe[size] ='\0';
 
-  // The format for /proc/pid/cmdline is:
-  // full_path_of_exe\0arg1\0arg2\0 ...
+  sp_debug("Exename is %s",exe);
+  std::string content(exe);
 
   return content;
 }
@@ -698,13 +696,14 @@ ProcessHasLibrary(int pid, std::string lib)
    if (!fp) {
      sp_perror("FAILED to open /proc/%d/maps file %s", pid, maps_file);
    }
+
   std::string line;
   while(std::getline(fp,line))
   {
       if(line.find(lib) != std::string::npos)
-      { 
-	sp_debug("Agent shared library is already injected into the process");
-	return true;
+      {
+        sp_debug("Agent shared library is already injected into the process");
+        return true;
       }
  }
  return false;
@@ -734,6 +733,8 @@ void sig_urg_handler(int signo)
     }
    signal(SIGURG,sig_urg_handler);
 }
+
+
 
 
 // ------------------------------------------------------------------- 
