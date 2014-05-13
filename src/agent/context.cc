@@ -95,27 +95,16 @@ namespace sp {
 
     sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
     sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker_);
+
+    //Get the total number of calls in stack using StackWalkerAPI
     walker_->walkStackFromFrame(stackwalk_, *f);
     sp_debug("WALKED STACK - %ld function calls found",
              (long)stackwalk_.size());
 
-    /*
-    char cmd[255];
-    snprintf(cmd, 255, "pstack %d", getpid());
-    FILE* fp = popen(cmd, "r");
-    char buf[1024];
-    while(fgets(buf, 1024, fp) != NULL) {
-      sp_print(buf);
-    }
-    pclose(fp);
-    */
-    
     for (unsigned i=0; i<stackwalk_.size(); i++) {
       string s;
       stackwalk_[i].getName(s);
 
-    //  sk::location_t loc = stackwalk_[i].getRALocation();    
-    //  sp_debug("Function %s RA Location = %lx RA= %lx " ,s.c_str(),loc.val.addr,stackwalk_[i].getRA());
     
       FuncSet found_funcs;
       g_parser->FindFunction(s, &found_funcs);

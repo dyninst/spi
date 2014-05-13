@@ -107,13 +107,13 @@ default_entry(sp::SpPoint* pt) {
 
 void
 default_exit(sp::SpPoint* pt) {
-  /*
-    ph::PatchFunction* f = sp::Callee(pt);
+  
+/*    ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return;
 
     string callee_name = f->name();
     sp_print("Leave %s", callee_name.c_str());
-  */
+ */
 }
 
 // Utilities that payload writers can use in their payload functions

@@ -137,28 +137,9 @@ SpParser::GetRuntimeSymtabs(sp::SymtabSet& symtabs) {
     
     symtabs.insert(sym);
 
-    // Determine whether the agent is injected or preloaded. If injected_ is:
-    //   - true: injected by other process (libijagent.so is loaded)
-    //   - false: preloaded
-    
-/*    if (sym->name().find("libijagent.so") != string::npos) {
-      injected_ = true;
-    }*/
   }
   return al;
 }
-//Get the load address of the particular object
-/*dt::Address SpParser::getLoadAddress(sb::Symtab* sym)
-{
-	dt::Address load_addr=0;
-	//dt::SymbolReaderFactory *symfactory= getSymtabReaderFactory();
-	
-	//translate=AddressTranslate::createAddressTranslator(&procreader,symfactory,executable_);
-	return load_addr;
-} 
-*/
-
-
 
 
 // Create a bunch of PatchObjects from Symtabs
@@ -173,7 +154,6 @@ SpParser::CreatePatchobjs(sp::SymtabSet& unique_tabs,
     sb::Symtab* sym = *i;
     dt::Address load_addr = 0;
     al->getLoadAddress(sym, load_addr);
-  //  sp_debug("Load Address for the object %s is %lx",sym->name().c_str(),load_addr);
 
     // Parsing binary objects is very time consuming. We avoid
     // parsing the libraries that are either well known (e.g., libc,
@@ -500,7 +480,6 @@ class SpVisitor : public in::Visitor {
   dt::Address seg_val_;
 };
 
-// TODO (wenbin): is it okay to cache indirect callee?
 SpFunction*
 SpParser::callee(SpPoint* pt,
                  bool parse_indirect) {
@@ -523,11 +502,13 @@ SpParser::callee(SpPoint* pt,
 
     SpFunction* sfunc = f;
     assert(sfunc);
+    //If it is a direct call, store it in the cache
     pt->SetCallee(sfunc);
     return sfunc;
   }
   
   // 2. Looking for indirect call
+  //Do not cach the indirect call
   if (parse_indirect) {
     
     SpBlock* b = pt->GetBlock();
@@ -551,16 +532,20 @@ SpParser::callee(SpPoint* pt,
                        insn->size()).c_str());
     sp_debug("DUMP INSN - }");
 
+    //Get the instruction target from Instruction API
     in::Expression::Ptr trg = insn->getControlFlowTarget();
     dt::Address call_addr = 0;
     if (trg) {
       dt::Address segment_reg_val = 0;
 
+      //Get the call target address by applying the visitor pattern
       SpVisitor visitor(pt, segment_reg_val);
       trg->apply(&visitor);
       call_addr = visitor.call_addr();
       
       sp_debug("GOT CALL_ADDR - %lx", call_addr);
+
+      //Find the function by call address
       f = FindFunction(call_addr);
       if (f) {
         SpFunction* sfunc = FUNC_CAST(f);
@@ -979,17 +964,12 @@ bool SpParser::hasBeenBound(const sb::relocationEntry &entry,
     //unsigned tmp = 0;
 
     //Read the value in the address got_entry
-  //  dt::Address *bound_add_pointer=(dt::Address *)got_entry;
-   // sp_debug("bound address pointer %p", bound_add_pointer);
-   // bound_addr=*bound_add_pointer;
- // bound_addr=got_entry;
-  //  bound_addr = (entry.target_addr()+6+base_addr); 
     sp_debug("Bound address %lx ", got_entry);//bound_addr);
         // the callee function has been bound by the runtime linker
         // find function and return
-	SpFunction* func=FindFunction(got_entry);//bound_addr);
+	SpFunction* func=FindFunction(got_entry);
         if (func==NULL) {
-            sp_debug("hasBeenBound: FindFunction failed");
+            sp_debug("FindFunction in hasbeenBound failed");
             return false;
         } else {
 		sp_debug("Function from FindFunction(Address) %s",func->name().c_str());

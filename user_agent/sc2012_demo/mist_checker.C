@@ -435,7 +435,7 @@ IpcChecker::check(SpPoint* pt,
         u_.WriteTrace("</trace>\n");
       }
     }
-  } else  if (callee->name().compare("send") == 0) {
+  } /*else  if (callee->name().compare("send") == 0) {
               //              callee->name().compare("recv") == 0) {
     ArgumentHandle h;
     int* fd = (int*)PopArgument(pt, &h, sizeof(int));
@@ -462,13 +462,13 @@ IpcChecker::check(SpPoint* pt,
         
         snprintf(buf, 1024,
                  "<host>%s</host>",
-                 host);
+                 host, line);
         u_.WriteTrace(buf);
         u_.WriteTrace("</trace>");
 
       }
     }
-  }
+  }*/
 
   return true;
 }
@@ -607,7 +607,6 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
   }
  else if (callee->name().compare("execl") == 0 ||
              callee->name().compare("execlp") == 0 ||
-             callee->name().compare("exec") == 0 ||
              callee->name().compare("execle") == 0 ||
              callee->name().compare("execv") == 0 ||
              callee->name().compare("execvp") == 0) {
@@ -618,7 +617,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
 
     char buf[102400];
     snprintf(buf, 102400,
-             "<trace type=\"%s\" time=\"%lu\">%s</trace>",
+             "<trace type=\"%s\" time=\"%lu\">%s</trace>\n",
              callee->name().c_str(), u_.GetUsec(), *path);
  //   sp_print("Trace %s",buf);
     u_.WriteTrace(buf);
@@ -629,7 +628,6 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     system(cmd);
     */
   //  u_.CloseTrace();
-
     char **ptr = environ;
     char **new_envs = (char**)malloc(1024*sizeof(char*));
     int cur = 0;
@@ -681,7 +679,7 @@ bool ForkChecker::check(SpPoint* pt, SpFunction* callee) {
     fclose(fp);
 */
 
-  u_.ChangeTraceFile(); 
+   u_.ChangeTraceFile(); 
   }
 	return true;
 }
@@ -757,19 +755,20 @@ bool CloneChecker::post_check(SpPoint* pt,
       */
       char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"clone\" time=\"%lu\">%d</trace>",
+               "<trace type=\"clone\" time=\"%lu\">%d </trace>",
                u_.GetUsec(), ret);
       u_.WriteTrace(buf);
+//      u_.WriteTrace("</trace>");
       // mist_->fork_init_run();
     } else {
      /* char buf[1024];
       snprintf(buf, 1024,
-               "<trace type=\"failed clone\" time=\"%lu\">%d",
+               "<trace type=\"failed clone\" time=\"%lu\">%d </trace>",
                u_.GetUsec(), ret);
-      u_.WriteTrace(buf);
-      u_.WriteTrace("</trace>");
-      snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-failed-clone-seq-num", buf, getpid());
-      system(buf);*/
+      u_.WriteTrace(buf);*/
+    //  u_.WriteTrace("</trace>");
+     // snprintf(buf, 1024, "echo \"%s\" > /tmp/%d-failed-clone-seq-num", buf, getpid());
+     // system(buf);
     }
   }
 

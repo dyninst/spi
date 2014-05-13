@@ -219,12 +219,6 @@ namespace sp {
       *p++ = 0x41; // pop r10
       *p++ = 0x5a;
    }
-    //subtract 8 from rsp
-/*    *p++ = 0x48;
-    *p++ = 0x83;
-    *p++ = 0xec;
-    *p++ = 0x04;	*/
-  //  *p++ = 0x58;
 
 
     // Restored for direct/indirect call
@@ -490,21 +484,18 @@ namespace sp {
     return (p - (buf + offset));
   }
 
- //Salini: Copied from dyninstAPI/src/emit-x86.c and modified
+ //Copied from dyninstAPI/src/emit-x86.c and modified
 size_t 
 SpSnippet::emitMovImmToReg64(Register dest, long imm, bool is_64, char *buf, size_t offset)
 {
-  sp_debug("In emitMovImmtoReg64 with destination reg = %d, imm = %0x", dest, (unsigned int)imm);
    char* p = buf + offset;  
    Register tmp_dest = dest;
- //  gen.markRegDefined(dest);
    p += emitRex(is_64, NULL, NULL, &tmp_dest, p,0);
    if (is_64) {
       *p++ = static_cast<char>(0xB8 + tmp_dest);
       *((long *)p) = imm;
       p+= sizeof(long);
    }
-    sp_debug("returning size of instruction from emitMovImm = %ld",(p-(buf+offset)));
        return (p - (buf + offset));
 }
 
@@ -542,14 +533,11 @@ SpSnippet::emitRex(bool is_64, Register* r, Register* x, Register* b, char *buf,
        rex |= 0x01;
        *b &= 0x07;
     }
-    sp_debug("Rex is %0x",rex);
     // emit the rex, if needed
     // (note that some other weird cases not covered here
     //  need a "blank" rex, like using %sil or %dil)
     if (rex & 0x0f)
 	*p++ = static_cast<char>(rex);
-   sp_debug("Returning rex value = %0x", *(p-1));
-   sp_debug("size of return instruction is %ld",(p-(buf+offset))); 
 
     return (p-(buf+offset));
 }
@@ -559,13 +547,8 @@ SpSnippet::emitPopReg64(Register dest, char* buf, size_t offset ) {
 
    assert(buf);
    char* p = buf + offset;
-   sp_debug("In emitPop Reg 64");
    p+=emitRex(false,NULL,NULL,&dest,buf,offset);
     *p++ = static_cast<char>(0x58+dest);
-   char *print = buf+offset;
-   for(int i=0 ; i< (p-(buf+offset)) ;i++)   
-     sp_debug("copied %0x",*(print+i)); 
-   sp_debug("size of return instruction is %ld",(p-(buf+offset))); 
   return (p-(buf+offset));      
 }
 
@@ -575,16 +558,9 @@ SpSnippet::emitPopReg64(Register dest, char* buf, size_t offset ) {
 			  size_t offset) {
    assert(buf);
     char* p = buf + offset;
-   sp_debug("In emitPush Reg 64");
    p+= emitRex(false, NULL, NULL, &src, buf, offset);
    *p++ = static_cast<char>(0x50+src);
-   char *print = buf+offset;
-   for(int i=0 ; i< (p-(buf+offset)) ;i++)   
-     sp_debug("copied %0x",*(print+i)); 
-   sp_debug("size of return instruction is %ld",(p-(buf+offset))); 
   return (p-(buf+offset));      
-  // emitSimpleInsn(0x50+src, buf, offset);
-//   if (gen.rs()) gen.rs()->incStack(8);
   }
 
 
@@ -613,7 +589,6 @@ SpSnippet::emitPopReg64(Register dest, char* buf, size_t offset ) {
   SpSnippet::align_stack(void* context) {
 	assert(context);
 	ucontext_t* ctx = (ucontext_t*)context;
-	sp_debug("Inital Stack value is %lx",(dt::Address)ctx->uc_mcontext.gregs[REG_RSP]);
 	ctx->uc_mcontext.gregs[REG_RSP] -=8;
 	return ctx->uc_mcontext.gregs[REG_RSP];
   }
@@ -1013,7 +988,6 @@ bool SpSnippet::getTargetAddr (dt::Address a, in::Instruction::Ptr insn, dt::Add
     if (exp->bind(thePC.get(), in::Result(in::u64, a + insn->size())) ||
         exp->bind(thePCFixme.get(), in::Result(in::u64, a + insn->size()))) {
       // Bind succeeded, eval to get targetAddr address
-	sp_debug("Bind succeeded");
       in::Result res = exp->eval();
       if (!res.defined) {
         sp_debug("ERROR: failed bind/eval at %lx",a);
@@ -1024,7 +998,6 @@ bool SpSnippet::getTargetAddr (dt::Address a, in::Instruction::Ptr insn, dt::Add
      return true;
     }
 }
-   sp_debug("Didnt use PC to read memory");
   // Didn't use the PC to read memory; thus we have to grind through
   // all the operands. We didn't do this directly because the 
   // memory-topping deref stops eval...
@@ -1032,14 +1005,12 @@ bool SpSnippet::getTargetAddr (dt::Address a, in::Instruction::Ptr insn, dt::Add
   insn->getOperands(operands);
   for (vector<in::Operand>::iterator iter = operands.begin();
        iter != operands.end(); ++iter) {
- 	sp_debug("Inside for");
     // If we can bind the PC, then we're in the operand
     // we want.
     in::Expression::Ptr exp = iter->getValue();
     if (exp->bind(thePC.get(), in::Result(in::u64, a + insn->size())) ||
         exp->bind(thePCFixme.get(), in::Result(in::u64, a + insn->size()))) {
       // Bind succeeded, eval to get target address
-	sp_debug("Bind success");
       in::Result res = exp->eval();
       assert(res.defined);
       targetAddr = res.convert<Address>();
@@ -1066,8 +1037,8 @@ return false;
     sp_debug("READ USE PC: %s", g_parser->DumpInsns((void*)insn->ptr(),insn->size()).c_str());
    if(!getTargetAddr(a, insn, targetAddr))
 	sp_debug("Cannot obtan target address");
-   sp_debug("found target address is %lx",targetAddr);	
-    //Salini:  copied and  modified from dynisntAPT/src/codegen-x86.C
+   sp_debug("Target address is %lx",targetAddr);	
+    //Copied and  modified from dynisntAPT/src/codegen-x86.C
     instruction ins(insn->ptr());
     const unsigned char *origInsn=ins.ptr();
     unsigned insnType = ins.type();
@@ -1077,11 +1048,8 @@ return false;
     
     bool is_data_abs64 = false;
     unsigned nPrefixes = count_prefixes(insnType);
- //   sp_debug("No of prefixes in the instruction is %u", nPrefixes);	
     signed long newDisp  = targetAddr - from ; 
    
-     sp_debug("New displacement is %lx", newDisp);
-   //count opcode bytes (1 or 2) 
    unsigned nOpcodeBytes = 1;
    if (*(origInsn + nPrefixes) == 0x0F) {
       nOpcodeBytes = 2;
@@ -1091,24 +1059,18 @@ return false;
        }
    }
  
-   //sp_debug("No of opcodes %u", nOpcodeBytes); 
    Register pointer_reg = (Register)-1;
 
    unsigned  char *newInsn = (unsigned char*)p;
   
  #if defined(arch_x86_64)        
    if (!is_disp32(newDisp+insnSz) && !is_addr32(targetAddr)) {
-	//sp_debug("Replacing with 64 bit");
       // Case C: replace with 64-bit.
       is_data_abs64 = true;
       unsigned char mod_rm = *(origInsn + nPrefixes + nOpcodeBytes);
-      //sp_debug("Mod rm is %0x",mod_rm);
       pointer_reg = (mod_rm & 0x38) != 0 ? 0 : 3;
-      //sp_debug("Pointer register value is %d",pointer_reg);	
       newInsn += emitPushReg64(pointer_reg, (char*)newInsn,0);
       newInsn += emitMovImmToReg64(pointer_reg, targetAddr, true, (char*)newInsn,0);
-   //   for(int i=0 ; i< (newInsn-(unsigned char*)p);i++)
-        //  sp_debug("Imm copy copied %0x",*(p+i));
    }
   #endif
 
@@ -1119,27 +1081,21 @@ return false;
    for (unsigned u = 0; u < nPrefixes; u++)
    {
 	 *newInsn++ = *origInsn++;
-//	sp_debug("copied prefix %0x",*(newInsn-1)); 
    }
    from += nPrefixes;
 
    if (*origInsn == 0x0F) {
       *newInsn++ = *origInsn++;
-//	sp_debug("copied opcode %0x",*(newInsn-1)); 
        // 3-byte opcode support
        if (*origInsn == 0x38 || *origInsn == 0x3A) {
            *newInsn++ = *origInsn++;
-//	sp_debug("copied opcode %0x",*(newInsn-1)); 
        }
    }
 
    // And the normal opcode
- //  sp_debug("Copying normal opcode %0x", *origInsn);
    *newInsn++ = *origInsn++;
-  // sp_debug("copied normal opcode %0x",*(newInsn-1)); 
 
    if (is_data_abs64) {
-//	sp_debug("data is abs_64");
       // change ModRM byte to use [pointer_reg]: requires
       // us to change last three bits (the r/m field)
       // to the value of pointer_reg
@@ -1147,21 +1103,14 @@ return false;
       assert(pointer_reg != (Register)-1);
       mod_rm = (mod_rm & 0xf8) + pointer_reg;
       *newInsn++ = mod_rm;
-  //     sp_debug("copied modrm inside data_abs %0x",*(newInsn-1));
 
    }
    else if (is_disp32(newDisp+insnSz)) {
-//	sp_debug("Displacement is 32 bit");
       // Whee easy case
       *newInsn++ = *origInsn++;
-//	sp_debug("Copied %0x", *(newInsn-1));
       // Size doesn't change....
       *((int *)newInsn) = (int)(newDisp - insnSz);
       newInsn += 4;
-//	sp_debug("Copied %0x",*(newInsn-4));
-//	sp_debug("Copied %0x",*(newInsn-3));
-//	sp_debug("Copied %0x",*(newInsn-2));
-//	sp_debug("Copied %0x",*(newInsn-1));
    }
   else if (is_addr32(targetAddr)) {
 	sp_debug("Target address is 32 bit");
@@ -1180,8 +1129,8 @@ return false;
       newInsn += 4;
    }
    else {
-	sp_debug("Reaching what should not be reached");
       // Should never be reached...
+	sp_debug("Reaching what should not be reached");
       assert(0);
    }
 
@@ -1190,7 +1139,6 @@ return false;
    origInsn += 4;
    while (origInsn - origInsnStart < (int)insnSz) {
       *newInsn++ = *origInsn++;
-  //     sp_debug("copied immediate after the displacement for RIP %0x",*(newInsn-1));
 
    }
 
@@ -1204,29 +1152,6 @@ return false;
 #endif
    return (newInsn-(unsigned char*)p);
 
- 	
-/*
-      char insn_buf[20];
-      memcpy(insn_buf, insn->ptr(), insn->size());
-      int* dis_buf = get_disp(insn, insn_buf);
-      long old_rip = a;
-      long new_rip = (long)p;
-      long long_new_dis = (old_rip - new_rip) + *dis_buf;
-
-      sp_debug("RELOC INSN - insn addr %lx, old_rip %lx, new_rip %lx,"
-               " displacement %x", a, old_rip,new_rip, *dis_buf);
-      sp_debug("RELOC INSN - new displacement %lx", long_new_dis);
-
-      if (sp::IsDisp32(long_new_dis)) {
-        // Easy case: just modify the displacement
-        *dis_buf = (int)long_new_dis;
-        memcpy(p, insn_buf, insn->size());
-        return insn->size();
-      } else {
-        // General purpose: emulate the instruction
-        size_t insn_size = emulate_pcsen(insn, *exp.begin(), a, p);
-        return insn_size;
-      }*/
     } else {
       // For non-pc-sensitive and non-last instruction, just copy it
       memcpy(p, insn->ptr(), insn->size());

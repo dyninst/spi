@@ -267,6 +267,7 @@ namespace sp {
     g_parser->SetLibrariesToInstrument(libs_to_inst_);
     g_parser->SetFuncsNotToInstrument(funcs_not_to_inst_);
 
+    //Parse and store the necessary` datastructures
     parser_->Parse();
     assert(g_parser->mgr());
 

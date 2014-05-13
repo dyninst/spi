@@ -3,6 +3,7 @@
 #include "SpInc.h"
 #include "trace_mgr.h"
 #include "mist_utils.h"
+#include <errno.h>
 
 namespace mist {
 
@@ -216,7 +217,7 @@ TraceMgr::OpenFile() {
   filename_ = trace_file_name;
   fp_ = fopen(trace_file_name, "w+");
   if (fp_ == NULL) {
-    fprintf(stderr, "fail to open %s\n", trace_file_name);
+    sp_print("fail to open %s because of error code %d", trace_file_name,errno);
     return;
   }
   setbuf(fp_, NULL);

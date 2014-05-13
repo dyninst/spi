@@ -11,27 +11,15 @@ Mist::Mist() {
   // Each init_checker is called only once when this agent is loaded
   init_checkers_.insert(new ProcInitChecker);   
   // Each checker is called for each point
-  checkers_.insert(new IpcChecker);
   checkers_.insert(new ForkChecker(this));
   checkers_.insert(new CloneChecker(this));
-//  checkers_.insert(new ExitChecker);
-//  checkers_.insert(new ChangeIdChecker);
-  
- /* checkers_.insert(new FileOpenChecker);
-  checkers_.insert(new LibChecker);
-  checkers_.insert(new MmapChecker);
-  checkers_.insert(new ChmodChecker);
-  checkers_.insert(new ThreadChecker);
-   */
-  // Each fini_checker is called only once when this agent is unloaded
- // fini_checkers_.insert(new ProcFiniChecker);
-//  init_run();
-   record_params();
+
+  //Records what functions to instrument from /tmp/config.txt   
+  record_params();
 
 }
 
 Mist::~Mist() {
-//  init_run();
   fini_run();
 
   // Clean up
@@ -277,7 +265,6 @@ void Mist::run(SpPoint* pt, SpFunction* f) {
 				strcpy(filetype,"SOCKET");
                          if(r >= 0) {
                                 filename[r]='\0';
-                            //    snprintf(buf,1024,"<file-descriptor>%d</file-descriptor><file type=%s name= %s> </file>",*fd,filetype, filename);
  	                        snprintf(buf,1024,"\n\t<file-descriptor>%d</file-descriptor><file name= \"%s\"> </file>",*fd, filename);
 
                                 u_.WriteTrace(buf);
@@ -363,33 +350,6 @@ void Mist::post_run(SpPoint* pt, SpFunction* f) {
                         u_.WriteTrace(buf);
 			}
 		}
-	/*	if(strcmp("",para.c_str()) ==0 ) {
-			
-    			ArgumentHandle h;
-			char** path = (char**)PopArgument(pt, &h, sizeof(char*));
-		        char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
-			char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
-    			FILE* fp = fopen(u_.TraceFileName().c_str(), "r+");
-    
-			    if (fp) {
-			    fseek(fp, -19, SEEK_END);
-			    fprintf(fp, "%s</trace></traces></process>", buf);
-			    fclose(fp);
-			    } else {
-			      char trace_file_name[255];
-			      unsigned long seq = MistUtils::GetUsec();
-			      snprintf(trace_file_name, 255, "/tmp/%d-%.14lu.xml", getpid(), seq);
-			      fp = fopen(trace_file_name, "w");
-			      if (fp) {
-			        fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><process>"
-		                "<head></head><traces>%s</trace></traces></process>", buf);
-			        fclose(fp);
-      				}
-    			   }
-			    // Execve!
-			    u_.ChangeTraceFile();
-	
-		}*/
 	     }
                        u_.WriteTrace("\n</trace>");
 	}
