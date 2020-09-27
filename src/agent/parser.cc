@@ -32,16 +32,19 @@
 #include <dirent.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <ucontext.h>
 #include <stack>
 
-#include "instructionAPI/h/BinaryFunction.h"
-#include "instructionAPI/h/Immediate.h"
-#include "instructionAPI/h/Register.h"
-#include "instructionAPI/h/Visitor.h"
-#include "patchAPI/h/PatchMgr.h"
-#include "symtabAPI/h/AddrLookup.h"
-#include "symtabAPI/h/Symtab.h"
+#include "BinaryFunction.h"
+#include "Immediate.h"
+#include "Register.h"
+#include "Visitor.h"
+#include "PatchMgr.h"
+#include "AddrLookup.h"
+#include "Symtab.h"
+#include "dyntypes.h"
 
 #include "agent/context.h"
 #include "agent/parser.h"
@@ -52,8 +55,6 @@
 #include "agent/patchapi/point.h"
 #include "common/utils.h"
 #include "injector/injector.h"
-
-
 
 namespace sp {
 
@@ -79,7 +80,7 @@ SpParser::~SpParser() {
   }
 
   // Destory shared memory we use
-  shmctl(IJMSG_ID, IPC_RMID, NULL);
+  shmctl(IJMSG_ID+getpid(), IPC_RMID, NULL);
 }
 
 // Agent-writer can create their own Parser. So use shared point to make
@@ -190,16 +191,20 @@ SpObject*
 SpParser::GetExeFromProcfs(sp::PatchObjects& patch_objs) {
   for (PatchObjects::iterator oi = patch_objs.begin();
        oi != patch_objs.end(); oi++) {
+    sp_debug("Trying next patch obj");
     SpObject* obj = OBJ_CAST(*oi);
     assert(obj);
     char* s1 = sp_filename(sp::GetExeName().c_str());
     char* s2 = sp_filename(obj->name().c_str());
-    // sp_debug("PARSE EXE - s1=%s, s2 =%s", s1, s2);
     if (strcmp(s1, s2) == 0) {
       sp_debug("GOT EXE - %s is an executable shared library", s2);
       return obj;
     } // strcmp
+    else {
+      sp_debug("PARSE EXE - s1=%s, s2 =%s", s1, s2);
+    }
   } // for each obj
+  sp_debug("failed to find exe from procfs");
   return NULL;
 }
 
@@ -279,11 +284,15 @@ SpParser::CreateObjectFromRuntime(sb::Symtab* sym,
                                   dt::Address load_addr) {
 
   // Parse binary objects using ParseAPI::CodeObject::parse().
+  sp_debug("Start create obj from runtime symtab name: %s", sym->name().c_str());
   pe::SymtabCodeSource* scs = new pe::SymtabCodeSource(sym);
   code_srcs_.push_back(scs);
+  sp_debug("Construcint code obj");
   pe::CodeObject* co = new pe::CodeObject(scs);
   code_objs_.push_back(co);
+  sp_debug("parsing");
   co->parse();
+  sp_debug("finished paring code obj");
 
   // Uncomment this to parse stripped object
   /*
@@ -347,6 +356,7 @@ SpParser::Parse() {
   if (!CreatePatchobjs(unique_tabs, al, patch_objs)) {
     sp_perror("FAILED TO CREATE PATCHOBJS");
   }
+  sp_debug("Created patchapi objs");
 
   // Step 3: In the case of executable shared library, we cannot get
   // exe_obj_ via symtabAPI, so we resort to /proc
@@ -377,16 +387,16 @@ SpParser::DumpInsns(void* addr,
   string s;
   char buf[256];
   in::InstructionDecoder deco(addr, size, cs->getArch());
-  in::Instruction::Ptr insn = deco.decode();
-  while(insn) {
+  in::Instruction insn = deco.decode();
+  while(insn.size() != 0) {
     sprintf(buf, "    %lx(%2lu bytes): %-25s | ", base,
-            (unsigned long)insn->size(), insn->format(base).c_str());
-    char* raw = (char*)insn->ptr();
-    for (unsigned i = 0; i < insn->size(); i++)
+            (unsigned long)insn.size(), insn.format(base).c_str());
+    char* raw = (char*)insn.ptr();
+    for (unsigned i = 0; i < insn.size(); i++)
       sprintf(buf, "%s%2x ", buf, 0xff&raw[i]);
     sprintf(buf, "%s\n", buf);
     s += buf;
-    base += insn->size();
+    base += insn.size();
     insn = deco.decode();
   }
   return s;
@@ -499,6 +509,7 @@ SpParser::callee(SpPoint* pt,
     if (tmp_f && tmp_f != f) {
       f = tmp_f;
     }
+    sp_debug("got callee, found function %lx", (long unsigned int) f);
 
     SpFunction* sfunc = f;
     assert(sfunc);
@@ -520,20 +531,20 @@ SpParser::callee(SpPoint* pt,
       return NULL;
     }
 
-    sp_debug("PARSING INDIRECT - for call insn %lx",
-             b->last());
+    //sp_debug("PARSING INDIRECT - for call insn %lx", b->last());
+    //sp_debug("PARSING INDIRECT - for call insn");
 
-    in::Instruction::Ptr insn = b->orig_call_insn();
-    assert(insn);
+    in::Instruction insn = b->orig_call_insn();
+    assert(insn.ptr());
 
-    sp_debug("DUMP INDCALL INSN (%ld bytes)- {", (long)insn->size());
-    sp_debug("%s",
-             DumpInsns((void*)insn->ptr(),
-                       insn->size()).c_str());
-    sp_debug("DUMP INSN - }");
+    // sp_debug("DUMP INDCALL INSN (%ld bytes)- {", (long)insn.size());
+    // sp_debug("%s",
+    //          DumpInsns((void*)insn.ptr(),
+    //                    insn.size()).c_str());
+    // sp_debug("DUMP INSN - }");
 
     //Get the instruction target from Instruction API
-    in::Expression::Ptr trg = insn->getControlFlowTarget();
+    in::Expression::Ptr trg = insn.getControlFlowTarget();
     dt::Address call_addr = 0;
     if (trg) {
       dt::Address segment_reg_val = 0;
@@ -543,22 +554,22 @@ SpParser::callee(SpPoint* pt,
       trg->apply(&visitor);
       call_addr = visitor.call_addr();
       
-      sp_debug("GOT CALL_ADDR - %lx", call_addr);
+      //sp_debug("GOT CALL_ADDR - %lx", call_addr);
 
       //Find the function by call address
       f = FindFunction(call_addr);
       if (f) {
         SpFunction* sfunc = FUNC_CAST(f);
         assert(sfunc);
-        sp_debug("PARSED INDIRECT - %lx is %s in %s", b->last(),
-                 sfunc->name().c_str(),
-                 sfunc->GetObject()->name().c_str());
+        // sp_debug("PARSED INDIRECT - %lx is %s in %s", b->last(),
+        //          sfunc->name().c_str(),
+        //          sfunc->GetObject()->name().c_str());
         return sfunc;
       }
     }
 
-    sp_debug("CANNOT FIND INDRECT CALL - for call insn %lx",
-             b->last());
+    // sp_debug("CANNOT FIND INDRECT CALL - for call insn %lx",
+    //          b->last());
   //  addr_callee_not_found_.insert(b->last());
     return NULL;
   }
@@ -585,10 +596,11 @@ void
 SpParser::GetFrame(long* pc,
                    long* sp,
                    long* bp) {
-  IjMsg* shm = (IjMsg*)GetSharedMemory(1986, sizeof(IjMsg));
+  IjMsg* shm = (IjMsg*)GetSharedMemory(IJMSG_ID+getpid(), sizeof(IjMsg));
   *pc = shm->pc;
   *sp = shm->sp;
   *bp = shm->bp;
+  FreeSharedMemory(1986+getpid(), sizeof(IjMsg));
 }
 
 
@@ -706,6 +718,7 @@ SpParser::FindFunction(dt::Address addr) {
       return NULL;
     }
   }
+  sp_debug("Function not found");
   addr_func_not_found_.insert(addr);
   return NULL;
 }
@@ -857,7 +870,7 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   for (pe::CodeObject::funclist::iterator fit = all.begin();
        fit != all.end(); fit++) {
 
-    // sp_debug("FUNC - %s", (*fit)->name().c_str());
+    //sp_debug("FUNC - %s", (*fit)->name().c_str());
     // Get or create a PatchFunction instance
 
     SpFunction* found = FUNC_CAST(obj->getFunc(*fit));
@@ -887,6 +900,8 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
     }
     
     // Skip .plt functions
+    // commented because unable to find the region
+    sp_debug("looking for region that contains %lu", (*fit)->addr());
     sb::Region* region = sym->findEnclosingRegion((*fit)->addr());
     assert(region);
     if (region->getRegionName().compare(".plt") == 0) {

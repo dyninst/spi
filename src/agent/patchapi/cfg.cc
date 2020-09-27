@@ -44,8 +44,8 @@ namespace sp {
     sb::Symtab* sym = GetObject()->symtab();
     assert(sym);
     dt::Address offset = function()->addr();
-    std::vector<sb::Symbol*>* symbols = sym->findSymbolByOffset(offset);
-    if (!symbols) {
+    std::vector<sb::Symbol*> symbols = sym->findSymbolByOffset(offset);
+    if (!symbols.empty()) {
       sb::Region* reg;
       if ((reg = sym->findEnclosingRegion(offset))) {
         if (reg->getRegionName().compare(".plt") == 0) {
@@ -53,10 +53,11 @@ namespace sp {
         }
       }
     }
-    if (!symbols || symbols->size() == 0) {
+    if (symbols.size() == 0) {
+      //sp_debug("GetMangledName: found no symbol, returning empty string");
       return "";
     }
-    return (*symbols)[0]->getMangledName();
+    return (symbols)[0]->getMangledName();
   }
 
   std::string SpFunction::GetPrettyName() {
@@ -70,9 +71,9 @@ namespace sp {
              GetObject()->load_addr(),
              offset);
     */
-    std::vector<sb::Symbol*>* symbols = sym->findSymbolByOffset(offset);
+    std::vector<sb::Symbol*> symbols = sym->findSymbolByOffset(offset);
 
-    if (!symbols) {
+    if (!symbols.empty()) {
       sb::Region* reg;
       if ((reg = sym->findEnclosingRegion(offset))) {
         if (reg->getRegionName().compare(".plt") == 0) {
@@ -81,11 +82,11 @@ namespace sp {
       }
     }
 
-    if (!symbols || symbols->size() == 0) {
+    if (symbols.size() == 0) {
       return "";
     }
 
-    return (*symbols)[0]->getPrettyName();
+    return (symbols)[0]->getPrettyName();
   }
 
 // SpBlock
@@ -95,7 +96,7 @@ namespace sp {
 		// Save the call instruction
 		orig_call_addr_ = last();
 		orig_call_insn_ = getInsn(orig_call_addr_);
-    if (!orig_call_insn_) return false;
+    if (!orig_call_insn_.ptr()) return false;
 
 		// Save the entire block
     char* blk_buf = (char*)start();

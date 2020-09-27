@@ -38,12 +38,12 @@
 #define OVERRIDE
 #define OVERLOAD
 
-#define COMMON_EXPORT
-#define INJECTOR_EXPORT
-#define AGENT_EXPORT
+#define COMMON_EXPORT __attribute__((visibility ("default")))
+#define INJECTOR_EXPORT __attribute__((visibility ("default")))
+#define AGENT_EXPORT __attribute__((visibility ("default")))
 
 // Some constants
-const int kLenStringBuffer = 255;
+const int kLenStringBuffer = 280;
 
 //Since condor does not like outputting stuffs to g_error_fp or g_output_fp
 extern FILE* g_output_fp;
@@ -52,11 +52,20 @@ extern FILE* g_error_fp;
 
 // Print facility
 #define sp_perror(...) do {\
-	char* nodir = basename((char*)__FILE__);							\
-  fprintf(g_error_fp, "ERROR in %s [%d]: ", nodir, __LINE__); \
-  fprintf(g_error_fp, __VA_ARGS__); \
-  fprintf(g_error_fp, "\n"); \
-  ::exit(0);						 \
+  if (getenv("SP_DEBUG")) {   \
+  		char* nodir = basename((char*)__FILE__);							\
+    fprintf(stderr, "ERROR in %s [%d]: ", nodir, __LINE__); \
+    fprintf(stderr, __VA_ARGS__); \
+    fprintf(stderr, "\n"); \
+    ::exit(0);						 \
+  } \
+  else if (getenv("SP_FDEBUG")) {               \
+    char* nodir = basename((char*)__FILE__);							\
+    fprintf(g_error_fp, "ERROR in %s [%d]: ", nodir, __LINE__); \
+    fprintf(g_error_fp, __VA_ARGS__); \
+    fprintf(g_error_fp, "\n"); \
+    ::exit(0);						 \
+  }					 \
 	} while(0)
 /*
 #define sp_print(...) do {\
@@ -65,12 +74,16 @@ extern FILE* g_error_fp;
   fflush(g_output_fp); \
 } while(0)
 */
-#define sp_print(...) do {\
-  fprintf(g_output_fp, __VA_ARGS__); \
-  fprintf(g_output_fp, "\n"); \
+#define sp_print(...) do { \
+  if (getenv("SP_FDEBUG")) {  \
+    char* nodir = basename((char*)__FILE__);  \
+    fprintf(g_output_fp, __VA_ARGS__);  \
+    fprintf(g_output_fp, "\n");  \
+  } else {  \
+    fprintf(stdout, __VA_ARGS__); \
+    fprintf(stdout, "\n"); \
+  }  \
 } while(0)
-
-extern FILE* g_debug_fp;
 
 #define sp_debug(...) do { \
   if (getenv("SP_DEBUG")) {   \

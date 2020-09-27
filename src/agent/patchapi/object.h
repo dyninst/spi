@@ -34,7 +34,7 @@
 
 #include "common/common.h"
 
-#include "patchAPI/h/PatchObject.h"
+#include "PatchObject.h"
 
 
 namespace sp {

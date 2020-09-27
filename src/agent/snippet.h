@@ -41,7 +41,9 @@
 #include "common/common.h"
 #include "agent/payload.h"
 #include "Buffer.h"
-#include "common/h/arch.h"
+//#include "arch.h"
+
+typedef unsigned int Register;
 
 namespace sp {
 
@@ -99,7 +101,7 @@ namespace sp {
     static dt::Address align_stack(void* context);
     static size_t jump_abs_size();
 
-    static bool UsePC(in::Instruction::Ptr);
+    static bool UsePC(in::Instruction);
 
     // XXX: to make inheritence happen
     virtual bool generate(ph::Point *, Dyninst::Buffer &) { return true; }
@@ -157,14 +159,14 @@ namespace sp {
                        char* buf,
                        size_t offset);
     size_t reloc_insn(dt::Address src_insn,
-                      in::Instruction::Ptr insn,
+                      in::Instruction insn,
                       dt::Address last,
                       char* buf);
     size_t reloc_insn_internal(dt::Address a,
-                      in::Instruction::Ptr insn,
+                      in::Instruction insn,
                       std::set<in::Expression::Ptr>& exp,
                      bool use_pc,char* p);
-     bool getTargetAddr(dt::Address a, in::Instruction::Ptr insn, dt::Address &targetAddr);
+     bool getTargetAddr(dt::Address a, in::Instruction insn, dt::Address &targetAddr);
 
   };
 }

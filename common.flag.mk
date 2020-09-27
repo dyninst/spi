@@ -4,7 +4,7 @@ DYNLINK ?= false
 # For COMMON
 #=================================================
 
-COMMON_FLAGS     = -fPIC -Werror -Wall
+COMMON_FLAGS     = -fPIC -g #-Werror -Wall
 ifdef SP_RELEASE
   COMMON_FLAGS  += -DSP_RELEASE
 endif
@@ -12,30 +12,20 @@ endif
 COMMON_IFLAGS     = -I$(SP_DIR)/h
 COMMON_IFLAGS    += -I$(SP_DIR)/src
 COMMON_IFLAGS    += -I$(DYNINST_DIR)
-COMMON_IFLAGS    += -I$(DYNINST_DIR)/common/h
-COMMON_IFLAGS    += -I$(DYNINST_DIR)/dynutil/h
-COMMON_IFLAGS    += -I$(DYNINST_DIR)/symtabAPI/h
+COMMON_IFLAGS    += -I$(DYNINST_DIR)/include
 
-COMMON_LDFLAGS  += -L$(DYNINST_DIR)/patchAPI/$(PLATFORM)
+COMMON_LDFLAGS  += -L$(DYNINST_DIR)/lib
 COMMON_LDFLAGS  += -lpatchAPI
-COMMON_LDFLAGS  += -L$(DYNINST_DIR)/stackwalk/$(PLATFORM)
 COMMON_LDFLAGS  += -lstackwalk
-COMMON_LDFLAGS   += -L$(DYNINST_DIR)/proccontrol/$(PLATFORM)
 COMMON_LDFLAGS   += -lpcontrol
-COMMON_LDFLAGS  += -L$(DYNINST_DIR)/parseAPI/$(PLATFORM)
 COMMON_LDFLAGS  += -lparseAPI
-COMMON_LDFLAGS  += -L$(DYNINST_DIR)/instructionAPI/$(PLATFORM)
 COMMON_LDFLAGS  += -linstructionAPI
-COMMON_LDFLAGS   += -L$(DYNINST_DIR)/symtabAPI/$(PLATFORM)
 COMMON_LDFLAGS   += -lsymtabAPI
-COMMON_LDFLAGS   += -L$(DYNINST_DIR)/symlite/$(PLATFORM)
 COMMON_LDFLAGS   += -lsymLite
-COMMON_LDFLAGS   += -L$(DYNINST_DIR)/dwarf/$(PLATFORM)
 COMMON_LDFLAGS   += -ldynDwarf
-COMMON_LDFLAGS   += -L$(DYNINST_DIR)/elf/$(PLATFORM)
 COMMON_LDFLAGS   += -ldynElf
-COMMON_LDFLAGS   += -L$(DYNINST_DIR)/common/$(PLATFORM)
 COMMON_LDFLAGS   += -lcommon
+COMMON_LDFLAGS   += -lboost_system
 
 COMMON_LDFLAGS   += -lpthread -lthread_db
 
@@ -61,8 +51,7 @@ IJ_FLAGS   += -D_GNU_SOURCE
 IJ_LDFLAGS  = $(COMMON_LDFLAGS)
 
 IJ_IFLAGS  += $(COMMON_IFLAGS)
-IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/h
-IJ_IFLAGS  += -I$(DYNINST_DIR)/proccontrol/src
+IJ_IFLAGS  += -I$(DYNINST_DIR)/include
 
 IJA_FLAGS   += -fPIC
 
@@ -89,10 +78,7 @@ AG_LDFLAGS  = $(COMMON_LDFLAGS)
 
 AG_IFLAGS  += $(COMMON_IFLAGS)
 AG_IFLAGS  += $(IJ_IFLAGS)
-AG_IFLAGS  += -I$(DYNINST_DIR)/patchAPI/h
-AG_IFLAGS  += -I$(DYNINST_DIR)/parseAPI/h
-AG_IFLAGS  += -I$(DYNINST_DIR)/instructionAPI/h
-AG_IFLAGS  += -I$(DYNINST_DIR)/stackwalk/h
+AG_IFLAGS  += -I$(DYNINST_DIR)/include
 
 #=================================================
 # For system tests

@@ -139,14 +139,14 @@ namespace sp {
       }
 
 			// We should have already escaped instrumented points in Propeller
-			// If not, something worong happens
+			// If not, something wrong happens
 			assert(!blk->instrumented());
 
       // Handle tail call
-			in::Instruction::Ptr callinsn = blk->getInsn(blk->last());
-			assert(callinsn);
+			in::Instruction callinsn = blk->getInsn(blk->last());
+			assert(callinsn.ptr());
 
-      if (callinsn->getCategory() == in::c_BranchInsn) {
+      if (callinsn.getCategory() == in::c_BranchInsn) {
 				sp_debug("TAIL CALL - for call insn %lx", blk->last());
 				if (getenv("SP_NO_TAILCALL"))	{
 					continue;

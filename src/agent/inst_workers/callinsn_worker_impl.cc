@@ -66,6 +66,9 @@ namespace sp {
 			return false;
 		}
 
+    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
+																			 b->size()).c_str());
+
     // 2. is it a direct call instruction
     if (call_insn[0] != (char)0xe8) {  // A direct call?
 			sp_debug("NOT NORMAL CALL");
@@ -73,9 +76,11 @@ namespace sp {
 				sp_debug("NOT TAIL CALL - try other workers");
 				return false;
 			} else {
-				sp_debug("IS TAIL CALL");
-				assert(call_insn_size == 5 &&
-							 "LARGE INDIRECT TAIL CALL, UNSUPPORTED");
+				sp_debug("IS TAIL CALL, call insn size: %lu", call_insn_size);
+        sp_debug("Try other workers");
+        return false;
+				// assert(call_insn_size == 5 &&
+				// 			 "LARGE INDIRECT TAIL CALL, UNSUPPORTED");
 			}
     }
 

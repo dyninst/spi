@@ -189,6 +189,7 @@ SpTcpWorker::Inject(SpChannel* c,
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
 
   // Execute the command
+  unsetenv("LD_PRELOAD");
   FILE* fp = popen(cmd_exe.c_str(), "r");
   if(fp==NULL)
   {

@@ -35,9 +35,10 @@
 #ifndef _SPADDRSPACE_H_
 #define _SPADDRSPACE_H_
 
-#include "patchAPI/h/AddrSpace.h"
+#include "AddrSpace.h"
 
 #include "common/common.h"
+using std::string;
 
 namespace sp {
   class SpObject;

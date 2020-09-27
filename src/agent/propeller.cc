@@ -38,8 +38,8 @@
 #include "agent/inst_workers/inst_worker_delegate.h" 
 #include "agent/inst_workers/trap_worker_impl.h"
 
-#include "patchAPI/h/Command.h"
-#include "patchAPI/h/PatchMgr.h"
+#include "Command.h"
+#include "PatchMgr.h"
 
 #include <signal.h>
 namespace sp {
@@ -126,7 +126,6 @@ namespace sp {
                  (dt::Address)callee, (dt::Address)p);
       } else {
         if (inst_calls) {
-          // sp_print("SKIP INDIRECT CALL - at %lx", blk->last());
           sp_debug("SKIP INDIRECT CALL - at %lx", blk->last());
           continue;
         }

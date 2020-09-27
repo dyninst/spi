@@ -36,6 +36,8 @@
 #include "agent/thread_mgr.h"
 #include "common/utils.h"
 
+using std::string;
+
 namespace sp {
 extern SpContext* g_context;
 extern SpParser::ptr g_parser;

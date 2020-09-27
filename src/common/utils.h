@@ -165,6 +165,8 @@ namespace sp {
   COMMON_EXPORT void* GetSharedMemory(int id,
                                       size_t size);
 
+  COMMON_EXPORT void FreeSharedMemory(int id, size_t size);
+
   // For debugging
   COMMON_EXPORT void SetSegfaultSignal();
 

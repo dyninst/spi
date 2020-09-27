@@ -462,6 +462,7 @@ SpIpcMgr::BeforeExit(SpPoint* pt) {
   //Detect fork for pipe
   if (ipc_mgr->IsFork(f->name().c_str())) {
     long pid = sp::ReturnValue(pt);
+    sp_debug("fork: pid[%ld]", pid);
     // Receiver
     if (pid == 0) {
       ipc_mgr->pipe_worker()->SetLocalStartTracing(0);

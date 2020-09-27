@@ -64,7 +64,7 @@ namespace sp {
                             ph::PatchMgrPtr      m,
                             ph::PatchBlock*      b,
                             Dyninst::Address     a,
-                            in::Instruction::Ptr i,
+                            in::Instruction i,
                             ph::PatchFunction *f) {
     return new SpPoint(t, m, b, a, i, f);
   }

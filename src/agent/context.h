@@ -46,8 +46,8 @@
 #include "agent/snippet.h"
 #include "agent/ipc/ipc_mgr.h"
 
-#include "stackwalk/h/frame.h"
-#include "stackwalk/h/walker.h"
+#include "frame.h"
+#include "walker.h"
 
 namespace sp {
 

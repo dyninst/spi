@@ -95,6 +95,8 @@ namespace sp {
 
     sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
     sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker_);
+    sp_debug("constructed frame");
+    assert(walker_);
 
     //Get the total number of calls in stack using StackWalkerAPI
     walker_->walkStackFromFrame(stackwalk_, *f);

@@ -23,13 +23,13 @@ class AgentTest : public testing::Test {
 
 TEST_F(AgentTest, default_setting) {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  ASSERT_TRUE(agent);
+  ASSERT_TRUE(agent != NULL);
   agent->Go();
 
-  EXPECT_TRUE(agent->parser());
-  EXPECT_TRUE(agent->init_event());
-  EXPECT_TRUE(agent->fini_event());
-  EXPECT_TRUE(agent->init_propeller());
+  EXPECT_TRUE(agent->parser() != NULL);
+  EXPECT_TRUE(agent->init_event() != NULL);
+  EXPECT_TRUE(agent->fini_event() != NULL);
+  EXPECT_TRUE(agent->init_propeller() != NULL);
   EXPECT_STREQ(agent->init_entry().c_str(), "default_entry");
   EXPECT_TRUE(agent->init_exit().size() == 0);
   EXPECT_TRUE(agent->libraries_to_instrument().size() == 0);
@@ -42,19 +42,19 @@ TEST_F(AgentTest, default_setting) {
 
 TEST_F(AgentTest, customized_setting) {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  ASSERT_TRUE(agent);
+  ASSERT_TRUE(agent != NULL);
 
   sp::SpParser::ptr parser = sp::SpParser::Create();
-  ASSERT_TRUE(parser);
+  ASSERT_TRUE(parser != NULL);
 
   sp::SpEvent::ptr init_event = sp::AsyncEvent::Create();
-  ASSERT_TRUE(init_event);
+  ASSERT_TRUE(init_event != NULL);
 
   sp::SpEvent::ptr fini_event = sp::SyncEvent::Create();
-  ASSERT_TRUE(fini_event);
+  ASSERT_TRUE(fini_event != NULL);
 
   sp::SpPropeller::ptr propeller = sp::SpPropeller::Create();
-  ASSERT_TRUE(propeller);
+  ASSERT_TRUE(propeller != NULL);
 
   agent->SetParser(parser);
   agent->SetInitEvent(init_event);

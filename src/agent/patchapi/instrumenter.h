@@ -46,7 +46,7 @@
 #include "agent/snippet.h"
 #include "common/common.h"
 
-#include "patchAPI/h/Instrumenter.h"
+#include "Instrumenter.h"
 
 namespace sp {
 

@@ -46,8 +46,9 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <iostream>
 
-#include "dynutil/h/util.h"
+#include "util.h"
 #include "common/utils.h"
 
 namespace sp {
@@ -250,16 +251,17 @@ PidUsesInode(const int pid,
 void
 GetPidsFromFileDesc(const int fd,
                     PidSet& pid_set) {
+  std::cout << "get pid from fd:" << fd << std::endl;
   int pid;
   DIR *dir;
   if ((dir = opendir("/proc")) == 0) {
     sp_perror("ERROR: cannot access /proc");
   }
+  std::cout << "opendir success\n";
 
   struct dirent *de;
   char *ep;
   while ((de = readdir(dir)) != 0) {
-
     if (isdigit(de->d_name[0])) {
       pid = strtol(de->d_name, &ep, 10);
       if (ep == 0 || *ep != 0 || pid < 0) {
@@ -821,6 +823,26 @@ GetSharedMemory(int id, size_t size) {
   }
   return shm;
 }
+
+//////////////////////////////////////////////////////////////////////
+
+// Free Shared library
+void
+FreeSharedMemory(int id, size_t size) {
+int shmid;
+  if ((shmid = shmget(id, size, 0666)) < 0) {
+    sp_perror("Failed to get a shared memory w/ %lu bytes w/ id %d",
+              (unsigned long)size, id);
+  }
+  int ret = shmctl(shmid, IPC_RMID, NULL);
+    if (ret < 0) {
+      sp_debug("free shared memory failed");
+    } else {
+      sp_debug("free shared memory successful");
+    }
+  return;
+}
+
 
 // ------------------------------------------------------------------- 
 // For debugging

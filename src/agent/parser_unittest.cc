@@ -4,15 +4,15 @@
 // For testing SpParser
 
 void foo(int a) {
-  cout << "i'm foo(int a)\n";
+  std::cout << "i'm foo(int a)\n";
 }
 
 void foo() {
-  cout << "i'm foo()\n";
+  std::cout << "i'm foo()\n";
 }
 
 int foo(int a, int b) {
-  cout << "i'm foo(int a, int b)\n";
+  std::cout << "i'm foo(int a, int b)\n";
   return 1;
 }
 
@@ -31,7 +31,7 @@ class ParserTest : public testing::Test {
     sp::SpParser::ptr parser_;
 
   virtual void SetUp() {
-    ASSERT_TRUE(parser_);
+    ASSERT_TRUE(parser_ != NULL);
   }
 
   virtual void TearDown() {
