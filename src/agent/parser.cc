@@ -531,17 +531,8 @@ SpParser::callee(SpPoint* pt,
       return NULL;
     }
 
-    //sp_debug("PARSING INDIRECT - for call insn %lx", b->last());
-    //sp_debug("PARSING INDIRECT - for call insn");
-
     in::Instruction insn = b->orig_call_insn();
     assert(insn.ptr());
-
-    // sp_debug("DUMP INDCALL INSN (%ld bytes)- {", (long)insn.size());
-    // sp_debug("%s",
-    //          DumpInsns((void*)insn.ptr(),
-    //                    insn.size()).c_str());
-    // sp_debug("DUMP INSN - }");
 
     //Get the instruction target from Instruction API
     in::Expression::Ptr trg = insn.getControlFlowTarget();
@@ -553,24 +544,15 @@ SpParser::callee(SpPoint* pt,
       SpVisitor visitor(pt, segment_reg_val);
       trg->apply(&visitor);
       call_addr = visitor.call_addr();
-      
-      //sp_debug("GOT CALL_ADDR - %lx", call_addr);
 
       //Find the function by call address
       f = FindFunction(call_addr);
       if (f) {
         SpFunction* sfunc = FUNC_CAST(f);
         assert(sfunc);
-        // sp_debug("PARSED INDIRECT - %lx is %s in %s", b->last(),
-        //          sfunc->name().c_str(),
-        //          sfunc->GetObject()->name().c_str());
         return sfunc;
       }
     }
-
-    // sp_debug("CANNOT FIND INDRECT CALL - for call insn %lx",
-    //          b->last());
-  //  addr_callee_not_found_.insert(b->last());
     return NULL;
   }
   
@@ -870,7 +852,6 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   for (pe::CodeObject::funclist::iterator fit = all.begin();
        fit != all.end(); fit++) {
 
-    //sp_debug("FUNC - %s", (*fit)->name().c_str());
     // Get or create a PatchFunction instance
 
     SpFunction* found = FUNC_CAST(obj->getFunc(*fit));

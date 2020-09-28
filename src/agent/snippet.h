@@ -43,6 +43,10 @@
 #include "Buffer.h"
 //#include "arch.h"
 
+// This Register type is borrowed from Dyninst internal
+// and used by emit_* functions
+// One possible solution for this is to expose codegenAPI
+// from Dyninst
 typedef unsigned int Register;
 
 namespace sp {

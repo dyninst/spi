@@ -4,7 +4,7 @@ DYNLINK ?= false
 # For COMMON
 #=================================================
 
-COMMON_FLAGS     = -fPIC -g #-Werror -Wall
+COMMON_FLAGS     = -fPIC -g -Wall -Wextra
 ifdef SP_RELEASE
   COMMON_FLAGS  += -DSP_RELEASE
 endif

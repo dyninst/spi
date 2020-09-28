@@ -28,7 +28,7 @@ TEST_DATA_DIR = $(SP_DIR)/$(PLATFORM)/test_data
 GTEST_DIR     = $(SP_DIR)/src/test/gmock/gtest
 GMOCK_DIR     = $(SP_DIR)/src/test/gmock
 CPPFLAGS     += -I$(GTEST_DIR)/include -I$(GMOCK_DIR)/include
-CXXFLAGS     += -g #-Wall -Wextra
+CXXFLAGS     += -g -Wall -Wextra
 GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
                 $(GTEST_DIR)/include/gtest/internal/*.h
 GMOCK_HEADERS = $(GMOCK_DIR)/include/gmock/*.h \

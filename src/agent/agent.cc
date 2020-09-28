@@ -89,7 +89,6 @@ namespace sp {
 
     // Enalbe outputing debug info to /tmp/spi-$PID
     if (getenv("SP_FDEBUG")) {
-      printf("FDEBUG\n");
       char fn[255];
       snprintf(fn, 255, "./tmp/spi/spi-%d", getpid());
       g_debug_fp = fopen(fn, "a+");
