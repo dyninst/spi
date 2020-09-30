@@ -188,8 +188,40 @@ SpTcpWorker::Inject(SpChannel* c,
 
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
 
+  // remove agent library from the LD_PRELOAD environment variable
+  // in the case that agent library is injected through LD_PRELOAD
+  char* ld_preload_str = std::getenv("LD_PRELOAD");
+
+  if (ld_preload_str == NULL) {
+    // no match for environment variable LD_PRELOAD
+    // nothing to be done
+  } else {
+    sp_debug("LD_PRELOAD set, looking for agentlib and remove");
+    // new string to hold LD_PRELOAD without agent lib
+    std::string new_ld_preload_str = "";
+
+    string agent_name = g_parser->agent_name();
+    sp_debug("Original LD_PRELOAD: %s", ld_preload_str);
+    char* tmp_str = strdup(ld_preload_str);
+    char* token = std::strtok(tmp_str, " :");
+    while (token != NULL) {
+      // if this token is not agent lib, we add it back to LD_PRELOAD
+      if (strstr(token, agent_name.c_str()) == NULL) {
+        new_ld_preload_str += token;
+      }
+      token = std::strtok(NULL, " :");
+      if (token != NULL) {
+        new_ld_preload_str += ":";
+      }
+    }
+    sp_debug("new LD_PRELOAD %s", new_ld_preload_str.c_str());
+    if (setenv("LD_PRELOAD", new_ld_preload_str.c_str(), true) < 0) {
+      sp_perror("setenv for LD_PRELOAD failed");
+    }
+    free(tmp_str);
+  }
+
   // Execute the command
-  unsetenv("LD_PRELOAD");
   FILE* fp = popen(cmd_exe.c_str(), "r");
   if(fp==NULL)
   {
