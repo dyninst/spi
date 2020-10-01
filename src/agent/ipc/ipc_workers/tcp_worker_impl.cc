@@ -188,37 +188,28 @@ SpTcpWorker::Inject(SpChannel* c,
 
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
 
-  // remove agent library from the LD_PRELOAD environment variable
-  // in the case that agent library is injected through LD_PRELOAD
-  char* ld_preload_str = std::getenv("LD_PRELOAD");
+  if(char* ld_preload = std::getenv("LD_PRELOAD")) {
+    std::string libs{ld_preload};
+    std::string agent_name = g_parser->agent_name();
 
-  if (ld_preload_str == NULL) {
-    // no match for environment variable LD_PRELOAD
-    // nothing to be done
-  } else {
-    sp_debug("LD_PRELOAD set, looking for agentlib and remove");
-    // new string to hold LD_PRELOAD without agent lib
-    std::string new_ld_preload_str = "";
+    // Find the location where the agent name starts
+    auto const start = libs.find(agent_name);
+    if(start != std::string::npos) {
+      // Find the previous separator
+      auto prev_colon = libs.rfind(':', start);
+      auto prev_space = libs.rfind(' ', start);
+      if(prev_colon == std::string::npos) prev_colon = 0;
+      if(prev_space == std::string::npos) prev_space = 0;
+      auto prev = (prev_colon > prev_space) ? prev_colon : prev_space;
 
-    string agent_name = g_parser->agent_name();
-    sp_debug("Original LD_PRELOAD: %s", ld_preload_str);
-    char* tmp_str = strdup(ld_preload_str);
-    char* token = std::strtok(tmp_str, " :");
-    while (token != NULL) {
-      // if this token is not agent lib, we add it back to LD_PRELOAD
-      if (strstr(token, agent_name.c_str()) == NULL) {
-        new_ld_preload_str += token;
-      }
-      token = std::strtok(NULL, " :");
-      if (token != NULL) {
-        new_ld_preload_str += ":";
+      // remove the agent library name
+      libs.replace(prev, start - prev + agent_name.length(), "");
+
+      // Replace the env. variable (NB: this requires a POSIX system)
+      if (setenv("LD_PRELOAD", libs.c_str(), true) < 0) {
+        sp_perror("setenv for LD_PRELOAD failed");
       }
     }
-    sp_debug("new LD_PRELOAD %s", new_ld_preload_str.c_str());
-    if (setenv("LD_PRELOAD", new_ld_preload_str.c_str(), true) < 0) {
-      sp_perror("setenv for LD_PRELOAD failed");
-    }
-    free(tmp_str);
   }
 
   // Execute the command
