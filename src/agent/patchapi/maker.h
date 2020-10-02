@@ -32,7 +32,7 @@
 #ifndef _SPPOINTMAKER_H_
 #define _SPPOINTMAKER_H_
 
-#include "patchAPI/h/CFGMaker.h"
+#include "CFGMaker.h"
 
 #include "common/common.h"
 
@@ -63,7 +63,7 @@ namespace sp {
                   ph::PatchMgrPtr      m,
                   ph::PatchBlock*      b,
                   Dyninst::Address     a,
-                  in::Instruction::Ptr i,
+                  in::Instruction i,
                   ph::PatchFunction *f);
 
     virtual ph::Point*

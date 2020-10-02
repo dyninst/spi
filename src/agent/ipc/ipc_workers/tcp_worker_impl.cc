@@ -188,6 +188,30 @@ SpTcpWorker::Inject(SpChannel* c,
 
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
 
+  if(char* ld_preload = std::getenv("LD_PRELOAD")) {
+    std::string libs{ld_preload};
+    std::string agent_name = g_parser->agent_name();
+
+    // Find the location where the agent name starts
+    auto const start = libs.find(agent_name);
+    if(start != std::string::npos) {
+      // Find the previous separator
+      auto prev_colon = libs.rfind(':', start);
+      auto prev_space = libs.rfind(' ', start);
+      if(prev_colon == std::string::npos) prev_colon = 0;
+      if(prev_space == std::string::npos) prev_space = 0;
+      auto prev = (prev_colon > prev_space) ? prev_colon : prev_space;
+
+      // remove the agent library name
+      libs.replace(prev, start - prev + agent_name.length(), "");
+
+      // Replace the env. variable (NB: this requires a POSIX system)
+      if (setenv("LD_PRELOAD", libs.c_str(), true) < 0) {
+        sp_perror("setenv for LD_PRELOAD failed");
+      }
+    }
+  }
+
   // Execute the command
   FILE* fp = popen(cmd_exe.c_str(), "r");
   if(fp==NULL)

@@ -68,7 +68,7 @@ google-mock: $(GMOCK_MAIN)
 #==========================================================
 # SPI UNIT TESTS
 #==========================================================
-UT_FLAGS   = $(AG_IFLAGS) $(AG_FLAGS) $(CPPFLAGS)
+UT_FLAGS   = $(AG_IFLAGS) $(CPPFLAGS) -no-pie -fno-PIE
 UT_LDFLAGS = -lpthread -ldl
 
 ifeq ($(DYNLINK), true)
@@ -86,7 +86,7 @@ VPATH    += $(ST_DIR) \
             $(AG_DIR)/patchapi
 
 UT_SRCS   = $(IJ_DIR)/injector_unittest.cc \
-            $(AG_DIR)/patchapi/addr_space_unittest.cc \
+						$(AG_DIR)/patchapi/addr_space_unittest.cc \
             $(AG_DIR)/agent_unittest.cc \
             $(AG_DIR)/utils_unittest.cc \
             $(AG_DIR)/payload_unittest.cc \
@@ -115,9 +115,9 @@ $(UT_OBJS): $(TEST_OBJS_DIR)/%.o : %.cc
 	@$(MKDIR) $(TEST_OBJS_DIR)
 	@$(GXX) -c -o $@ $< $(UT_FLAGS)
 
-$(UT_EXES): $(TEST_EXES_DIR)/%.exe : $(TEST_OBJS_DIR)/%.o $(GMOCK_MAIN)  $(AGENT) $(TEST_OBJS_DIR)/common_unittest.o
+$(UT_EXES): $(TEST_EXES_DIR)/%.exe : $(TEST_OBJS_DIR)/%.o $(GMOCK_MAIN) $(AGENT) $(TEST_OBJS_DIR)/common_unittest.o
 	@echo Linking $*.exe
-	@$(GXX) -o $@ $< $(TEST_OBJS_DIR)/common_unittest.o $(GMOCK_MAIN) $(UT_LDFLAGS)
+	@$(GXX) -o $@ $< $(TEST_OBJS_DIR)/common_unittest.o $(GMOCK_MAIN) $(UT_LDFLAGS) -no-pie
 
 $(UT_ONESTOP_EXE): $(UT_OBJS) $(GMOCK_MAIN) $(AGENT)
 	@echo Linking $(notdir $(UT_ONESTOP_EXE))
@@ -175,7 +175,7 @@ MUTATEE_FLAGS      += -g -fPIC
 MUTATEE_LDFLAGS    += -lpthread -ldl
 MUTATEE_LDFLAGS    += -L$(MUTATEE_EXES_DIR)
 
-mutatee_exes: $(MUTATEE_EXES) $(MUTATEE_CPP_EXES)
+mutatee_exes: $(MUTATEE_EXES) $(MUTATEE_CPP_EXES) $(MUTATEE_LIB_SO)
 
 $(MUTATEE_OBJS): $(MUTATEE_OBJS_DIR)/%.o : $(ME_DIR)/%.c
 	@echo "Compiling $*.o"

@@ -36,8 +36,8 @@
 #include "agent/parser.h"
 #include "agent/patchapi/object.h"
 
-#include "patchAPI/h/PatchMgr.h"
-#include "patchAPI/h/PatchObject.h"
+#include "PatchMgr.h"
+#include "PatchObject.h"
 
 #include "common/utils.h"
 

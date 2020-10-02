@@ -22,7 +22,7 @@ class ContextTest : public testing::Test {
 
 TEST_F(ContextTest, default_setting) {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  ASSERT_TRUE(agent);
+  ASSERT_TRUE(agent != NULL);
 
   MockEvent::ptr event = MockEvent::Create();
   agent->SetInitEvent(event);
@@ -42,16 +42,16 @@ TEST_F(ContextTest, default_setting) {
 
 TEST_F(ContextTest, customized_setting) {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  ASSERT_TRUE(agent);
+  ASSERT_TRUE(agent != NULL);
 
   MockEvent::ptr event = MockEvent::Create();
   agent->SetInitEvent(event);
 
   sp::SpParser::ptr parser = sp::SpParser::Create();
-  ASSERT_TRUE(parser);
+  ASSERT_TRUE(parser != NULL);
 
   sp::SpPropeller::ptr propeller = sp::SpPropeller::Create();
-  ASSERT_TRUE(propeller);
+  ASSERT_TRUE(propeller != NULL);
 
   agent->SetParser(parser);
   agent->SetInitEntry("wrapper_entry");

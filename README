@@ -1,3 +1,10 @@
+----
+Note
+----
+1. Currently SPI depends on a customized dyninstAPI
+  - build dyninst with arch-x86.h exposed to public
+  - build dyninst with OpenMP disabled
+
 -------
 Install
 -------
@@ -33,7 +40,7 @@ SP_AGENT_DIR: the directory path of agent shared library that will be injected.
 ---------------------
 Shared memory id used
 ---------------------
-1. 1986: for communication between injector process and user process
+1. 1986+[user_process_pid]: for communication between injector process and user process
 
 --------------
 Make arguments
@@ -63,3 +70,12 @@ SSH
 ---
 - To run test suite:
   - make "ssh localhost" work without typing in password
+
+-----
+TODOS
+-----
+- Inter-host propel
+- Solve the arch-x86.h dependency problem
+  - A possible solution is to expose codegenAPI in dyninst
+- OpenMP hangs during parsing
+- Test suite

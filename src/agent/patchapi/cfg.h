@@ -34,8 +34,8 @@
 #ifndef _SPCFG_H_
 #define _SPCFG_H_
 
-#include "parseAPI/h/CFG.h"
-#include "patchAPI/h/PatchCFG.h"
+#include "CFG.h"
+#include "PatchCFG.h"
 #include "common/common.h"
 
 namespace sp {
@@ -106,7 +106,7 @@ namespace sp {
 		size_t call_size() const { return (size_t)(end() - last()); }
 
 		// Get original code
-		in::Instruction::Ptr orig_call_insn() const { return orig_call_insn_;}
+		in::Instruction orig_call_insn() const { return orig_call_insn_;}
 
 	protected:
 		bool instrumented_;
@@ -114,7 +114,7 @@ namespace sp {
 
 		dt::Address          orig_call_addr_;
 		std::string          orig_code_; // Including last insn
-		in::Instruction::Ptr orig_call_insn_;
+		in::Instruction orig_call_insn_;
 	};
 
 

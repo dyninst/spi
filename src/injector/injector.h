@@ -36,7 +36,7 @@
 #define SP_INJECTOR_H_
 
 // ProcControlAPI
-#include "proccontrol/h/PCProcess.h"
+#include "PCProcess.h"
 
 // SelfPropelled
 #include "common/common.h"
@@ -98,18 +98,18 @@ namespace sp {
 
     // For loading user library
     size_t GetIjTemplateSize();
-    char* GetIjTemplate(dt::Address ij_addr,
+    unsigned char* GetIjTemplate(dt::Address ij_addr,
                         dt::Address code_addr);
 
     // For loading ijagent.so using do_dlopen
     size_t GetCodeTemplateSize();
-    char* GetCodeTemplate(dt::Address args_addr,
+    unsigned char* GetCodeTemplate(dt::Address args_addr,
                           dt::Address do_dlopen,
                           dt::Address code_addr);
 
     // For loading ijagent.so using __libc_dlopen_mode
     size_t GetDlmodeTemplateSize();
-    char* GetDlmodeTemplate(Dyninst::Address libname,
+    unsigned char* GetDlmodeTemplate(Dyninst::Address libname,
                             Dyninst::Address mode,
                             Dyninst::Address dlopen,
                             Dyninst::Address /*code_addr*/);

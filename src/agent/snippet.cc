@@ -179,7 +179,7 @@ namespace sp {
         sp_debug("TAIL_CALL_INDIRECT_CALL");
 
       // 5.3. indirect call
-      assert(b->orig_call_insn());
+      //assert(b->orig_call_insn());
       blob_size_ += emit_call_orig(blob_, blob_size_);
     }
 
@@ -254,7 +254,7 @@ namespace sp {
     for (ph::PatchBlock::Insns::iterator i = insns.begin();
          i != insns.end(); i++) {
       dt::Address a = i->first;
-      in::Instruction::Ptr insn = i->second;
+      in::Instruction insn = i->second;
       p += reloc_insn(a, insn, call_addr, p);
     }
 

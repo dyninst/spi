@@ -63,12 +63,12 @@ namespace sp {
 		}
 
 		if (m == MAP_FAILED) {
-			sp_debug("FAILED TO MAP TO %lx (size %ld)",
-							 (long)base, (long)size);
+			sp_debug("%s: FAILED TO MAP TO %lx (size %ld)",
+							 name().c_str(), (long)base, (long)size);
 			return;
 		} else {
-			sp_debug("SUCCEED TO MAP TO %lx (size %ld)",
-							 (long)m, (long)size);
+			sp_debug("%s: SUCCEED TO MAP TO %lx (size %ld)",
+							 name().c_str(), (long)m, (long)size);
 		}
 
 		small_freebufs_.base =base;
@@ -82,7 +82,8 @@ namespace sp {
 
 		if(small_freebufs_.buf_size >=size) {
 			ret =small_freebufs_.base +size ;
-			sp_debug("Returning %lu buffer",size);
+			//sp_debug("Number of free buffers: %d", small_freebufs_.list.size());
+			sp_debug("%s: Returning %lu buffer at %lx", name().c_str(), size, ret);
 			small_freebufs_.base +=size + 1;		  
 			return ret;
 

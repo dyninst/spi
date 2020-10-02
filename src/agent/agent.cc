@@ -36,13 +36,16 @@
 #include "agent/context.h"
 #include "agent/patchapi/addr_space.h"
 #include "common/utils.h"
+#include "common/common.h"
 #include "injector/injector.h"
 #include <signal.h>
 #include <fcntl.h>
-#include "patchAPI/h/PatchMgr.h"
-FILE*         g_debug_fp = NULL;
-FILE*  g_error_fp = NULL;
-FILE*  g_output_fp= NULL;
+#include <sys/ipc.h>  // clean shared memory if created
+#include <sys/shm.h>
+#include "PatchMgr.h"
+FILE* g_debug_fp;
+FILE* g_error_fp;
+FILE* g_output_fp;
 
 namespace sp {
 
@@ -68,17 +71,32 @@ namespace sp {
     }
 	
    char error_file[255],output_file[255];
-     snprintf(error_file,255,"/tmp/spi/spi-error-%d", getpid());
+     snprintf(error_file,255,"./tmp/spi/spi-error-%d", getpid());
      g_error_fp=fopen(error_file , "a+");
+     if (g_error_fp == NULL) {
+        std::cerr << "Failed to open file for output erro info: " << strerror(errno) << std::endl;
+        std::cerr << "Using stderr instead...\n";
+        g_error_fp = stderr;
+      }
 
-     snprintf(output_file,255,"/tmp/spi/spi-output-%d", getpid());
+     snprintf(output_file,255,"./tmp/spi/spi-output-%d", getpid());
      g_output_fp=fopen(output_file , "a+");
+     if (g_output_fp == NULL) {
+        std::cerr << "Failed to open file for output stdout info: " << strerror(errno) << std::endl;
+        std::cerr << "Using stderr instead...\n";
+        g_output_fp = stderr;
+      }
 
     // Enalbe outputing debug info to /tmp/spi-$PID
     if (getenv("SP_FDEBUG")) {
       char fn[255];
-      snprintf(fn, 255, "/tmp/spi/spi-%d", getpid());
+      snprintf(fn, 255, "./tmp/spi/spi-%d", getpid());
       g_debug_fp = fopen(fn, "a+");
+      if (g_debug_fp == NULL) {
+        std::cerr << "Failed to open file for output debug info: " << strerror(errno) << std::endl;
+        std::cerr << "Using stderr instead...\n";
+        g_debug_fp = stderr;
+      }
     }
     return ptr(new SpAgent());
   }
@@ -293,6 +311,7 @@ namespace sp {
 
 
     // Copy agent's variables to context
+    sp_debug("Copy agent's variables to context");
     g_context->SetInitPropeller(init_propeller_);
     g_context->SetParser(parser_);
     g_context->SetInitEntryName(init_entry_);
@@ -334,7 +353,9 @@ namespace sp {
     }
     // Register Events
     init_event_->RegisterEvent();
+    sp_debug("init registered");
     fini_event_->RegisterEvent();
+    sp_debug("fini registered");
   }
 
 }

@@ -9,11 +9,8 @@
 using namespace sp;
 FILE* g_debug_fp = stderr;
 FILE* g_error_fp = stderr;
-FILE* g_output_fp = stderr;
-/*
-FILE*         g_debug_fp = fopen("/tmp/spi-inject-debug","w");
-FILE*         g_output_fp = fopen("/tmp/spi-inject-output","w");
-*/
+FILE* g_output_fp = stdout;
+
 // Here we go!
 int main(int argc, char *argv[]) {
 

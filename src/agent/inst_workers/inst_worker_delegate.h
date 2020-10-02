@@ -88,7 +88,7 @@ namespace sp {
       blk->getInsns(insns);
       for (ph::PatchBlock::Insns::iterator i = insns.begin();
            i != insns.end(); i++) {
-        in::Instruction::Ptr insn = i->second;
+        in::Instruction insn = i->second;
         if (SpSnippet::UsePC(insn)) {
           sp_debug("EST SIZE - USE PC");
           size += 20; // the worse case, we emulate pc insn

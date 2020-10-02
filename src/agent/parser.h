@@ -38,7 +38,7 @@
 
 #include "common/utils.h"
 
-#include "patchAPI/h/CFGMaker.h"
+#include "CFGMaker.h"
 
 namespace sp {
 
@@ -58,6 +58,8 @@ namespace sp {
   typedef std::map<std::string, FuncSet> DemangledFuncsMap;
 
   typedef std::set<dt::Address> AddrSet;
+
+  using std::string;
   
   class  SpParser {
   public:

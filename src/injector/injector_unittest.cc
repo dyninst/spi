@@ -39,7 +39,7 @@ class InjectorTest : public testing::Test {
 
   virtual void SetUp() {
     SetTimeout();
-    
+    std::cout << "Setting up\n";
 		// Start a tcp_server via popen
     char mutatee[1024];
     snprintf(mutatee, 1024,
@@ -47,7 +47,6 @@ class InjectorTest : public testing::Test {
              " %s/%s/test_mutatee/tcp_server4.exe",
              getenv("SP_DIR"), getenv("PLATFORM"),
              getenv("SP_DIR"), getenv("PLATFORM"));
-
 		server_ = popen(mutatee, "r");
 		if (server_ == NULL) {
 			sp_perror("Failed to start tcp_server");
@@ -87,19 +86,24 @@ TEST_F(InjectorTest, pid_inject) {
   cmd += "/";
   cmd += getenv("PLATFORM");
   cmd += "/test_agent/inject_test_agent.so";
+	//cmd += " 2>&1";
+	sp_debug(cmd.c_str());
 
   // system(cmd.c_str());
 
 	// Execute the injector
 	FILE* fp = popen(cmd.c_str(), "r");
+	ASSERT_TRUE(fp != NULL);
 	char buf[1024];
 
   // Skip the first line
 	ASSERT_TRUE(fgets(buf, 1024, fp) != NULL);
-	ASSERT_TRUE(fgets(buf, 1024, fp) != NULL);  
+	sp_debug("first line: %s", buf);
+	ASSERT_TRUE(fgets(buf, 1024, fp) != NULL);
+	sp_debug("second line: %s", buf);
 
 	// Check "INJECTED" for the second line
-	ASSERT_TRUE(strstr(buf, "INJECTED") != NULL);
+	ASSERT_TRUE(strstr(buf, "INJECTION SUCCESS") != NULL);
 	pclose(fp);
 
 }

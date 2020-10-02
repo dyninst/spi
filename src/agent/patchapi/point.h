@@ -90,7 +90,7 @@ namespace sp {
 					ph::PatchMgrPtr m,
 					ph::PatchBlock *b,
 					Dyninst::Address a,
-					Dyninst::InstructionAPI::Instruction::Ptr i,
+					Dyninst::InstructionAPI::Instruction i,
 					ph::PatchFunction *f)
 		: ph::Point(t,m,b,a,i,f),
 			tail_call_(false),

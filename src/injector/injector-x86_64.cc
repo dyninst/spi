@@ -34,7 +34,7 @@
 namespace sp {
 
 // The code snippet to invoke do_dlopen
-static char kDlopenCode[] = {
+static unsigned char kDlopenCode[] = {
   //0 , 1
   0x90, 0x90,                                         // nop, nop
   //         (OFF_ARGS)
@@ -50,7 +50,7 @@ static char kDlopenCode[] = {
 };
 
 // The code snippet to invoke __libc_dlopen_mode
-static char kLibcDlopenModeCode[] = {
+static unsigned char kLibcDlopenModeCode[] = {
   //0 , 1
   0x90, 0x90,                                         // nop, nop
   //         (OFF_ARGS)
@@ -69,7 +69,7 @@ static char kLibcDlopenModeCode[] = {
 };
 
 // The code snippet to invoke ij_agent
-static char kIjagentCode[] = {
+static unsigned char kIjagentCode[] = {
   //0 , 1
   0x90, 0x90,                                         // nop, nop
   //         (OFF_IJ)
@@ -95,7 +95,7 @@ SpInjector::GetCodeTemplateSize() {
   return sizeof(kDlopenCode);
 }
 
-char*
+unsigned char*
 SpInjector::GetCodeTemplate(Dyninst::Address args_addr,
                             Dyninst::Address do_dlopen,
                             Dyninst::Address /*code_addr*/) {
@@ -111,7 +111,7 @@ SpInjector::GetDlmodeTemplateSize() {
   return sizeof(kLibcDlopenModeCode);
 }
 
-char*
+unsigned char*
 SpInjector::GetDlmodeTemplate(Dyninst::Address libname,
                               Dyninst::Address mode,
                               Dyninst::Address dlopen,
@@ -129,7 +129,7 @@ size_t SpInjector::GetIjTemplateSize() {
   return sizeof(kIjagentCode);
 }
 
-char* SpInjector::GetIjTemplate(Dyninst::Address ij_addr,
+unsigned char* SpInjector::GetIjTemplate(Dyninst::Address ij_addr,
                                 Dyninst::Address /*code_addr*/) {
   long* p = (long*)&kIjagentCode[OFF_IJ];
   *p = (long)ij_addr;
