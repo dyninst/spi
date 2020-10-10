@@ -136,54 +136,54 @@ SpTcpWorker::Inject(SpChannel* c,
   if (strstr(remote_ip, "127.0.0.1")) {
     // For local machine, invoke injector directly
     sp_debug("LOCAL MACHINE TCP");
-  } else {
-    // For remote machine, ssh injector
-    // snprintf(cmd, 1024, "ssh root@%s \"", remote_ip);
-    snprintf(cmd, 1024, "ssh %s \"", remote_ip);
-    cmd_exe += cmd;
-  }
-  sp_debug("cmd_exe = %s", cmd_exe.c_str());
-      
-  // Injector path
-  if (getenv("SP_DIR") && getenv("PLATFORM")) {
-    snprintf(cmd, 1024, "%s/%s/",
-             getenv("SP_DIR"),
-             getenv("PLATFORM"));
-  } else {
-    cmd[0] = '\0';
-  }
-  cmd_exe += cmd;
-  cmd_exe += "injector.exe";
-  //sp_debug("Salini inserted: cmd_exe = %s", cmd_exe.c_str());
 
-  // IP and Port
-  snprintf(cmd, 1024, " port %s ", remote_port);
-  cmd_exe += cmd;
-
-  // Agent path
-  if (agent_path == NULL) {
-    if (getenv("SP_AGENT_DIR")) {
-      snprintf(cmd, 1024, "%s %s/", cmd, getenv("SP_AGENT_DIR"));
+    // Injector path
+    if (getenv("SP_DIR") && getenv("PLATFORM")) {
+      cmd_exe += "$SP_DIR/$PLATFORM";
     } else {
-      snprintf(cmd, 1024, "%s ./", cmd);
+      cmd[0] = '\0';
     }
+    cmd_exe += "/injector.exe";
+
+    // IP and Port
+    snprintf(cmd, 1024, " port %s", remote_port);
     cmd_exe += cmd;
+
+    // Agent lib path
+    if (getenv("SP_AGENT_DIR")) {
+      cmd_exe += " $SP_AGENT_DIR";
+    } else {
+      cmd_exe += " ./";
+    }
+
+    // Agent lib name
     assert(g_parser);
-//    snprintf(cmd,1024,"%s","libagent.so");
- snprintf(cmd, 1024, "%s%s", cmd,
+    snprintf(cmd, 1024, "/%s",
          sp_filename((char*)g_parser->agent_name().c_str()));
     cmd_exe += cmd;
   } else {
-    snprintf(cmd, 1024, "%s%s", cmd, agent_path);
-    cmd_exe += cmd;
-  }
-
-  if (strstr(remote_ip, "127.0.0.1")) {
-    // For local machine, invoke injector directly
-    sp_debug("LOCAL MACHINE TCP");
-  } else {
     // For remote machine, ssh injector
-    cmd_exe += "\" 2>&1 |tee /tmp/injector_log";
+    snprintf(cmd, 1024, "ssh %s -t \'bash -l -c \"", remote_ip);
+    cmd_exe += cmd;
+
+    // Injector path
+    cmd_exe += "\\$SP_DIR/\\$PLATFORM";
+    cmd_exe += "/injector.exe";
+
+    // IP and Port
+    snprintf(cmd, 1024, " port %s", remote_port);
+    cmd_exe += cmd;
+
+    // Agent lib path
+    cmd_exe += " \\$SP_AGENT_DIR";
+
+    // Agent lib name
+    assert(g_parser);
+    snprintf(cmd, 1024, "/%s",
+         sp_filename((char*)g_parser->agent_name().c_str()));
+    cmd_exe += cmd;
+
+    cmd_exe += "\"\' 2>&1 |tee ./tmp/injector_log";
   }
 
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
