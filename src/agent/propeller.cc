@@ -66,25 +66,28 @@ namespace sp {
                   PayloadFunc exit,
                   SpPoint* point,
                   StringSet* inst_calls) {
-    assert(func);
+    if (func == NULL) {
+      sp_debug("FATAL: func is NULL");
+      return false;
+    }
 
     sp_debug("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
    
-    if(func->name().find("std::")!=std::string::npos) {
-	sp_debug("TODO: libstdc++ functions: stop propelling");
-	return true;
+    if (func->name().find("std::")!=std::string::npos || func->name().find("cxx")!=std::string::npos) {
+      sp_debug("TODO: libstdc++ functions: stop propelling");
+      return true;
+    }
+
+    if (strcmp(func->name().c_str(), "exit") == 0) {
+      sp_debug("exit function, stop propelling");
+      return true;
     }
     // 1. Find points according to type
     Points pts;
     ph::PatchMgrPtr mgr = g_parser->mgr();
     assert(mgr);
-    ph::PatchFunction* cur_func = NULL;
-    if (point) {
-      cur_func = func;
-    } else {
-      cur_func = g_parser->FindFunction(func->GetMangledName());
-    }
+    ph::PatchFunction* cur_func = func;
 
     if (!cur_func) return false;
 

@@ -118,6 +118,11 @@ namespace sp {
     AGENT_EXPORT dt::Address
         GetFuncAddrFromName(string func_name_without_path);
 
+    bool GetFuncsByName(sp::SpObject* obj,
+                        std::string name,
+                        bool mangled,
+                        sp::FuncSet* func_set);
+
     // Dump instructions from a buffer
     AGENT_EXPORT string
         DumpInsns(void* addr,
@@ -169,10 +174,6 @@ namespace sp {
 
     ph::PatchMgrPtr CreateMgr(PatchObjects& patch_objs);
 
-    bool GetFuncsByName(sp::SpObject* obj,
-                        std::string name,
-                        bool mangled,
-                        sp::FuncSet* func_set);
     bool FindPltFunc(sp::SpObject* obj,
                         std::string name,
                         bool mangled,
@@ -183,7 +184,7 @@ namespace sp {
         sp::FuncSet* func_set);
 
     //Get the load address of the symbol from AddressTranslat::createAddressTranslator
-   // dt::Address getLoadAddress(sb::Symtab* sym);
+    // dt::Address getLoadAddress(sb::Symtab* sym);
 
   };
 
