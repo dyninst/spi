@@ -35,6 +35,7 @@
 #include "common/common.h"
 
 namespace sp {
+	extern SpAddrSpace* g_as;
 
 	void SpObject::InitMemoryAlloc(dt::Address base,
                                  size_t size) {
@@ -80,23 +81,32 @@ namespace sp {
 	SpObject::AllocateBuffer(size_t size) {
 		dt::Address ret = 0;
 
+		if (small_freebufs_.buf_size < size) {
+			// not enough space in the memory pool
+			// we need to ask AddressSpace for a new interval
+			if (g_as == NULL) {
+				sp_perror("NULL pointer to AddrSpace when asking for a new interval allocation");
+				return 0;
+			}
+			g_as->allocateNewInterval(this);
+		}
+
 		if(small_freebufs_.buf_size >=size) {
-			ret =small_freebufs_.base +size ;
+			ret = small_freebufs_.base +size ;
 			//sp_debug("Number of free buffers: %d", small_freebufs_.list.size());
 			sp_debug("%s: Returning %lu buffer at %lx", name().c_str(), size, ret);
 			small_freebufs_.base +=size + 1;		  
 			return ret;
-
 		}
-    size_t ps = getpagesize();
-    size = ((size + ps -1) & ~(ps - 1));
-    if (::posix_memalign((void**)&ret, ps, size) == 0) {
-      // sp_print("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
-      sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
-      return ret;
-    }
-    sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
-    return 0;
+		size_t ps = getpagesize();
+		size = ((size + ps -1) & ~(ps - 1));
+		if (::posix_memalign((void**)&ret, ps, size) == 0) {
+			// sp_print("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+			sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+				return ret;
+		}
+		sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
+			return 0;
 	}
 
 	bool

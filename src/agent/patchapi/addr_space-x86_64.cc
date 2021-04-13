@@ -155,13 +155,13 @@ SpAddrSpace::UpdateFreeIntervals() {
   
   // Re-arrange free buffers. Some rules:
   // - Reduce each "hole" between two mapped objects to less than 1.5GB
-  // - Each interval should have size smaller than 500MB
+  // - Each interval should have size smaller than 128MB
 
   FreeIntervalList tmp_list;
   std::copy(free_intervals_.begin(), free_intervals_.end(),
             back_inserter(tmp_list));
   free_intervals_.clear();
-  const size_t max_interval_size = (const size_t)1024*1024*512;
+  const size_t max_interval_size = (const size_t)1024*1024*128;
   const size_t max_mapped_area_size = (const size_t)1024*1024*(1024+512);
   for (FreeIntervalList::iterator fi = tmp_list.begin();
        fi != tmp_list.end(); fi++) {
@@ -241,6 +241,50 @@ SpAddrSpace::DumpFreeIntervals() {
 }
 
 bool
+SpAddrSpace::allocateNewInterval(SpObject* obj) {
+  if (obj == NULL) {
+    sp_perror("NULL pointer to SpObject when trying to allocate a new interval for object");
+    return false;
+  }
+  sp_debug("Trying to allocate new interval for object %s", obj->name().c_str());
+
+  sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
+             obj->name().c_str(), obj->load_addr(), obj->codeBase());
+  MemMapping& mapping = mem_maps_[obj->load_addr()];
+  sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+            " Inode %lu, Path %s, previous_end %lx",
+            mapping.start, mapping.end, mapping.offset,
+            mapping.perms, mapping.dev.c_str(), mapping.inode,
+            mapping.path.c_str(),
+            mapping.previous_end);
+
+  FreeInterval* interval = NULL;
+  if (!GetClosestInterval(mapping.start, &interval)) {
+    sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
+              mapping.start, obj->name().c_str());
+    return false;
+  }
+  assert(interval);
+  size_t size = interval->size();
+  size_t ps = getpagesize();
+
+  sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
+            "rounded size %ld", (long)interval->start,
+            (long)interval->end, (long)interval->size(), (long)size);
+
+  size = (size <= 2147483646 ? size : 2147483646);
+  size = ((size + ps -1) & ~(ps - 1));
+
+  dt::Address base = interval->end - size;
+  if (base < ps) {
+    base += ps;
+    size -= ps;
+  }
+  obj->InitMemoryAlloc(base, size);
+  return true;
+}
+
+bool
 SpAddrSpace::GetClosestInterval(dt::Address addr,
                                 FreeInterval** interval) {
   const size_t distance = (const size_t)(1024*1024*(1024+512));
@@ -254,11 +298,18 @@ SpAddrSpace::GetClosestInterval(dt::Address addr,
     sp_debug("GET CLOSEST INTERVAL - free interval [%lx, %lx], size %ld",
              (*i).start, (*i).end, (*i).size());
     if ((*i).start > addr) {
+      sp_debug("start larger than addr");
       continue;
     } else {
       if (!previous) return false;
-      if (previous->used) continue;
-      if ((addr - (*i).start) > distance) continue;
+      if (previous->used) {
+        sp_debug("this interval already used");
+        continue;
+      }
+      if ((addr - (*i).start) > distance) {
+        sp_debug("distance too far");
+        continue;
+      }
       *interval = previous;
       (*interval)->used = true;
       return true;

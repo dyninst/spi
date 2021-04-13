@@ -35,6 +35,7 @@
 #include "common/common.h"
 
 #include "PatchObject.h"
+#include "agent/patchapi/addr_space.h"
 
 
 namespace sp {

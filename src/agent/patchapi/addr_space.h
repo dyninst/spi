@@ -87,6 +87,8 @@ namespace sp {
                              int perm);
 
     void InitMemoryAllocator();
+    bool allocateNewInterval(SpObject* obj);
+
     protected:
 
     MemMappings mem_maps_;
