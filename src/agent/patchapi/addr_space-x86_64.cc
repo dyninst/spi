@@ -155,13 +155,13 @@ SpAddrSpace::UpdateFreeIntervals() {
   
   // Re-arrange free buffers. Some rules:
   // - Reduce each "hole" between two mapped objects to less than 1.5GB
-  // - Each interval should have size smaller than 128MB
+  // - Each interval should have size smaller than 16MB
 
   FreeIntervalList tmp_list;
   std::copy(free_intervals_.begin(), free_intervals_.end(),
             back_inserter(tmp_list));
   free_intervals_.clear();
-  const size_t max_interval_size = (const size_t)1024*1024*128;
+  const size_t max_interval_size = (const size_t)1024*1024*16;
   const size_t max_mapped_area_size = (const size_t)1024*1024*(1024+512);
   for (FreeIntervalList::iterator fi = tmp_list.begin();
        fi != tmp_list.end(); fi++) {
