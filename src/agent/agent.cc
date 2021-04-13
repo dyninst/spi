@@ -351,6 +351,7 @@ namespace sp {
           (void*)g_parser->GetFuncAddrFromName("wrapper_exit");
       assert(wrapper_exit);
       g_context->SetWrapperExit(wrapper_exit);
+    }
 
     // Register Events for initial instrumentation
     init_event_->RegisterEvent();
