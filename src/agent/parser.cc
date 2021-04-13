@@ -56,6 +56,8 @@
 #include "common/utils.h"
 #include "injector/injector.h"
 
+#include "PatchCFG.h"
+
 namespace sp {
 
 extern SpContext* g_context;
@@ -161,7 +163,9 @@ SpParser::CreatePatchobjs(sp::SymtabSet& unique_tabs,
     // or dyninst).
     string libname_no_path = sp_filename(sym->name().c_str());
 
-    if (!CanInstrumentLib(libname_no_path)) {
+    // Skip parsing unwanted libraries
+    // Parsing libc is part of the ad-hoc fix to stop instrumentation after exit
+    if (!CanInstrumentLib(libname_no_path) && libname_no_path.find("libc.so") == string::npos) {
       sp_debug("SKIPED - skip parsing %s",
                sp_filename(sym->name().c_str()));
       continue;
@@ -189,13 +193,19 @@ SpParser::CreatePatchobjs(sp::SymtabSet& unique_tabs,
 // Get mutatee's executable's SpObject
 SpObject*
 SpParser::GetExeFromProcfs(sp::PatchObjects& patch_objs) {
+  std::string exeName = sp::GetExeName();
   for (PatchObjects::iterator oi = patch_objs.begin();
        oi != patch_objs.end(); oi++) {
     sp_debug("Trying next patch obj");
     SpObject* obj = OBJ_CAST(*oi);
     assert(obj);
-    char* s1 = sp_filename(sp::GetExeName().c_str());
-    char* s2 = sp_filename(obj->name().c_str());
+
+    // we want to make a copy of it because the basename may return a pointer 
+    // to the middle of the original string
+    std::string objName = obj->name();
+    char* s1 = sp_filename(exeName.c_str());
+    char* s2 = sp_filename(objName.c_str());
+    sp_debug("exec name[%s] obj name[%s]", sp::GetExeName().c_str(), obj->name().c_str());
     if (strcmp(s1, s2) == 0) {
       sp_debug("GOT EXE - %s is an executable shared library", s2);
       return obj;
@@ -287,12 +297,9 @@ SpParser::CreateObjectFromRuntime(sb::Symtab* sym,
   sp_debug("Start create obj from runtime symtab name: %s", sym->name().c_str());
   pe::SymtabCodeSource* scs = new pe::SymtabCodeSource(sym);
   code_srcs_.push_back(scs);
-  sp_debug("Construcint code obj");
   pe::CodeObject* co = new pe::CodeObject(scs);
   code_objs_.push_back(co);
-  sp_debug("parsing");
   co->parse();
-  sp_debug("finished paring code obj");
 
   // Uncomment this to parse stripped object
   /*
@@ -385,11 +392,12 @@ SpParser::DumpInsns(void* addr,
   dt::Address base = (dt::Address)addr;
   pe::CodeSource* cs = exe_obj_->co()->cs();
   string s;
-  char buf[256];
+  char buf[4096];
   in::InstructionDecoder deco(addr, size, cs->getArch());
   in::Instruction insn = deco.decode();
+  insn.format(base);
   while(insn.size() != 0) {
-    sprintf(buf, "    %lx(%2lu bytes): %-25s | ", base,
+    snprintf(buf, 2047, "    %lx(%2lu bytes): %-25s | ", base,
             (unsigned long)insn.size(), insn.format(base).c_str());
     char* raw = (char*)insn.ptr();
     for (unsigned i = 0; i < insn.size(); i++)
@@ -505,10 +513,11 @@ SpParser::callee(SpPoint* pt,
   // 1. Looking for direct call
   f = FUNC_CAST(pt->getCallee());
   if (f) {
-    SpFunction* tmp_f = g_parser->FindFunction(f->GetMangledName());
-    if (tmp_f && tmp_f != f) {
-      f = tmp_f;
-    }
+    // XXX: Why bother lookup function by mangled name when patchapi gets it?
+    // SpFunction* tmp_f = g_parser->FindFunction(f->GetMangledName());
+    // if (tmp_f && tmp_f != f) {
+    //   f = tmp_f;
+    // }
     sp_debug("got callee, found function %lx", (long unsigned int) f);
 
     SpFunction* sfunc = f;
@@ -671,8 +680,15 @@ SpParser::FindFunction(dt::Address addr) {
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
 
+    if (!CanInstrumentLib(obj->name().c_str())) {
+      sp_debug("SKIPED - skip finding function at %s",
+               sp_filename(obj->name().c_str()));
+      continue;
+    }
+
     // Get the function offset relative to the object
     dt::Address offset = addr - obj->codeBase();
+    sp_debug("code base %lx for %s", obj->codeBase(), obj->name().c_str());
     
     pe::CodeObject* co = obj->co();
     pe::CodeSource* cs = co->cs();
@@ -681,8 +697,10 @@ SpParser::FindFunction(dt::Address addr) {
     set<pe::Block *> blocks;
     int cnt = cs->findRegions(offset, match);
 
-    if(cnt != 1)
+    if(cnt != 1) {
+      sp_debug("%ld Regions found", cnt);
       continue;
+    }
     else if(cnt == 1) {
       co->findBlocks(*match.begin(), offset, blocks);
 
@@ -741,6 +759,14 @@ SpParser::FindFunction(string name,
        ci != as->objMap().end(); ci++) {
     SpObject* obj = OBJ_CAST(ci->second);
 
+    // Two cases to skip:
+    // 1. Not in inst_lib list
+    // 2. In inst_lib, lib is libc, but function is not __libc_start_main
+    if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
+      sp_debug("Find Function: SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
+      continue;
+    }
+
     GetFuncsByName(obj, name, false, &func_set);
   }
 
@@ -797,6 +823,14 @@ SpParser::FindFunction(string name) {
       sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
       continue;
     }
+
+    // Two cases to skip:
+    // 1. Not in inst_lib list
+    // 2. In inst_lib, lib is libc, but function is not __libc_start_main
+    if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
+      sp_debug("SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
+      continue;
+    }
     
     GetFuncsByName(obj, name, true, &func_set);
   }
@@ -826,14 +860,6 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   assert(func_set);
   sp_debug("IN OBJECT - %s in %s?",
            name.c_str(), obj->name().c_str());
-
-  // Two cases to skip:
-  // 1. Not in inst_lib list
-  // 2. In inst_lib, lib is libc, but function is not __libc_start_main
- if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
-    sp_debug("Find Function: SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
-    return false;
-  }
 
   if ((strcmp(name.c_str(), "recv") != 0) && (strcmp(name.c_str(), "read") != 0) && obj->name().find("libc-") != std::string::npos &&
       strcmp(name.c_str(), "__libc_start_main") != 0) {
@@ -876,25 +902,11 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
       if (!found ||
           found->name().length() == 0 ||
           found->name().compare(name) != 0) {
+        // sp_debug("found [%s] name [%s]", found->name().c_str(), name.c_str());
         continue;
-      }      
+      }
     }
-    
-    // Skip .plt functions
-    // commented because unable to find the region
-    sp_debug("looking for region that contains %lu", (*fit)->addr());
-    sb::Region* region = sym->findEnclosingRegion((*fit)->addr());
-    assert(region);
-    if (region->getRegionName().compare(".plt") == 0) {
-      sp_debug("A PLT - %s at function address %lx in object  %s with object load address %lx", name.c_str(),
-               (*fit)->addr(), sym->name().c_str(),obj->load_addr());
-     /* if(FindPltFunc(obj, name, true, func_set, (*fit)->addr(),obj->load_addr()) == true) 
-	return true; 
-      else*/
-     	 continue;
-    }
-
-    
+        
     sp_debug("GOT %s in OBJECT - %s at %lx",
              name.c_str(), sym->name().c_str(),
              found->addr() - obj->load_addr());

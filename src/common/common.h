@@ -76,7 +76,6 @@ extern FILE* g_error_fp;
 */
 #define sp_print(...) do { \
   if (getenv("SP_FDEBUG")) {  \
-    char* nodir = basename((char*)__FILE__);  \
     fprintf(g_output_fp, __VA_ARGS__);  \
     fprintf(g_output_fp, "\n");  \
   } else {  \

@@ -60,10 +60,6 @@ SpInjector::ptr SpInjector::Create(dt::PID pid) {
 
 //////////////////////////////////////////////////////////////////////
 SpInjector::SpInjector(dt::PID pid) : pid_(pid) {
-
-  FILE *fp = fopen("./tmp/proc_control_debug", "w");
-  pc::setDebugChannel(fp);
-  pc::setDebug(true);
   proc_ = Process::attachProcess(pid);
   if (proc_ == Process::ptr()) {
     sp_debug("Injector [pid = %5d] - Failed to attach to process %d.", getpid(),

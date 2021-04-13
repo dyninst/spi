@@ -36,7 +36,14 @@
 #include "agent/thread_mgr.h"
 #include "common/utils.h"
 
+#include <atomic>         // std::atomic
+
 using std::string;
+
+// global variable to track if we should
+// do instrumentation, the purpose of this is to stop
+// instrumentation when we hit exit function
+std::atomic<int> IN_INSTRUMENTATION {1};
 
 namespace sp {
 extern SpContext* g_context;
@@ -118,6 +125,16 @@ default_exit(sp::SpPoint* pt) {
  */
 }
 
+/**
+ * payload entry function for exit function to toggle off
+ * instrumentation
+ */
+void
+toggle_off_instrumentation_entry(sp::SpPoint* pt) {
+  sp_debug("PROCESS[%d] toggle off instrumentation", getpid());
+  IN_INSTRUMENTATION = 0;
+}
+
 // Utilities that payload writers can use in their payload functions
 
 namespace sp {
@@ -182,6 +199,15 @@ Callee(SpPoint* pt) {
 // Propel instrumentation to next points of the point `pt`
 void
 Propel(SpPoint* pt) {
+  // the instrumentation status will be off after the exit function is called
+  // we stop instrumentation since the exit handlers call destructors for
+  // all the global variables, and we can not rely on them any more
+  if (!IN_INSTRUMENTATION) {
+    sp_debug("PROCESS[%d] Already hit exit function, skip instrumentation", getpid());
+    return;
+  } else {
+    sp_debug("PROCESS[%d] still in instrumentation", getpid());
+  }
 
   sp::SpPropeller::ptr p = sp::SpPropeller::ptr();
   SpFunction* f = NULL;
@@ -195,11 +221,15 @@ Propel(SpPoint* pt) {
 
   // Skip if we have already propagated from this point
   if (f->propagated()) {
+    sp_debug("Already propagated, goto exit");
     goto PROPEL_EXIT;
   }
 
   p = g_context->init_propeller();
-  assert(p);
+  if (!p) {
+    sp_debug("asserting propeller");
+    assert(p);
+  }
 
   p->go(f,
         g_context->init_entry(),

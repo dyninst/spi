@@ -35,6 +35,7 @@
 #include "agent/agent.h"
 #include "agent/context.h"
 #include "agent/patchapi/addr_space.h"
+#include "agent/patchapi/object.h"
 #include "common/utils.h"
 #include "common/common.h"
 #include "injector/injector.h"
@@ -71,7 +72,7 @@ namespace sp {
     }
 	
    char error_file[255],output_file[255];
-     snprintf(error_file,255,"./tmp/spi/spi-error-%d", getpid());
+     snprintf(error_file,255,"%s/%s/tmp/spi/spi-error-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
      g_error_fp=fopen(error_file , "a+");
      if (g_error_fp == NULL) {
         std::cerr << "Failed to open file for output erro info: " << strerror(errno) << std::endl;
@@ -79,7 +80,7 @@ namespace sp {
         g_error_fp = stderr;
       }
 
-     snprintf(output_file,255,"./tmp/spi/spi-output-%d", getpid());
+     snprintf(output_file,255,"%s/%s/tmp/spi/spi-output-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
      g_output_fp=fopen(output_file , "a+");
      if (g_output_fp == NULL) {
         std::cerr << "Failed to open file for output stdout info: " << strerror(errno) << std::endl;
@@ -90,7 +91,7 @@ namespace sp {
     // Enalbe outputing debug info to /tmp/spi-$PID
     if (getenv("SP_FDEBUG")) {
       char fn[255];
-      snprintf(fn, 255, "./tmp/spi/spi-%d", getpid());
+      snprintf(fn, 255, "%s/%s/tmp/spi/spi-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
       g_debug_fp = fopen(fn, "a+");
       if (g_debug_fp == NULL) {
         std::cerr << "Failed to open file for output debug info: " << strerror(errno) << std::endl;
@@ -351,11 +352,45 @@ namespace sp {
       assert(wrapper_exit);
       g_context->SetWrapperExit(wrapper_exit);
     }
-    // Register Events
+
+    // Register Events for initial instrumentation
     init_event_->RegisterEvent();
     sp_debug("init registered");
     fini_event_->RegisterEvent();
     sp_debug("fini registered");
+
+    std::string exit_function_payload_str("toggle_off_instrumentation_entry");
+    void* exit_function_payload = (void*)g_parser->GetFuncAddrFromName(exit_function_payload_str);
+
+    if (exit_function_payload == NULL) {
+      sp_perror("Failed to find exit function payload to toggle off instrumentation, return immediately");
+      return;
+    }
+
+    // Instrument exit function inside libc to stop SPI when exit is called
+    FuncSet found_exit_funcs;
+    std::string exit_string("__GI_exit");
+    for (ph::AddrSpace::ObjMap::iterator ci = g_as->objMap().begin();
+       ci != g_as->objMap().end(); ci++) {
+      SpObject* obj = OBJ_CAST(ci->second);
+      if (obj->name().find("libc.so") != string::npos) {
+        g_parser->GetFuncsByName(obj, exit_string, false, &found_exit_funcs);
+      }
+    }
+    for (FuncSet::iterator i = found_exit_funcs.begin();
+        i != found_exit_funcs.end(); i++) {
+      if (*i == NULL) continue;
+      SpFunction* f = *i;
+      sp_debug("Pre-instrumenting exit function: %s", f->name().c_str());
+      g_context->init_propeller()->go(f,
+                                      exit_function_payload,
+                                      g_context->init_exit());
+    }
+
+    // a sleep interval to attach gdb
+    if (getenv("SP_GDBSLEEP")) {
+      sleep(15);
+    }
   }
 
 }
