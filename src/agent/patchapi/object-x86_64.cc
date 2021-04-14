@@ -73,7 +73,7 @@ namespace sp {
 		}
 
 		small_freebufs_.base =base;
-		small_freebufs_. buf_size = size ;
+		small_freebufs_.buf_size = size ;
 
 	}
 
@@ -91,11 +91,13 @@ namespace sp {
 			g_as->allocateNewInterval(this);
 		}
 
-		if(small_freebufs_.buf_size >=size) {
-			ret = small_freebufs_.base +size ;
+		if (small_freebufs_.buf_size >= size) {
+			ret = small_freebufs_.base;
 			//sp_debug("Number of free buffers: %d", small_freebufs_.list.size());
 			sp_debug("%s: Returning %lu buffer at %lx", name().c_str(), size, ret);
-			small_freebufs_.base +=size + 1;		  
+			small_freebufs_.base += (size+1);
+			small_freebufs_.buf_size -= (size+1);
+			sp_debug("%s: %lu bytes left", name().c_str(), small_freebufs_.buf_size);
 			return ret;
 		}
 		size_t ps = getpagesize();
