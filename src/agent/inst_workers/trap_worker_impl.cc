@@ -67,6 +67,7 @@ bool TrapWorker::run(SpPoint* pt) {
   // This mapping is used in trap handler
   assert(pt->snip());
   inst_map_[call_addr] = pt->snip();
+  sp_debug("snippet added to instrumentation map at %xl", call_addr);
 
   // Install
   return install(pt);
@@ -183,6 +184,7 @@ void TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
   assert(pc);
   InstMap& inst_map = TrapWorker::inst_map_;
   if (inst_map.find(pc) == inst_map.end()) {
+    sp_debug("instrumentation map for %lx not found", pc);
     dt::Address ret = g_context->GetReturnAddress();
 
     if (ret != (dt::Address)0) {
@@ -219,6 +221,8 @@ void TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
 
       // Set pc to jump to the exit point instrumentation
       SpSnippet::set_pc((dt::Address)exit_snip_addr, c);
+    } else {
+      sp_debug("ret 0 inside trap handler");
     }
   } else {
     // Get patch area's address

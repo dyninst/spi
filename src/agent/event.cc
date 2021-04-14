@@ -111,13 +111,13 @@ namespace sp {
        at the call stack size. If the call stack size is zero then
        the agent is preloaded. If the call stack size is greater 
        than zero, then the agent is injected */
-      FuncSet call_stack;
-      g_context->GetCallStack(&call_stack);
-      sp_debug("CALLSTACK - %lu calls in the call stack",
-               (unsigned long)call_stack.size());
+    FuncSet call_stack;
+    g_context->GetCallStack(&call_stack);
+    sp_debug("CALLSTACK - %lu calls in the call stack",
+              (unsigned long)call_stack.size());
 
-      if (call_stack.size()<=0)  {
-      sp_debug("PRELOAD - preload agent.so, and instrument main()");
+    if (call_stack.size() <= 0)  {
+    sp_debug("PRELOAD - preload agent.so, and instrument main()");
 
       SpFunction* f = g_parser->FindFunction("main");
       if (f) {
@@ -146,11 +146,11 @@ namespace sp {
         if (f->name().compare("main") == 0) {
           break;
         }
-	if (IsRecvLikeFunction(f->name())) { //.compare("recv") == 0) {
-		sp_debug("Recv like function on the stack");
-		//Modify the PC to start at a new location 
-	        g_context->init_propeller()->ModifyPC(f,g_context->init_exit());	
-	}
+        if (IsRecvLikeFunction(f->name())) {
+          sp_debug("Recv like function on the stack");
+          //Modify the PC to start at a new location 
+          g_context->init_propeller()->ModifyPC(f,g_context->init_exit());	
+        }
       } // Iterate through all the functions int the Call stack
     } // Injection mode
  
@@ -180,7 +180,7 @@ namespace sp {
       }
     }
 
-    for (FuncSet::iterator i = funcs_.begin(); 
+    for (FuncSet::iterator i = funcs_.begin();
            i != funcs_.end(); i++) {
         SpFunction* f = *i;
         sp_debug("PRE-INST FUNC - %s", f->name().c_str());
