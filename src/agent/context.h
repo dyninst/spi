@@ -48,6 +48,7 @@
 
 #include "frame.h"
 #include "walker.h"
+#include <stack>
 
 namespace sp {
 
@@ -102,12 +103,15 @@ class SpContext {
     char* FindExitInstAddrFromCallSitePoint(SpPoint*);
    
     //Table to store the non-instrumented functions and their return address
-   typedef std::map<SpPoint*,char*> PointRetAddrMap;
-   typedef std::map<dt::Address, SpPoint*> RetAddrCallPointMap;
-   PointRetAddrMap pt_ra_map_;
-   RetAddrCallPointMap ra_csp_map_;
+    typedef std::map<SpPoint*,char*> PointRetAddrMap;
+    typedef std::map<dt::Address, SpPoint*> RetAddrCallPointMap;
+    PointRetAddrMap pt_ra_map_;
+    RetAddrCallPointMap ra_csp_map_;
 
-   dt::Address GetReturnAddress();
+    dt::Address GetReturnAddress();
+
+    void PushPointCallInfo(PointCallInfo*);
+    PointCallInfo* PopPointCallInfo();
 
   protected:
 

@@ -419,9 +419,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
 
 // Will be called before user-specified exit-payload function.
 bool
-SpIpcMgr::BeforeExit(SpPoint* pt) {
-
- ph::PatchFunction* f = sp::Callee(pt);
+SpIpcMgr::BeforeExit(SpPoint* pt, SpFunction* f) {
   if (!f) return false;
 
   // fcntl F_SETOWN socket descriptors returned, so that it can receive OOB packets

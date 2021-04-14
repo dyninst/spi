@@ -48,74 +48,167 @@ std::atomic<int> IN_INSTRUMENTATION {1};
 namespace sp {
 extern SpContext* g_context;
 extern SpParser::ptr g_parser;
+
+PointHandle::PointHandle(SpPoint* pt, SpFunction* callee, void* user_info, long ret_val) {
+  this->pt_ = pt;
+  this->callee_ = callee;
+  this->user_info_ = user_info;
+  this->return_value_ = ret_val;
+}
+
+PointHandle::~PointHandle() {}
+
+SpPoint* PointHandle::GetPoint() {
+  return pt_;
+}
+
+SpFunction* PointHandle::GetCallee() {
+  return callee_;
+}
+
+void* PointHandle::GetUserInfo() {
+  return user_info_;
+}
+
+long PointHandle::ReturnValue() {
+  return return_value_;
+}
 }
 
 //////////////////////////////////////////////////////////////////////
 
-// The two wrappers are used only in IPC mode
+/**
+ * wrapper function for payload entry
+ * This wrapper is responsible for getting the callee of current point
+ * and calling the payload entry function. It gets the returned pointer
+ * from payload entry and push the callee and pointer to the stack,
+ * the callee and pointer are expected to be popped off from stack in
+ * the wrapper_exit function
+ */
 void
 wrapper_entry(sp::SpPoint* pt,
-              sp::PayloadFunc_t entry) {
-  assert(sp::g_context);
+              sp::PayloadFuncEntry entry) {
+  sp_debug("In wrapper entry function for point %p", pt);
+  if (sp::g_context == NULL) {
+    sp_perror("Global context is NULL, return");
+    return;
+  }
 
-  // Handle IPC stuffs
-  if (sp::g_context->IsIpcEnabled()) {
-    if (!sp::SpIpcMgr::BeforeEntry(pt)) {
-      return;
+  void* user_info = NULL;
+  sp::SpFunction* callee = sp::Callee(pt);
+
+  if (callee != NULL) {
+    // Handle IPC stuffs
+    if (sp::g_context->IsIpcEnabled()) {
+      sp::SpIpcMgr::BeforeEntry(pt);
+    }
+
+    // Handle multihread stuffs
+    if (sp::g_context->IsMultithreadEnabled()) {
+      sp::SpThreadMgr::BeforeEntry(pt);
+    }
+
+    if (entry) {
+      user_info = entry(pt);
     }
   }
 
-  // Handle multihread stuffs
-  if (sp::g_context->IsMultithreadEnabled()) {
-    if (!sp::SpThreadMgr::BeforeEntry(pt)) {
-      return;
-    }
-  }
-
-  if (entry) entry(pt);
+  sp::PointCallInfo* pointInfo = new sp::PointCallInfo(pt, callee, user_info);
+  sp::g_context->PushPointCallInfo(pointInfo);
+  sp_debug("Pushing point call info onto stack: %lx", pointInfo->pt);
 }
 
+///////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////
-
+/**
+ * wrapper function for payload exit
+ * This wrapper is responsible for retrieving the callee information from the 
+ * stack and passing the information into the user-defined payload exit
+ * function.
+ */
 void
 wrapper_exit(sp::SpPoint* pt,
-             sp::PayloadFunc_t exit) {
-  // Handle IPC stuffs
-  if (sp::g_context->IsIpcEnabled()) {
-    if (!sp::SpIpcMgr::BeforeExit(pt)) {
-      return;
+             sp::PayloadFuncExit exit) {
+  sp_debug("In wrapper exit function for point %p", pt);
+
+  sp::PointCallInfo* pointInfo;
+  long ret_val;
+  
+  // Retrieving point information and call payload exit function
+  pointInfo = sp::g_context->PopPointCallInfo();
+
+  // get return value for this point, also for all the tailcalls before the point
+  ret_val = ReturnValue(pt);
+
+  // iterate through tailcall points
+  while (pt != pointInfo->pt) {
+    sp_debug("Got info from previous tail call %p", pointInfo->pt);
+
+    if (!pointInfo->pt->tailcall()) {
+      sp_debug("ERROR: this point is not tailcall");
     }
+    
+    // Handle IPC stuffs
+    if (sp::g_context->IsIpcEnabled()) {
+      sp::SpIpcMgr::BeforeExit(pointInfo->pt, pointInfo->callee);
+    }
+
+    // Handle dlopen
+    if (sp::g_context->IsHandleDlopenEnabled()) {
+      sp::SpParser::ParseDlExit(pointInfo->pt);
+    }
+
+    if (exit) {
+      sp::PointHandle* point_handle =
+        new sp::PointHandle(pointInfo->pt, pointInfo->callee, pointInfo->info, ret_val);
+      exit(point_handle);
+      delete point_handle;
+    }
+
+    delete pointInfo;
+    pointInfo = sp::g_context->PopPointCallInfo();
+  }
+
+  // Now, deal with the correct pointInfo
+  if (sp::g_context->IsIpcEnabled()) {
+    sp::SpIpcMgr::BeforeExit(pt, pointInfo->callee);
   }
 
   // Handle dlopen
   if (sp::g_context->IsHandleDlopenEnabled()) {
-    if (!sp::SpParser::ParseDlExit(pt)) {
-      return;
-    }
+    sp::SpParser::ParseDlExit(pt);
   }
-  if (exit) exit(pt);
+
+  if (exit) {
+    sp::PointHandle* point_handle =
+      new sp::PointHandle(pointInfo->pt, pointInfo->callee, pointInfo->info, ret_val);
+    exit(point_handle);
+    delete point_handle;
+  }
+
+  delete pointInfo;
 }
 
 
 //////////////////////////////////////////////////////////////////////
 
 // Default payload functions
-void
+void*
 default_entry(sp::SpPoint* pt) {
   ph::PatchFunction* f = sp::Callee(pt);
-  if (!f) return;
+  if (!f) return NULL;
 
   string callee_name = f->name();
   sp_print("Enter %s", callee_name.c_str());
 
   sp::Propel(pt);
+  return NULL;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void
-default_exit(sp::SpPoint* pt) {
+default_exit(sp::PointHandle*) {
   
 /*    ph::PatchFunction* f = sp::Callee(pt);
     if (!f) return;
