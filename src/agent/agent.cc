@@ -341,17 +341,17 @@ namespace sp {
       // SpIpcMgr will be deleted in the destructor of SpContext
       g_context->SetIpcMgr(new SpIpcMgr());
     }
-    if (allow_ipc_ || allow_multithread_ || handle_dlopen_) {
-      sp_debug("ALLOW IPC OR MULTITHREADED OR HANDLE_DLOPEN");
-      void* wrapper_entry =
-          (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
-      assert(wrapper_entry);
-      g_context->SetWrapperEntry(wrapper_entry);
-      void* wrapper_exit =
-          (void*)g_parser->GetFuncAddrFromName("wrapper_exit");
-      assert(wrapper_exit);
-      g_context->SetWrapperExit(wrapper_exit);
-    }
+
+    // Always use wrapper functions for payload entry and exit
+    sp_debug("ALLOW IPC OR MULTITHREADED OR HANDLE_DLOPEN");
+    void* wrapper_entry =
+        (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
+    assert(wrapper_entry);
+    g_context->SetWrapperEntry(wrapper_entry);
+    void* wrapper_exit =
+        (void*)g_parser->GetFuncAddrFromName("wrapper_exit");
+    assert(wrapper_exit);
+    g_context->SetWrapperExit(wrapper_exit);
 
     // Register Events for initial instrumentation
     init_event_->RegisterEvent();

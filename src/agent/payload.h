@@ -38,6 +38,7 @@
 // Wrappers for locking
 #define SP_LOCK(func) do {                              \
     int result = Lock(&g_propel_lock);                  \
+    sp_debug("Acquired lock");                  \
     if (result == SP_DEAD_LOCK) {                       \
       sp_print("DEAD LOCK - skip #func for point %lx",  \
                pt->block()->last());                    \
@@ -47,6 +48,7 @@
 
 #define SP_UNLOCK(func) do {                    \
  func##_EXIT:                                   \
+    sp_debug("Released lock");                  \
     Unlock(&g_propel_lock);                     \
   } while (0)
 
@@ -54,10 +56,41 @@ namespace sp {
   class SpContext;
   class SpPoint;
 
+  // a struct to pass information tuple between payload entry and payload exit
+  struct PointCallInfo {
+    PointCallInfo(SpPoint* pt, SpFunction* callee, void* info) {
+      this->pt = pt;
+      this->callee = callee;
+      this->info = info;
+    }
+
+    SpPoint* pt;
+    SpFunction* callee;
+    void* info;
+  };
+
+  class PointHandle {
+    SpPoint* pt_;
+    SpFunction* callee_;
+    void* user_info_;
+    long return_value_;
+
+  public:
+    PointHandle(SpPoint*, SpFunction*, void*, long);
+    ~PointHandle();
+
+    SpPoint* GetPoint();
+    SpFunction* GetCallee();
+    void* GetUserInfo();
+    long ReturnValue();
+  };
+
   // ------------------------
   //       Private things
   // ------------------------
   typedef void (*PayloadFunc_t)(ph::Point* pt);
+  typedef void* (*PayloadFuncEntry)(ph::Point* pt);
+  typedef void (*PayloadFuncExit)(PointHandle*); 
   typedef void* PayloadFunc;
   struct ArgumentHandle {
     ArgumentHandle();

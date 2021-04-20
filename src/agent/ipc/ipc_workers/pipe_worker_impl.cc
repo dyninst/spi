@@ -124,7 +124,7 @@ SpPipeWorker::Inject(SpChannel* c,
   if (c->remote_pid > 0) {
 
     sp_debug("Remote pid is %d",c->remote_pid);
-    if(ProcessHasLibrary(c->remote_pid, "libmyagent")){
+    if(ProcessHasLibrary(c->remote_pid, "libagent")){
      sp_debug("Process %d already has agent shared library", c->remote_pid);
      return true;
     }

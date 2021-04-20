@@ -133,17 +133,12 @@ namespace sp {
     // 2. Save context (TODO: better to have liveness analysis)
     blob_size_ += emit_save(blob_, blob_size_);
 
-    // 3. Call payload before function call
-    long param_func = 0;
-    long called_func = (long)entry_;
+    // 3. Call payload wrapper before function call
+    long param_func = (long)entry_;
+    long called_func = (long)g_context->wrapper_entry();
     sp_debug("PAYLOAD ENTRY - at %lx", called_func);
     assert(g_context);
-    if (g_context->IsIpcEnabled() ||
-        g_context->IsMultithreadEnabled() ||
-        g_context->IsHandleDlopenEnabled()) {
-      param_func = (long)entry_;
-      called_func = (long)g_context->wrapper_entry();
-    }
+
     blob_size_ += emit_pass_param((long)point_, param_func, blob_,
                                   blob_size_);
     blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
@@ -173,6 +168,8 @@ namespace sp {
                                   false);
     } else {
 
+      sp_debug("For point %lx", point_);
+
       if (!point_->tailcall())
         sp_debug("INDIRECT_CALL ");
       else
@@ -191,24 +188,18 @@ namespace sp {
     SpFunction* callee = point_->callee();
     if (callee)
     {
-	char* ret_blob_address = blob_;
-	ret_blob_address += blob_size_;
-	g_context->pt_ra_map_[point_] = ret_blob_address;
- 	g_context->ra_csp_map_[ret_addr] = point_;
-//	sp_debug("Point %lx exit point instrumentation address %lx return address %lx",(dt::Address)point_ , (dt::Address)ret_blob_address, ret_addr);	
+      char* ret_blob_address = blob_;
+      ret_blob_address += blob_size_;
+      g_context->pt_ra_map_[point_] = ret_blob_address;
+      g_context->ra_csp_map_[ret_addr] = point_;
     } 
 
       // 6. save context
       blob_size_ += emit_save(blob_, blob_size_);
 
       // 7. Pass parameters
-      param_func = 0;
-      called_func = (long)exit_;
-      if (g_context->IsIpcEnabled() ||
-          g_context->IsHandleDlopenEnabled()) {
-        param_func = (long)exit_;
-        called_func = (long)g_context->wrapper_exit();
-      }
+      param_func = (long)exit_;
+      called_func = (long)g_context->wrapper_exit();
       blob_size_ += emit_pass_param((long)point_,
                                     param_func,
                                     blob_,
@@ -421,7 +412,7 @@ namespace sp {
     // We may want to reallocate it, so free existing buffer first
     if (blob_) {
       sp_debug("REALLOC - for %lx", point_->block()->last());
-      g_as->free(obj, (dt::Address)blob_);
+      // g_as->free(obj, (dt::Address)blob_);
     }
 
     blob_ = (char*)g_as->malloc(obj, estimate_size,
@@ -440,6 +431,8 @@ namespace sp {
 
     int offset = saved_reg_map_[reg];
     *out = RegVal(offset);
+
+    sp_debug("Looing for register [%s] with offset [%d]", reg.name().c_str(), offset);
 
     sp_debug("ORIG VAL - %s = %lx, size: %ld",
              reg.name().c_str(), *out, (long)reg.size());

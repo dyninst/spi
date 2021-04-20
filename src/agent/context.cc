@@ -47,6 +47,9 @@ namespace sp {
   extern SpLock* g_propel_lock;
   extern SpAddrSpace* g_as;
 
+  // a thread safe stack to communicate between payload entry and payload exit
+  thread_local std::stack<PointCallInfo*> point_info_stack_;
+
   SpContext::SpContext() :
       init_entry_(NULL),
       init_exit_(NULL),
@@ -59,7 +62,6 @@ namespace sp {
       allow_multithread_(false),
       directcall_only_(false),
       walker_(sk::Walker::newWalker()) {
-
   }
 
   SpContext*
@@ -148,10 +150,10 @@ namespace sp {
   //The function name says it all
   SpPoint* SpContext::FindCallSitePointFromRetAddr(dt::Address ret_addr)
   {
-	if(ra_csp_map_.find(ret_addr) == ra_csp_map_.end())
-		return NULL;
-	else
-		return ra_csp_map_[ret_addr];
+    if(ra_csp_map_.find(ret_addr) == ra_csp_map_.end())
+      return NULL;
+    else
+      return ra_csp_map_[ret_addr];
   }
   
   char* SpContext::FindExitInstAddrFromCallSitePoint(SpPoint* pt)
@@ -166,5 +168,21 @@ namespace sp {
     delete ipc_mgr_;
     delete g_propel_lock;
     delete g_as;
+  }
+
+  // push the call point informaiton onto stack
+  void SpContext::PushPointCallInfo(PointCallInfo* callInfo) {
+    point_info_stack_.push(callInfo);
+  }
+
+  // reverse of the PushPointHandle function
+  PointCallInfo* SpContext::PopPointCallInfo() {
+    if (point_info_stack_.size() == 0) {
+      sp_perror("ERROR: stack is already empty before pop");
+      return NULL;
+    }
+    PointCallInfo* ret = point_info_stack_.top();
+    point_info_stack_.pop();
+    return ret;
   }
 }
