@@ -419,7 +419,8 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
 
 // Will be called before user-specified exit-payload function.
 bool
-SpIpcMgr::BeforeExit(SpPoint* pt, SpFunction* f) {
+SpIpcMgr::BeforeExit(PointHandle* handle) {
+  SpFunction* f = handle->GetCallee();
   if (!f) return false;
 
   // fcntl F_SETOWN socket descriptors returned, so that it can receive OOB packets
@@ -459,7 +460,7 @@ SpIpcMgr::BeforeExit(SpPoint* pt, SpFunction* f) {
  */
   //Detect fork for pipe
   if (ipc_mgr->IsFork(f->name().c_str())) {
-    long pid = sp::ReturnValue(pt);
+    long pid = handle->ReturnValue();
     sp_debug("fork: pid[%ld]", pid);
     // Receiver
     if (pid == 0) {
@@ -468,7 +469,7 @@ SpIpcMgr::BeforeExit(SpPoint* pt, SpFunction* f) {
   }
   // Detect popen for pipe
   else if (ipc_mgr->IsPopen(f->name().c_str())) {
-    FILE* fp = (FILE*)sp::ReturnValue(pt);
+    FILE* fp = (FILE*)handle->ReturnValue();
     int fd = fileno(fp);
     // XXX: magic?? This is a very artificial way to wait for fork done
     sleep(5);

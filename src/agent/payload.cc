@@ -147,10 +147,13 @@ wrapper_exit(sp::SpPoint* pt,
     if (!pointInfo->pt->tailcall()) {
       sp_debug("ERROR: this point is not tailcall");
     }
+
+    sp::PointHandle* point_handle =
+      new sp::PointHandle(pointInfo->pt, pointInfo->callee, pointInfo->info, ret_val);
     
     // Handle IPC stuffs
     if (sp::g_context->IsIpcEnabled()) {
-      sp::SpIpcMgr::BeforeExit(pointInfo->pt, pointInfo->callee);
+      sp::SpIpcMgr::BeforeExit(point_handle);
     }
 
     // Handle dlopen
@@ -159,19 +162,20 @@ wrapper_exit(sp::SpPoint* pt,
     }
 
     if (exit) {
-      sp::PointHandle* point_handle =
-        new sp::PointHandle(pointInfo->pt, pointInfo->callee, pointInfo->info, ret_val);
       exit(point_handle);
-      delete point_handle;
     }
-
+    
+    delete point_handle;
     delete pointInfo;
     pointInfo = sp::g_context->PopPointCallInfo();
   }
 
+  sp::PointHandle* point_handle =
+      new sp::PointHandle(pointInfo->pt, pointInfo->callee, pointInfo->info, ret_val);
+
   // Now, deal with the correct pointInfo
   if (sp::g_context->IsIpcEnabled()) {
-    sp::SpIpcMgr::BeforeExit(pt, pointInfo->callee);
+    sp::SpIpcMgr::BeforeExit(point_handle);
   }
 
   // Handle dlopen
@@ -180,12 +184,10 @@ wrapper_exit(sp::SpPoint* pt,
   }
 
   if (exit) {
-    sp::PointHandle* point_handle =
-      new sp::PointHandle(pointInfo->pt, pointInfo->callee, pointInfo->info, ret_val);
     exit(point_handle);
-    delete point_handle;
   }
 
+  delete point_handle;
   delete pointInfo;
 }
 
