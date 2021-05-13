@@ -6,7 +6,8 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void test_entry(SpPoint* pt) {
+void* test_entry(SpPoint* pt) {
+	return NULL;
 }
 
 AGENT_INIT

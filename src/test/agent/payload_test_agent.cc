@@ -6,26 +6,35 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void test_entry(SpPoint* pt) {
+void* test_entry(SpPoint* pt) {
 
   SpFunction* f = Callee(pt);
-  if (!f) return;
+  if (!f) return NULL;
   sp_print("ENTER %s", f->GetMangledName().c_str());
   sp::Propel(pt);
+  return NULL;
 }
 
-void test_exit(SpPoint* pt) {
-  SpFunction* f = Callee(pt);
-  sp_print("LEAVE %s", f->GetMangledName().c_str());
-  if (!f) return;
+void test_exit(sp::PointHandle* handle) {
+  if (!handle->GetCallee()) return;
+  sp_print("LEAVE %s", handle->GetCallee()->GetMangledName().c_str());
 }
 
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  StringSet libs_to_inst;
-  libs_to_inst.insert("libtest1.so");
-  agent->SetLibrariesToInstrument(libs_to_inst);
+  StringSet libs_not_to_inst {"linux-vdso.so",
+                                "libdl.so",
+                                "libresolv.so",
+                                "librt.so",
+                                "libcrypto.so",
+                                "libstdc++.so",
+                                "libm.so",
+                                "libgomp.so",
+                                "libpthread.so",
+                                "libc.so",
+                                "ld-linux-x86-64.so"};
+  agent->SetLibrariesNotToInstrument(libs_not_to_inst);
   agent->SetInitEntry("test_entry");
   agent->SetInitExit("test_exit");
   agent->Go();

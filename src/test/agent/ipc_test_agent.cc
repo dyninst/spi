@@ -7,9 +7,9 @@ using namespace sp;
 
 //int level = 0;
 
-void test_entry(SpPoint* pt) {
+void* test_entry(SpPoint* pt) {
   SpFunction* f = Callee(pt);
-  if (!f) return;
+  if (!f) return NULL;
 
 	if (IsIpcWrite(pt)) {
     /*
@@ -35,19 +35,20 @@ void test_entry(SpPoint* pt) {
   }
   */
   sp::Propel(pt);
+  return NULL;
 }
 
-void test_exit(SpPoint* pt) {
-  SpFunction* f = Callee(pt);
+void test_exit(sp::PointHandle* handle) {
+  SpFunction* f = handle->GetCallee();
   if (!f) return;
   // level--;
   
-	if (IsIpcWrite(pt)) {
-		long size = sp::ReturnValue(pt);
+	if (IsIpcWrite(handle->GetPoint())) {
+		long size = handle->ReturnValue();
 		// sp_print("Write size: %ld @ pid=%d", size, getpid());
 		fprintf(stderr, "Write size: %ld @ pid=%d\n", size, getpid());
-	} else if (IsIpcRead(pt)) {
-		long size = sp::ReturnValue(pt);
+	} else if (IsIpcRead(handle->GetPoint())) {
+		long size = handle->ReturnValue();
 		// sp_print("Read size: %ld @ pid=%d", size, getpid());
 		fprintf(stderr, "Read size: %ld @ pid=%d\n", size, getpid());
 	}
@@ -57,9 +58,18 @@ AGENT_INIT
 void MyAgent() {
   // fprintf(stderr, "AGENT LOADED!\n");
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  StringSet libs_to_inst;
-  libs_to_inst.insert("mod_chunked.so");
-  agent->SetLibrariesToInstrument(libs_to_inst);
+  StringSet libs_not_to_inst {"linux-vdso.so",
+                                "libdl.so",
+                                "libresolv.so",
+                                "librt.so",
+                                "libcrypto.so",
+                                "libstdc++.so",
+                                "libm.so",
+                                "libgomp.so",
+                                "libpthread.so",
+                                "libc.so",
+                                "ld-linux-x86-64.so"};
+  agent->SetLibrariesNotToInstrument(libs_not_to_inst);
   
   agent->SetInitEntry("test_entry");
   agent->SetInitExit("test_exit");

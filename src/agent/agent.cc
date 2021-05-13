@@ -182,9 +182,9 @@ namespace sp {
   }
 
   void
-  SpAgent::SetLibrariesToInstrument(const StringSet& libs) {
+  SpAgent::SetLibrariesNotToInstrument(const StringSet& libs) {
     for (StringSet::iterator i = libs.begin(); i != libs.end(); i++)
-      libs_to_inst_.insert(*i);
+      libs_not_to_inst_.insert(*i);
   }
 
   void
@@ -283,7 +283,7 @@ namespace sp {
     // The parser will be freed automatically, because it is a shared ptr
     g_parser = parser_;
     assert(g_parser);
-    g_parser->SetLibrariesToInstrument(libs_to_inst_);
+    g_parser->SetLibrariesNotToInstrument(libs_not_to_inst_);
     g_parser->SetFuncsNotToInstrument(funcs_not_to_inst_);
 
     //Parse and store the necessary` datastructures

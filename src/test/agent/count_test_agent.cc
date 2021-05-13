@@ -19,7 +19,7 @@ namespace sp {
   extern void report_timer();
 }
 
-void print_entry(SpPoint* pt) {
+void* print_entry(SpPoint* pt) {
   SetSegfaultSignal();
 
   ++callcount;
@@ -40,9 +40,10 @@ void print_entry(SpPoint* pt) {
     break;
   }
   sp::Propel(pt);
+  return NULL;
 }
 
-void print_exit(Point* pt) {
+void print_exit(sp::PointHandle*) {
 }
 
 void segv_handler(int num) {

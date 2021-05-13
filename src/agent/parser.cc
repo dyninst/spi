@@ -66,8 +66,6 @@ extern SpParser::ptr g_parser;
 SpParser::SpParser()
     : injected_(false), exe_obj_(NULL) {
 
-  binaries_to_inst_.insert(sp_filename(GetExeName().c_str()));
-  binaries_to_inst_.insert("libagent.so");
 }
 
 // Clean up memory buffers for ParseAPI stuffs
@@ -356,7 +354,7 @@ SpParser::Parse() {
   if (agent_name_.size() == 0) {
     agent_name_ = "libagent.so";
   }
-  binaries_to_inst_.insert(agent_name_);
+  // binaries_to_inst_.insert(agent_name_);
 
   // Step 2: Create patchapi objects
   PatchObjects patch_objs;
@@ -597,9 +595,9 @@ SpParser::GetFrame(long* pc,
 
 
 void
-SpParser::SetLibrariesToInstrument(const StringSet& libs) {
+SpParser::SetLibrariesNotToInstrument(const StringSet& libs) {
   for (StringSet::iterator i = libs.begin(); i != libs.end(); i++)
-    binaries_to_inst_.insert(*i);
+    binaries_not_to_inst_.insert(*i);
 }
 
 void
@@ -610,11 +608,11 @@ SpParser::SetFuncsNotToInstrument(const StringSet& funcs) {
 
 bool
 SpParser::CanInstrumentLib(const std::string& lib) {
-  for (StringSet::iterator i = binaries_to_inst_.begin();
-       i != binaries_to_inst_.end(); i++) {
-    if (lib.find(*i) != string::npos) return true;
+  for (StringSet::iterator i = binaries_not_to_inst_.begin();
+       i != binaries_not_to_inst_.end(); i++) {
+    if (lib.find(*i) != string::npos) return false;
   }
-  return false;
+  return true;
 }
 
 bool

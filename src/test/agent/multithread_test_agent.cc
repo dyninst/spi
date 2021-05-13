@@ -6,22 +6,31 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void test_entry(SpPoint* pt) {
+void* test_entry(SpPoint* pt) {
 
-PatchFunction* f = Callee(pt);
-  if (!f) return;
+  PatchFunction* f = Callee(pt);
+  if (!f) return NULL;
 	sp_print("%s at %ld", f->name().c_str(), pthread_self());
 
   sp::Propel(pt);
+  return NULL;
 }
 
 AGENT_INIT
 void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
-  StringSet libs_to_inst;
-  libs_to_inst.insert("libtest1.so");
-  // libs_to_inst.insert("libpthread");
-  agent->SetLibrariesToInstrument(libs_to_inst);
+  StringSet libs_not_to_inst {"linux-vdso.so",
+                                "libdl.so",
+                                "libresolv.so",
+                                "librt.so",
+                                "libcrypto.so",
+                                "libstdc++.so",
+                                "libm.so",
+                                "libgomp.so",
+                                "libpthread.so",
+                                "libc.so",
+                                "ld-linux-x86-64.so"};
+  agent->SetLibrariesNotToInstrument(libs_not_to_inst);
   
   agent->EnableMultithread(true);
   

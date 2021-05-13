@@ -6,13 +6,14 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void test_entry(SpPoint* pt) {
+void* test_entry(SpPoint* pt) {
 
   SpFunction* f = Callee(pt);
-  if (!f) return;
+  if (!f) return NULL;
   std::cout << f->name().c_str() << std::endl;
 
   sp::Propel(pt);
+  return NULL;
 }
 
 AGENT_INIT
@@ -20,11 +21,18 @@ void MyAgent() {
   sp::SpAgent::ptr agent = sp::SpAgent::Create();
   // agent->EnableHandleDlopen(true);
   agent->EnableIpc(true);
-  StringSet libs_to_inst;
-  libs_to_inst.insert("libtest1.so");
-  libs_to_inst.insert("libcalc.so");
-
-  agent->SetLibrariesToInstrument(libs_to_inst);
+  StringSet libs_not_to_inst {"linux-vdso.so",
+                                "libdl.so",
+                                "libresolv.so",
+                                "librt.so",
+                                "libcrypto.so",
+                                "libstdc++.so",
+                                "libm.so",
+                                "libgomp.so",
+                                "libpthread.so",
+                                "libc.so",
+                                "ld-linux-x86-64.so"};
+  agent->SetLibrariesNotToInstrument(libs_not_to_inst);
   agent->SetInitEntry("test_entry");
   agent->Go();
 }

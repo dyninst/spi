@@ -60,7 +60,7 @@ namespace sp {
     AGENT_EXPORT void SetInitEntry(string);
     AGENT_EXPORT void SetInitExit(string);
     AGENT_EXPORT void SetInitPropeller(SpPropeller::ptr);
-    AGENT_EXPORT void SetLibrariesToInstrument(const StringSet& libs);
+    AGENT_EXPORT void SetLibrariesNotToInstrument(const StringSet& libs);
 
     // Note: We can only bypass instrumenting direct function calls that
     // are specified by this function. For indirect function calls, we
@@ -95,8 +95,8 @@ namespace sp {
     AGENT_EXPORT SpPropeller::ptr init_propeller() const {
       return init_propeller_;
     }
-    AGENT_EXPORT const StringSet& libraries_to_instrument() const {
-      return libs_to_inst_;
+    AGENT_EXPORT const StringSet& libraries_not_to_instrument() const {
+      return libs_not_to_inst_;
     }
     AGENT_EXPORT const StringSet& funcs_not_to_instrument() const {
       return funcs_not_to_inst_;
@@ -145,7 +145,7 @@ namespace sp {
     bool allow_multithread_;
     bool handle_dlopen_;
 
-    StringSet  libs_to_inst_;
+    StringSet  libs_not_to_inst_;
     StringSet  funcs_not_to_inst_;
 
     SpAgent();

@@ -74,7 +74,7 @@ namespace sp {
 
     // Control what to instrument, what not to
     AGENT_EXPORT void
-        SetLibrariesToInstrument(const StringSet& libs);
+        SetLibrariesNotToInstrument(const StringSet& libs);
     AGENT_EXPORT bool
         CanInstrumentLib(const string& lib_full_path);
     AGENT_EXPORT void
@@ -142,7 +142,7 @@ namespace sp {
     ph::PatchMgrPtr mgr_;
     ph::PatchMgrPtr ret_mgr_;
     SpObject* exe_obj_;
-    StringSet binaries_to_inst_;
+    StringSet binaries_not_to_inst_;
     StringSet funcs_not_to_inst_;
 
     AddrFuncMap addr_func_map_;

@@ -5,11 +5,12 @@ using namespace Dyninst;
 using namespace PatchAPI;
 using namespace sp;
 
-void test_entry(SpPoint* pt) {
+void* test_entry(SpPoint* pt) {
   PatchFunction* f = Callee(pt);
-  if (!f) return;
+  if (!f) return NULL;
   sp_print("%s", f->name().c_str());
   sp::Propel(pt);
+  return NULL;
 }
 
 AGENT_INIT
