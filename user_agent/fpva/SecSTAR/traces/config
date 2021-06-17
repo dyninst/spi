@@ -1,0 +1,5 @@
+SERVER=localhost
+CLIENT=localhost
+#SERVER=bleu
+#CLIENT=bleu
+WEBSERVER=/var/www
