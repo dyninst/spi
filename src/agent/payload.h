@@ -38,7 +38,6 @@
 // Wrappers for locking
 #define SP_LOCK(func) do {                              \
     int result = Lock(&g_propel_lock);                  \
-    sp_debug("Acquired lock");                  \
     if (result == SP_DEAD_LOCK) {                       \
       sp_print("DEAD LOCK - skip #func for point %lx",  \
                pt->block()->last());                    \
@@ -48,7 +47,6 @@
 
 #define SP_UNLOCK(func) do {                    \
  func##_EXIT:                                   \
-    sp_debug("Released lock");                  \
     Unlock(&g_propel_lock);                     \
   } while (0)
 

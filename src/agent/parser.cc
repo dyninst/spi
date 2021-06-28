@@ -163,7 +163,9 @@ SpParser::CreatePatchobjs(sp::SymtabSet& unique_tabs,
 
     // Skip parsing unwanted libraries
     // Parsing libc is part of the ad-hoc fix to stop instrumentation after exit
-    if (!CanInstrumentLib(libname_no_path) && libname_no_path.find("libc.so") == string::npos) {
+    if (!CanInstrumentLib(libname_no_path)
+        && libname_no_path.find("libc.so") == string::npos
+        && libname_no_path.find("ld-linux-x86-64.so") == string::npos) {
       sp_debug("SKIPED - skip parsing %s",
                sp_filename(sym->name().c_str()));
       continue;
@@ -424,12 +426,12 @@ class SpVisitor : public in::Visitor {
     } else {
       // Non-pc case, x86-32 always goes this way
       dt::Address rval = pt_->snip()->GetSavedReg(r->getID());
-      sp_debug("GOT NON-PC REG - %s = %lx",
-               r->getID().name().c_str(), rval);
+      // sp_debug("GOT NON-PC REG - %s = %lx",
+      //          r->getID().name().c_str(), rval);
       call_addr_ = rval;
     }
 
-    sp_debug("SP_VISITOR - reg value %lx", call_addr_);
+    // sp_debug("SP_VISITOR - reg value %lx", call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(in::BinaryFunction* b) {
@@ -440,10 +442,10 @@ class SpVisitor : public in::Visitor {
 
     if (b->isAdd()) {
       call_addr_ = i1 + i2;
-      sp_debug("SP_VISITOR - %lx + %lx = %lx", i1, i2, call_addr_);
+      // sp_debug("SP_VISITOR - %lx + %lx = %lx", i1, i2, call_addr_);
     } else if (b->isMultiply()) {
       call_addr_ = i1 * i2;
-      sp_debug("SP_VISITOR - %lx * %lx = %lx", i1, i2, call_addr_);
+      // sp_debug("SP_VISITOR - %lx * %lx = %lx", i1, i2, call_addr_);
     } else {
       assert(0);
     }
@@ -471,17 +473,17 @@ class SpVisitor : public in::Visitor {
       }
     }
 
-    sp_debug("SP_VISITOR - imm %lx ", call_addr_);
+    // sp_debug("SP_VISITOR - imm %lx ", call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(in::Dereference* d) {
     dt::Address* addr = (dt::Address*)(stack_.top() + seg_val_);
     stack_.pop();
-    sp_debug("SP_VISITOR - dereferencing %lx => ? ",
-             (dt::Address)addr);
+    // sp_debug("SP_VISITOR - dereferencing %lx => ? ",
+    //          (dt::Address)addr);
     call_addr_ = *addr;
-    sp_debug("SP_VISITOR - dereference %lx => %lx ",
-             (dt::Address)addr, call_addr_);
+    // sp_debug("SP_VISITOR - dereference %lx => %lx ",
+    //          (dt::Address)addr, call_addr_);
     stack_.push(call_addr_);
   }
 
