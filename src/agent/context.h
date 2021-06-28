@@ -97,6 +97,10 @@ class SpContext {
       return allow_multithread_;
     }
 
+    std::string getAgentName() const {
+      return parser_->agent_name();
+    }
+
     void GetCallStack(FuncSet* func_set);
 
     SpPoint* FindCallSitePointFromRetAddr(dt::Address ret);

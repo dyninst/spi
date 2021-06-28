@@ -47,6 +47,7 @@ bool IpcChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
     sockaddr** addr = (sockaddr**)PopArgument(pt, &h, sizeof(sockaddr*));
     char host[256];
     char service[256];
+    sp_print("FPVA got connect");
     if (sp::GetAddress((sockaddr_storage*)*addr, host, 256, service, 256)) {
       sp_print("INSTRUMENTATION(PID=%d): connect() to %s:%s ...\n", getpid(),
                host, service);
@@ -101,63 +102,6 @@ bool ForkChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
     char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
     char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
 
-    char** new_envs = (char**)malloc(1024 * sizeof(char*));
-    char** ptr = *envs;
-    int cur = 0;
-
-    bool ld_preload = false;
-    bool ld_library_path = false;
-    bool platform = false;
-    bool sp_agent_dir = false;
-    if (ptr != NULL) {
-      while (*ptr != NULL) {
-        // if the key is LD_PRELOAD, we append the agent library
-        if (strstr(*ptr, "LD_PRELOAD=") == *ptr) {
-          new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-          if (sp::g_context) {
-            snprintf(new_envs[cur], 1024, "%s:%s/%s", *ptr,
-                     getenv("SP_AGENT_DIR"), sp::g_context->getAgentName().c_str());
-          } else {
-            snprintf(new_envs[cur], 1024, "%s:%s/%s", *ptr,
-                     getenv("SP_AGENT_DIR"), "libmyagent.so");
-          }
-          ld_preload = true;
-        } else if (strstr(*ptr, "LD_LIBRARY_PATH=") == *ptr) {
-          // if the key is LD_LIBRARY_PATH, we append the agent dir
-          new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-          snprintf(new_envs[cur], 1024, "%s:%s:%s/%s", *ptr,
-                   getenv("SP_AGENT_DIR"), getenv("SP_DIR"),
-                   getenv("PLATFORM"));
-          ld_library_path = true;
-        } else if (strstr(*ptr, "PLATFORM=") == *ptr) {
-          platform = true;
-        } else if (strstr(*ptr, "SP_AGENT_DIR=") == *ptr) {
-          sp_agent_dir = true;
-        } else {
-          new_envs[cur] = *ptr;
-          sp_print("%s", new_envs[cur]);
-        }
-        cur++;
-        ptr++;
-      }
-    }
-    if (getenv("SP_IPC")) {
-      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-      snprintf(new_envs[cur], 1024, "SP_IPC=1");
-      cur++;
-    }
-
-    if (getenv("SP_FDEBUG")) {
-      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-      snprintf(new_envs[cur], 1024, "SP_FDEBUG=1");
-      cur++;
-    }
-    new_envs[cur] = NULL;
-    cur++;
-
-    // TODO flush the file
-    execve(*path, *argvs, new_envs);
-    system("touch /tmp/fail_execve");
   } else if (callee->name().compare("execl") == 0 ||
              callee->name().compare("execlp") == 0 ||
              callee->name().compare("execle") == 0 ||
@@ -168,45 +112,6 @@ bool ForkChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
     sp::ArgumentHandle h;
     char** path = (char**)PopArgument(pt, &h, sizeof(char*));
 
-    char** ptr = environ;
-    char** new_envs = (char**)malloc(1024 * sizeof(char*));
-    int cur = 0;
-    bool ld_preload = false;
-    if (ptr != NULL) {
-      while (*ptr != NULL) {
-        // if the key is LD_PRELOAD, we append the agent library
-        if (strstr(*ptr, "LD_PRELOAD=") == *ptr) {
-          new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-          if (sp::g_context) {
-            snprintf(new_envs[cur], 1024, "%s:%s/%s", *ptr,
-                     getenv("SP_AGENT_DIR"), sp::g_context->getAgentName().c_str());
-          } else {
-            snprintf(new_envs[cur], 1024, "%s:%s/%s", *ptr,
-                     getenv("SP_AGENT_DIR"), "libmyagent.so");
-          }
-          ld_preload = true;
-        } else {
-          new_envs[cur] = *ptr;
-          sp_print("%s", new_envs[cur]);
-        }
-        cur++;
-        ptr++;
-      }
-    }
-    if (!ld_preload) {
-      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-      if (sp::g_context) {
-        snprintf(new_envs[cur], 1024, "LD_PRELOAD=%s/%s",
-                 getenv("SP_AGENT_DIR"), sp::g_context->getAgentName().c_str());
-      } else {
-        snprintf(new_envs[cur], 1024, "LD_PRELOAD=%s/%s",
-                 getenv("SP_AGENT_DIR"), "libmyagent.so");
-      }
-      cur++;
-    }
-    new_envs[cur] = NULL;
-    cur++;
-    environ = new_envs;
     // TODO: Flush the file
   }
   return true;

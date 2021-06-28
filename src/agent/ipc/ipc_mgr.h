@@ -120,6 +120,8 @@ namespace sp {
     SpTcpWorker* tcp_worker() const { return tcp_worker_; }
     SpUdpWorker* udp_worker() const { return udp_worker_; }
 
+    void HandleExec(SpPoint*);
+
  protected:
 
     // IPC workers
