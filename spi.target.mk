@@ -1,6 +1,7 @@
 
 INJECTOR   = injector.exe
 IJAGENT    = libijagent.so
+GETPIDFROMPORT = getpidfromport
 
 ifeq ($(DYNLINK), false)
 AGENT      = libagent.a
@@ -41,7 +42,10 @@ $(UTILS_OBJS): $(OBJS_DIR)/%.o : %.cc
 # Injector
 #======================================
 
-injector_exe: $(INJECTOR) $(IJAGENT)
+injector_exe: $(INJECTOR) $(IJAGENT) $(GETPIDFROMPORT)
+
+$(GETPIDFROMPORT): $(IJ_DIR)/getpidfromport.cc
+	g++ -o $(GETPIDFROMPORT) $(IJ_DIR)/getpidfromport.cc
 
 #---------------- 
 # injector objs
