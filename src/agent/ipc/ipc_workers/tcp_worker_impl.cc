@@ -183,53 +183,41 @@ SpTcpWorker::Inject(SpChannel* c,
          sp_filename((char*)g_parser->agent_name().c_str()));
     cmd_exe += cmd;
 
-    cmd_exe += "\"\' 2>&1 |tee ./tmp/injector_log";
+    cmd_exe += "\"\' 2>&1 | tee -a ./tmp/injector_log";
   }
 
   sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
 
-  if(char* ld_preload = std::getenv("LD_PRELOAD")) {
-    std::string libs{ld_preload};
-    std::string agent_name = g_parser->agent_name();
-
-    // Find the location where the agent name starts
-    auto const start = libs.find(agent_name);
-    if(start != std::string::npos) {
-      // Find the previous separator
-      auto prev_colon = libs.rfind(':', start);
-      auto prev_space = libs.rfind(' ', start);
-      if(prev_colon == std::string::npos) prev_colon = 0;
-      if(prev_space == std::string::npos) prev_space = 0;
-      auto prev = (prev_colon > prev_space) ? prev_colon : prev_space;
-
-      // remove the agent library name
-      libs.replace(prev, start - prev + agent_name.length(), "");
-
-      // Replace the env. variable (NB: this requires a POSIX system)
-      if (setenv("LD_PRELOAD", libs.c_str(), true) < 0) {
-        sp_perror("setenv for LD_PRELOAD failed");
-      }
+  // unset LD_PRELOAD before popen injector
+  // then set LD_PRELOAD back after popen is finished
+  std::string libs;
+  if (char* ld_preload = std::getenv("LD_PRELOAD")) {
+    libs = ld_preload;
+    if (unsetenv("LD_PRELOAD") < 0) {
+      sp_perror("unsetenv for LD_PRELOAD failed");
     }
   }
 
   // Execute the command
   FILE* fp = popen(cmd_exe.c_str(), "r");
-  if(fp==NULL)
-  {
-        sp_debug("Popen error");
-        return false;
+  if (fp == NULL) {
+    sp_debug("Popen error");
+    return false;
   }
   char line[1024];
-  while(fgets(line,sizeof(line),fp)) {
-  if (strstr(line, "SUCCESS") != NULL) {
-    sp_debug("Injected");
-    c->injected = true;
-    break;
-  }
-
+  while (fgets(line,sizeof(line),fp)) {
+    if (strstr(line, "SUCCESS") != NULL) {
+      sp_debug("Injected");
+      c->injected = true;
+      break;
+    }
   }
   pclose(fp);
   sp_debug("Popen finished Returning %d",c->injected?1 :0);
+
+  if (setenv("LD_PRELOAD", libs.c_str(), true) < 0) {
+    sp_perror("setenv for LD_PRELOAD failed");
+  }
   return c->injected;
 }
 
