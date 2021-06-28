@@ -41,6 +41,7 @@
 #include "agent/ipc/ipc_workers/tcp_worker_impl.h"
 #include "agent/ipc/ipc_workers/udp_worker_impl.h"
 #include "common/utils.h"
+#include "common/common.h"
 #include "injector/injector.h"
 namespace sp {
 
@@ -412,6 +413,8 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       sp_debug("FAILED TO CREATE CHANNEL - for read");
     }
   }
+
+  ipc_mgr->HandleExec(pt);
   return true;
 }
 
@@ -426,38 +429,6 @@ SpIpcMgr::BeforeExit(PointHandle* handle) {
   // fcntl F_SETOWN socket descriptors returned, so that it can receive OOB packets
   sp::SpIpcMgr* ipc_mgr = sp::g_context->ipc_mgr();
 
-   //Uncomment the following if you need byte counting for flow analysis
-/*  ipc_mgr->fcntlReturnParam(pt);
-  
-  //Bytecounting for tcp ipc functions for following the control flow
-  // Sender-side
-  int fd = -1;
-  SpIpcWorkerDelegate* worker = NULL;
-  sockaddr* sa = NULL;
-  ipc_mgr->GetWriteParam(pt, &fd, NULL, NULL, NULL, &sa);
-  if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
-    SpChannel* c = worker->GetChannel(fd, SP_WRITE, sa);
-    if (c) {
-        int num_bytes=sp::ReturnValue(pt);
-	c->byte_count+=num_bytes;
-	sp_print("Num_bytes =%d cumulative =%d",num_bytes,c->byte_count);          
-    }
-  }
-
-  // Receiver-side
-  fd = -1;
-  worker = NULL;
-  ipc_mgr->GetReadParam(pt, &fd, NULL, NULL);
-  if (fd != -1 && (worker = ipc_mgr->GetWorker(fd))) {
-    //connfd=fd;
-    SpChannel* c = worker->GetChannel(fd, SP_READ);
-    if (c) {
-       int num_bytes=sp::ReturnValue(pt);
-        c->byte_count+=num_bytes;
-        sp_print("Num_bytes =%d cumulative =%d",num_bytes,c->byte_count);
-  }
-}
- */
   //Detect fork for pipe
   if (ipc_mgr->IsFork(f->name().c_str())) {
     long pid = handle->ReturnValue();
@@ -465,6 +436,36 @@ SpIpcMgr::BeforeExit(PointHandle* handle) {
     // Receiver
     if (pid == 0) {
       ipc_mgr->pipe_worker()->SetLocalStartTracing(0);
+    } else {
+      // change file descriptors for the child
+      char error_file[255],output_file[255];
+      snprintf(error_file,255,"%s/%s/tmp/spi/spi-error-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
+      g_error_fp=fopen(error_file , "a+");
+      if (g_error_fp == NULL) {
+        std::cerr << "Failed to open file for output erro info: " << strerror(errno) << std::endl;
+        std::cerr << "Using stderr instead...\n";
+        g_error_fp = stderr;
+      }
+
+      snprintf(output_file,255,"%s/%s/tmp/spi/spi-output-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
+      g_output_fp=fopen(output_file , "a+");
+      if (g_output_fp == NULL) {
+        std::cerr << "Failed to open file for output stdout info: " << strerror(errno) << std::endl;
+        std::cerr << "Using stderr instead...\n";
+        g_output_fp = stderr;
+      }
+
+      // Enalbe outputing debug info to /tmp/spi-$PID
+      if (getenv("SP_FDEBUG")) {
+        char fn[255];
+        snprintf(fn, 255, "%s/%s/tmp/spi/spi-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
+        g_debug_fp = fopen(fn, "a+");
+        if (g_debug_fp == NULL) {
+          std::cerr << "Failed to open file for output debug info: " << strerror(errno) << std::endl;
+          std::cerr << "Using stderr instead...\n";
+          g_debug_fp = stderr;
+        }
+      }
     }
   }
   // Detect popen for pipe
@@ -478,6 +479,134 @@ SpIpcMgr::BeforeExit(PointHandle* handle) {
   }
 
   return true;
+}
+
+/*
+ * In the case of exec family functions, we want the agent library to
+ * get propelled into the new program
+ * In the case of execve, we have to construct new environment
+ * variables so that we can add LD_PRELOAD and etc, and we call execve
+ * In other cases, we simply add LD_PRELOAD to the parent process as
+ * the environment variables are copied to the new program
+ */
+void SpIpcMgr::HandleExec(SpPoint* pt) {
+  SpFunction* callee = sp::Callee(pt);
+  if (callee->name().compare("execve") == 0) {
+    sp::ArgumentHandle h;
+    char** path = (char**)PopArgument(pt, &h, sizeof(char*));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
+
+    char** new_envs = (char**)malloc(1024 * sizeof(char*));
+    char** ptr = *envs;
+    int cur = 0;
+
+    bool ld_preload = false;
+    bool ld_library_path = false;
+    bool platform = false;
+    bool sp_agent_dir = false;
+    if (ptr != NULL) {
+      while (*ptr != NULL) {
+        // if the key is LD_PRELOAD, we append the agent library
+        if (strstr(*ptr, "LD_PRELOAD=") == *ptr) {
+          new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+          if (sp::g_context) {
+            snprintf(new_envs[cur], 1024, "%s:%s/%s", *ptr,
+                     getenv("SP_AGENT_DIR"), sp::g_context->getAgentName().c_str());
+          } else {
+            snprintf(new_envs[cur], 1024, "%s:%s/%s", *ptr,
+                     getenv("SP_AGENT_DIR"), "libmyagent.so");
+          }
+          ld_preload = true;
+        } else if (strstr(*ptr, "LD_LIBRARY_PATH=") == *ptr) {
+          // if the key is LD_LIBRARY_PATH, we append the agent dir
+          new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+          snprintf(new_envs[cur], 1024, "%s:%s:%s/%s", *ptr,
+                   getenv("SP_AGENT_DIR"), getenv("SP_DIR"),
+                   getenv("PLATFORM"));
+          ld_library_path = true;
+        } else if (strstr(*ptr, "PLATFORM=") == *ptr) {
+          platform = true;
+        } else if (strstr(*ptr, "SP_AGENT_DIR=") == *ptr) {
+          sp_agent_dir = true;
+        } else {
+          new_envs[cur] = *ptr;
+          sp_print("%s", new_envs[cur]);
+        }
+        cur++;
+        ptr++;
+      }
+    }
+
+    if (!ld_preload) {
+      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+      if (sp::g_context) {
+        snprintf(new_envs[cur], 1024, "LD_PRELOAD=%s/%s",
+                  getenv("SP_AGENT_DIR"), sp::g_context->getAgentName().c_str());
+      } else {
+        snprintf(new_envs[cur], 1024, "LD_PRELOAD=%s/%s",
+                  getenv("SP_AGENT_DIR"), "libmyagent.so");
+      }
+    }
+    if (!ld_library_path) {
+      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+      snprintf(new_envs[cur], 1024, "LD_LIBRARY_PATH=%s:%s/%s",
+                getenv("SP_AGENT_DIR"), getenv("SP_DIR"),
+                getenv("PLATFORM"));
+      ld_library_path = true;
+    }
+    if (!platform) {
+      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+      snprintf(new_envs[cur], 1024, "PLATFORM=%s", getenv("PLATFORM"));
+      cur++;
+    }
+    if (!sp_agent_dir) {
+      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+      snprintf(new_envs[cur], 1024, "SP_AGENT_DIR=%s", getenv("SP_AGENT_DIR"));
+      cur++;
+    }
+    if (getenv("SP_IPC")) {
+      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+      snprintf(new_envs[cur], 1024, "SP_IPC=1");
+      cur++;
+    }
+
+    if (getenv("SP_FDEBUG")) {
+      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+      snprintf(new_envs[cur], 1024, "SP_FDEBUG=1");
+      cur++;
+    }
+    new_envs[cur] = NULL;
+    cur++;
+
+    execve(*path, *argvs, new_envs);
+    system("touch /tmp/fail_execve");
+  } else if (callee->name().compare("execl") == 0 ||
+             callee->name().compare("execlp") == 0 ||
+             callee->name().compare("execle") == 0 ||
+             callee->name().compare("execv") == 0 ||
+             callee->name().compare("execvp") == 0) {
+    std::string agent_name = g_parser->agent_name();
+    if (char* ld_preload_str = getenv("LD_PRELOAD")) {
+      std::string libs{ld_preload_str};
+      size_t start = libs.find(agent_name);
+      if (start == std::string::npos) {
+        // agent lib is not in the LD_PRELOAD, append it
+        libs += ":";
+        libs += getenv("SP_AGENT_DIR");
+        libs += "/";
+        libs += agent_name;
+        setenv("LD_PRELOAD", libs.c_str(), 1);
+      }
+    } else {
+      // no LD_PRELOAD environment variable yet,
+      // we will set it to our agent lib
+      std::string tmp = getenv("SP_AGENT_DIR");
+      tmp += "/";
+      tmp += agent_name;
+      setenv("LD_PRELOAD", tmp.c_str(), 1);
+    }
+  }
 }
 
 } // Namespace sp

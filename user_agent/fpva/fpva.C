@@ -14,7 +14,7 @@ Fpva::Fpva() {
   initCheckers_.push_back(new ProcInitChecker(mgr_));
   // Each checker is called for each point
   checkers_.push_back(new ForkChecker(mgr_));
-
+  checkers_.push_back(new IpcChecker(mgr_));
 }
 
 Fpva::~Fpva() {
