@@ -65,7 +65,7 @@ void Fpva::PreRun(sp::SpPoint* pt, sp::SpFunction* f) {
   mgr_->Flush();
 }
 
-void Fpva::PostRun(sp::PointHandle* pHandle) {
+void Fpva::PostRun(sp::PointCallHandle* pHandle) {
   for (std::vector<FpvaChecker*>::iterator i = checkers_.begin(); i != checkers_.end(); i++) {
     (*i)->PostCheck(pHandle);
   }

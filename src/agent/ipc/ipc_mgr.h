@@ -113,7 +113,7 @@ namespace sp {
     static bool BeforeEntry(SpPoint*);
 
     // Will be called before user-specified exit-payload function.
-    static bool BeforeExit(PointHandle*);
+    static bool BeforeExit(PointCallHandle*);
 
     // Get workers
     SpPipeWorker* pipe_worker() const { return pipe_worker_; }

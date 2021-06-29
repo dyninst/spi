@@ -19,7 +19,8 @@ namespace sp {
   extern void report_timer();
 }
 
-void* print_entry(SpPoint* pt) {
+void* print_entry(PointCallHandle* handle) {
+  SpPoint* pt = handle->GetPoint();
   SetSegfaultSignal();
 
   ++callcount;
@@ -43,7 +44,7 @@ void* print_entry(SpPoint* pt) {
   return NULL;
 }
 
-void print_exit(sp::PointHandle*) {
+void print_exit(sp::PointCallHandle*) {
 }
 
 void segv_handler(int num) {

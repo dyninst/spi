@@ -6,16 +6,16 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void* test_entry(SpPoint* pt) {
-
-  SpFunction* f = Callee(pt);
+void* test_entry(PointCallHandle* handle) {
+  SpFunction* f = handle->GetCallee();
+  SpPoint* pt = handle->GetPoint();
   if (!f) return NULL;
   sp_print("ENTER %s", f->GetMangledName().c_str());
   sp::Propel(pt);
   return NULL;
 }
 
-void test_exit(sp::PointHandle* handle) {
+void test_exit(sp::PointCallHandle* handle) {
   if (!handle->GetCallee()) return;
   sp_print("LEAVE %s", handle->GetCallee()->GetMangledName().c_str());
 }

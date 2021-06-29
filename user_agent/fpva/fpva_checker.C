@@ -83,7 +83,7 @@ bool IpcChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
 }
 
 //////////////////////////////////////////////////////////////////////
-bool IpcChecker::PostCheck(sp::PointHandle*) { return true; }
+bool IpcChecker::PostCheck(sp::PointCallHandle*) { return true; }
 
 /*
  * In the case of exec family functions, we want the agent library to
@@ -123,10 +123,10 @@ bool ForkChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
  * If we are in the child process, update the xml doc because we don't want
  * two duplicate xml trace files
  */
-bool ForkChecker::PostCheck(sp::PointHandle* pHandle) {
+bool ForkChecker::PostCheck(sp::PointCallHandle* pHandle) {
   sp::SpFunction* callee = pHandle->GetCallee();
   if (callee->name().compare("fork") == 0) {
-    pid_t ret = (pid_t) pHandle->ReturnValue();
+    pid_t ret = (pid_t) pHandle->GetReturnValue();
     if (ret == 0) {
       mgr_->NewDoc();
     } else {

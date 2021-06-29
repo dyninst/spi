@@ -6,9 +6,9 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void* test_entry(SpPoint* pt) {
-
-  PatchFunction* f = Callee(pt);
+void* test_entry(PointCallHandle* handle) {
+  PatchFunction* f = handle->GetCallee();
+  SpPoint* pt = handle->GetPoint();
   if (!f) return NULL;
 	sp_print("%s at %ld", f->name().c_str(), pthread_self());
 

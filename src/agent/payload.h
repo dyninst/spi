@@ -54,41 +54,35 @@ namespace sp {
   class SpContext;
   class SpPoint;
 
-  // a struct to pass information tuple between payload entry and payload exit
-  struct PointCallInfo {
-    PointCallInfo(SpPoint* pt, SpFunction* callee, void* info) {
-      this->pt = pt;
-      this->callee = callee;
-      this->info = info;
-    }
-
-    SpPoint* pt;
-    SpFunction* callee;
-    void* info;
-  };
-
-  class PointHandle {
+  class PointCallHandle {
     SpPoint* pt_;
     SpFunction* callee_;
     void* user_info_;
     long return_value_;
 
   public:
-    PointHandle(SpPoint*, SpFunction*, void*, long);
-    ~PointHandle();
+    // Constructors
+    PointCallHandle(SpPoint*, SpFunction*, void*, long);
+    PointCallHandle(SpPoint*, SpFunction*);
+    ~PointCallHandle();
 
+    // Accessors
     SpPoint* GetPoint();
     SpFunction* GetCallee();
     void* GetUserInfo();
-    long ReturnValue();
+    long GetReturnValue();
+
+    // Mutators
+    void SetUserInfo(void*);
+    void SetReturnValue(long);
   };
 
   // ------------------------
   //       Private things
   // ------------------------
   typedef void (*PayloadFunc_t)(ph::Point* pt);
-  typedef void* (*PayloadFuncEntry)(ph::Point* pt);
-  typedef void (*PayloadFuncExit)(PointHandle*); 
+  typedef void* (*PayloadFuncEntry)(PointCallHandle*);
+  typedef void (*PayloadFuncExit)(PointCallHandle*); 
   typedef void* PayloadFunc;
   struct ArgumentHandle {
     ArgumentHandle();

@@ -8,14 +8,15 @@
 
 fpva::Fpva* G_FPVA;
 
-void FpvaEntry(sp::SpPoint* pt) {
-  sp::SpFunction* f = Callee(pt);
+void FpvaEntry(sp::PointCallHandle* handle) {
+  sp::SpFunction* f = handle->GetCallee();
+  sp::SpPoint* pt = handle->GetPoint();
   if (!f) return;
   G_FPVA->PreRun(pt, f);
   sp::Propel(pt);
 }
 
-void FpvaExit(sp::PointHandle* pHandle) {
+void FpvaExit(sp::PointCallHandle* pHandle) {
   sp::SpFunction* f = pHandle->GetCallee();
   if (!f) return;
   G_FPVA->PostRun(pHandle);

@@ -48,7 +48,7 @@ namespace sp {
   extern SpAddrSpace* g_as;
 
   // a thread safe stack to communicate between payload entry and payload exit
-  thread_local std::stack<PointCallInfo*> point_info_stack_;
+  thread_local std::stack<PointCallHandle*> call_handle_stack_;
 
   SpContext::SpContext() :
       init_entry_(NULL),
@@ -171,18 +171,18 @@ namespace sp {
   }
 
   // push the call point informaiton onto stack
-  void SpContext::PushPointCallInfo(PointCallInfo* callInfo) {
-    point_info_stack_.push(callInfo);
+  void SpContext::PushPointCallHandle(PointCallHandle* callHandle) {
+    call_handle_stack_.push(callHandle);
   }
 
   // reverse of the PushPointHandle function
-  PointCallInfo* SpContext::PopPointCallInfo() {
-    if (point_info_stack_.size() == 0) {
+  PointCallHandle* SpContext::PopPointCallHandle() {
+    if (call_handle_stack_.size() == 0) {
       sp_perror("ERROR: stack is already empty before pop");
       return NULL;
     }
-    PointCallInfo* ret = point_info_stack_.top();
-    point_info_stack_.pop();
+    PointCallHandle* ret = call_handle_stack_.top();
+    call_handle_stack_.pop();
     return ret;
   }
 }

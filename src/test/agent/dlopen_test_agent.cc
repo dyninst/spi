@@ -6,8 +6,9 @@ using namespace PatchAPI;
 using namespace sp;
 
 int num_objs = 0;
-void* test_entry(SpPoint* pt) {
-  SpFunction* f = Callee(pt);
+void* test_entry(PointCallHandle* handle) {
+  SpPoint* pt = handle->GetPoint();
+  SpFunction* f = handle->GetCallee();
   if (!f) return NULL;
   if (f->name().compare("dlopen") == 0) {
     AddrSpace* as = pt->GetObject()->addrSpace();
@@ -16,7 +17,7 @@ void* test_entry(SpPoint* pt) {
   return NULL;
 }
 
-void test_exit(sp::PointHandle* handle) {
+void test_exit(sp::PointCallHandle* handle) {
   SpFunction* f = handle->GetCallee();
   if (!f) return;
   if (f->name().compare("dlopen") == 0) {

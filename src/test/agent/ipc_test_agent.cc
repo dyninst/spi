@@ -7,8 +7,9 @@ using namespace sp;
 
 //int level = 0;
 
-void* test_entry(SpPoint* pt) {
-  SpFunction* f = Callee(pt);
+void* test_entry(PointCallHandle* handle) {
+  SpFunction* f = handle->GetCallee();
+  SpPoint* pt = handle->GetPoint();
   if (!f) return NULL;
 
 	if (IsIpcWrite(pt)) {
@@ -38,17 +39,17 @@ void* test_entry(SpPoint* pt) {
   return NULL;
 }
 
-void test_exit(sp::PointHandle* handle) {
+void test_exit(sp::PointCallHandle* handle) {
   SpFunction* f = handle->GetCallee();
   if (!f) return;
   // level--;
   
 	if (IsIpcWrite(handle->GetPoint())) {
-		long size = handle->ReturnValue();
+		long size = handle->GetReturnValue();
 		// sp_print("Write size: %ld @ pid=%d", size, getpid());
 		fprintf(stderr, "Write size: %ld @ pid=%d\n", size, getpid());
 	} else if (IsIpcRead(handle->GetPoint())) {
-		long size = handle->ReturnValue();
+		long size = handle->GetReturnValue();
 		// sp_print("Read size: %ld @ pid=%d", size, getpid());
 		fprintf(stderr, "Read size: %ld @ pid=%d\n", size, getpid());
 	}

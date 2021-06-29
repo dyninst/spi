@@ -15,7 +15,7 @@ class Fpva {
   void InitRun();
   void FiniRun();
   void PreRun(sp::SpPoint* pt, sp::SpFunction* f);
-  void PostRun(sp::PointHandle* pHandle);
+  void PostRun(sp::PointCallHandle* pHandle);
 
  private:
   std::vector<OneTimeChecker*> initCheckers_;

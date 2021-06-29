@@ -114,8 +114,8 @@ class SpContext {
 
     dt::Address GetReturnAddress();
 
-    void PushPointCallInfo(PointCallInfo*);
-    PointCallInfo* PopPointCallInfo();
+    void PushPointCallHandle(PointCallHandle*);
+    PointCallHandle* PopPointCallHandle();
 
   protected:
 

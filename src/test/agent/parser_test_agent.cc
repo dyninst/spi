@@ -6,7 +6,7 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void* test_entry(SpPoint* pt) {
+void* test_entry(PointCallHandle* handle) {
 	return NULL;
 }
 

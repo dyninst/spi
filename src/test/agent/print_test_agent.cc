@@ -6,9 +6,9 @@ using namespace PatchAPI;
 using namespace sp;
 
 
-void* test_entry(SpPoint* pt) {
-
-  SpFunction* f = Callee(pt);
+void* test_entry(PointCallHandle* handle) {
+  SpFunction* f = handle->GetCallee();
+  SpPoint* pt = handle->GetPoint();
   if (!f) return NULL;
   std::cout << f->name().c_str() << std::endl;
 

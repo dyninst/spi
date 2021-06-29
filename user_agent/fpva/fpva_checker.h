@@ -24,7 +24,7 @@ class FpvaChecker {
   FpvaChecker(TraceMgr* mgr);
   virtual ~FpvaChecker() {}
   virtual bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) = 0;
-  virtual bool PostCheck(sp::PointHandle* pHandle) = 0;
+  virtual bool PostCheck(sp::PointCallHandle* pHandle) = 0;
 
  protected:
   TraceMgr* mgr_;
@@ -48,7 +48,7 @@ class IpcChecker : public FpvaChecker {
   using FpvaChecker::FpvaChecker;
   virtual ~IpcChecker() {}
   virtual bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
-  virtual bool PostCheck(sp::PointHandle* pHandle);
+  virtual bool PostCheck(sp::PointCallHandle* pHandle);
 
  protected:
   string port;
@@ -58,7 +58,7 @@ class ForkChecker : public FpvaChecker {
  public:
   using FpvaChecker::FpvaChecker;
   virtual bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
-  virtual bool PostCheck(sp::PointHandle* pHandle);
+  virtual bool PostCheck(sp::PointCallHandle* pHandle);
 };
 
 }  // namespace fpva

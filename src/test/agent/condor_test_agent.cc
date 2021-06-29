@@ -13,12 +13,13 @@ int level = -1;
 typedef map<int, Address> LevelMap;
 LevelMap level_map;
 
-void* test_entry(SpPoint* pt) {
+void* test_entry(PointCallHandle* handle) {
 
   level ++;
+  SpPoint* pt = handle->GetPoint();
   if (pt->tailcall()) level--;
   
-  SpFunction* f = Callee(pt);
+  SpFunction* f = handle->GetCallee();
   if (!f) return NULL;
 
   sp_print("%s", f->name().c_str());
@@ -27,7 +28,7 @@ void* test_entry(SpPoint* pt) {
   return NULL;
 }
 
-void spi_test_exit(PointHandle* handle) {
+void spi_test_exit(PointCallHandle* handle) {
   level --;
   if (handle->GetCallee()) {
     sp_print("Exiting %s", handle->GetCallee()->name().c_str());
@@ -48,7 +49,11 @@ void MyAgent() {
                                 "libgomp.so",
                                 "libpthread.so",
                                 "libc.so",
-                                "ld-linux-x86-64.so"};
+                                "ld-linux-x86-64.so",
+                                "libparseAPI.so",
+                                "libpcontrol.so",
+                                "libstackwalk.so",
+                                "libpatchAPI.so"};
   agent->SetLibrariesNotToInstrument(libs_not_to_inst);
 
   StringSet funcs_not_to_inst;

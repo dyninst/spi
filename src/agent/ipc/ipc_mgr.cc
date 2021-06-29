@@ -422,7 +422,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
 
 // Will be called before user-specified exit-payload function.
 bool
-SpIpcMgr::BeforeExit(PointHandle* handle) {
+SpIpcMgr::BeforeExit(PointCallHandle* handle) {
   SpFunction* f = handle->GetCallee();
   if (!f) return false;
 
@@ -431,7 +431,7 @@ SpIpcMgr::BeforeExit(PointHandle* handle) {
 
   //Detect fork for pipe
   if (ipc_mgr->IsFork(f->name().c_str())) {
-    long pid = handle->ReturnValue();
+    long pid = handle->GetReturnValue();
     sp_debug("fork: pid[%ld]", pid);
     // Receiver
     if (pid == 0) {
@@ -470,7 +470,7 @@ SpIpcMgr::BeforeExit(PointHandle* handle) {
   }
   // Detect popen for pipe
   else if (ipc_mgr->IsPopen(f->name().c_str())) {
-    FILE* fp = (FILE*)handle->ReturnValue();
+    FILE* fp = (FILE*)handle->GetReturnValue();
     int fd = fileno(fp);
     // XXX: magic?? This is a very artificial way to wait for fork done
     sleep(5);
