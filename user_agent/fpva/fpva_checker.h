@@ -38,7 +38,7 @@ class FpvaChecker {
 class ProcInitChecker : public OneTimeChecker {
  public:
   using OneTimeChecker::OneTimeChecker;
-  virtual bool Run();
+  bool Run();
   ~ProcInitChecker() {}
 };
 
@@ -47,8 +47,8 @@ class IpcChecker : public FpvaChecker {
  public:
   using FpvaChecker::FpvaChecker;
   virtual ~IpcChecker() {}
-  virtual bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
-  virtual bool PostCheck(sp::PointCallHandle* pHandle);
+  bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
+  bool PostCheck(sp::PointCallHandle* pHandle);
 
  protected:
   string port;
@@ -57,8 +57,22 @@ class IpcChecker : public FpvaChecker {
 class ForkChecker : public FpvaChecker {
  public:
   using FpvaChecker::FpvaChecker;
-  virtual bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
-  virtual bool PostCheck(sp::PointCallHandle* pHandle);
+  bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
+  bool PostCheck(sp::PointCallHandle* pHandle);
+};
+
+class FileChecker : public FpvaChecker {
+ public:
+  using FpvaChecker::FpvaChecker;
+  bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
+  bool PostCheck(sp::PointCallHandle* pHandle);
+};
+
+class PrivilegeChecker : public FpvaChecker {
+ public:
+  using FpvaChecker::FpvaChecker;
+  bool PreCheck(sp::SpPoint* pt, sp::SpFunction* callee);
+  bool PostCheck(sp::PointCallHandle* pHandle);
 };
 
 }  // namespace fpva

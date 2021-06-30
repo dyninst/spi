@@ -126,7 +126,7 @@ bool ForkChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
 bool ForkChecker::PostCheck(sp::PointCallHandle* pHandle) {
   sp::SpFunction* callee = pHandle->GetCallee();
   if (callee->name().compare("fork") == 0) {
-    pid_t ret = (pid_t) pHandle->GetReturnValue();
+    pid_t ret = (pid_t)pHandle->GetReturnValue();
     if (ret == 0) {
       mgr_->NewDoc();
     } else {
@@ -144,4 +144,53 @@ bool ForkChecker::PostCheck(sp::PointCallHandle* pHandle) {
   return true;
 }
 
-}  // namespace mist
+bool FileChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
+  if (callee->name() == "open" || callee->name() == "fopen") {
+    sp::ArgumentHandle h;
+    char** fname = (char**)PopArgument(pt, &h, sizeof(void*));
+    CallTrace newTrace;
+    newTrace.functionName = callee->name();
+    newTrace.timeStamp = std::to_string(FpvaUtils::GetUsec());
+    newTrace.parameters.insert(
+        std::pair<std::string, std::string>("file", std::string(*fname)));
+    mgr_->AddTrace(&newTrace);
+    return true;
+  } else if (callee->name() == "chmod") {
+    sp::ArgumentHandle h;
+    char** fname = (char**)PopArgument(pt, &h, sizeof(void*));
+    mode_t* mode = (mode_t*)PopArgument(pt, &h, sizeof(mode_t));
+    CallTrace newTrace;
+    newTrace.functionName = callee->name();
+    newTrace.timeStamp = std::to_string(FpvaUtils::GetUsec());
+    newTrace.parameters.insert(
+        std::pair<std::string, std::string>("file", std::string(*fname)));
+    newTrace.parameters.insert(
+        std::pair<std::string, std::string>("mode", std::to_string(*mode)));
+    mgr_->AddTrace(&newTrace);
+    return true;
+  }
+  return false;
+}
+
+bool FileChecker::PostCheck(sp::PointCallHandle*) { return true; }
+
+bool PrivilegeChecker::PreCheck(sp::SpPoint* pt, sp::SpFunction* callee) {
+  if (callee->name() == "seteuid" || callee->name() == "setuid") {
+    sp::ArgumentHandle h;
+    uid_t* uid = (uid_t*)PopArgument(pt, &h, sizeof(uid_t));
+    CallTrace newTrace;
+    newTrace.functionName = callee->name();
+    newTrace.timeStamp = std::to_string(FpvaUtils::GetUsec());
+    newTrace.parameters.insert(std::pair<std::string, std::string>(
+        "name", FpvaUtils::GetUserName(*uid)));
+    newTrace.parameters.insert(
+        std::pair<std::string, std::string>("uid", std::to_string(*uid)));
+    mgr_->AddTrace(&newTrace);
+    return true;
+  }
+  return false;
+}
+
+bool PrivilegeChecker::PostCheck(sp::PointCallHandle*) { return true; }
+
+}  // namespace fpva

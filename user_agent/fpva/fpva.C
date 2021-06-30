@@ -15,6 +15,8 @@ Fpva::Fpva() {
   // Each checker is called for each point
   checkers_.push_back(new ForkChecker(mgr_));
   checkers_.push_back(new IpcChecker(mgr_));
+  checkers_.push_back(new FileChecker(mgr_));
+  checkers_.push_back(new PrivilegeChecker(mgr_));
 }
 
 Fpva::~Fpva() {
