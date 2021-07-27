@@ -70,23 +70,34 @@ namespace sp {
         sp_perror("ERROR: failed to setup core dump ability\n");
       }
     }
-	
-   char error_file[255],output_file[255];
-     snprintf(error_file,255,"%s/%s/tmp/spi/spi-error-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
-     g_error_fp=fopen(error_file , "a+");
-     if (g_error_fp == NULL) {
-        std::cerr << "Failed to open file for output erro info: " << strerror(errno) << std::endl;
-        std::cerr << "Using stderr instead...\n";
-        g_error_fp = stderr;
-      }
 
-     snprintf(output_file,255,"%s/%s/tmp/spi/spi-output-%d", getenv("SP_DIR"), getenv("PLATFORM"), getpid());
-     g_output_fp=fopen(output_file , "a+");
-     if (g_output_fp == NULL) {
-        std::cerr << "Failed to open file for output stdout info: " << strerror(errno) << std::endl;
-        std::cerr << "Using stderr instead...\n";
-        g_output_fp = stderr;
-      }
+    // initialize runtime root path for SPI
+    std::string runtime_dir;
+    if (getenv("SP_DIR") && getenv("PLATFORM")) {
+      runtime_dir = getenv("SP_DIR");
+      runtime_dir += "/";
+      runtime_dir += getenv("PLATFORM");
+    } else {
+      runtime_dir = "/";
+    }
+	
+    // open files for debug, error, output
+    std::ostringstream error_file, output_file;
+    error_file << runtime_dir << "/tmp/spi/spi-error-" << getpid();
+    output_file << runtime_dir << "/tmp/spi/spi-output-" << getpid();
+    g_error_fp = fopen(error_file.str().c_str(), "a+");
+    if (g_error_fp == NULL) {
+      std::cerr << "Failed to open file for output erro info: " << strerror(errno) << std::endl;
+      std::cerr << "Using stderr instead...\n";
+      g_error_fp = stderr;
+    }
+
+    g_output_fp = fopen(output_file.str().c_str(), "a+");
+    if (g_output_fp == NULL) {
+      std::cerr << "Failed to open file for output stdout info: " << strerror(errno) << std::endl;
+      std::cerr << "Using stderr instead...\n";
+      g_output_fp = stderr;
+    }
 
     // Enalbe outputing debug info to /tmp/spi-$PID
     if (getenv("SP_FDEBUG")) {
@@ -368,20 +379,93 @@ namespace sp {
     }
 
     // Instrument exit function inside libc to stop SPI when exit is called
-    FuncSet found_exit_funcs;
+    // Instrument _dl_runtime_resolve inside ld.so
+    FuncSet preinst_funcs;
     std::string exit_string("__GI_exit");
+    std::string resolver_string("_dl_runtime_resolve_xsave");
+    dt::Address resolver_addr = NULL;
     for (ph::AddrSpace::ObjMap::iterator ci = g_as->objMap().begin();
        ci != g_as->objMap().end(); ci++) {
       SpObject* obj = OBJ_CAST(ci->second);
       if (obj->name().find("libc.so") != string::npos) {
-        g_parser->GetFuncsByName(obj, exit_string, false, &found_exit_funcs);
+        g_parser->GetFuncsByName(obj, exit_string, false, &preinst_funcs);
+      }
+
+      // if the resolver function is not found yet, we look into this symtab's regions
+      // and find the .got.plt section. We look at the 3rd entry in the table, which
+      // should contain the address of the resolver function
+      if (!resolver_addr) {
+        sb::Symtab* tab = obj->symtab();
+        std::vector<sb::Region*> regions;
+        bool ret = tab->getAllRegions(regions);
+        if (!ret) sp_perror("Error");
+        for (std::vector<sb::Region*>::iterator reg = regions.begin(); reg != regions.end(); reg++) {
+          sp_debug("Got region [%s]", (*reg)->getRegionName().c_str());
+          if ((*reg)->getRegionName().compare(".got.plt") == 0) {
+            dt::Address mem_offset = (*reg)->getMemOffset();
+            dt::Address code_base = obj->codeBase();
+            sp_debug("Mem offset is [%lx] obj base [%lx] for obj [%s]", mem_offset, code_base, obj->name().c_str());
+            dt::Address* got_entry = (dt::Address*) (mem_offset + code_base + 16);  // offset to the 3rd entry
+            sp_debug("dereferencing [%lx]", got_entry);
+            sp_debug("resolver function addr [%lx]", *got_entry);
+
+            if (*got_entry != NULL) {
+              resolver_addr = *got_entry;
+            }
+          }  // end .got.plt
+        }  // end region loop
+      }  // end if !resolver_addr
+
+      if (obj->name().find("ld-linux-x86-64.so") != string::npos) {
+        dt::Address func_offset = resolver_addr - obj->codeBase();
+        pe::CodeObject* co = obj->co();
+        co->parse(func_offset, true);
+        pe::CodeSource* cs = co->cs();
+
+        set<pe::CodeRegion *> region_match;
+        set<pe::Block *> blocks;
+        std::vector<pe::CodeRegion *> all_regions = cs->regions();
+
+        for (std::vector<pe::CodeRegion*>::iterator cr = all_regions.begin(); cr != all_regions.end(); cr++) {
+          sp_debug("Region Low[%lx] - [%lx]", (*cr)->low(), (*cr)->high());
+        }
+
+        int cnt = cs->findRegions(func_offset, region_match);
+        if (cnt == 1) {
+          std::set<pe::Function*> funcs;
+          co->findBlocks(*region_match.begin(), func_offset, blocks);
+
+          pe::Block* b = *(blocks.begin());
+          sp_debug("Block size [%lx], Addr [%lx]", b->size(), b->start());
+          co->findFuncs(*region_match.begin(), func_offset, funcs);
+          
+          if (funcs.size() > 0) {
+            pe::Function* res = *funcs.begin();
+            sp_debug("out edges [%d]", res->callEdges().size());
+            for (pe::Function::blocklist::iterator blk = res->blocks().begin(); blk != res->blocks().end(); blk++) {
+              sp_debug("Block size [%ld] start [%lx]", (*blk)->size(), (*blk)->start());
+            }
+            sp_debug("%s", g_parser->DumpInsns((void*) resolver_addr,
+						 													 78).c_str());
+            if (b->parsed()) {
+              sp_debug("Function is parsed");
+            }
+            // Instrument the found resolver function
+            g_context->init_propeller()->go(FUNC_CAST(obj->getFunc(*funcs.begin())),
+                                            g_context->init_entry(),
+                                            g_context->init_exit());
+          }
+        } else {
+          sp_debug("Found %d region", cnt);
+        }
       }
     }
-    for (FuncSet::iterator i = found_exit_funcs.begin();
-        i != found_exit_funcs.end(); i++) {
+
+    for (FuncSet::iterator i = preinst_funcs.begin();
+        i != preinst_funcs.end(); i++) {
       if (*i == NULL) continue;
       SpFunction* f = *i;
-      sp_debug("Pre-instrumenting exit function: %s", f->name().c_str());
+      sp_debug("Pre-instrumenting function: %s", f->name().c_str());
       g_context->init_propeller()->go(f,
                                       exit_function_payload,
                                       g_context->init_exit());
