@@ -79,10 +79,14 @@ namespace sp {
       return true;
     }
 
-    if (strcmp(func->name().c_str(), "exit") == 0) {
-      sp_debug("exit function, stop propelling");
-      return true;
+    // Skip propelling into functions that we do not want to instrument
+    // We need this check if we are doing initial instrumentation for
+    // all functions on the stack trace when agentlib is injected
+    if (!g_parser->CanInstrumentFunc(func->name())) {
+      sp_debug("SKIP propel into - %s", func->name().c_str());
+      return false;
     }
+
     // 1. Find points according to type
     Points pts;
     ph::PatchMgrPtr mgr = g_parser->mgr();
