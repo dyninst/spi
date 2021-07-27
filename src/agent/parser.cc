@@ -835,8 +835,8 @@ SpParser::FindFunction(string name) {
     GetFuncsByName(obj, name, true, &func_set);
   }
 
-  // We return the first function
-  if (func_set.size() > 0) {
+  // We skip the case multiple functions have the same name
+  if (func_set.size() == 1) {
     mangled_func_map_[name] = *func_set.begin();
     sp_debug("FOUND - %s in object %s", name.c_str(),
              FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
