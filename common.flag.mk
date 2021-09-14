@@ -29,7 +29,7 @@ COMMON_LDFLAGS   += -lboost_system
 
 COMMON_LDFLAGS   += -lpthread -lthread_db
 
-
+COMMON_LDFLAGS  += -ltbbmalloc
 
 
 #COMMON_LDFLAGS   += -L$(LIBDWARF_LIB)
