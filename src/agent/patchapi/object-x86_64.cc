@@ -94,17 +94,17 @@ namespace sp {
 		if (small_freebufs_.buf_size >= size) {
 			ret = small_freebufs_.base;
 			//sp_debug("Number of free buffers: %d", small_freebufs_.list.size());
-			sp_debug("%s: Returning %lu buffer at %lx", name().c_str(), size, ret);
+			sp_debug("%s: Returning size %lu buffer at %lx from interval [%lx, %lx]", name().c_str(), size, ret, small_freebufs_.base, (small_freebufs_.base + small_freebufs_.buf_size));
 			small_freebufs_.base += (size+1);
 			small_freebufs_.buf_size -= (size+1);
-			sp_debug("%s: %lu bytes left", name().c_str(), small_freebufs_.buf_size);
+			sp_debug("%s: %lu bytes left in interval [%lx, %lx]", name().c_str(), small_freebufs_.buf_size, small_freebufs_.base, (small_freebufs_.base + small_freebufs_.buf_size));
 			return ret;
 		}
 		size_t ps = getpagesize();
 		size = ((size + ps -1) & ~(ps - 1));
 		if (::posix_memalign((void**)&ret, ps, size) == 0) {
 			// sp_print("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
-			sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+			sp_debug("FAILED TO GET A CLOSE BUFFER - %lu at %lx malloced", size, ret);
 				return ret;
 		}
 		sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
@@ -126,12 +126,6 @@ namespace sp {
 		switch (type) {
 		case SMALL_BUF:
 			small_freebufs_.list.push_back(buf);
-			break;
-		case MID_BUF:
-			mid_freebufs_.list.push_back(buf);
-			break;
-		case BIG_BUF:
-			big_freebufs_.list.push_back(buf);
 			break;
 		default:
       sp_perror("UNKNOWN FREE - %lx", buf);
