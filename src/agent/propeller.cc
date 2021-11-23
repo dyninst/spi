@@ -74,10 +74,10 @@ namespace sp {
     sp_debug("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
    
-    if (func->name().find("std::")!=std::string::npos || func->name().find("cxx")!=std::string::npos) {
+    /*if (func->name().find("std::")!=std::string::npos || func->name().find("cxx")!=std::string::npos) {
       sp_debug("TODO: libstdc++ functions: stop propelling");
       return true;
-    }
+    }*/
 
     // Skip propelling into functions that we do not want to instrument
     // We need this check if we are doing initial instrumentation for

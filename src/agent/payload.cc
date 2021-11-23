@@ -44,6 +44,7 @@ using std::string;
 // do instrumentation, the purpose of this is to stop
 // instrumentation when we hit exit function
 std::atomic<int> IN_INSTRUMENTATION {1};
+int trampGuard = 0;
 
 namespace sp {
 extern SpContext* g_context;
@@ -103,37 +104,43 @@ void PointCallHandle::SetReturnValue(long ret_val) {
 void
 wrapper_entry(sp::SpPoint* pt,
               sp::PayloadFuncEntry entry) {
-  sp_debug("In wrapper entry function for point %p", pt);
-  if (sp::g_context == NULL) {
-    sp_perror("Global context is NULL, return");
-    return;
+
+  if (trampGuard == 0){
+    trampGuard = 1;	  
+    sp_debug("In wrapper entry function for point %p", pt);
+    
+    if (sp::g_context == NULL) {
+      sp_perror("Global context is NULL, return");
+      return;
+    }
+
+    void* user_info = NULL;
+    sp::SpFunction* callee = sp::Callee(pt);
+
+    sp::PointCallHandle* call_handle =
+      new sp::PointCallHandle(pt, callee);
+
+    if (callee != NULL) {
+      // Handle IPC stuffs
+      if (sp::g_context->IsIpcEnabled()) {
+        sp::SpIpcMgr::BeforeEntry(pt);
+      }
+
+      // Handle multihread stuffs
+      if (sp::g_context->IsMultithreadEnabled()) {
+        sp::SpThreadMgr::BeforeEntry(pt);
+      }
+
+      if (entry) {
+        user_info = entry(call_handle);
+      }
+
+      call_handle->SetUserInfo(user_info);
+    }
+
+    sp::g_context->PushPointCallHandle(call_handle);
+    trampGuard = 0;
   }
-
-  void* user_info = NULL;
-  sp::SpFunction* callee = sp::Callee(pt);
-
-  sp::PointCallHandle* call_handle =
-    new sp::PointCallHandle(pt, callee);
-
-  if (callee != NULL) {
-    // Handle IPC stuffs
-    if (sp::g_context->IsIpcEnabled()) {
-      sp::SpIpcMgr::BeforeEntry(pt);
-    }
-
-    // Handle multihread stuffs
-    if (sp::g_context->IsMultithreadEnabled()) {
-      sp::SpThreadMgr::BeforeEntry(pt);
-    }
-
-    if (entry) {
-      user_info = entry(call_handle);
-    }
-
-    call_handle->SetUserInfo(user_info);
-  }
-
-  sp::g_context->PushPointCallHandle(call_handle);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -154,62 +161,67 @@ wrapper_entry(sp::SpPoint* pt,
 void
 wrapper_exit(sp::SpPoint* pt,
              sp::PayloadFuncExit exit) {
-  sp_debug("In wrapper exit function for point %p", pt);
-
-  sp::PointCallHandle* call_handle;
-  long ret_val;
   
-  // 1. Retrieving point information and the return value.
-  //    Due to the property of tailcalls, the return value is the same for all
-  //    of the previous tailcalls
-  call_handle = sp::g_context->PopPointCallHandle();
-  ret_val = ReturnValue(pt);
+  if (trampGuard == 0){	  
+    trampGuard = 1;
+    sp_debug("In wrapper exit function for point %p", pt);
+  
+    sp::PointCallHandle* call_handle;
+    long ret_val;
+  
+    // 1. Retrieving point information and the return value.
+    //    Due to the property of tailcalls, the return value is the same for all
+    //    of the previous tailcalls
+    call_handle = sp::g_context->PopPointCallHandle();
+    ret_val = ReturnValue(pt);
 
-  call_handle->SetReturnValue(ret_val);
+    call_handle->SetReturnValue(ret_val);
 
-  // 2. Iterate through all the missed tailcall information and call the exit
-  //    payload function for all of them
-  while (pt != call_handle->GetPoint()) {
-    sp_debug("Got info from previous tail call %p", call_handle->GetPoint());
+    // 2. Iterate through all the missed tailcall information and call the exit
+    //    payload function for all of them
+    while (pt != call_handle->GetPoint()) {
+      sp_debug("Got info from previous tail call %p", call_handle->GetPoint());
 
-    if (!call_handle->GetPoint()->tailcall()) {
-      sp_debug("ERROR: this point is not tailcall");
-    }
+      if (!call_handle->GetPoint()->tailcall()) {
+        sp_debug("ERROR: this point is not tailcall");
+      }
     
-    // Handle IPC stuffs
+      // Handle IPC stuffs
+      if (sp::g_context->IsIpcEnabled()) {
+        sp::SpIpcMgr::BeforeExit(call_handle);
+      }
+
+      // Handle dlopen
+      if (sp::g_context->IsHandleDlopenEnabled()) {
+        sp::SpParser::ParseDlExit(call_handle->GetPoint());
+      }
+
+      if (exit) {
+        exit(call_handle);
+      }
+    
+      delete call_handle;
+      call_handle = sp::g_context->PopPointCallHandle();
+      call_handle->SetReturnValue(ret_val);
+    }
+
+    // 3. Now, deal with the current call handler
     if (sp::g_context->IsIpcEnabled()) {
       sp::SpIpcMgr::BeforeExit(call_handle);
     }
 
     // Handle dlopen
     if (sp::g_context->IsHandleDlopenEnabled()) {
-      sp::SpParser::ParseDlExit(call_handle->GetPoint());
+      sp::SpParser::ParseDlExit(pt);
     }
 
     if (exit) {
       exit(call_handle);
     }
-    
+
     delete call_handle;
-    call_handle = sp::g_context->PopPointCallHandle();
-    call_handle->SetReturnValue(ret_val);
+    trampGuard = 0;
   }
-
-  // 3. Now, deal with the current call handler
-  if (sp::g_context->IsIpcEnabled()) {
-    sp::SpIpcMgr::BeforeExit(call_handle);
-  }
-
-  // Handle dlopen
-  if (sp::g_context->IsHandleDlopenEnabled()) {
-    sp::SpParser::ParseDlExit(pt);
-  }
-
-  if (exit) {
-    exit(call_handle);
-  }
-
-  delete call_handle;
 }
 
 
