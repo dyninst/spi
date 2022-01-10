@@ -32,7 +32,7 @@ void MyAgent() {
       "librt.so",       "libcrypto.so",       "libstdc++.so",
       "libm.so",        "libgomp.so",         "libpthread.so",
       "libc.so",        "ld-linux-x86-64.so", "libparseAPI.so",
-      "libpcontrol.so", "libstackwalk.so",    "libpatchAPI.so"};
+      "libpcontrol.so", "libstackwalk.so",    "libpatchAPI.so", "libclassad.so"};
   agent->SetLibrariesNotToInstrument(libs_not_to_inst);
 
   sp::StringSet funcs_not_to_inst;
