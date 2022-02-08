@@ -49,6 +49,9 @@ extern SpParser::ptr g_parser;
 // Used in trap handler, for mapping call instruction's address to snippet
 TrapWorker::InstMap TrapWorker::inst_map_;
 
+bool sigill = false;
+bool installed = false;
+
 bool TrapWorker::run(SpPoint* pt) {
   sp_debug("TRAP WORKER - runs");
   assert(pt);
@@ -58,7 +61,13 @@ bool TrapWorker::run(SpPoint* pt) {
   act.sa_sigaction = TrapWorker::OnTrap;
   act.sa_flags = SA_SIGINFO;
   struct sigaction old_act;
-  sigaction(SIGTRAP, &act, &old_act);
+  if (!installed)
+    if (sigill)
+      sigaction(SIGILL, &act, &old_act);
+    else
+      sigaction(SIGTRAP, &act, &old_act);
+
+  installed = true;
 
   // Call insn's addr
   assert(pt->GetBlock());
@@ -101,8 +110,16 @@ bool TrapWorker::install(SpPoint* pt) {
              (unsigned long)call_addr);
     return false;
   }
+  
+  char ill_1, ill_2, int3;
 
-  char int3 = (char)0xcc;
+  if (sigill) {
+    ill_1 = (char) 0x0F; 
+    ill_2 = (char) 0x0B;
+  }
+  else
+    int3 = (char)0xcc;
+
   size_t call_size = b->call_size();
 
   // Overwrite int3 to the call site
@@ -115,7 +132,11 @@ bool TrapWorker::install(SpPoint* pt) {
     sp_debug("FAILED PERM - failed to change memory permission");
     return false;
   } else {
-    g_as->write(obj, (dt::Address)call_addr, (dt::Address)&int3, 1);
+    if (sigill) {
+      g_as->write(obj, (dt::Address)call_addr, (dt::Address)&ill_1, 1);
+      g_as->write(obj, (dt::Address)call_addr+1, (dt::Address)&ill_2, 1);
+    } else
+      g_as->write(obj, (dt::Address)call_addr, (dt::Address)&int3, 1);
   }
 
   sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
