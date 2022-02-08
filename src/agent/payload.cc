@@ -44,7 +44,7 @@ using std::string;
 // do instrumentation, the purpose of this is to stop
 // instrumentation when we hit exit function
 std::atomic<int> IN_INSTRUMENTATION {1};
-int trampGuard = 0;
+bool inTramp = false;
 
 namespace sp {
 extern SpContext* g_context;
@@ -91,6 +91,14 @@ void PointCallHandle::SetReturnValue(long ret_val) {
 }
 }
 
+class TrampGuard {
+  public:
+    TrampGuard(bool &b): guard(b) {assert(!guard); guard = true;}
+    ~TrampGuard() {guard = false;}
+  private:
+    bool &guard;
+};
+
 //////////////////////////////////////////////////////////////////////
 
 /**
@@ -105,8 +113,7 @@ void
 wrapper_entry(sp::SpPoint* pt,
               sp::PayloadFuncEntry entry) {
 
-  if (trampGuard == 0){
-    trampGuard = 1;	  
+  TrampGuard trampGuard(inTramp);	  
     sp_debug("In wrapper entry function for point %p", pt);
     
     if (sp::g_context == NULL) {
@@ -139,8 +146,6 @@ wrapper_entry(sp::SpPoint* pt,
     }
 
     sp::g_context->PushPointCallHandle(call_handle);
-    trampGuard = 0;
-  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,8 +167,7 @@ void
 wrapper_exit(sp::SpPoint* pt,
              sp::PayloadFuncExit exit) {
   
-  if (trampGuard == 0){	  
-    trampGuard = 1;
+  TrampGuard trampGuard(inTramp);
     sp_debug("In wrapper exit function for point %p", pt);
   
     sp::PointCallHandle* call_handle;
@@ -220,8 +224,6 @@ wrapper_exit(sp::SpPoint* pt,
     }
 
     delete call_handle;
-    trampGuard = 0;
-  }
 }
 
 
