@@ -32,7 +32,7 @@
 #include "injector/injector.h"
 
 namespace sp {
-
+/*
 // The code snippet to invoke do_dlopen
 static unsigned char kDlopenCode[] = {
   //0 , 1
@@ -80,7 +80,8 @@ static unsigned char kIjagentCode[] = {
   0xff, 0xd0,                                         // call %rax
   0xCC
 };
-
+*/
+/*
 enum {
   OFF_ARGS = 4,
   OFF_DODLOPEN = 14,
@@ -98,7 +99,8 @@ SpInjector::GetCodeTemplateSize() {
 unsigned char*
 SpInjector::GetCodeTemplate(Dyninst::Address args_addr,
                             Dyninst::Address do_dlopen,
-                            Dyninst::Address /*code_addr*/) {
+                            Dyninst::Address //code_addr
+			    ) {
   long* p = (long*)&kDlopenCode[OFF_DODLOPEN];
   *p = (long)do_dlopen;
   p = (long*)&kDlopenCode[OFF_ARGS];
@@ -115,7 +117,8 @@ unsigned char*
 SpInjector::GetDlmodeTemplate(Dyninst::Address libname,
                               Dyninst::Address mode,
                               Dyninst::Address dlopen,
-                              Dyninst::Address /*code_addr*/) {
+                              Dyninst::Address //code_addr
+			      ) {
   long* p = (long*)&kLibcDlopenModeCode[OFF_DODLOPEN+10];
   *p = (long)dlopen;
   p = (long*)&kLibcDlopenModeCode[OFF_ARGS];
@@ -130,12 +133,13 @@ size_t SpInjector::GetIjTemplateSize() {
 }
 
 unsigned char* SpInjector::GetIjTemplate(Dyninst::Address ij_addr,
-                                Dyninst::Address /*code_addr*/) {
+                                Dyninst::Address //code_addr
+				) {
   long* p = (long*)&kIjagentCode[OFF_IJ];
   *p = (long)ij_addr;
   return kIjagentCode;
 }
-
+*/
 Dyninst::Address SpInjector::pc() {
   Dyninst::MachRegisterVal rip;
   thr_->getRegister(Dyninst::x86_64::rip, rip);

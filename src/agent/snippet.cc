@@ -152,6 +152,8 @@ namespace sp {
     // Case 2: non tail call and direct call
     // Case 3: indirect call (tail call or non tail call)
 
+    SpFunction* callee;
+
     if (point_->tailcall() && func_) {
       sp_debug("TAIL_CALL_DIRECT_CALL ");
       assert(!ret_addr);
@@ -180,12 +182,7 @@ namespace sp {
       blob_size_ += emit_call_orig(blob_, blob_size_);
     }
 
-    if (g_context->IsIpcEnabled() ||
-        g_context->IsHandleDlopenEnabled() ||
-        exit_) {
-
-
-    SpFunction* callee = point_->callee();
+    callee = point_->callee();
     if (callee)
     {
       char* ret_blob_address = blob_;
@@ -194,21 +191,21 @@ namespace sp {
       g_context->ra_csp_map_[ret_addr] = point_;
     } 
 
-      // 6. save context
-      blob_size_ += emit_save(blob_, blob_size_);
+    // 6. save context
+    blob_size_ += emit_save(blob_, blob_size_);
 
-      // 7. Pass parameters
-      param_func = (long)exit_;
-      called_func = (long)g_context->wrapper_exit();
-      blob_size_ += emit_pass_param((long)point_,
-                                    param_func,
-                                    blob_,
-                                    blob_size_);
-      blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
+    // 7. Pass parameters
+    param_func = (long)exit_;
+    called_func = (long)g_context->wrapper_exit();
+    blob_size_ += emit_pass_param((long)point_,
+                                  param_func,
+                                  blob_,
+                                  blob_size_);
+    blob_size_ += emit_call_abs(called_func, blob_, blob_size_, true);
 
-      // 8. Restore context
-      blob_size_ += emit_restore(blob_, blob_size_);
-    }
+    // 8. Restore context
+    blob_size_ += emit_restore(blob_, blob_size_);
+
 
     // 9. Jump back to ORIG_INSN_ADDR
     blob_size_ += emit_jump_abs(ret_addr, blob_, blob_size_);

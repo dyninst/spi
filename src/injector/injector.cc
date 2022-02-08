@@ -290,7 +290,7 @@ bool SpInjector::Inject(const char *lib_name) {
   // proc_->detach();
   return true;
 }*/
-
+/*
 //////////////////////////////////////////////////////////////////////
 // Invoke ijagent function in libijagent.so, which in turn invokes dlopen
 void SpInjector::LoadUserLibrary() {
@@ -431,11 +431,11 @@ void SpInjector::LoadIjagent(const char *lib_name) {
     proc_->freeMemory(code_addr);
     free(libname);
   }
-  /*
-  char dump_maps[1024];
-  snprintf(dump_maps, 1024, "cat /proc/%d/maps", pid_);
-  system(dump_maps);
-*/
+  
+  //char dump_maps[1024];
+  //snprintf(dump_maps, 1024, "cat /proc/%d/maps", pid_);
+  //system(dump_maps);
+
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -555,7 +555,7 @@ bool SpInjector::GetResolvedLibPath(const std::string &filename,
 
   return (0 < paths.size());
 }
-
+*/
 //////////////////////////////////////////////////////////////////////
 void SpInjector::UpdateFrameInfo() {
   sp_debug("Shared memory key: %ui", IJMSG_ID+proc_->getPid());
