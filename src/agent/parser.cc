@@ -786,8 +786,71 @@ SpParser::FindFunction(string name,
   return true;
 }
 
-// Find function by name.
+// Find function by mangled name.
+bool
+SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
 
+  sp_debug("LOOKING FOR FUNC BY MANGLED NAME - looking for %s",
+           name.c_str());
+  
+  if (name.length() == 0) {
+    return false;
+  }
+
+  // A quick return, if this function is in the cache
+  if (mangled_func_map_.find(name) != mangled_func_map_.end()) {
+    sp_debug("GOT FROM CACHE - %s",
+             FUNC_CAST((*mangled_func_map_[name].begin()))->GetMangledName().c_str());
+    std::copy(mangled_func_map_[name].begin(), mangled_func_map_[name].end(), inserter(*found_funcs, found_funcs->begin()));
+    return true;
+  }
+
+  // A quick return, if this function is proved to be not found
+  if (mangled_func_not_found_.find(name) != mangled_func_not_found_.end()) {
+    sp_debug("NOT FOUND - %s is proved to be not found", name.c_str());
+    return false;
+  }
+  
+  // Iterate through each object to look for this function
+  assert(mgr_);
+  ph::AddrSpace* as = mgr_->as();
+  FuncSet func_set;
+  for (ph::AddrSpace::ObjMap::iterator ci = as->objMap().begin();
+       ci != as->objMap().end(); ci++) {
+    SpObject* obj = OBJ_CAST(ci->second);
+
+    if (strcmp(sp_filename(obj->name().c_str()), "libagent.so") == 0) {
+      sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+      continue;
+    }
+
+    // Two cases to skip:
+    // 1. Not in inst_lib list
+    // 2. In inst_lib, lib is libc, but function is not __libc_start_main
+    if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
+      sp_debug("SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
+      continue;
+    }
+    
+    GetFuncsByName(obj, name, true, &func_set);
+  }
+
+  if (func_set.size() == 0) {
+    mangled_func_not_found_.insert(name);  
+    sp_debug("NO FOUND - %s", name.c_str());
+    return false;
+  }
+  
+  //std::copy(func_set.begin(), func_set.end(), inserter(mangled_func_map_[name], mangled_func_map_[name].begin()));
+  std::copy(func_set.begin(), func_set.end(), inserter(*found_funcs, found_funcs->begin()));
+  assert(found_funcs->size() > 0);
+  sp_debug("FOUND - %lu instances of %s, first in object %s", found_funcs->size(), name.c_str(),
+         FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
+  return true;
+}
+
+// Find function by name.
+/*
 SpFunction*
 SpParser::FindFunction(string name) {
 
@@ -846,7 +909,7 @@ SpParser::FindFunction(string name) {
   mangled_func_not_found_.insert(name);  
   sp_debug("NO FOUND - %s", name.c_str());
   return NULL;
-}
+}*/
 
 size_t total_count=0;
 size_t total_size=0;
@@ -861,7 +924,7 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
   sp_debug("IN OBJECT - %s in %s?",
            name.c_str(), obj->name().c_str());
 
-  if ((strcmp(name.c_str(), "recv") != 0) && (strcmp(name.c_str(), "read") != 0) && obj->name().find("libc-") != std::string::npos &&
+if ((strcmp(name.c_str(), "recv") != 0) && (strcmp(name.c_str(), "read") != 0) && obj->name().find("libc-") != std::string::npos &&
       strcmp(name.c_str(), "__libc_start_main") != 0) {
     sp_debug("Find function: SKIP - lib %s and non __libc_start_main for the function %s",
              sp_filename(obj->name().c_str()),name.c_str());

@@ -118,8 +118,16 @@ namespace sp {
 
     if (call_stack.size() <= 0)  {
     sp_debug("PRELOAD - preload agent.so, and instrument main()");
-
-      SpFunction* f = g_parser->FindFunction("main");
+    sp_debug(GetExeName().c_str());
+      
+      FuncSet found_funcs;
+      SpFunction* f = NULL;
+      g_parser->FindFunctionByMangledName("main", &found_funcs);
+      for (FuncSet::iterator i = found_funcs.begin(); i != found_funcs.end(); i++) {
+        if (strcmp(FUNC_CAST(*i)->GetObject()->name().c_str(), sp::GetExeObjName().c_str()) == 0)
+          f = FUNC_CAST(*i);
+      }
+      //f = g_parser->FindFunction("main");
       if (f) {
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),

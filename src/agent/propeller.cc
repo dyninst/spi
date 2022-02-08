@@ -41,6 +41,9 @@
 #include "Command.h"
 #include "PatchMgr.h"
 
+#include "PatchObject.h"
+#include "agent/patchapi/object.h"
+
 #include <signal.h>
 namespace sp {
 
@@ -182,7 +185,14 @@ namespace sp {
     ph::PatchMgrPtr mgr = g_parser->mgr();
     assert(mgr);
     ph::PatchFunction* cur_func = NULL;
-    cur_func = g_parser->FindFunction(func->GetMangledName());
+    FuncSet found_funcs;
+    //cur_func = g_parser->FindFunction(func->GetMangledName());
+    g_parser->FindFunctionByMangledName(func->GetMangledName(), &found_funcs);
+
+    for (FuncSet::iterator i = found_funcs.begin(); i != found_funcs.end(); i++) {
+      if (strcmp(FUNC_CAST(*i)->GetObject()->name().c_str(), func->GetObject()->name().c_str()) == 0)
+        cur_func = func;
+    }
 
     if (!cur_func) return false;
     //1. Find all return points

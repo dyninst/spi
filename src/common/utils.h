@@ -102,7 +102,10 @@ namespace sp {
 
   // Gets full path of the executable file
   COMMON_EXPORT std::string GetExeName();
-   
+
+  // Gets executable object name
+  COMMON_EXPORT std::string GetExeObjName();
+
   //check if a library is already present in the process
   COMMON_EXPORT bool ProcessHasLibrary(int pid, std::string lib);
 

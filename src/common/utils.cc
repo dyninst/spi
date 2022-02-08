@@ -674,6 +674,15 @@ GetExeName() {
 
 //////////////////////////////////////////////////////////////////////
 
+// Gets current process's executable name without full path
+std::string
+GetExeObjName() {
+  std::string path = GetExeName();
+  return path.substr(path.find_last_of("//") + 1);
+}
+
+//////////////////////////////////////////////////////////////////////
+
 // Gets text content from a file. If file doesn't exist, return "".
 std::string
 GetFileText(const char* filename) {
