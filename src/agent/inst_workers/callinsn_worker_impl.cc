@@ -44,7 +44,7 @@ namespace sp {
 
   bool
   RelocCallInsnWorker::run(SpPoint* pt) {
-    sp_debug("RELOC CALLINSN WORKER - runs");
+    sp_debug("worker", "RELOC CALLINSN WORKER - runs");
 
 		assert(pt);
 		SpBlock* b = pt->GetBlock();
@@ -61,23 +61,23 @@ namespace sp {
 
 		// 1. is the instruction >= 5 bytes?
 		if (call_insn_size < 5) {
-			sp_debug("SMALL CALL INSN - call insn is too small (< 5-byte),"
+			sp_debug("worker", "SMALL CALL INSN - call insn is too small (< 5-byte),"
 							 " try other workers");
 			return false;
 		}
 
-    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
+    sp_debug("worker", "%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
 
     // 2. is it a direct call instruction
     if (call_insn[0] != (char)0xe8) {  // A direct call?
-			sp_debug("NOT NORMAL CALL");
+			sp_debug("worker", "NOT NORMAL CALL");
 			if (!pt->tailcall()) {           // A jump for direct tail call?
-				sp_debug("NOT TAIL CALL - try other workers");
+				sp_debug("worker", "NOT TAIL CALL - try other workers");
 				return false;
 			} else {
-				sp_debug("IS TAIL CALL, call insn size: %lu", call_insn_size);
-        sp_debug("Try other workers");
+				sp_debug("worker", "IS TAIL CALL, call insn size: %lu", call_insn_size);
+        sp_debug("worker", "Try other workers");
         return false;
 				// assert(call_insn_size == 5 &&
 				// 			 "LARGE INDIRECT TAIL CALL, UNSUPPORTED");
@@ -90,13 +90,13 @@ namespace sp {
 		size_t est_size = EstimateBlobSize(pt);
 		dt::Address blob = snip->GetBlob(est_size);
     if (!blob) {
-      sp_debug("NULL BLOB - get null blob at %lx", b->last());
+      sp_debug("worker", "NULL BLOB - get null blob at %lx", b->last());
       return false;
     }
 
     long rel_addr = (long)blob - (long)call_insn_addr;
     if (!sp::IsDisp32(rel_addr)) {
-      sp_debug("NOT 4-byte DISP - blob=%lx, call_insn=%lx, delta=%ld,"
+      sp_debug("worker", "NOT 4-byte DISP - blob=%lx, call_insn=%lx, delta=%ld,"
                " try other workers", (long)blob, (long)call_insn_addr,
                rel_addr);
       return false;
@@ -133,7 +133,7 @@ namespace sp {
 		assert(blob);
     size_t blob_size = snip->GetBlobSize();
     if (!blob || (long)blob < getpagesize()) {
-			sp_debug("FAILED TO GENERATE BLOB");
+			sp_debug("worker", "FAILED TO GENERATE BLOB");
 			return false;
 		}
 
@@ -145,12 +145,12 @@ namespace sp {
     int* lp = (int*)p;
 
 		assert(pt->callee());
-    sp_debug("BEFORE INSTALL (%lu bytes) for point %lx for %s- {",
+    sp_debug("worker", "BEFORE INSTALL (%lu bytes) for point %lx for %s- {",
              (unsigned long)b->size(), (unsigned long)call_addr,
              pt->callee()->name().c_str());
-    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
+    sp_debug("worker", "%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
-    sp_debug("}");
+    sp_debug("worker", "}");
 
     // Build the jump instruction
 		SpObject* obj = pt->GetObject();
@@ -159,10 +159,10 @@ namespace sp {
     size_t insn_length = b->call_size();
     *lp = (int)((long)blob - (long)call_addr - insn_length);
 
-    sp_debug("REL CAL - blob at %lx, last insn at %lx, insn length %lu",
+    sp_debug("worker", "REL CAL - blob at %lx, last insn at %lx, insn length %lu",
              (unsigned long)blob, b->end(),
 						 (unsigned long)insn_length);
-    sp_debug("JUMP REL - jump to relative address %x", *lp);
+    sp_debug("worker", "JUMP REL - jump to relative address %x", *lp);
 
     // Replace "call" with a "jump" instruction
 
@@ -172,13 +172,13 @@ namespace sp {
                                   insn_length, perm)) {
       g_as->write(obj, (dt::Address)call_addr, (dt::Address)jump, 5);
     } else {
-      sp_debug("MPROTECT - Failed to change memory access permission");
+      sp_debug("worker", "MPROTECT - Failed to change memory access permission");
       return false;
     }
 
     // Change the permission of snippet, so that it can be executed.
     if (!g_as->SetMemoryPermission((dt::Address)blob, blob_size, perm)) {
-      sp_debug("MPROTECT - Failed to change memory access permission"
+      sp_debug("worker", "MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       g_as->free(obj, (dt::Address)blob);
       return false;
@@ -186,12 +186,12 @@ namespace sp {
     
 		assert(pt->callee());
 
-    sp_debug("AFTER INSTALL (%lu bytes) for point %lx for %s- {",
+    sp_debug("worker", "AFTER INSTALL (%lu bytes) for point %lx for %s- {",
              b->size(), b->last(),
              pt->callee()->name().c_str());
-    sp_debug("%s", g_parser->DumpInsns((void*)b->start(),
+    sp_debug("worker", "%s", g_parser->DumpInsns((void*)b->start(),
 																			 b->size()).c_str());
-    sp_debug("}");
+    sp_debug("worker", "}");
 
     return true;
   }

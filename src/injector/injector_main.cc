@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     const char* lib_name = argv[3];
     sp_print("Injector [pid = %5d]: INJECTING - %s to pid=%d...",
              getpid(), lib_name, pid);
-    sp_debug("========== Injector ==========");
+    sp_debug("injector", "========== Injector ==========");
     SpInjector::ptr injector = SpInjector::Create(pid);
     injector->Inject(lib_name);
   }

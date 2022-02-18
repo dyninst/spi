@@ -39,7 +39,7 @@ namespace sp {
 
 	void SpObject::InitMemoryAlloc(dt::Address base,
                                  size_t size) {
-		sp_debug("INIT MEMORY ALLOC - base %lx, size %ld",
+		sp_debug("patchapi", "INIT MEMORY ALLOC - base %lx, size %ld",
              (long)base, (long)size);
 
 		// MMap this big buffer
@@ -64,11 +64,11 @@ namespace sp {
 		}
 
 		if (m == MAP_FAILED) {
-			sp_debug("%s: FAILED TO MAP TO %lx (size %ld)",
+			sp_debug("patchapi", "%s: FAILED TO MAP TO %lx (size %ld)",
 							 name().c_str(), (long)base, (long)size);
 			return;
 		} else {
-			sp_debug("%s: SUCCEED TO MAP TO %lx (size %ld)",
+			sp_debug("patchapi", "%s: SUCCEED TO MAP TO %lx (size %ld)",
 							 name().c_str(), (long)m, (long)size);
 		}
 
@@ -93,21 +93,21 @@ namespace sp {
 
 		if (small_freebufs_.buf_size >= size) {
 			ret = small_freebufs_.base;
-			//sp_debug("Number of free buffers: %d", small_freebufs_.list.size());
-			sp_debug("%s: Returning size %lu buffer at %lx from interval [%lx, %lx]", name().c_str(), size, ret, small_freebufs_.base, (small_freebufs_.base + small_freebufs_.buf_size));
+			//sp_debug("patchapi", "Number of free buffers: %d", small_freebufs_.list.size());
+			sp_debug("patchapi", "%s: Returning size %lu buffer at %lx from interval [%lx, %lx]", name().c_str(), size, ret, small_freebufs_.base, (small_freebufs_.base + small_freebufs_.buf_size));
 			small_freebufs_.base += (size+1);
 			small_freebufs_.buf_size -= (size+1);
-			sp_debug("%s: %lu bytes left in interval [%lx, %lx]", name().c_str(), small_freebufs_.buf_size, small_freebufs_.base, (small_freebufs_.base + small_freebufs_.buf_size));
+			sp_debug("patchapi", "%s: %lu bytes left in interval [%lx, %lx]", name().c_str(), small_freebufs_.buf_size, small_freebufs_.base, (small_freebufs_.base + small_freebufs_.buf_size));
 			return ret;
 		}
 		size_t ps = getpagesize();
 		size = ((size + ps -1) & ~(ps - 1));
 		if (::posix_memalign((void**)&ret, ps, size) == 0) {
 			// sp_print("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
-			sp_debug("FAILED TO GET A CLOSE BUFFER - %lu at %lx malloced", size, ret);
+			sp_debug("patchapi", "FAILED TO GET A CLOSE BUFFER - %lu at %lx malloced", size, ret);
 				return ret;
 		}
-		sp_debug("FAILED TO GET A CLOSE BUFFER - 0 is malloced");
+		sp_debug("patchapi", "FAILED TO GET A CLOSE BUFFER - 0 is malloced");
 			return 0;
 	}
 
@@ -116,7 +116,7 @@ namespace sp {
     if (!buf) return false;
     
 		if (alloc_bufs_.find(buf) == alloc_bufs_.end()) {
-			sp_debug("FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
+			sp_debug("patchapi", "FREE FROM MALLOC-ed - %lx is allocated by malloc", buf);
       ::free((void*)buf);
       buf = (dt::Address)NULL;
       return true;

@@ -54,7 +54,7 @@ namespace sp {
       }
     }
     if (symbols.size() == 0) {
-      //sp_debug("GetMangledName: found no symbol, returning empty string");
+      //sp_debug("patchapi", "GetMangledName: found no symbol, returning empty string");
       return "";
     }
     return (symbols)[0]->getMangledName();

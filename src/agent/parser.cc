@@ -107,17 +107,17 @@ SpParser::GetRuntimeSymtabs(sp::SymtabSet& symtabs) {
   sb::AddressLookup* al =
       sb::AddressLookup::createAddressLookup(getpid());
   if (!al) {
-    sp_debug("FAILED TO CREATE AddressLookup");
+    sp_debug("agent", "FAILED TO CREATE AddressLookup");
     return NULL;
   }
   al->refresh();
   std::vector<sb::Symtab*> tabs;
   al->getAllSymtabs(tabs);
   if (tabs.size() == 0) {
-    sp_debug("FOUND NO SYMTABS");
+    sp_debug("agent", "FOUND NO SYMTABS");
     return NULL;
   }
-  sp_debug("SYMTABS - %ld symtabs found", (long)tabs.size());
+  sp_debug("agent", "SYMTABS - %ld symtabs found", (long)tabs.size());
 
   for (std::vector<sb::Symtab*>::iterator i = tabs.begin();
        i != tabs.end(); i++) {
@@ -131,7 +131,7 @@ SpParser::GetRuntimeSymtabs(sp::SymtabSet& symtabs) {
     Symbols syms;
     if (sym->findSymbol(syms, magic_var) && syms.size() > 0) {
       agent_name_ = sym->name();
-      sp_debug("AGENT NAME - %s", agent_name_.c_str());
+      sp_debug("agent", "AGENT NAME - %s", agent_name_.c_str());
     }
 
     // Deduplicate symtabs
@@ -166,23 +166,23 @@ SpParser::CreatePatchobjs(sp::SymtabSet& unique_tabs,
     if (!CanInstrumentLib(libname_no_path)
         && libname_no_path.find("libc.so") == string::npos
         && libname_no_path.find("ld-linux-x86-64.so") == string::npos) {
-      sp_debug("SKIPED - skip parsing %s",
+      sp_debug("agent", "SKIPED - skip parsing %s",
                sp_filename(sym->name().c_str()));
       continue;
     }
 
     SpObject* patch_obj = CreateObject(sym, load_addr);
     if (!patch_obj) {
-      sp_debug("FAILED TO CREATE PATCH OBJECT");
+      sp_debug("agent", "FAILED TO CREATE PATCH OBJECT");
       continue;
     }
 
     patch_objs.push_back(patch_obj);
-    sp_debug("PARSED - parsed %s", sp_filename(sym->name().c_str()));
+    sp_debug("agent", "PARSED - parsed %s", sp_filename(sym->name().c_str()));
 
     if (sym->isExec()) {
       exe_obj_ = patch_obj;
-      sp_debug("EXE - %s is an executable",
+      sp_debug("agent", "EXE - %s is an executable",
                sp_filename(sym->name().c_str()));
     }
   } // End of symtab iteration
@@ -196,7 +196,7 @@ SpParser::GetExeFromProcfs(sp::PatchObjects& patch_objs) {
   std::string exeName = sp::GetExeName();
   for (PatchObjects::iterator oi = patch_objs.begin();
        oi != patch_objs.end(); oi++) {
-    sp_debug("Trying next patch obj");
+    sp_debug("agent", "Trying next patch obj");
     SpObject* obj = OBJ_CAST(*oi);
     assert(obj);
 
@@ -205,16 +205,16 @@ SpParser::GetExeFromProcfs(sp::PatchObjects& patch_objs) {
     std::string objName = obj->name();
     char* s1 = sp_filename(exeName.c_str());
     char* s2 = sp_filename(objName.c_str());
-    sp_debug("exec name[%s] obj name[%s]", sp::GetExeName().c_str(), obj->name().c_str());
+    sp_debug("agent", "exec name[%s] obj name[%s]", sp::GetExeName().c_str(), obj->name().c_str());
     if (strcmp(s1, s2) == 0) {
-      sp_debug("GOT EXE - %s is an executable shared library", s2);
+      sp_debug("agent", "GOT EXE - %s is an executable shared library", s2);
       return obj;
     } // strcmp
     else {
-      sp_debug("PARSE EXE - s1=%s, s2 =%s", s1, s2);
+      sp_debug("agent", "PARSE EXE - s1=%s, s2 =%s", s1, s2);
     }
   } // for each obj
-  sp_debug("failed to find exe from procfs");
+  sp_debug("agent", "failed to find exe from procfs");
   return NULL;
 }
 
@@ -264,10 +264,10 @@ SpParser::CreateObject(sb::Symtab* sym,
     if (dir) {
       dirent* entry = readdir(dir);
       while (entry) {
-        sp_debug("Parsed library: %s is %s?", entry->d_name,
+        sp_debug("agent", "Parsed library: %s is %s?", entry->d_name,
                  no_path_name);
         if (strcmp(no_path_name, entry->d_name) == 0) {
-          sp_debug("GOT Parsed LIB: %s", entry->d_name);
+          sp_debug("agent", "GOT Parsed LIB: %s", entry->d_name);
           parse_from_file = true;
           break;
         }
@@ -275,15 +275,15 @@ SpParser::CreateObject(sb::Symtab* sym,
       }
       closedir(dir);
     } else {
-      sp_debug("FAILED TO ITERATE DIR %s", getenv("SP_PARSE_DIR"));
+      sp_debug("agent", "FAILED TO ITERATE DIR %s", getenv("SP_PARSE_DIR"));
     }
   }
 
   if (parse_from_file) {
-    sp_debug("PARSE FROM FILE - for %s", sym->name().c_str());
+    sp_debug("agent", "PARSE FROM FILE - for %s", sym->name().c_str());
     obj = CreateObjectFromFile(sym, load_addr);
   } else {
-    sp_debug("PARSE FROM RUNTIME - for %s", sym->name().c_str());
+    sp_debug("agent", "PARSE FROM RUNTIME - for %s", sym->name().c_str());
     obj = CreateObjectFromRuntime(sym, load_addr);
   }
   return obj;
@@ -294,7 +294,7 @@ SpParser::CreateObjectFromRuntime(sb::Symtab* sym,
                                   dt::Address load_addr) {
 
   // Parse binary objects using ParseAPI::CodeObject::parse().
-  sp_debug("Start create obj from runtime symtab name: %s", sym->name().c_str());
+  sp_debug("agent", "Start create obj from runtime symtab name: %s", sym->name().c_str());
   pe::SymtabCodeSource* scs = new pe::SymtabCodeSource(sym);
   code_srcs_.push_back(scs);
   pe::CodeObject* co = new pe::CodeObject(scs);
@@ -315,7 +315,7 @@ SpParser::CreateObjectFromRuntime(sb::Symtab* sym,
 // dt::Address real_load_addr =
   // load_addr ? load_addr : scs->loadAddress();
   dt::Address real_load_addr=load_addr;	
-   sp_debug("Symbol %s: load_addr: %lx, scs->loadAddress: %lx", sym->name().c_str(),load_addr,
+   sp_debug("agent", "Symbol %s: load_addr: %lx, scs->loadAddress: %lx", sym->name().c_str(),load_addr,
            scs->loadAddress());
   SpObject* obj =  new sp::SpObject(co,
                                     load_addr,
@@ -363,7 +363,7 @@ SpParser::Parse() {
   if (!CreatePatchobjs(unique_tabs, al, patch_objs)) {
     sp_perror("FAILED TO CREATE PATCHOBJS");
   }
-  sp_debug("Created patchapi objs");
+  sp_debug("agent", "Created patchapi objs");
 
   // Step 3: In the case of executable shared library, we cannot get
   // exe_obj_ via symtabAPI, so we resort to /proc
@@ -426,12 +426,12 @@ class SpVisitor : public in::Visitor {
     } else {
       // Non-pc case, x86-32 always goes this way
       dt::Address rval = pt_->snip()->GetSavedReg(r->getID());
-      // sp_debug("GOT NON-PC REG - %s = %lx",
+      // sp_debug("agent", "GOT NON-PC REG - %s = %lx",
       //          r->getID().name().c_str(), rval);
       call_addr_ = rval;
     }
 
-    // sp_debug("SP_VISITOR - reg value %lx", call_addr_);
+    // sp_debug("agent", "SP_VISITOR - reg value %lx", call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(in::BinaryFunction* b) {
@@ -442,10 +442,10 @@ class SpVisitor : public in::Visitor {
 
     if (b->isAdd()) {
       call_addr_ = i1 + i2;
-      // sp_debug("SP_VISITOR - %lx + %lx = %lx", i1, i2, call_addr_);
+      // sp_debug("agent", "SP_VISITOR - %lx + %lx = %lx", i1, i2, call_addr_);
     } else if (b->isMultiply()) {
       call_addr_ = i1 * i2;
-      // sp_debug("SP_VISITOR - %lx * %lx = %lx", i1, i2, call_addr_);
+      // sp_debug("agent", "SP_VISITOR - %lx * %lx = %lx", i1, i2, call_addr_);
     } else {
       assert(0);
     }
@@ -473,16 +473,16 @@ class SpVisitor : public in::Visitor {
       }
     }
 
-    // sp_debug("SP_VISITOR - imm %lx ", call_addr_);
+    // sp_debug("agent", "SP_VISITOR - imm %lx ", call_addr_);
     stack_.push(call_addr_);
   }
   virtual void visit(in::Dereference* d) {
     dt::Address* addr = (dt::Address*)(stack_.top() + seg_val_);
     stack_.pop();
-    // sp_debug("SP_VISITOR - dereferencing %lx => ? ",
+    // sp_debug("agent", "SP_VISITOR - dereferencing %lx => ? ",
     //          (dt::Address)addr);
     call_addr_ = *addr;
-    // sp_debug("SP_VISITOR - dereference %lx => %lx ",
+    // sp_debug("agent", "SP_VISITOR - dereference %lx => %lx ",
     //          (dt::Address)addr, call_addr_);
     stack_.push(call_addr_);
   }
@@ -518,7 +518,7 @@ SpParser::callee(SpPoint* pt,
     // if (tmp_f && tmp_f != f) {
     //   f = tmp_f;
     // }
-    sp_debug("got callee, found function %lx", (long unsigned int) f);
+    sp_debug("agent", "got callee, found function %lx", (long unsigned int) f);
 
     SpFunction* sfunc = f;
     assert(sfunc);
@@ -536,7 +536,7 @@ SpParser::callee(SpPoint* pt,
 
     if (addr_callee_not_found_.find(b->last()) !=
                                     addr_callee_not_found_.end()) {
-      sp_debug("NOT FOUND - proved not found for %lx", b->last());
+      sp_debug("agent", "NOT FOUND - proved not found for %lx", b->last());
       return NULL;
     }
 
@@ -638,13 +638,13 @@ SpParser::GetFuncAddrFromName(string name) {
   FuncSet found_funcs;
   // We expect users to provide pretty name
   if (!FindFunction(name, &found_funcs) || found_funcs.size() == 0) {
-    sp_debug("GET FUNC ADDR FROM NAME - failed for %s", name.c_str());
+    sp_debug("agent", "GET FUNC ADDR FROM NAME - failed for %s", name.c_str());
     return 0;
   }
 
   // To simplify things, We don't want the payload function to be overloaded
   if (found_funcs.size() > 1) {
-    sp_debug("GET FUNC ADDR FROM NAME - failed for %s, overloaded func",
+    sp_debug("agent", "GET FUNC ADDR FROM NAME - failed for %s, overloaded func",
              name.c_str());
     return 0;
   }
@@ -656,7 +656,7 @@ SpParser::GetFuncAddrFromName(string name) {
 
 SpFunction*
 SpParser::FindFunction(dt::Address addr) {
-  sp_debug("FIND FUNC BY ADDR - for call insn %lx", addr);
+  sp_debug("agent", "FIND FUNC BY ADDR - for call insn %lx", addr);
 
   if (addr == 0) {
     return NULL;
@@ -664,14 +664,14 @@ SpParser::FindFunction(dt::Address addr) {
   
   // A quick return, if this function is in the cache
   if (addr_func_map_.find(addr) != addr_func_map_.end()) {
-    sp_debug("GOT FROM CACHE - %s",
+    sp_debug("agent", "GOT FROM CACHE - %s",
              addr_func_map_[addr]->name().c_str());
     return addr_func_map_[addr];
   }
 
   // A quick return, if this function is proved to be not found
   if (addr_func_not_found_.find(addr) != addr_func_not_found_.end()) {
-    sp_debug("NOT FOUND - call at %lx is proved to be not found", addr);
+    sp_debug("agent", "NOT FOUND - call at %lx is proved to be not found", addr);
     return NULL;
   }
   
@@ -681,14 +681,14 @@ SpParser::FindFunction(dt::Address addr) {
     SpObject* obj = OBJ_CAST(ci->second);
 
     if (!CanInstrumentLib(obj->name().c_str())) {
-      sp_debug("SKIPED - skip finding function at %s",
+      sp_debug("agent", "SKIPED - skip finding function at %s",
                sp_filename(obj->name().c_str()));
       continue;
     }
 
     // Get the function offset relative to the object
     dt::Address offset = addr - obj->codeBase();
-    sp_debug("code base %lx for %s", obj->codeBase(), obj->name().c_str());
+    sp_debug("agent", "code base %lx for %s", obj->codeBase(), obj->name().c_str());
     
     pe::CodeObject* co = obj->co();
     pe::CodeSource* cs = co->cs();
@@ -698,13 +698,13 @@ SpParser::FindFunction(dt::Address addr) {
     int cnt = cs->findRegions(offset, match);
 
     if(cnt != 1) {
-      sp_debug("%ld Regions found", cnt);
+      sp_debug("agent", "%ld Regions found", cnt);
       continue;
     }
     else if(cnt == 1) {
       co->findBlocks(*match.begin(), offset, blocks);
 
-      sp_debug("%ld blocks found", (long)blocks.size());
+      sp_debug("agent", "%ld blocks found", (long)blocks.size());
       if (blocks.size() == 1) {
         std::vector<pe::Function*> funcs;
         (*blocks.begin())->getFuncs(funcs);
@@ -718,7 +718,7 @@ SpParser::FindFunction(dt::Address addr) {
       return NULL;
     }
   }
-  sp_debug("Function not found");
+  sp_debug("agent", "Function not found");
   addr_func_not_found_.insert(addr);
   return NULL;
 }
@@ -728,7 +728,7 @@ SpParser::FindFunction(dt::Address addr) {
 bool
 SpParser::FindFunction(string name,
                        FuncSet* found_funcs) {
-  sp_debug("LOOKING FOR FUNC BY PRETTY NAME - looking for %s", name.c_str());
+  sp_debug("agent", "LOOKING FOR FUNC BY PRETTY NAME - looking for %s", name.c_str());
 
   if (name.length() == 0) {
     return false;
@@ -736,7 +736,7 @@ SpParser::FindFunction(string name,
 
   // A quick return, if this function is in the cache
   if (demangled_func_map_.find(name) != demangled_func_map_.end()) {
-    sp_debug("GOT FROM CACHE - %s", name.c_str());
+    sp_debug("agent", "GOT FROM CACHE - %s", name.c_str());
 
     std::copy(demangled_func_map_[name].begin(),
               demangled_func_map_[name].end(),
@@ -747,7 +747,7 @@ SpParser::FindFunction(string name,
   // A quick return, if this function is proved to be not found
   if (demangled_func_not_found_.find(name)
       != demangled_func_not_found_.end()) {
-    sp_debug("NOT FOUND - %s is proved to be not found", name.c_str());
+    sp_debug("agent", "NOT FOUND - %s is proved to be not found", name.c_str());
     return false;
   }
   
@@ -763,7 +763,7 @@ SpParser::FindFunction(string name,
     // 1. Not in inst_lib list
     // 2. In inst_lib, lib is libc, but function is not __libc_start_main
     if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
-      sp_debug("Find Function: SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
+      sp_debug("agent", "Find Function: SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
       continue;
     }
 
@@ -790,7 +790,7 @@ SpParser::FindFunction(string name,
 bool
 SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
 
-  sp_debug("LOOKING FOR FUNC BY MANGLED NAME - looking for %s",
+  sp_debug("agent", "LOOKING FOR FUNC BY MANGLED NAME - looking for %s",
            name.c_str());
   
   if (name.length() == 0) {
@@ -799,7 +799,7 @@ SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
 
   // A quick return, if this function is in the cache
   if (mangled_func_map_.find(name) != mangled_func_map_.end()) {
-    sp_debug("GOT FROM CACHE - %s",
+    sp_debug("agent", "GOT FROM CACHE - %s",
              FUNC_CAST((*mangled_func_map_[name].begin()))->GetMangledName().c_str());
     std::copy(mangled_func_map_[name].begin(), mangled_func_map_[name].end(), inserter(*found_funcs, found_funcs->begin()));
     return true;
@@ -807,7 +807,7 @@ SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
 
   // A quick return, if this function is proved to be not found
   if (mangled_func_not_found_.find(name) != mangled_func_not_found_.end()) {
-    sp_debug("NOT FOUND - %s is proved to be not found", name.c_str());
+    sp_debug("agent", "NOT FOUND - %s is proved to be not found", name.c_str());
     return false;
   }
   
@@ -820,7 +820,7 @@ SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
     SpObject* obj = OBJ_CAST(ci->second);
 
     if (strcmp(sp_filename(obj->name().c_str()), "libagent.so") == 0) {
-      sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+      sp_debug("agent", "SKIP - lib %s", sp_filename(obj->name().c_str()));
       continue;
     }
 
@@ -828,7 +828,7 @@ SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
     // 1. Not in inst_lib list
     // 2. In inst_lib, lib is libc, but function is not __libc_start_main
     if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
-      sp_debug("SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
+      sp_debug("agent", "SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
       continue;
     }
     
@@ -837,14 +837,14 @@ SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
 
   if (func_set.size() == 0) {
     mangled_func_not_found_.insert(name);  
-    sp_debug("NO FOUND - %s", name.c_str());
+    sp_debug("agent", "NO FOUND - %s", name.c_str());
     return false;
   }
   
   //std::copy(func_set.begin(), func_set.end(), inserter(mangled_func_map_[name], mangled_func_map_[name].begin()));
   std::copy(func_set.begin(), func_set.end(), inserter(*found_funcs, found_funcs->begin()));
   assert(found_funcs->size() > 0);
-  sp_debug("FOUND - %lu instances of %s, first in object %s", found_funcs->size(), name.c_str(),
+  sp_debug("agent", "FOUND - %lu instances of %s, first in object %s", found_funcs->size(), name.c_str(),
          FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
   return true;
 }
@@ -854,7 +854,7 @@ SpParser::FindFunctionByMangledName(string name, FuncSet* found_funcs) {
 SpFunction*
 SpParser::FindFunction(string name) {
 
-  sp_debug("LOOKING FOR FUNC BY MANGLED NAME - looking for %s",
+  sp_debug("agent", "LOOKING FOR FUNC BY MANGLED NAME - looking for %s",
            name.c_str());
   
   if (name.length() == 0) {
@@ -863,14 +863,14 @@ SpParser::FindFunction(string name) {
 
   // A quick return, if this function is in the cache
   if (mangled_func_map_.find(name) != mangled_func_map_.end()) {
-    sp_debug("GOT FROM CACHE - %s",
+    sp_debug("agent", "GOT FROM CACHE - %s",
              mangled_func_map_[name]->name().c_str());
     return mangled_func_map_[name];
   }
 
   // A quick return, if this function is proved to be not found
   if (mangled_func_not_found_.find(name) != mangled_func_not_found_.end()) {
-    sp_debug("NOT FOUND - %s is proved to be not found", name.c_str());
+    sp_debug("agent", "NOT FOUND - %s is proved to be not found", name.c_str());
     return NULL;
   }
   
@@ -883,7 +883,7 @@ SpParser::FindFunction(string name) {
     SpObject* obj = OBJ_CAST(ci->second);
 
     if (strcmp(sp_filename(obj->name().c_str()), "libagent.so") == 0) {
-      sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+      sp_debug("agent", "SKIP - lib %s", sp_filename(obj->name().c_str()));
       continue;
     }
 
@@ -891,7 +891,7 @@ SpParser::FindFunction(string name) {
     // 1. Not in inst_lib list
     // 2. In inst_lib, lib is libc, but function is not __libc_start_main
     if (!CanInstrumentLib(sp_filename(obj->name().c_str()))) {
-      sp_debug("SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
+      sp_debug("agent", "SKIP - lib %s for the function %s", sp_filename(obj->name().c_str()),name.c_str());
       continue;
     }
     
@@ -901,13 +901,13 @@ SpParser::FindFunction(string name) {
   // We skip the case multiple functions have the same name
   if (func_set.size() == 1) {
     mangled_func_map_[name] = *func_set.begin();
-    sp_debug("FOUND - %s in object %s", name.c_str(),
+    sp_debug("agent", "FOUND - %s in object %s", name.c_str(),
              FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
     return *func_set.begin();
   }
 
   mangled_func_not_found_.insert(name);  
-  sp_debug("NO FOUND - %s", name.c_str());
+  sp_debug("agent", "NO FOUND - %s", name.c_str());
   return NULL;
 }*/
 
@@ -921,12 +921,12 @@ SpParser::GetFuncsByName(sp::SpObject* obj,
                          sp::FuncSet* func_set) {
   assert(obj);
   assert(func_set);
-  sp_debug("IN OBJECT - %s in %s?",
+  sp_debug("agent", "IN OBJECT - %s in %s?",
            name.c_str(), obj->name().c_str());
 
 if ((strcmp(name.c_str(), "recv") != 0) && (strcmp(name.c_str(), "read") != 0) && obj->name().find("libc-") != std::string::npos &&
       strcmp(name.c_str(), "__libc_start_main") != 0) {
-    sp_debug("Find function: SKIP - lib %s and non __libc_start_main for the function %s",
+    sp_debug("agent", "Find function: SKIP - lib %s and non __libc_start_main for the function %s",
              sp_filename(obj->name().c_str()),name.c_str());
     return false;
   }
@@ -954,7 +954,7 @@ if ((strcmp(name.c_str(), "recv") != 0) && (strcmp(name.c_str(), "read") != 0) &
           found->GetMangledName().length() == 0 ||
           found->GetMangledName().compare(name) != 0) {
         /*
-          sp_debug("SKIP %s - mangled name %s length %ld",
+          sp_debug("agent", "SKIP %s - mangled name %s length %ld",
           (*fit)->name().c_str(),
           found->GetMangledName().c_str(),
           found->GetMangledName().length());
@@ -965,12 +965,12 @@ if ((strcmp(name.c_str(), "recv") != 0) && (strcmp(name.c_str(), "read") != 0) &
       if (!found ||
           found->name().length() == 0 ||
           found->name().compare(name) != 0) {
-        // sp_debug("found [%s] name [%s]", found->name().c_str(), name.c_str());
+        // sp_debug("agent", "found [%s] name [%s]", found->name().c_str(), name.c_str());
         continue;
       }
     }
         
-    sp_debug("GOT %s in OBJECT - %s at %lx",
+    sp_debug("agent", "GOT %s in OBJECT - %s at %lx",
              name.c_str(), sym->name().c_str(),
              found->addr() - obj->load_addr());
 
@@ -997,7 +997,7 @@ SpParser::FindPltFunc(sp::SpObject* obj,
   assert(symtab);
   std::vector<sb::relocationEntry> fbt;
   if (!symtab->getFuncBindingTable(fbt)) {
-      sp_debug("No relocation information for this Symtab");
+      sp_debug("agent", "No relocation information for this Symtab");
       return false;
   }
  //Get the code Source of this symtab
@@ -1008,10 +1008,10 @@ SpParser::FindPltFunc(sp::SpObject* obj,
   
   for (u_int i = 0; i < fbt.size(); i++) {
             if (fbt[i].target_addr() == pltFuncAddr) {
-		 sp_debug("Plt function address %lx", pltFuncAddr);
+		 sp_debug("agent", "Plt function address %lx", pltFuncAddr);
                 // check to see if this function has been bound yet
                 if (hasBeenBound(fbt[i],objLoadAddr,func_set)) {
-		   sp_debug("GOT %s from FindPltFunc, Object - %s",
+		   sp_debug("agent", "GOT %s from FindPltFunc, Object - %s",
            			  name.c_str(), symtab->name().c_str());
                     return true;
                 }
@@ -1031,19 +1031,19 @@ bool SpParser::hasBeenBound(const sb::relocationEntry &entry,
     
     dt::Address got_entry = entry.rel_addr() + base_addr;
    // dt::Address bound_addr = 0;
-    sp_debug("function relative address %lx, object base address %lx, got_entry %lx",entry.rel_addr(),base_addr,got_entry);
+    sp_debug("agent", "function relative address %lx, object base address %lx, got_entry %lx",entry.rel_addr(),base_addr,got_entry);
     //unsigned tmp = 0;
 
     //Read the value in the address got_entry
-    sp_debug("Bound address %lx ", got_entry);//bound_addr);
+    sp_debug("agent", "Bound address %lx ", got_entry);//bound_addr);
         // the callee function has been bound by the runtime linker
         // find function and return
 	SpFunction* func=FindFunction(got_entry);
         if (func==NULL) {
-            sp_debug("FindFunction in hasbeenBound failed");
+            sp_debug("agent", "FindFunction in hasbeenBound failed");
             return false;
         } else {
-		sp_debug("Function from FindFunction(Address) %s",func->name().c_str());
+		sp_debug("agent", "Function from FindFunction(Address) %s",func->name().c_str());
 		  func_set->insert(func);
             return true;
         }
@@ -1094,7 +1094,7 @@ SpParser::ParseDlExit(SpPoint* pt) {
       al->getLoadAddress(sym, load_addr);
       SpObject* patch_obj = g_parser->CreateObject(sym, load_addr);
       if (!patch_obj) {
-        sp_debug("FAILED TO CREATE PATCH OBJECT");
+        sp_debug("agent", "FAILED TO CREATE PATCH OBJECT");
         return false;
       }
       as->loadObject(patch_obj);

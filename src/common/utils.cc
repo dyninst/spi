@@ -71,7 +71,7 @@ CPerfCounter a[kNumTimers];
 void
 SetupTimer(const int i) {
   if (i < 0 || i > (kNumTimers - 1)) {
-    sp_debug("OUT OF BOUND TIMER - timer id should be in [0, 9]");
+    sp_debug("common", "OUT OF BOUND TIMER - timer id should be in [0, 9]");
     return;
   }
   a[i]._clocks = 0;
@@ -85,7 +85,7 @@ SetupTimer(const int i) {
 void
 StartTimer(const int i) {
   if (i < 0 || i > (kNumTimers - 1)) {
-    sp_debug("OUT OF BOUND TIMER - timer id should be in [0, 9]");
+    sp_debug("common", "OUT OF BOUND TIMER - timer id should be in [0, 9]");
     return;
   }
   struct timeval s;
@@ -98,7 +98,7 @@ StartTimer(const int i) {
 void
 StopTimer(const int i) {
   if (i < 0 || i > (kNumTimers - 1)) {
-    sp_debug("OUT OF BOUND TIMER - timer id should be in [0, 9]");
+    sp_debug("common", "OUT OF BOUND TIMER - timer id should be in [0, 9]");
     return;
   }
 
@@ -116,7 +116,7 @@ StopTimer(const int i) {
 void
 ResetTimer(const int i) {
   if (i < 0 || i > (kNumTimers - 1)) {
-    sp_debug("OUT OF BOUND TIMER - timer id should be in [0, 9]");
+    sp_debug("common", "OUT OF BOUND TIMER - timer id should be in [0, 9]");
     return;
   }
 
@@ -128,7 +128,7 @@ ResetTimer(const int i) {
 double
 GetTimer(const int i) {
   if (i < 0 || i > (kNumTimers - 1)) {
-    sp_debug("OUT OF BOUND TIMER - timer id should be in [0, 9]");
+    sp_debug("common", "OUT OF BOUND TIMER - timer id should be in [0, 9]");
     return 0.0;
   }
 
@@ -141,7 +141,7 @@ void
 PrintTime(const char *msg,
           const int i) {
   if (i < 0 || i > (kNumTimers - 1)) {
-    sp_debug("OUT OF BOUND TIMER - timer id should be in [0, 9]");
+    sp_debug("common", "OUT OF BOUND TIMER - timer id should be in [0, 9]");
     return;
   }
 
@@ -270,7 +270,7 @@ GetPidsFromFileDesc(const int fd,
       }
       if (pid != getpid() &&
           PidUsesInode(pid, GetInodeFromFileDesc(fd))) {
-        sp_debug("GET PID FOR PIPE: pid - %d", pid);
+        sp_debug("common", "GET PID FOR PIPE: pid - %d", pid);
         pid_set.insert(pid);
       }
     }
@@ -297,14 +297,14 @@ void GetSocketDescFromPid(int pid, SocketSet& socket_set)
       snprintf(name, kLenStringBuffer, "/proc/%u/fd/%s", pid, de->d_name);
       int size = -1;
       if ((size = readlink(name, buffer, kLenStringBuffer)) < 0) {
-        sp_debug("GetSocketDescFromPid: readlink error");
+        sp_debug("common", "GetSocketDescFromPid: readlink error");
       }
       else {
         buffer[size] = '\0';
         if (sscanf(buffer, "socket:[%lu]", &temp_node) == 1){
         // Tcp
         socket_set.insert(dir);
-        sp_debug("%d uses Socket %d",pid,dir);
+        sp_debug("common", "%d uses Socket %d",pid,dir);
        }
      }
     }
@@ -514,7 +514,7 @@ GetLocalAddress(const int fd,
   assert(out);
   socklen_t sock_len = sizeof(sockaddr_storage);
   if (getsockname(fd, reinterpret_cast<sockaddr*>(out), &sock_len) == -1) {
-    sp_debug("FAILED GET LOCAL ADDR - getsockname @ pid = %d", getpid());
+    sp_debug("common", "FAILED GET LOCAL ADDR - getsockname @ pid = %d", getpid());
     return false;
   }
   return true;
@@ -528,7 +528,7 @@ GetRemoteAddress(const int fd,
   assert(out);
   socklen_t sock_len = sizeof(sockaddr_storage);
   if (getpeername(fd, reinterpret_cast<sockaddr*>(out), &sock_len) == -1) {
-    sp_debug("FAILED GET REMOTE ADDR - getpeername @ pid = %d", getpid());
+    sp_debug("common", "FAILED GET REMOTE ADDR - getpeername @ pid = %d", getpid());
     return false;
   }
   return true;
@@ -641,12 +641,12 @@ IsIllegalProgram() {
 
   std::string content = GetFileText(proc_path.c_str());
   char* exe_name = sp_filename(content.c_str());
-  sp_debug("exe: %s", exe_name); */
+  sp_debug("common", "exe: %s", exe_name); */
   std::string exe_name = GetExeName();
 
   for (StringSet::iterator si = illegal_exes.begin();
        si != illegal_exes.end(); si++) {
-    // sp_debug("comparing: %s", (*si).c_str());
+    // sp_debug("common", "comparing: %s", (*si).c_str());
     if ((*si).compare(exe_name.c_str()) == 0) return true;
   }
   return false;
@@ -666,7 +666,7 @@ GetExeName() {
     } 
    exe[size] ='\0';
 
-  sp_debug("Exename is %s",exe);
+  sp_debug("common", "Exename is %s",exe);
   std::string content(exe);
 
   return content;
@@ -714,7 +714,7 @@ ProcessHasLibrary(int pid, std::string lib)
   {
       if(line.find(lib) != std::string::npos)
       {
-        sp_debug("Agent shared library is already injected into the process");
+        sp_debug("common", "Agent shared library is already injected into the process");
         return true;
       }
  }
@@ -729,13 +729,13 @@ void sig_urg_handler(int signo)
         int             n;
         char    buff[100];
  	int connfd;
-	sp_debug("SIGURG received!!");
+	sp_debug("common", "SIGURG received!!");
         SocketSet socket_set;
         GetSocketDescFromPid(getpid(),socket_set);
         if(socket_set.size() > 0) {
         for(SocketSet::iterator s=socket_set.begin(); s!=socket_set.end(); s++) {
    	   connfd=*s;
-	   sp_debug("Socket: %d, trying to receive OOB", connfd);
+	   sp_debug("common", "Socket: %d, trying to receive OOB", connfd);
            if ((n = recv(connfd, buff, sizeof(buff)-1, MSG_OOB)) > 0) {
 		       buff[n] ='\0';
 		       sp_print("read OOB data %s",buff);
@@ -787,7 +787,7 @@ GetThreadId() {
 int
 InitLock(SpLock* const lock) {
   assert(lock);
-  sp_debug("INIT LOCK - mutex %d", lock->mutex);
+  sp_debug("common", "INIT LOCK - mutex %d", lock->mutex);
   lock->mutex = 0;
   return 0;
 }
@@ -811,7 +811,7 @@ int Lock(SpLock* const lock) {
 int
 Unlock(SpLock* const lock) {
   assert(lock);
-  // sp_debug("UNLOCK - mutex %d", lock->mutex);
+  // sp_debug("common", "UNLOCK - mutex %d", lock->mutex);
   __sync_synchronize();
   lock->mutex = 0;
   return 0;
@@ -846,9 +846,9 @@ int shmid;
   }
   int ret = shmctl(shmid, IPC_RMID, NULL);
     if (ret < 0) {
-      sp_debug("free shared memory failed");
+      sp_debug("common", "free shared memory failed");
     } else {
-      sp_debug("free shared memory successful");
+      sp_debug("common", "free shared memory successful");
     }
   return;
 }

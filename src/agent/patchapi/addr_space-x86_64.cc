@@ -129,14 +129,14 @@ SpAddrSpace::UpdateMemoryMappings() {
 void
 SpAddrSpace::DumpMemoryMappings() {
 
-  sp_debug("MMAPS - %lu memory mappings",
+  sp_debug("patchapi", "MMAPS - %lu memory mappings",
            (unsigned long)mem_maps_.size());
 
   for (MemMappings::iterator mi = mem_maps_.begin();
        mi != mem_maps_.end(); mi++) {
 
     MemMapping& mapping = mi->second;
-    sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+    sp_debug("patchapi", "MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
              " Inode %lu, Path %s, previous_end %lx",
              mapping.start, mapping.end, mapping.offset,
              mapping.perms, mapping.dev.c_str(), mapping.inode,
@@ -195,10 +195,10 @@ SpAddrSpace::UpdateFreeIntervals() {
 
     SpObject* obj = OBJ_CAST(i->second);
     assert(obj);
-    sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
+    sp_debug("patchapi", "HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
              obj->name().c_str(), obj->load_addr(), obj->codeBase());
     MemMapping& mapping = mem_maps_[obj->load_addr()];
-    sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+    sp_debug("patchapi", "MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
              " Inode %lu, Path %s, previous_end %lx",
              mapping.start, mapping.end, mapping.offset,
              mapping.perms, mapping.dev.c_str(), mapping.inode,
@@ -207,7 +207,7 @@ SpAddrSpace::UpdateFreeIntervals() {
 
     FreeInterval* interval = NULL;
     if (!GetClosestInterval(mapping.start, &interval)) {
-      sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
+      sp_debug("patchapi", "FAILED TO GET FREE INTERVAL - for %lx %s",
                mapping.start, obj->name().c_str());
       continue;
     }
@@ -215,7 +215,7 @@ SpAddrSpace::UpdateFreeIntervals() {
     size_t size = interval->size();
     size_t ps = getpagesize();
 
-    sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
+    sp_debug("patchapi", "GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
              "rounded size %ld", (long)interval->start,
              (long)interval->end, (long)interval->size(), (long)size);
 
@@ -235,7 +235,7 @@ void
 SpAddrSpace::DumpFreeIntervals() {
   for (FreeIntervalList::iterator i = free_intervals_.begin();
        i != free_intervals_.end(); i++) {
-    sp_debug("FREE INTERVAL - [%lx ~ %lx], used %d, size: %ld MB",
+    sp_debug("patchapi", "FREE INTERVAL - [%lx ~ %lx], used %d, size: %ld MB",
              (*i).start, (*i).end, (*i).used, (*i).size()/1024/1024);
   }
 }
@@ -246,12 +246,12 @@ SpAddrSpace::allocateNewInterval(SpObject* obj) {
     sp_perror("NULL pointer to SpObject when trying to allocate a new interval for object");
     return false;
   }
-  sp_debug("Trying to allocate new interval for object %s", obj->name().c_str());
+  sp_debug("patchapi", "Trying to allocate new interval for object %s", obj->name().c_str());
 
-  sp_debug("HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
+  sp_debug("patchapi", "HANDLING OBJECT - %s @ load addr: %lx, code base: %lx",
              obj->name().c_str(), obj->load_addr(), obj->codeBase());
   MemMapping& mapping = mem_maps_[obj->load_addr()];
-  sp_debug("MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
+  sp_debug("patchapi", "MMAP - Range[%lx ~ %lx], Offset %lx, Perm %x, Dev %s,"
             " Inode %lu, Path %s, previous_end %lx",
             mapping.start, mapping.end, mapping.offset,
             mapping.perms, mapping.dev.c_str(), mapping.inode,
@@ -260,7 +260,7 @@ SpAddrSpace::allocateNewInterval(SpObject* obj) {
 
   FreeInterval* interval = NULL;
   if (!GetClosestInterval(mapping.start, &interval)) {
-    sp_debug("FAILED TO GET FREE INTERVAL - for %lx %s",
+    sp_debug("patchapi", "FAILED TO GET FREE INTERVAL - for %lx %s",
               mapping.start, obj->name().c_str());
     return false;
   }
@@ -268,7 +268,7 @@ SpAddrSpace::allocateNewInterval(SpObject* obj) {
   size_t size = interval->size();
   size_t ps = getpagesize();
 
-  sp_debug("GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
+  sp_debug("patchapi", "GET FREE INTERVAL - [%lx, %lx], w/ original size %ld, "
             "rounded size %ld", (long)interval->start,
             (long)interval->end, (long)interval->size(), (long)size);
 
@@ -295,19 +295,19 @@ SpAddrSpace::GetClosestInterval(dt::Address addr,
 
     // Bind a free interval before this object, and the distance should
     // be shorter than 1.5GB
-    sp_debug("GET CLOSEST INTERVAL - free interval [%lx, %lx], size %ld",
+    sp_debug("patchapi", "GET CLOSEST INTERVAL - free interval [%lx, %lx], size %ld",
              (*i).start, (*i).end, (*i).size());
     if ((*i).start > addr) {
-      sp_debug("start larger than addr");
+      sp_debug("patchapi", "start larger than addr");
       continue;
     } else {
       if (!previous) return false;
       if (previous->used) {
-        sp_debug("this interval already used");
+        sp_debug("patchapi", "this interval already used");
         continue;
       }
       if ((addr - (*i).start) > distance) {
-        sp_debug("distance too far");
+        sp_debug("patchapi", "distance too far");
         continue;
       }
       *interval = previous;

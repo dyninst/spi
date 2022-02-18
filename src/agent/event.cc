@@ -113,12 +113,12 @@ namespace sp {
        than zero, then the agent is injected */
     FuncSet call_stack;
     g_context->GetCallStack(&call_stack);
-    sp_debug("CALLSTACK - %lu calls in the call stack",
+    sp_debug("agent", "CALLSTACK - %lu calls in the call stack",
               (unsigned long)call_stack.size());
 
     if (call_stack.size() <= 0)  {
-    sp_debug("PRELOAD - preload agent.so, and instrument main()");
-    sp_debug(GetExeName().c_str());
+    sp_debug("agent", "PRELOAD - preload agent.so, and instrument main()");
+    sp_debug("agent", GetExeName().c_str());
       
       FuncSet found_funcs;
       SpFunction* f = NULL;
@@ -134,7 +134,7 @@ namespace sp {
                                         g_context->init_exit());
 
       } else {
-        sp_debug("FAIL PRELOAD - try injection ...");
+        sp_debug("agent", "FAIL PRELOAD - try injection ...");
         fail_preload = true;
       }
     } // LD_PRELOAD mode
@@ -146,7 +146,7 @@ namespace sp {
       for (FuncSet::iterator i = call_stack.begin(); 
            i != call_stack.end(); i++) {
         SpFunction* f = *i;
-        sp_debug("Call stck function %s",f->name().c_str());
+        sp_debug("agent", "Call stck function %s",f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
@@ -155,7 +155,7 @@ namespace sp {
           break;
         }
         if (IsRecvLikeFunction(f->name())) {
-          sp_debug("Recv like function on the stack");
+          sp_debug("agent", "Recv like function on the stack");
           //Modify the PC to start at a new location 
           g_context->init_propeller()->ModifyPC(f,g_context->init_exit());	
         }
@@ -191,7 +191,7 @@ namespace sp {
     for (FuncSet::iterator i = funcs_.begin();
            i != funcs_.end(); i++) {
         SpFunction* f = *i;
-        sp_debug("PRE-INST FUNC - %s", f->name().c_str());
+        sp_debug("agent", "PRE-INST FUNC - %s", f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
@@ -225,12 +225,12 @@ namespace sp {
       assert(obj);
 
       if (strcmp(sp_filename(obj->name().c_str()), "libagent.so") == 0) {
-        sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+        sp_debug("agent", "SKIP - lib %s", sp_filename(obj->name().c_str()));
         continue;
       }
       
       if (!g_parser->CanInstrumentLib(sp_filename(obj->name().c_str()))) {
-        sp_debug("SKIP - lib %s", sp_filename(obj->name().c_str()));
+        sp_debug("agent", "SKIP - lib %s", sp_filename(obj->name().c_str()));
         continue;
       }
       // sp_print("HANDLING - lib %s", sp_filename(obj->name().c_str()));

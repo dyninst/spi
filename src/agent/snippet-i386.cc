@@ -260,7 +260,7 @@ SpSnippet::reloc_insn(dt::Address src_insn,
   char* p = buf;
   if (insn->getCategory() == in::c_CallInsn &&
       a != last)  {
-    sp_debug("THUNK CALL - at insn %lx", src_insn);
+    sp_debug("agent", "THUNK CALL - at insn %lx", src_insn);
     // Case 2: handle thunk call
     // What thunk does, is to move current pc value to ebx.
     // mov orig_pc, ebx
@@ -323,7 +323,7 @@ SpSnippet::GetSavedReg(Dyninst::MachRegister reg) {
 
   /*
     for (int i = 0; i < 32; i+=4) {
-    sp_debug("i: %d, EDI: %lx", i, reg_val(i));
+    sp_debug("agent", "i: %d, EDI: %lx", i, reg_val(i));
     }
   */
   namespace d32 = Dyninst::x86;
@@ -331,11 +331,11 @@ SpSnippet::GetSavedReg(Dyninst::MachRegister reg) {
   dt::Address out = 0;
   if (GetRegInternal(reg,
                      &out)) {
-    sp_debug("GOT REG - %s = %lx", reg.name().c_str(), out);
+    sp_debug("agent", "GOT REG - %s = %lx", reg.name().c_str(), out);
     return out;
   }
 
-  sp_debug("NOT FOUND - %s", reg.name().c_str());
+  sp_debug("agent", "NOT FOUND - %s", reg.name().c_str());
   return 0;
 }
 

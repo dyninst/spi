@@ -595,12 +595,12 @@ dt::Address SpSnippet::GetSavedReg(dt::MachRegister reg) {
 
   /*
     for (int i = -64; i < 48; i++) {
-    sp_debug("DUMP SAVED REGS: %lx", reg_val((i*8)));
+    sp_debug("agent", "DUMP SAVED REGS: %lx", reg_val((i*8)));
     }
   */
   dt::Address out = 0;
   if (GetRegInternal(reg, &out)) {
-    sp_debug("GOT REG - %s = %lx", reg.name().c_str(), out);
+    sp_debug("agent", "GOT REG - %s = %lx", reg.name().c_str(), out);
     return out;
   }
 
@@ -609,15 +609,15 @@ dt::Address SpSnippet::GetSavedReg(dt::MachRegister reg) {
   namespace d64 = Dyninst::x86_64;
 
   if (reg == d64::rsp || reg == d64::esp || reg == d64::sp || reg == d64::spl) {
-    sp_debug("GOT SP - %s = %lx = %lx + %x", reg.name().c_str(),
+    sp_debug("agent", "GOT SP - %s = %lx = %lx + %x", reg.name().c_str(),
              saved_context_loc_ + RSP, saved_context_loc_, RSP);
     if (func()) {
-      sp_debug("Before %s", func()->name().c_str());
+      sp_debug("agent", "Before %s", func()->name().c_str());
     }
     return (saved_context_loc_ + RSP);
   }
 
-  sp_debug("NOT FOUND - %s", reg.name().c_str());
+  sp_debug("agent", "NOT FOUND - %s", reg.name().c_str());
   return 0;
 }
 
@@ -728,7 +728,7 @@ class EmuVisitor : public in::Visitor {
       //      if (r->getID().isPC()) {
       imm_ = a_;
       stack_.push(imm_);
-      sp_debug("EMU VISITOR - pc %lx", a_);
+      sp_debug("agent", "EMU VISITOR - pc %lx", a_);
     }
   }
   virtual void visit(in::BinaryFunction* b) {
@@ -740,10 +740,10 @@ class EmuVisitor : public in::Visitor {
 
     if (b->isAdd()) {
       imm_ = i1 + i2;
-      sp_debug("EMU VISITOR - %lx + %lx = %lx", i1, i2, imm_);
+      sp_debug("agent", "EMU VISITOR - %lx + %lx = %lx", i1, i2, imm_);
     } else if (b->isMultiply()) {
       imm_ = i1 * i2;
-      sp_debug("EMU VISITOR - %lx * %lx = %lx", i1, i2, imm_);
+      sp_debug("agent", "EMU VISITOR - %lx * %lx = %lx", i1, i2, imm_);
     } else {
       assert(0);
     }
@@ -770,7 +770,7 @@ class EmuVisitor : public in::Visitor {
         break;
       }
     }
-    sp_debug("EMU VISITOR - IMM %lx", imm_);
+    sp_debug("agent", "EMU VISITOR - IMM %lx", imm_);
     stack_.push(imm_);
   }
   virtual void visit(in::Dereference* d) {
@@ -868,7 +868,7 @@ class EmuVisitor : public in::Visitor {
     if ((char)insn_buf[1] == (char)0x8d) {
       int* dis = get_disp(insn, insn_buf);
 
-      sp_debug("LEA - orig-disp(%d), orig-insn-addr(%lx),"
+      sp_debug("agent", "LEA - orig-disp(%d), orig-insn-addr(%lx),"
                " orig-insn-size(%ld), abs-trg(%lx)",
                *dis, a, insn->size(), *dis+a+insn->size());
 
@@ -881,7 +881,7 @@ class EmuVisitor : public in::Visitor {
       e->apply(&visitor);
       *l = visitor.imm();
 
-      sp_debug("OTHER PC-INSN - orig-insn-size(%ld), abs-trg(%lx)",
+      sp_debug("agent", "OTHER PC-INSN - orig-insn-size(%ld), abs-trg(%lx)",
                insn->size(), *l);
 
     }
@@ -956,7 +956,7 @@ bool SpSnippet::getTargetAddr(dt::Address a, in::Instruction insn,
       // Bind succeeded, eval to get targetAddr address
       in::Result res = exp->eval();
       if (!res.defined) {
-        sp_debug("ERROR: failed bind/eval at %lx", a);
+        sp_debug("agent", "ERROR: failed bind/eval at %lx", a);
         continue;
       }
       assert(res.defined);
@@ -996,11 +996,11 @@ size_t SpSnippet::reloc_insn_internal(dt::Address a, in::Instruction insn,
     // Deal with PC-sensitive instruction
     // first get the target address associated with this instruction
     dt::Address targetAddr = 0;
-    sp_debug("READ USE PC: %s",
+    sp_debug("agent", "READ USE PC: %s",
              g_parser->DumpInsns((void*)insn.ptr(), insn.size()).c_str());
     if (!getTargetAddr(a, insn, targetAddr))
-      sp_debug("Cannot obtan target address");
-    sp_debug("Target address is %lx", targetAddr);
+      sp_debug("agent", "Cannot obtan target address");
+    sp_debug("agent", "Target address is %lx", targetAddr);
     // Copied and  modified from dynisntAPT/src/codegen-x86.C
     instruction ins(insn.ptr(), true);
     const unsigned char* origInsn = ins.ptr();
@@ -1076,7 +1076,7 @@ size_t SpSnippet::reloc_insn_internal(dt::Address a, in::Instruction insn,
       *((int*)newInsn) = (int)(newDisp - insnSz);
       newInsn += 4;
     } else if (is_addr32(targetAddr)) {
-      sp_debug("Target address is 32 bit");
+      sp_debug("agent", "Target address is 32 bit");
       assert(!is_disp32(newDisp + insnSz));
       unsigned char mod_rm = *origInsn++;
 
@@ -1092,7 +1092,7 @@ size_t SpSnippet::reloc_insn_internal(dt::Address a, in::Instruction insn,
       newInsn += 4;
     } else {
       // Should never be reached...
-      sp_debug("Reaching what should not be reached");
+      sp_debug("agent", "Reaching what should not be reached");
       assert(0);
     }
 
@@ -1193,11 +1193,11 @@ size_t SpSnippet::reloc_insn(dt::Address src_insn, in::Instruction insn,
 
   if (use_pc) {
     assert(opSet.size() == 1);
-    sp_debug("USE PC: %s",
+    sp_debug("agent", "USE PC: %s",
              g_parser->DumpInsns((void*)insn.ptr(), insn.size()).c_str());
-    sp_debug("USE_PC - at %lx", src_insn);
+    sp_debug("agent", "USE_PC - at %lx", src_insn);
   } else {
-    sp_debug("NOT_USE PC - at %lx", src_insn);
+    sp_debug("agent", "NOT_USE PC - at %lx", src_insn);
   }
 
   // Here we go!
@@ -1234,12 +1234,12 @@ size_t SpSnippet::emit_call_orig(char* buf, size_t offset) {
     opSet.insert(trg);
   }
 
-  sp_debug("EMIT_CALL_ORIG - for call insn at %lx", src);
-  sp_debug("BEFORE RELOC - %s",
+  sp_debug("agent", "EMIT_CALL_ORIG - for call insn at %lx", src);
+  sp_debug("agent", "BEFORE RELOC - %s",
            g_parser->DumpInsns((void*)insn.ptr(), insn.size()).c_str());
-  if (use_pc) sp_debug("PC-REL CALL");
+  if (use_pc) sp_debug("agent", "PC-REL CALL");
   size_t insn_size = reloc_insn_internal(src, insn, opSet, use_pc, p);
-  sp_debug("AFTER RELOC %s", g_parser->DumpInsns((void*)p, insn_size).c_str());
+  sp_debug("agent", "AFTER RELOC %s", g_parser->DumpInsns((void*)p, insn_size).c_str());
   return insn_size;
 }
 
@@ -1375,7 +1375,7 @@ dt::Address SpSnippet::GetFs(void* context) {
   assert(ctx);
   // REG_CSGSFS
   int index = REG_CSGSFS;
-  sp_debug("REG_CSGSFS=%llx", ctx->uc_mcontext.gregs[index]);
+  sp_debug("agent", "REG_CSGSFS=%llx", ctx->uc_mcontext.gregs[index]);
   return ((ctx->uc_mcontext.gregs[index] >> 32) & 0xffff);
 }
 
@@ -1412,7 +1412,7 @@ bool SpSnippet::UsePC(in::Instruction insn) {
     (*i)->apply(&visitor);
     read_use_pc = visitor.use_pc();
     if (read_use_pc) {
-      sp_debug("READ USE PC: %s",
+      sp_debug("agent", "READ USE PC: %s",
                g_parser->DumpInsns((void*)insn.ptr(), insn.size()).c_str());
       return true;
     }
@@ -1426,7 +1426,7 @@ bool SpSnippet::UsePC(in::Instruction insn) {
     (*i)->apply(&visitor);
     write_use_pc = visitor.use_pc();
     if (write_use_pc) {
-      sp_debug("WRITE USE PC: %s",
+      sp_debug("agent", "WRITE USE PC: %s",
                g_parser->DumpInsns((void*)insn.ptr(), insn.size()).c_str());
       return true;
     }

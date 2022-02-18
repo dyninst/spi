@@ -59,29 +59,29 @@ namespace sp {
   SpInstrumenter::SpInstrumenter(ph::AddrSpace* as)
     : ph::Instrumenter(as) {
 
-    sp_debug("INSTRUMENTER - created");
+    sp_debug("patchapi", "INSTRUMENTER - created");
 
 		// Relocate insn
 		if (getenv("SP_TEST_RELOCINSN")) {
-			sp_debug("ONLY TEST RELOCINSN WORKER");
+			sp_debug("patchapi", "ONLY TEST RELOCINSN WORKER");
 			workers_.push_back(new RelocCallInsnWorker);
 		}
 
 		// Relocate call block
 		if (getenv("SP_TEST_RELOCBLK")) {
-			sp_debug("ONLY TEST RELOCBLK WORKER");
+			sp_debug("patchapi", "ONLY TEST RELOCBLK WORKER");
 			workers_.push_back(new RelocCallBlockWorker);
 		}
 
 		// Only use springboard
 		if (getenv("SP_TEST_SPRING")) {
-			sp_debug("ONLY TEST SPRING BOARD WORKER");
+			sp_debug("patchapi", "ONLY TEST SPRING BOARD WORKER");
 			workers_.push_back(new SpringboardWorker);
 		}
 
 		// Only use trap
 		if (getenv("SP_TEST_TRAP")) {
-			sp_debug("ONLY TEST TRAP WORKER");
+			sp_debug("patchapi", "ONLY TEST TRAP WORKER");
 			workers_.push_back(new TrapWorker);
 		}
 
@@ -89,7 +89,7 @@ namespace sp {
 				getenv("SP_TEST_RELOCBLK") ||
 				getenv("SP_TEST_SPRING") ||
 				getenv("SP_TEST_TRAP")) {
-			sp_debug("DEBUGGING MODE - test a subset of workers");
+			sp_debug("patchapi", "DEBUGGING MODE - test a subset of workers");
 			return;
 		}
 
@@ -119,7 +119,7 @@ namespace sp {
           static_cast<ph::PushBackCommand*>(*c);
       
       if (!command) {
-				sp_debug("BAD COMMAND - skip");
+				sp_debug("patchapi", "BAD COMMAND - skip");
 				continue;
 			}
 
@@ -127,14 +127,14 @@ namespace sp {
 			assert(spt);
 			SpBlock* blk = spt->GetBlock();
 			assert(blk);
-			sp_debug("INSTRUMENTING POINT - for call insn %lx", blk->last());
+			sp_debug("patchapi", "INSTRUMENTING POINT - for call insn %lx", blk->last());
 
       // If we only want to instrument direct call, and this point is a
 			// indirect call point, then skip it
       if (spt &&
           !spt->getCallee() &&
           g_context->IsDirectcallOnlyEnabled()) {
-        sp_debug("INDIRECT CALL - skip");
+        sp_debug("patchapi", "INDIRECT CALL - skip");
         continue;
       }
 
@@ -147,7 +147,7 @@ namespace sp {
 			assert(callinsn.ptr());
 
       if (callinsn.getCategory() == in::c_BranchInsn) {
-				sp_debug("TAIL CALL - for call insn %lx", blk->last());
+				sp_debug("patchapi", "TAIL CALL - for call insn %lx", blk->last());
 				if (getenv("SP_NO_TAILCALL"))	{
 					continue;
 				}
@@ -166,23 +166,23 @@ namespace sp {
         // very dangous when we want to restore in the future.
 				// If this worker succeeds, then we are done for current point
         if (worker->save(spt)) {
-					sp_debug("SAVE SUCCESSFULLY");
+					sp_debug("patchapi", "SAVE SUCCESSFULLY");
 					if (worker->run(spt)) {
 						blk->SetInstrumented(true);
 						spt->SetInstallMethod(worker->install_method());
 						++success_count;
 						break; // escape the worker loop
 					} else {
-						sp_debug("FAILED TO INSTALL - for call insn %lx",
+						sp_debug("patchapi", "FAILED TO INSTALL - for call insn %lx",
 										 blk->last());
 					} // install
         } else {
-					sp_debug("FAILED TO SAVE - for call insn %lx", blk->last());
+					sp_debug("patchapi", "FAILED TO SAVE - for call insn %lx", blk->last());
 				} // save
       } // workers
     } // commands
 
-		sp_debug("BATCH DONE - %d / %lu succeeded", success_count,
+		sp_debug("patchapi", "BATCH DONE - %d / %lu succeeded", success_count,
 						 (unsigned long)user_commands_.size());
 		user_commands_.clear();
 

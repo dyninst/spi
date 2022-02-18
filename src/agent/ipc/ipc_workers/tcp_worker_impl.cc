@@ -46,7 +46,7 @@ extern SpParser::ptr g_parser;
 //////////////////////////////////////////////////////////////////////
 
 SpTcpWorker::SpTcpWorker() : start_tracing_(0) {
-  // sp_debug("TCP WORKER - created for pid=%d", getpid());
+  // sp_debug("ipc", "TCP WORKER - created for pid=%d", getpid());
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -58,12 +58,12 @@ SpTcpWorker::SetRemoteStartTracing(char yes_or_no,
   /*if(c->send_oob)
 	return;
   c->send_oob=true;
-  sp_debug("SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
+  sp_debug("ipc", "SET TRACING - yes_or_no (%d), fd (%d)", yes_or_no, c->fd);
   assert(c);
   // Sanity check
   if (c && IsTcp(c->fd)) {
     //int mark_byte = (getpid() & 0xFF) | 1;
-    sp_debug("OOB MARK \"S\" - sending via fd=%d", c->fd);
+    sp_debug("ipc", "OOB MARK \"S\" - sending via fd=%d", c->fd);
     if (send(c->fd, "S", 1, MSG_OOB) < 0) {
       perror("send");
       sp_perror("OUT-OF-BAND - failed to send oob byte");
@@ -91,16 +91,16 @@ SpTcpWorker::CanStartTracing(int fd) {
   
   int at_mark = 0;
   if (ioctl(fd, SIOCATMARK, &at_mark) < 0) {
-    sp_debug("ioctl(SIOCATMARK) error");
+    sp_debug("ipc", "ioctl(SIOCATMARK) error");
     return 0;
   }
   if (at_mark) {
     uint8_t mark = 0;
     if (recv(fd, &mark, sizeof(mark), MSG_OOB) < 0) {
-      sp_debug("Recv OOB error");
+      sp_debug("ipc", "Recv OOB error");
       return 0;
     }
-    sp_debug("GOT mark at_mark=%d, mark=%d", at_mark, mark);
+    sp_debug("ipc", "GOT mark at_mark=%d, mark=%d", at_mark, mark);
     // fprintf(stderr, "GOT mark at_mark=%d, mark=%d\n", at_mark, mark);
     start_tracing_ = 1;
     return 1;
@@ -117,7 +117,7 @@ SpTcpWorker::Inject(SpChannel* c,
                     char* agent_path) {
 
   if (c->injected) return true;
-  sp_debug("NO INJECTED(tcp) -- start injection");
+  sp_debug("ipc", "NO INJECTED(tcp) -- start injection");
 
   TcpChannel *tcp_channel = static_cast<TcpChannel*>(c);
   assert(tcp_channel);
@@ -128,14 +128,14 @@ SpTcpWorker::Inject(SpChannel* c,
   if (!GetAddress(&tcp_channel->remote, remote_ip, 256, remote_port, 64)) {
     sp_perror("failed to get remote address in tcp_worker::inject()");
   }
-  sp_debug("REMOTE IP: %s, REMOTE PORT: %s", remote_ip, remote_port);
+  sp_debug("ipc", "REMOTE IP: %s, REMOTE PORT: %s", remote_ip, remote_port);
 
   char cmd[1024];
   string cmd_exe;
 
   if (strstr(remote_ip, "127.0.0.1")) {
     // For local machine, invoke injector directly
-    sp_debug("LOCAL MACHINE TCP");
+    sp_debug("ipc", "LOCAL MACHINE TCP");
 
     // Injector path
     if (getenv("SP_DIR") && getenv("PLATFORM")) {
@@ -186,7 +186,7 @@ SpTcpWorker::Inject(SpChannel* c,
     cmd_exe += "\"\' 2>&1 | tee -a ./tmp/injector_log";
   }
 
-  sp_debug("INJECT CMD -- %s", cmd_exe.c_str());
+  sp_debug("ipc", "INJECT CMD -- %s", cmd_exe.c_str());
 
   // unset LD_PRELOAD before popen injector
   // then set LD_PRELOAD back after popen is finished
@@ -201,19 +201,19 @@ SpTcpWorker::Inject(SpChannel* c,
   // Execute the command
   FILE* fp = popen(cmd_exe.c_str(), "r");
   if (fp == NULL) {
-    sp_debug("Popen error");
+    sp_debug("ipc", "Popen error");
     return false;
   }
   char line[1024];
   while (fgets(line,sizeof(line),fp)) {
     if (strstr(line, "SUCCESS") != NULL) {
-      sp_debug("Injected");
+      sp_debug("ipc", "Injected");
       c->injected = true;
       break;
     }
   }
   pclose(fp);
-  sp_debug("Popen finished Returning %d",c->injected?1 :0);
+  sp_debug("ipc", "Popen finished Returning %d",c->injected?1 :0);
 
   if (setenv("LD_PRELOAD", libs.c_str(), true) < 0) {
     sp_perror("setenv for LD_PRELOAD failed");
@@ -232,16 +232,16 @@ SpTcpWorker::CreateChannel(int fd,
   c->type = SP_TCP;
   c->inode = GetInodeFromFileDesc(fd);
   fcntl(fd, F_SETOWN, getpid());
-  sp_debug("CREATE CHANNEL -- for fd=%d", fd);
+  sp_debug("ipc", "CREATE CHANNEL -- for fd=%d", fd);
   // connect, we can get remote ip/port from arg
   if (arg != NULL) {
-    sp_debug("GET ADDR from sockaddr_storage");
+    sp_debug("ipc", "GET ADDR from sockaddr_storage");
     // Get local ip / port
     char host[256];
     char service[64];
     c->remote = *((sockaddr_storage*)arg);
     if (GetAddress(&c->remote, host, 256, service, 64)) {
-      sp_debug("connect remote host: %s, service: %s\n", host, service);
+      sp_debug("ipc", "connect remote host: %s, service: %s\n", host, service);
     } else {
       sp_perror("failed to get connect remote address");
     }
@@ -249,7 +249,7 @@ SpTcpWorker::CreateChannel(int fd,
     // Get local ip / port (skip it for now)
     if (GetLocalAddress(fd, &c->local)) {
       if (GetAddress(&c->local, host, 256, service, 64)) {
-        sp_debug("connect local host: %s, service: %s\n", host, service);
+        sp_debug("ipc", "connect local host: %s, service: %s\n", host, service);
       } else {
         sp_perror("failed to get local address for write/send");
       }
@@ -259,14 +259,14 @@ SpTcpWorker::CreateChannel(int fd,
 
   // send/write
   else if (rw == SP_WRITE || rw == SP_READ) {
-    sp_debug("GET ADDR from getpeername");
+    sp_debug("ipc", "GET ADDR from getpeername");
     
     // Get remote ip / port
     if (GetRemoteAddress(fd, &c->remote)) {
       char host[256];
       char service[64];
       if (GetAddress(&c->remote, host, 256, service, 64)) {
-        sp_debug("write/send remote host: %s, service: %s\n", host, service);
+        sp_debug("ipc", "write/send remote host: %s, service: %s\n", host, service);
       } else {
         sp_perror("failed to get remote address for write/send");
       }
@@ -277,7 +277,7 @@ SpTcpWorker::CreateChannel(int fd,
       char host[256];
       char service[64];
       if (GetAddress(&c->local, host, 256, service, 64)) {
-        sp_debug("write/send local host: %s, service: %s\n", host, service);
+        sp_debug("ipc", "write/send local host: %s, service: %s\n", host, service);
       } else {
         sp_perror("failed to get local address for write/send");
       }

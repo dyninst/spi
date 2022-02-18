@@ -93,19 +93,19 @@ namespace sp {
                                     size_t length,
                                     int perm) {
     bool ret = false;
-    sp_debug("SETTING MEMORY PERM - for [%lx ~ %lx] of %ld bytes",
+    sp_debug("patchapi", "SETTING MEMORY PERM - for [%lx ~ %lx] of %ld bytes",
              (long)a, (long)(a + length - 1), (long)length);
 
     dt::Address aligned = a;
     size_t pz = getpagesize();
     if (a > pz) {
-      sp_debug("PAGE SIZE SMALLER - pagesize %lx, address %lx",
+      sp_debug("patchapi", "PAGE SIZE SMALLER - pagesize %lx, address %lx",
                (long)pz, (long)a);
       aligned = (dt::Address)(((dt::Address) aligned) & ~(pz-1));
     } else if (a % pz == 0) {
       aligned = a;
     } else {
-      sp_debug("PAGE SIZE LARGER - pagesize %lx, address %lx",
+      sp_debug("patchapi", "PAGE SIZE LARGER - pagesize %lx, address %lx",
                (long)pz, (long)a);
       // assert(0 && "LARGE PAGE SIZE?");
       return false;
@@ -113,14 +113,14 @@ namespace sp {
     }
 
     size_t len = length + (a - aligned); 
-    sp_debug("TRY mprotect - for [%lx ~ %lx] of %ld bytes",
+    sp_debug("patchapi", "TRY mprotect - for [%lx ~ %lx] of %ld bytes",
              (long)aligned, (long)(aligned + len - 1), (long)len);
     if (mprotect((void*)aligned, len, perm) < 0) {
-      sp_debug("MPROTECT - Failed to change memory access permission");
+      sp_debug("patchapi", "MPROTECT - Failed to change memory access permission");
       // perror("mprotect");
       return false;
     } else {
-      sp_debug("MPROTECT - SUCCEED TO change memory access"
+      sp_debug("patchapi", "MPROTECT - SUCCEED TO change memory access"
                " perm for %lx in [%lx, %lx]", a, aligned, aligned+len-1);
       ret = true;
     }

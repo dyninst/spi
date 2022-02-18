@@ -62,18 +62,18 @@ SpInjector::ptr SpInjector::Create(dt::PID pid) {
 SpInjector::SpInjector(dt::PID pid) : pid_(pid) {
   proc_ = Process::attachProcess(pid);
   if (proc_ == Process::ptr()) {
-    sp_debug("Injector [pid = %5d] - Failed to attach to process %d.", getpid(),
+    sp_debug("injector", "Injector [pid = %5d] - Failed to attach to process %d.", getpid(),
              pid);
     exit(0);
   } else
-    sp_debug("Attached the process %d successfully", pid);
+    sp_debug("injector", "Attached the process %d successfully", pid);
   ThreadPool &thrs = proc_->threads();
   thr_ = thrs.getInitialThread();
 }
 
 //////////////////////////////////////////////////////////////////////
 SpInjector::~SpInjector() {
-  sp_debug("Detaching the process");
+  sp_debug("injector", "Detaching the process");
   proc_->detach();
 }
 
@@ -86,7 +86,7 @@ Address SpInjector::FindFunction(const char *func) {
     std::string name = (*li)->getName();
     if (name.size() <= 0)
       continue;
-    sp_debug("IN LIB - %s", name.c_str());
+    sp_debug("injector", "IN LIB - %s", name.c_str());
     sb::Symtab *obj = NULL;
     bool ret = sb::Symtab::openFile(obj, name);
     std::vector<sb::Function *> funcs;
@@ -108,10 +108,10 @@ Address SpInjector::FindDlopen() {
   if (func_addr)
     return func_addr;
 
-  sp_debug("Injector [pid = %5d]: Cannot find do_dlopen", getpid());
+  sp_debug("injector", "Injector [pid = %5d]: Cannot find do_dlopen", getpid());
 
   func_addr = FindFunction("__libc_dlopen_mode");
-  sp_debug("Injector [pid = %5d]: Got _dl_open at %lx", getpid(), func_addr);
+  sp_debug("injector", "Injector [pid = %5d]: Got _dl_open at %lx", getpid(), func_addr);
 
   return func_addr;
 }
@@ -128,7 +128,7 @@ Process::cb_ret_t on_event_lib(Event::const_ptr ev) {
   for (std::set<Library::ptr>::iterator i = libs.begin(); i != libs.end();
        i++) {
     Address loaded_addr = (*i)->getLoadAddress();
-    sp_debug("LOADED - Library %s at %lx", sp_filename((*i)->getName().c_str()),
+    sp_debug("injector", "LOADED - Library %s at %lx", sp_filename((*i)->getName().c_str()),
              loaded_addr);
   }
   return Process::cbThreadContinue;
@@ -148,7 +148,7 @@ Process::cb_ret_t on_event_signal(Event::const_ptr ev) {
 // Check whether a library is loaded
 bool SpInjector::IsLibraryLoaded(const char *libname) {
   char *name_only = sp_filename(libname);
-  sp_debug("CHECKING - checking whether %s is loaded ...", name_only);
+  sp_debug("injector", "CHECKING - checking whether %s is loaded ...", name_only);
 
   std::string proc_maps = "";
   proc_maps += "/proc/";
@@ -156,10 +156,10 @@ bool SpInjector::IsLibraryLoaded(const char *libname) {
   proc_maps += "/maps";
   const char *content = sp::GetFileText(proc_maps.c_str()).c_str();
   if (strstr(content, name_only)) {
-    sp_debug("LOADED - %s is already loaded", name_only);
+    sp_debug("injector", "LOADED - %s is already loaded", name_only);
     return true;
   }
-  sp_debug("NO LOADED - %s is not yet loaded", name_only);
+  sp_debug("injector", "NO LOADED - %s is not yet loaded", name_only);
   return false;
 }
 
@@ -294,7 +294,7 @@ bool SpInjector::Inject(const char *lib_name) {
 //////////////////////////////////////////////////////////////////////
 // Invoke ijagent function in libijagent.so, which in turn invokes dlopen
 void SpInjector::LoadUserLibrary() {
-  sp_debug("PAUSED - Process %d is paused by injector.", pid_);
+  sp_debug("injector", "PAUSED - Process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(),
               pid_);
@@ -302,19 +302,19 @@ void SpInjector::LoadUserLibrary() {
   UpdateFrameInfo();
   Address ij_agent_addr = FindFunction("ij_agent");
   if (ij_agent_addr > 0) {
-    sp_debug("FOUND - Address of ij_agent function at %lx", ij_agent_addr);
+    sp_debug("injector", "FOUND - Address of ij_agent function at %lx", ij_agent_addr);
   } else {
     sp_perror("Injector [pid = %5d] - Failed to find ij_agent", getpid());
   }
   size_t size = GetIjTemplateSize();
   Address code_addr = proc_->mallocMemory(size);
   unsigned char *code = GetIjTemplate(ij_agent_addr, code_addr);
-  sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
+  sp_debug("injector", "ALLOCATED - Buffer for load-library code in mutatee's heap"
            " at %lx of %lu bytes",
            code_addr, (unsigned long)size);
   IRPC::ptr irpc = IRPC::createIRPC(code, size, code_addr);
   irpc->setStartOffset(2);
-  sp_debug("POSTING - IRPC is on the way ...");
+  sp_debug("injector", "POSTING - IRPC is on the way ...");
   if (!proc_->postIRPC(irpc)) {
     sp_perror("Injector [pid = %5d] - Failed to execute load-library code"
               " in mutatee's address space",
@@ -334,7 +334,7 @@ void SpInjector::LoadIjagent(const char *lib_name) {
     sp_perror("Injector [pid = %5d] - %s cannot be found", getpid(),
               sp_filename(lib_name));
   }
-  sp_debug("PAUSED - Process %d is paused by injector.", pid_);
+  sp_debug("injector", "PAUSED - Process %d is paused by injector.", pid_);
   if (!proc_->stopProc()) {
     sp_perror("Injector [pid = %5d] - Failed to stop process %d", getpid(),
               pid_);
@@ -352,12 +352,12 @@ void SpInjector::LoadIjagent(const char *lib_name) {
   // Find do_dlopen function
   Address do_dlopen_addr = FindFunction("do_dlopen");
   if (do_dlopen_addr > 0) {
-    sp_debug("FOUND - Address of do_dlopen function at %lx", do_dlopen_addr);
+    sp_debug("injector", "FOUND - Address of do_dlopen function at %lx", do_dlopen_addr);
 
     size_t lib_name_len = strlen(libname) + 1;
     lib_name_addr = proc_->mallocMemory(lib_name_len);
     proc_->writeMemory(lib_name_addr, (void *)libname, lib_name_len);
-    sp_debug("STORED - Library name \"%s\" in mutatee's heap at %lx",
+    sp_debug("injector", "STORED - Library name \"%s\" in mutatee's heap at %lx",
              sp_filename(libname), lib_name_addr);
 
     DlopenArg args;
@@ -366,32 +366,32 @@ void SpInjector::LoadIjagent(const char *lib_name) {
     args.mode = RTLD_NOW | RTLD_GLOBAL;
     args.link_map = 0;
     proc_->writeMemory(args_addr, &args, sizeof(args));
-    sp_debug("STORED - do_dlopen's argument in mutatee's heap at %lx",
+    sp_debug("injector", "STORED - do_dlopen's argument in mutatee's heap at %lx",
              args_addr);
 
     size = GetCodeTemplateSize();
     code_addr = proc_->mallocMemory(size);
     code = GetCodeTemplate(args_addr, do_dlopen_addr, code_addr);
-    sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
+    sp_debug("injector", "ALLOCATED - Buffer for load-library code in mutatee's heap"
              " at %lx of %lu bytes",
              code_addr, (unsigned long)size);
   }
 
   // Cannot do_dlopen, then we try __libc_dl_open_mode
   else {
-    sp_debug("Injector [pid = %5d] - Failed to find do_dlopen, "
+    sp_debug("injector", "Injector [pid = %5d] - Failed to find do_dlopen, "
              "try __libc_dlopen_mode",
              getpid());
     Address libc_dlopen_addr = FindFunction("__libc_dlopen_mode");
     if (libc_dlopen_addr > 0) {
-      sp_debug("FOUND - Address of __libc_dlopen_mode function at %lx",
+      sp_debug("injector", "FOUND - Address of __libc_dlopen_mode function at %lx",
                libc_dlopen_addr);
 
       // Argument 1
       size_t lib_name_len = strlen(libname) + 1;
       lib_name_addr = proc_->mallocMemory(lib_name_len);
       proc_->writeMemory(lib_name_addr, (void *)libname, lib_name_len);
-      sp_debug("STORED - 1st argument libname \"%s\" in mutatee's heap at %lx",
+      sp_debug("injector", "STORED - 1st argument libname \"%s\" in mutatee's heap at %lx",
                sp_filename(libname), lib_name_addr);
 
       // Argument 2
@@ -401,7 +401,7 @@ void SpInjector::LoadIjagent(const char *lib_name) {
       code_addr = proc_->mallocMemory(size);
       code =
           GetDlmodeTemplate(lib_name_addr, mode, libc_dlopen_addr, code_addr);
-      sp_debug("ALLOCATED - Buffer for load-library code in mutatee's heap"
+      sp_debug("injector", "ALLOCATED - Buffer for load-library code in mutatee's heap"
                " at %lx of %lu bytes",
                code_addr, (unsigned long)size);
     } else {
@@ -558,12 +558,12 @@ bool SpInjector::GetResolvedLibPath(const std::string &filename,
 */
 //////////////////////////////////////////////////////////////////////
 void SpInjector::UpdateFrameInfo() {
-  sp_debug("Shared memory key: %ui", IJMSG_ID+proc_->getPid());
+  sp_debug("injector", "Shared memory key: %ui", IJMSG_ID+proc_->getPid());
   IjMsg *shm = (IjMsg *)GetSharedMemory(IJMSG_ID+proc_->getPid(), sizeof(IjMsg));
   shm->pc = pc();
   shm->sp = sp();
   shm->bp = bp();
-  sp_debug("Updated frame info pc [%ld] sp [%ld] bp [%ld]", shm->pc, shm->sp,
+  sp_debug("injector", "Updated frame info pc [%ld] sp [%ld] bp [%ld]", shm->pc, shm->sp,
            shm->bp);
 }
 

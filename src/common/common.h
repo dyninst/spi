@@ -33,6 +33,7 @@
 #define SP_COMMON_H_
 
 #include <stdio.h>
+#include <string.h>
 
 // Some macros for code readability
 #define OVERRIDE
@@ -84,21 +85,29 @@ extern FILE* g_error_fp;
   }  \
 } while(0)
 
-#define sp_debug(...) do { \
-  if (getenv("SP_DEBUG")) {   \
-  		char* nodir = basename((char*)__FILE__);				 \
-      fprintf(stderr, "%s [%d]: ", nodir, __LINE__); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n");  \
-      fflush(stderr); \
-    } \
-  else if (getenv("SP_FDEBUG")) {               \
-  		char* nodir = basename((char*)__FILE__);				 \
-      fprintf(g_debug_fp, "%s [%d]: ", nodir, __LINE__); \
-      fprintf(g_debug_fp, __VA_ARGS__); \
-      fprintf(g_debug_fp, "\n");  \
-      fflush(g_debug_fp); \
-  }\
+#define sp_debug(debug_type, ...) do { \
+  if ((strcmp(debug_type, "injector") == 0 && getenv("SP_DEBUG_INJECTOR")) || \
+      (strcmp(debug_type, "common") == 0 && getenv("SP_DEBUG_COMMON")) || \
+      (strcmp(debug_type, "patchapi") == 0 && getenv("SP_DEBUG_PATCHAPI")) || \
+      (strcmp(debug_type, "ipc") == 0 && getenv("SP_DEBUG_IPC")) || \
+      (strcmp(debug_type, "worker") == 0 && getenv("SP_DEBUG_WORKER")) || \
+      (strcmp(debug_type, "sigtrap") == 0 && getenv("SP_DEBUG_SIGTRAP")) || \
+      (strcmp(debug_type, "agent") == 0 && getenv("SP_DEBUG_AGENT"))) { \
+    if (getenv("SP_DEBUG")) {   \
+        char* nodir = basename((char*)__FILE__);				 \
+        fprintf(stderr, "%s [%d]: ", nodir, __LINE__); \
+        fprintf(stderr, __VA_ARGS__); \
+        fprintf(stderr, "\n");  \
+        fflush(stderr); \
+      } \
+    else if (getenv("SP_FDEBUG")) {               \
+        char* nodir = basename((char*)__FILE__);				 \
+        fprintf(g_debug_fp, "%s [%d]: ", nodir, __LINE__); \
+        fprintf(g_debug_fp, __VA_ARGS__); \
+        fprintf(g_debug_fp, "\n");  \
+        fflush(g_debug_fp); \
+    }\
+  } \
 } while(0)
 
 // Gets file name from a full path name

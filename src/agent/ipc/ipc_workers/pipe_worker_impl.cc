@@ -49,7 +49,7 @@ extern SpParser::ptr g_parser;
 //////////////////////////////////////////////////////////////////////
 
 SpPipeWorker::SpPipeWorker() {
-  // sp_debug("PIPE WORKER - created for pid=%d", getpid());
+  // sp_debug("ipc", "PIPE WORKER - created for pid=%d", getpid());
   TracingInternal(&start_tracing_);
   start_tracing_[getpid()] = 0;
 }
@@ -119,20 +119,20 @@ SpPipeWorker::Inject(SpChannel* c,
   //      do bookkeeping correctly.
   if (c->injected) return true;
  
-  sp_debug("NO INJECTED(pipe) -- start injection");
+  sp_debug("ipc", "NO INJECTED(pipe) -- start injection");
 
   if (c->remote_pid > 0) {
 
-    sp_debug("Remote pid is %d",c->remote_pid);
+    sp_debug("ipc", "Remote pid is %d",c->remote_pid);
     if(ProcessHasLibrary(c->remote_pid, "libagent")){
-     sp_debug("Process %d already has agent shared library", c->remote_pid);
+     sp_debug("ipc", "Process %d already has agent shared library", c->remote_pid);
      return true;
     }
     SpInjector::ptr injector = SpInjector::Create(c->remote_pid);
     if(!injector)
-	sp_debug("Injector not created");
+	sp_debug("ipc", "Injector not created");
     else
-    sp_debug("Injector created for process id %d",c->remote_pid);
+    sp_debug("ipc", "Injector created for process id %d",c->remote_pid);
     string agent_name = "";
     if (getenv("SP_AGENT_DIR")) {
       agent_name = getenv("SP_AGENT_DIR");
@@ -142,14 +142,14 @@ SpPipeWorker::Inject(SpChannel* c,
     }
     agent_name += g_parser->agent_name();
     sp_print("%s", agent_name.c_str());
-    sp_debug("agent shared library which is going to be injected is %s",agent_name.c_str());
+    sp_debug("ipc", "agent shared library which is going to be injected is %s",agent_name.c_str());
     c->injected = injector->Inject(agent_name.c_str());
-    sp_debug("Returned back");
+    sp_debug("ipc", "Returned back");
   } 
    if(c->injected)
-	sp_debug("Injected into the pipe");
+	sp_debug("ipc", "Injected into the pipe");
    else
-	sp_debug("Not injected into the pipe");
+	sp_debug("ipc", "Not injected into the pipe");
   return c->injected;
 //  return 0;
 }
@@ -164,17 +164,17 @@ SpPipeWorker::CreateChannel(int fd,
   c->local_pid = getpid();
   PidSet pid_set;
   GetPidsFromFileDesc(fd, pid_set);
-  sp_debug("FD TO PID - get a %lu pids from fd %d",
+  sp_debug("ipc", "FD TO PID - get a %lu pids from fd %d",
            (unsigned long)pid_set.size(), fd);
   if (pid_set.size() == 0) {
-    sp_debug("FAILED TO GET PID - from fd = %d", fd);
+    sp_debug("ipc", "FAILED TO GET PID - from fd = %d", fd);
     // return NULL;
   }
 
   for (PidSet::iterator i = pid_set.begin(); i != pid_set.end(); i++) {
     if (*i != c->local_pid) {
       c->remote_pid = *i;
-      sp_debug("Local pid =%d Remote pid = %d",c->local_pid,c->remote_pid);
+      sp_debug("ipc", "Local pid =%d Remote pid = %d",c->local_pid,c->remote_pid);
       break;
     }
   }
