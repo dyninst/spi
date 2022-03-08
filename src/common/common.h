@@ -51,6 +51,11 @@ extern FILE* g_output_fp;
 extern FILE* g_debug_fp;
 extern FILE* g_error_fp;
 
+const int numDebugTypes = 8;
+enum DebugType {injectorDebug, commonDebug, patchapiDebug, ipcDebug, workerDebug, sigtrapDebug, agentDebug, unknownDebugType};
+extern bool debugTypeEnabled [numDebugTypes];
+// = {getenv("SP_DEBUG_INJECTOR"), getenv("SP_DEBUG_COMMON"), getenv("SP_DEBUG_PATCHAPI"), getenv("SP_DEBUG_IPC"), getenv("SP_DEBUG_WORKER"), getenv("SP_DEBUG_SIGTRAP"), getenv("SP_DEBUG_AGENT"), true};
+
 // Print facility
 #define sp_perror(...) do {\
   if (getenv("SP_DEBUG")) {   \
@@ -86,13 +91,11 @@ extern FILE* g_error_fp;
 } while(0)
 
 #define sp_debug(debug_type, ...) do { \
-  if ((strcmp(debug_type, "injector") == 0 && getenv("SP_DEBUG_INJECTOR")) || \
-      (strcmp(debug_type, "common") == 0 && getenv("SP_DEBUG_COMMON")) || \
-      (strcmp(debug_type, "patchapi") == 0 && getenv("SP_DEBUG_PATCHAPI")) || \
-      (strcmp(debug_type, "ipc") == 0 && getenv("SP_DEBUG_IPC")) || \
-      (strcmp(debug_type, "worker") == 0 && getenv("SP_DEBUG_WORKER")) || \
-      (strcmp(debug_type, "sigtrap") == 0 && getenv("SP_DEBUG_SIGTRAP")) || \
-      (strcmp(debug_type, "agent") == 0 && getenv("SP_DEBUG_AGENT"))) { \
+  DebugType debugType = debug_type; \
+  if (debugType >= numDebugTypes) { \
+    debugType = unknownDebugType; \
+  } \
+  if (debugTypeEnabled[debugType]) { \
     if (getenv("SP_DEBUG")) {   \
         char* nodir = basename((char*)__FILE__);				 \
         fprintf(stderr, "%s [%d]: ", nodir, __LINE__); \
@@ -109,6 +112,14 @@ extern FILE* g_error_fp;
     }\
   } \
 } while(0)
+
+#define sp_debug_injector(...) sp_debug(injectorDebug, __VA_ARGS__)
+#define sp_debug_common(...) sp_debug(commonDebug, __VA_ARGS__)
+#define sp_debug_patchapi(...) sp_debug(patchapiDebug, __VA_ARGS__)
+#define sp_debug_ipc(...) sp_debug(ipcDebug, __VA_ARGS__)
+#define sp_debug_worker(...) sp_debug(workerDebug, __VA_ARGS__)
+#define sp_debug_sigtrap(...) sp_debug(sigtrapDebug, __VA_ARGS__)
+#define sp_debug_agent(...) sp_debug(agentDebug, __VA_ARGS__)
 
 // Gets file name from a full path name
 #define sp_filename(path) basename((char*)path)

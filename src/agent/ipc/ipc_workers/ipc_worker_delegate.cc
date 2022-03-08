@@ -79,12 +79,12 @@ SpIpcWorkerDelegate::GetChannel(int fd,
   if (rw == SP_WRITE) {
     c->rw = SP_WRITE;
     channel_map_write_[fd] = c;
-    sp_debug("ipc", "WRITE CHANNEL @ pid = %d - get a WRITE channel with"
+    sp_debug_ipc("WRITE CHANNEL @ pid = %d - get a WRITE channel with"
              " inode %ld for fd %d with remote pid %d", getpid(), GetInodeFromFileDesc(fd), fd, c->remote_pid);
   } else {
     c->rw = SP_READ;
     channel_map_read_[fd] = c;
-    sp_debug("ipc", "READ CHANNEL @ pid = %d - get a READ channel with"
+    sp_debug_ipc("READ CHANNEL @ pid = %d - get a READ channel with"
              " inode %ld for fd %d with remote pid %d", getpid(), GetInodeFromFileDesc(fd), fd, c->remote_pid);
   }
   c->fd = fd;

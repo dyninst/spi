@@ -70,15 +70,15 @@ namespace sp {
                   SpPoint* point,
                   StringSet* inst_calls) {
     if (func == NULL) {
-      sp_debug("agent", "FATAL: func is NULL");
+      sp_debug_agent("FATAL: func is NULL");
       return false;
     }
 
-    sp_debug("agent", "START PROPELLING - propel to callees of function %s",
+    sp_debug_agent("START PROPELLING - propel to callees of function %s",
              func->name().c_str());
    
     /*if (func->name().find("std::")!=std::string::npos || func->name().find("cxx")!=std::string::npos) {
-      sp_debug("agent", "TODO: libstdc++ functions: stop propelling");
+      sp_debug_agent("TODO: libstdc++ functions: stop propelling");
       return true;
     }*/
 
@@ -86,7 +86,7 @@ namespace sp {
     // We need this check if we are doing initial instrumentation for
     // all functions on the stack trace when agentlib is injected
     if (!g_parser->CanInstrumentFunc(func->name())) {
-      sp_debug("agent", "SKIP propel into - %s", func->name().c_str());
+      sp_debug_agent("SKIP propel into - %s", func->name().c_str());
       return false;
     }
 
@@ -119,7 +119,7 @@ namespace sp {
 
       if (callee) {
         if (!g_parser->CanInstrumentFunc(callee->name())) {
-          sp_debug("agent", "SKIP NOT-INST FUNC - %s", callee->name().c_str());
+          sp_debug_agent("SKIP NOT-INST FUNC - %s", callee->name().c_str());
           continue;
         }
 
@@ -127,23 +127,23 @@ namespace sp {
         if (inst_calls &&
             (inst_calls->find(callee->name()) == inst_calls->end())) {
           // sp_print("SKIP NOT-INST CALL - %s", callee->name().c_str());
-          sp_debug("agent", "SKIP NOT-INST CALL - %s", callee->name().c_str());
+          sp_debug_agent("SKIP NOT-INST CALL - %s", callee->name().c_str());
           continue;
         }
-        sp_debug("agent", "POINT - instrumenting direct call at %lx to "
+        sp_debug_agent("POINT - instrumenting direct call at %lx to "
                  "function %s (%lx) for point %lx",
                  blk->last(), callee->name().c_str(),
                  (dt::Address)callee, (dt::Address)p);
       } else {
         if (inst_calls) {
-          sp_debug("agent", "SKIP INDIRECT CALL - at %lx", blk->last());
+          sp_debug_agent("SKIP INDIRECT CALL - at %lx", blk->last());
           continue;
         }
-        sp_debug("agent", "POINT - instrumenting indirect call at %lx for point %lx",
+        sp_debug_agent("POINT - instrumenting indirect call at %lx for point %lx",
                  blk->last(), (dt::Address)p);
       }
 
-      sp_debug("agent", "PAYLOAD ENTRY - %lx", (long)entry);
+      sp_debug_agent("PAYLOAD ENTRY - %lx", (long)entry);
       p->SetCallerPt(point);
       SpSnippet::ptr sp_snip = SpSnippet::create(callee,
                                                  p,
@@ -163,10 +163,10 @@ namespace sp {
     bool ret = patcher.commit();
 
     if (ret) {
-      sp_debug("agent", "FINISH PROPELLING - callees of function %s are"
+      sp_debug_agent("FINISH PROPELLING - callees of function %s are"
                " instrumented", func->name().c_str());
     } else {
-      sp_debug("agent", "FINISH PROPELLING - instrumentation failed for"
+      sp_debug_agent("FINISH PROPELLING - instrumentation failed for"
                " callees of %s", func->name().c_str());
     }
     return ret;
@@ -179,7 +179,7 @@ namespace sp {
   SpPropeller::ModifyPC(SpFunction* func,
                   PayloadFunc exit) {
     assert(func);
-    sp_debug("agent", "Modify PC for the function %s",func->name().c_str());
+    sp_debug_agent("Modify PC for the function %s",func->name().c_str());
 	
     Points pts;
     ph::PatchMgrPtr mgr = g_parser->mgr();
@@ -187,17 +187,17 @@ namespace sp {
     ph::PatchFunction* cur_func = NULL;
     FuncSet found_funcs;
     //cur_func = g_parser->FindFunction(func->GetMangledName());
-    g_parser->FindFunctionByMangledName(func->GetMangledName(), &found_funcs);
+    found_funcs = g_parser->FindFunctionByMangledName(func->GetMangledName());
 
-    for (FuncSet::iterator i = found_funcs.begin(); i != found_funcs.end(); i++) {
-      if (strcmp(FUNC_CAST(*i)->GetObject()->name().c_str(), func->GetObject()->name().c_str()) == 0)
+    for (auto i: found_funcs) {
+      if (FUNC_CAST(i)->GetObject()->name() == func->GetObject()->name())
         cur_func = func;
     }
 
     if (!cur_func) return false;
     //1. Find all return points
     next_ret_points(cur_func, mgr, pts);
-    sp_debug("agent", "No of return points for the function %s  is %lu", func->name().c_str(),pts.size());
+    sp_debug_agent("No of return points for the function %s  is %lu", func->name().c_str(),pts.size());
     
     //2.. Replace all the return points associated with the function with a trap instruction
     for(unsigned i=0; i<pts.size();i++) {

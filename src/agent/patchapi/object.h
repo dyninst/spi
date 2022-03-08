@@ -68,8 +68,7 @@ namespace sp {
 						 sb::Symtab* symtab)
 			: ph::PatchObject(o, a, cm, cb),
 			load_addr_(la),
-			symtab_(symtab),
-	 		small_freebufs_ {} {}
+			symtab_(symtab) {}
 
 
     dt::Address load_addr() const { return load_addr_; }
@@ -88,7 +87,7 @@ namespace sp {
 		std::string name_;
 		sb::Symtab* symtab_;
 
-		FreeBufs small_freebufs_;  // Small buffers
+		FreeBufs small_freebufs_ {};  // Small buffers
 
 		BufTypeMap alloc_bufs_;    // To facilitate future deallocation
     typedef std::map<dt::Address, size_t> BufSizeMap;  // For the mmap-ed

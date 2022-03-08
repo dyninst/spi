@@ -70,7 +70,7 @@ namespace sp {
     // should have a smarter memory allocator.
     assert(g_as);
     assert(pt);
-    sp_debug("agent", "SNIPPET CONSTRUCTOR - payload entry %lx", (long)entry_);
+    sp_debug_agent("SNIPPET CONSTRUCTOR - payload entry %lx", (long)entry_);
     InitSavedRegMap();
   }
 
@@ -96,7 +96,7 @@ namespace sp {
 
     assert(point_);
     if (!blob_) {
-      sp_debug("agent", "ALLOC BLOB - for size %ld", (long)est_size);
+      sp_debug_agent("ALLOC BLOB - for size %ld", (long)est_size);
       blob_ = (char*)GetBlob(est_size);
       if (!blob_) return NULL;
     }
@@ -105,7 +105,7 @@ namespace sp {
 
     // If this blob is already generated? If so, just return it.
     if (blob_size_ > 0 && blob_) {
-      sp_debug("agent", "BLOB EXIST - avoid regenerating it");
+      sp_debug_agent("BLOB EXIST - avoid regenerating it");
       return blob_;
     }
 
@@ -113,15 +113,15 @@ namespace sp {
     assert(b);
  
 
-    sp_debug("agent", "RET_ADDR - is %lx for point %lx ", ret_addr,
+    sp_debug_agent("RET_ADDR - is %lx for point %lx ", ret_addr,
              (dt::Address)b->last());
 
     // 1. Relocate call block, if it's indirect call
     if (reloc) {
-      sp_debug("agent", "RELOC BLOCK");
+      sp_debug_agent("RELOC BLOCK");
       /*
       if (b->size() >= BLK_LIMIT) {
-        sp_debug("agent", "NO SUFFICIENT SPACE - for BLOB (%lu >= %lu)",
+        sp_debug_agent("NO SUFFICIENT SPACE - for BLOB (%lu >= %lu)",
                  b->size(), (unsigned long)BLK_LIMIT);
         return NULL;
       }
@@ -136,7 +136,7 @@ namespace sp {
     // 3. Call payload wrapper before function call
     long param_func = (long)entry_;
     long called_func = (long)g_context->wrapper_entry();
-    sp_debug("agent", "PAYLOAD ENTRY - at %lx", called_func);
+    sp_debug_agent("PAYLOAD ENTRY - at %lx", called_func);
     assert(g_context);
 
     blob_size_ += emit_pass_param((long)point_, param_func, blob_,
@@ -155,14 +155,14 @@ namespace sp {
     SpFunction* callee;
 
     if (point_->tailcall() && func_) {
-      sp_debug("agent", "TAIL_CALL_DIRECT_CALL ");
+      sp_debug_agent("TAIL_CALL_DIRECT_CALL ");
       assert(!ret_addr);
       // 5.1. tail call and direct call
       blob_size_ += emit_jump_abs((long)func_->addr(), blob_, blob_size_);
       goto EXIT;
     } else if (!point_->tailcall() && func_) {
       assert(ret_addr);
-      sp_debug("agent", "SIMPLE_DIRECT_CALL ");
+      sp_debug_agent("SIMPLE_DIRECT_CALL ");
       // 5.2. non tail call and Direct call
       blob_size_ += emit_call_abs((long)func_->addr(),
                                   blob_,
@@ -170,12 +170,12 @@ namespace sp {
                                   false);
     } else {
 
-      sp_debug("agent", "For point %lx", point_);
+      sp_debug_agent("For point %lx", point_);
 
       if (!point_->tailcall())
-        sp_debug("agent", "INDIRECT_CALL ");
+        sp_debug_agent("INDIRECT_CALL ");
       else
-        sp_debug("agent", "TAIL_CALL_INDIRECT_CALL");
+        sp_debug_agent("TAIL_CALL_INDIRECT_CALL");
 
       // 5.3. indirect call
       //assert(b->orig_call_insn());
@@ -213,17 +213,17 @@ namespace sp {
   EXIT:
 
     if (func_) {
-      sp_debug("agent", "DUMP PATCH AREA %lx (%lu bytes) for point %lx for %s - {",
+      sp_debug_agent("DUMP PATCH AREA %lx (%lu bytes) for point %lx for %s - {",
                (unsigned long)blob_,
                (unsigned long)blob_size_, b->last(),
                func_->name().c_str());
     } else {
-      sp_debug("agent", "DUMP PATCH AREA %lx (%lu bytes) for point %lx - {",
+      sp_debug_agent("DUMP PATCH AREA %lx (%lu bytes) for point %lx - {",
                (unsigned long)blob_, (unsigned long)blob_size_, b->last());
     }
-    sp_debug("agent", "%s", g_parser->DumpInsns((void*)blob_,
+    sp_debug_agent("%s", g_parser->DumpInsns((void*)blob_,
                                        blob_size_).c_str());
-    sp_debug("agent", "}");
+    sp_debug_agent("}");
 
     return blob_;
   }
@@ -271,7 +271,7 @@ namespace sp {
     long after_jmp = callblk->start() + 2;
     bool done = false;
 
-    sp_debug("agent", "LOOKING FOR SPRING BOARD - springboard size should >= %ld",
+    sp_debug_agent("LOOKING FOR SPRING BOARD - springboard size should >= %ld",
              (long)min_springblk_size);
 
     // Find a nearby block
@@ -290,14 +290,14 @@ namespace sp {
       upper -= obj->load_addr();
       lower -= obj->load_addr();
     }
-    sp_debug("agent", "SAME OBJ - codebase-%lx, load_addr-%lx, range-[%lx, %lx) ",
+    sp_debug_agent("SAME OBJ - codebase-%lx, load_addr-%lx, range-[%lx, %lx) ",
              obj->codeBase(), obj->load_addr(), lower, upper);
 
     for (unsigned i = 0; i < regions.size(); i++) {
       pe::CodeRegion* cr = regions[i];
       size_t cr_low = cr->low();
       size_t cr_high = cr->high();
-      sp_debug("agent", "REGION [%lx, %lx] - (%lx, %lx)", (unsigned long)cr_low,
+      sp_debug_agent("REGION [%lx, %lx] - (%lx, %lx)", (unsigned long)cr_low,
                (unsigned long)cr_high, lower, upper);
       if ((lower <= (long)cr_low && (long)cr_low < upper) ||
           ((long)cr_low <= lower && upper < (long)cr_high) ||
@@ -317,7 +317,7 @@ namespace sp {
                bi != blks.end(); bi++) {
             b = *bi;
           }
-          sp_debug("agent", "POTENTIAL SPRING BOARD - %ld found, [%lx, %lx]",
+          sp_debug_agent("POTENTIAL SPRING BOARD - %ld found, [%lx, %lx]",
                    (unsigned long)blks.size(), b->start(),
                    b->size() + b->start());
 
@@ -327,13 +327,13 @@ namespace sp {
           }
 
           if (!sp::IsDisp8(rel)) {
-            sp_debug("agent", "TOO BIG DISP, SKIPPED - disp=%ld", (long)rel);
+            sp_debug_agent("TOO BIG DISP, SKIPPED - disp=%ld", (long)rel);
             span_addr = b->end();
             continue;
           }
           size_t s = b->lastInsnAddr() - b->start();
           if (s < min_springblk_size) {
-            sp_debug("agent", "TOO SMALL, SKIPPED - size=%ld", (long)s);
+            sp_debug_agent("TOO SMALL, SKIPPED - size=%ld", (long)s);
             span_addr = b->end();
             continue;
           }
@@ -342,19 +342,19 @@ namespace sp {
 
           // For simplicity, we don't want call block
           if (pb->containsCall()) {
-            sp_debug("agent", "CALL BLK, SKIPPED - we don't relocate call block");
+            sp_debug_agent("CALL BLK, SKIPPED - we don't relocate call block");
             span_addr = b->end();
             continue;
           }
 
           // For simplicity, we don't relocate used spring block
           if (pb->IsSpring()) {
-            sp_debug("agent", "SPRING BOARD, SKIPPED - we don't relocate second-hand"
+            sp_debug_agent("SPRING BOARD, SKIPPED - we don't relocate second-hand"
                      " spring board");
             span_addr = b->end();
             continue;
           }
-          sp_debug("agent", "GOT SPRING BOARD");
+          sp_debug_agent("GOT SPRING BOARD");
           spring_blk_ = pb;
           pb->SetIsSpring(true);
           done = true;
@@ -387,10 +387,10 @@ namespace sp {
     spring_size_ += emit_jump_abs(ret_addr, spring_, spring_size_);
 
     assert(point_->block());
-    sp_debug("agent", "DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {",
+    sp_debug_agent("DUMP RELOC SPRING INSNS (%lu bytes) for point %lx- {",
              (unsigned long)spring_size_, point_->block()->last());
-    sp_debug("agent", "%s", g_parser->DumpInsns((void*)spring_, spring_size_).c_str());
-    sp_debug("agent", "}");
+    sp_debug_agent("%s", g_parser->DumpInsns((void*)spring_, spring_size_).c_str());
+    sp_debug_agent("}");
 
     return spring_;
   }
@@ -408,7 +408,7 @@ namespace sp {
 
     // We may want to reallocate it, so free existing buffer first
     if (blob_) {
-      sp_debug("agent", "REALLOC - for %lx", point_->block()->last());
+      sp_debug_agent("REALLOC - for %lx", point_->block()->last());
       // g_as->free(obj, (dt::Address)blob_);
     }
 
@@ -429,9 +429,9 @@ namespace sp {
     int offset = saved_reg_map_[reg];
     *out = RegVal(offset);
 
-    sp_debug("agent", "Looing for register [%s] with offset [%d]", reg.name().c_str(), offset);
+    sp_debug_agent("Looing for register [%s] with offset [%d]", reg.name().c_str(), offset);
 
-    sp_debug("agent", "ORIG VAL - %s = %lx, size: %ld",
+    sp_debug_agent("ORIG VAL - %s = %lx, size: %ld",
              reg.name().c_str(), *out, (long)reg.size());
     switch(reg.size()) {
       case 8:
@@ -454,7 +454,7 @@ namespace sp {
         return false;
     }
 
-    sp_debug("agent", "NEW VAL - %s = %lx",
+    sp_debug_agent("NEW VAL - %s = %lx",
              reg.name().c_str(), *out);
 
     return true;

@@ -109,9 +109,8 @@ namespace sp {
     AGENT_EXPORT bool
         FindFunction(string func_name,
                      FuncSet* found_funcs);
-    AGENT_EXPORT bool
-        FindFunctionByMangledName(string func_name,
-                     FuncSet* found_funcs);
+    AGENT_EXPORT FuncSet
+        FindFunctionByMangledName(string func_name);
 
     /*AGENT_EXPORT SpFunction*
         FindFunction(string func_name);*/

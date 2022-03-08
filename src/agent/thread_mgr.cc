@@ -52,10 +52,10 @@ SpThreadMgr::BeforeEntry(SpPoint* pt) {
   bool ret = true;
   
   SP_LOCK(THREADMGR_BEFOREENTRY);
-  sp_debug("agent", "THREAD MGR BeforeEntry");
+  sp_debug_agent("THREAD MGR BeforeEntry");
   func = pt->callee();
   if (!func) {
-    sp_debug("agent", "CANNOT FIND CALLEE FOR %lx", pt->block()->last());
+    sp_debug_agent("CANNOT FIND CALLEE FOR %lx", pt->block()->last());
     ret = false;
     goto THREADMGR_BEFOREENTRY_EXIT;
   }
@@ -73,17 +73,17 @@ SpThreadMgr::BeforeEntry(SpPoint* pt) {
     SpFunction* tfunc =
         g_parser->FindFunction((dt::Address)*thread_func);
     if (!tfunc) {
-      sp_debug("agent", "CANNOT FIND FUNCTION FOR %lx", (dt::Address)*thread_func);
+      sp_debug_agent("CANNOT FIND FUNCTION FOR %lx", (dt::Address)*thread_func);
       ret = false;
       goto THREADMGR_BEFOREENTRY_EXIT;
     }
-    sp_debug("agent", "GOT CALLBACK - %s at %lx", tfunc->name().c_str(),
+    sp_debug_agent("GOT CALLBACK - %s at %lx", tfunc->name().c_str(),
              (long)*thread_func);
 
     // Start propagating instrumentation to thread routine
     sp::SpPropeller::ptr p = g_context->init_propeller();
     assert(p);
-    sp_debug("agent", "GET PROPELLER");
+    sp_debug_agent("GET PROPELLER");
     p->go(tfunc,
           g_context->init_entry(),
           g_context->init_exit(),

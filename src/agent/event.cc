@@ -113,19 +113,19 @@ namespace sp {
        than zero, then the agent is injected */
     FuncSet call_stack;
     g_context->GetCallStack(&call_stack);
-    sp_debug("agent", "CALLSTACK - %lu calls in the call stack",
+    sp_debug_agent("CALLSTACK - %lu calls in the call stack",
               (unsigned long)call_stack.size());
 
     if (call_stack.size() <= 0)  {
-    sp_debug("agent", "PRELOAD - preload agent.so, and instrument main()");
-    sp_debug("agent", GetExeName().c_str());
+    sp_debug_agent("PRELOAD - preload agent.so, and instrument main()");
+    sp_debug_agent(GetExeName().c_str());
       
       FuncSet found_funcs;
       SpFunction* f = NULL;
-      g_parser->FindFunctionByMangledName("main", &found_funcs);
-      for (FuncSet::iterator i = found_funcs.begin(); i != found_funcs.end(); i++) {
-        if (strcmp(FUNC_CAST(*i)->GetObject()->name().c_str(), sp::GetExeObjName().c_str()) == 0)
-          f = FUNC_CAST(*i);
+      found_funcs = g_parser->FindFunctionByMangledName("main");
+      for (auto i: found_funcs) {
+        if (FUNC_CAST(i)->GetObject()->name() == sp::GetExeObjName())
+          f = FUNC_CAST(i);
       }
       //f = g_parser->FindFunction("main");
       if (f) {
@@ -134,7 +134,7 @@ namespace sp {
                                         g_context->init_exit());
 
       } else {
-        sp_debug("agent", "FAIL PRELOAD - try injection ...");
+        sp_debug_agent("FAIL PRELOAD - try injection ...");
         fail_preload = true;
       }
     } // LD_PRELOAD mode
@@ -146,7 +146,7 @@ namespace sp {
       for (FuncSet::iterator i = call_stack.begin(); 
            i != call_stack.end(); i++) {
         SpFunction* f = *i;
-        sp_debug("agent", "Call stck function %s",f->name().c_str());
+        sp_debug_agent("Call stck function %s",f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
@@ -155,7 +155,7 @@ namespace sp {
           break;
         }
         if (IsRecvLikeFunction(f->name())) {
-          sp_debug("agent", "Recv like function on the stack");
+          sp_debug_agent("Recv like function on the stack");
           //Modify the PC to start at a new location 
           g_context->init_propeller()->ModifyPC(f,g_context->init_exit());	
         }
@@ -191,7 +191,7 @@ namespace sp {
     for (FuncSet::iterator i = funcs_.begin();
            i != funcs_.end(); i++) {
         SpFunction* f = *i;
-        sp_debug("agent", "PRE-INST FUNC - %s", f->name().c_str());
+        sp_debug_agent("PRE-INST FUNC - %s", f->name().c_str());
         g_context->init_propeller()->go(f,
                                         g_context->init_entry(),
                                         g_context->init_exit());
@@ -225,12 +225,12 @@ namespace sp {
       assert(obj);
 
       if (strcmp(sp_filename(obj->name().c_str()), "libagent.so") == 0) {
-        sp_debug("agent", "SKIP - lib %s", sp_filename(obj->name().c_str()));
+        sp_debug_agent("SKIP - lib %s", sp_filename(obj->name().c_str()));
         continue;
       }
       
       if (!g_parser->CanInstrumentLib(sp_filename(obj->name().c_str()))) {
-        sp_debug("agent", "SKIP - lib %s", sp_filename(obj->name().c_str()));
+        sp_debug_agent("SKIP - lib %s", sp_filename(obj->name().c_str()));
         continue;
       }
       // sp_print("HANDLING - lib %s", sp_filename(obj->name().c_str()));

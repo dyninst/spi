@@ -47,6 +47,8 @@
 FILE* g_debug_fp;
 FILE* g_error_fp;
 FILE* g_output_fp;
+bool debugTypeEnabled [numDebugTypes] = {getenv("SP_DEBUG_INJECTOR"), getenv("SP_DEBUG_COMMON"), getenv("SP_DEBUG_PATCHAPI"), getenv("SP_DEBUG_IPC"), getenv("SP_DEBUG_WORKER"), getenv("SP_DEBUG_SIGTRAP"), getenv("SP_DEBUG_AGENT"), true};
+
 
 namespace sp {
 
@@ -67,7 +69,7 @@ namespace sp {
       core_limit.rlim_cur = RLIM_INFINITY;
       core_limit.rlim_max = RLIM_INFINITY;
       if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
-        sp_perror("ERROR: failed to setup core dump ability\n");
+        sp_perror("RROR: failed to setup core dump ability\n");
       }
     }
 	
@@ -197,12 +199,13 @@ namespace sp {
 
   void
   SpAgent::Go() {
-    sp_debug("agent", "==== Start Self-propelled instrumentation @ Process %d ====",
+
+    sp_debug_agent("==== Start Self-propelled instrumentation @ Process %d ====",
              getpid());
 
     // XXX: ignore bash/lsof/Injector for now ...
     if (sp::IsIllegalProgram()) {
-      sp_debug("agent", "ILLEGAL EXE - avoid instrumenting %s", GetExeName().c_str());
+      sp_debug_agent("ILLEGAL EXE - avoid instrumenting %s", GetExeName().c_str());
       return;
     }
 
@@ -235,47 +238,47 @@ namespace sp {
 
     // Sanity check. If not user-provided configuration, use default ones
     if (!init_event_) {
-      sp_debug("agent", "INIT EVENT - Use default event");
+      sp_debug_agent("INIT EVENT - Use default event");
       init_event_ = SyncEvent::Create();
     }
     if (!fini_event_) {
-      sp_debug("agent", "FINI EVENT - Use default event");
+      sp_debug_agent("FINI EVENT - Use default event");
       fini_event_ = SpEvent::Create();
     }
     if (init_entry_.size() == 0) {
-      sp_debug("agent", "ENTRY_PAYLOAD - Use default payload entry calls");
+      sp_debug_agent("ENTRY_PAYLOAD - Use default payload entry calls");
       init_entry_ = "default_entry";
     }
     if (init_exit_.size() == 0) {
-      sp_debug("agent", "EXIT_PAYLOAD - No payload exit calls");
+      sp_debug_agent("EXIT_PAYLOAD - No payload exit calls");
       init_exit_ = "";
     }
     if (!parser_) {
-      sp_debug("agent", "PARSER - Use default parser");
+      sp_debug_agent("PARSER - Use default parser");
       parser_ = SpParser::Create();
     }
     if (!init_propeller_) {
-      sp_debug("agent", "PROPELLER - Use default propeller");
+      sp_debug_agent("PROPELLER - Use default propeller");
       init_propeller_ = SpPropeller::Create();
     }
 
     if (directcall_only_) {
-      sp_debug("agent", "DIRECT CALL ONLY - only instrument direct calls,"
+      sp_debug_agent("DIRECT CALL ONLY - only instrument direct calls,"
                " ignoring indirect calls");
     } else {
-      sp_debug("agent", "DIRECT/INDIRECT CALL - instrument both direct and"
+      sp_debug_agent("DIRECT/INDIRECT CALL - instrument both direct and"
                " indirect calls");
     }
     if (allow_ipc_) {
-      sp_debug("agent", "MULTI PROCESS - support multiprocess instrumentation");
+      sp_debug_agent("MULTI PROCESS - support multiprocess instrumentation");
     } else {
-      sp_debug("agent", "SINGLE PROCESS - only support single-process "
+      sp_debug_agent("SINGLE PROCESS - only support single-process "
                "instrumentation");
     }
     if (trap_only_) {
-      sp_debug("agent", "TRAP ONLY - Only use trap-based instrumentation");
+      sp_debug_agent("TRAP ONLY - Only use trap-based instrumentation");
     } else {
-      sp_debug("agent", "JUMP + TRAP - Use jump and trap for instrumentation");
+      sp_debug_agent("JUMP + TRAP - Use jump and trap for instrumentation");
     }
 
 
@@ -292,7 +295,7 @@ namespace sp {
 
     // We use default event, which does nothing on initial instrumentation
     if (parse_only_) {
-      sp_debug("agent", "PARSE ONLY - exit after parsing, without instrumentation");
+      sp_debug_agent("PARSE ONLY - exit after parsing, without instrumentation");
       sp::SpEvent::ptr init_event = sp::SpEvent::Create();
       init_event_  = init_event;
       // return;
@@ -312,7 +315,7 @@ namespace sp {
 
 
     // Copy agent's variables to context
-    sp_debug("agent", "Copy agent's variables to context");
+    sp_debug_agent("Copy agent's variables to context");
     g_context->SetInitPropeller(init_propeller_);
     g_context->SetParser(parser_);
     g_context->SetInitEntryName(init_entry_);
@@ -343,7 +346,7 @@ namespace sp {
     }
 
     // Always use wrapper functions for payload entry and exit
-    sp_debug("agent", "ALLOW IPC OR MULTITHREADED OR HANDLE_DLOPEN");
+    sp_debug_agent("ALLOW IPC OR MULTITHREADED OR HANDLE_DLOPEN");
     void* wrapper_entry =
         (void*)g_parser->GetFuncAddrFromName("wrapper_entry");
     assert(wrapper_entry);
@@ -355,9 +358,9 @@ namespace sp {
 
     // Register Events for initial instrumentation
     init_event_->RegisterEvent();
-    sp_debug("agent", "init registered");
+    sp_debug_agent("init registered");
     fini_event_->RegisterEvent();
-    sp_debug("agent", "fini registered");
+    sp_debug_agent("fini registered");
 
     std::string exit_function_payload_str("toggle_off_instrumentation_entry");
     void* exit_function_payload = (void*)g_parser->GetFuncAddrFromName(exit_function_payload_str);
@@ -381,7 +384,7 @@ namespace sp {
         i != found_exit_funcs.end(); i++) {
       if (*i == NULL) continue;
       SpFunction* f = *i;
-      sp_debug("agent", "Pre-instrumenting exit function: %s", f->name().c_str());
+      sp_debug_agent("Pre-instrumenting exit function: %s", f->name().c_str());
       g_context->init_propeller()->go(f,
                                       exit_function_payload,
                                       g_context->init_exit());

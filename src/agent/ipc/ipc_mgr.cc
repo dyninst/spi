@@ -103,7 +103,7 @@ SpIpcMgr::GetWriteParam(SpPoint* pt,
     size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
     if (size_out) *size_out = *size;
 
-    sp_debug("ipc", "IPC GOT WRITE -- %s => fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("IPC GOT WRITE -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("writev") == 0) {
@@ -116,7 +116,7 @@ SpIpcMgr::GetWriteParam(SpPoint* pt,
     // int* iovcnt = (int*)sp::PopArgument(pt, &h, sizeof(int));
     // fprintf(stderr, "iovcnt: %d\n", *iovcnt);
 
-    sp_debug("ipc", "IPC GOT WRITE -- %s => fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("IPC GOT WRITE -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("connect") == 0) {
@@ -125,7 +125,7 @@ SpIpcMgr::GetWriteParam(SpPoint* pt,
     sockaddr** sa = (sockaddr**)sp::PopArgument(pt, &h, sizeof(sockaddr*));
     if (sa_out) *sa_out = *sa;
 
-    sp_debug("ipc", "IPC GOT CONNECT -- %s => fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("IPC GOT CONNECT -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("fputs") == 0) {
@@ -162,7 +162,7 @@ SpIpcMgr::GetWriteParam(SpPoint* pt,
     int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
     if (fd_out) *fd_out = *fd;
 
-    sp_debug("ipc", "IPC GOT sendfile -- %s => fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("IPC GOT sendfile -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 /* if((*fd_out)!=-1) {
    	fcntl((*fd_out), F_SETOWN,getpid() ==-1);
@@ -194,7 +194,7 @@ SpIpcMgr::GetReadParam(SpPoint* pt,
     size_t* size = (size_t*)sp::PopArgument(pt, &h, sizeof(size_t));
     if (size_out) *size_out = *size;
 
-    sp_debug("ipc", "IPC GOT READ -- %s => fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("IPC GOT READ -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("readv") == 0) {
@@ -207,7 +207,7 @@ SpIpcMgr::GetReadParam(SpPoint* pt,
     // int* iovcnt = (int*)sp::PopArgument(pt, &h, sizeof(int));
     // fprintf(stderr, "iovcnt: %d\n", *iovcnt);
 
-    sp_debug("ipc", "IPC GOT READ -- %s => fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("IPC GOT READ -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 
   else if (f->name().compare("fgets") == 0) {
@@ -239,7 +239,7 @@ SpIpcMgr::GetReadParam(SpPoint* pt,
     int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
     if (fd_out) *fd_out = *fd;
 
-    sp_debug("ipc", "IPC GOT ACCEPT -- %s => fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("IPC GOT ACCEPT -- %s => fd = %d", f->name().c_str(), *fd_out);
   }
 /* if((*fd_out)!=-1) {
         fcntl((*fd_out), F_SETOWN,getpid() ==-1);
@@ -263,7 +263,7 @@ SpIpcMgr::GetCloseParam(SpPoint* pt,
   if (f->name().compare("close") == 0) {
     int* fd = (int*)sp::PopArgument(pt, &h, sizeof(int));
     if (fd_out) *fd_out = *fd;
-    sp_debug("ipc", "CLOSE -- %s fd = %d", f->name().c_str(), *fd_out);
+    sp_debug_ipc("CLOSE -- %s fd = %d", f->name().c_str(), *fd_out);
   }
  /* if((*fd_out)!=-1) {
         fcntl((*fd_out), F_SETOWN,getpid() ==-1);
@@ -283,11 +283,11 @@ SpIpcMgr::fcntlReturnParam(SpPoint* pt) {
   ArgumentHandle h;
   if (f->name().compare("socket") == 0) {
     fd = sp::ReturnValue(pt);
-    sp_debug("ipc", "SOCKET -- %s fd = %d", f->name().c_str(), fd);
+    sp_debug_ipc("SOCKET -- %s fd = %d", f->name().c_str(), fd);
   }
   if (f->name().compare("accept") == 0) {
     int fd = sp::ReturnValue(pt);
-    sp_debug("ipc", "SOCKET -- %s fd = %d", f->name().c_str(), fd);
+    sp_debug_ipc("SOCKET -- %s fd = %d", f->name().c_str(), fd);
   }
  /* if(fd!=-1) {
         fcntl(fd, F_SETOWN,getpid() ==-1);
@@ -328,12 +328,12 @@ char SpIpcMgr::CanStartTracing(int fd) {
 SpIpcWorkerDelegate* SpIpcMgr::GetWorker(int fd) {
   // PIPE
   if (IsPipe(fd)) {
-    sp_debug("ipc", "PIPE FD - fd = %d", fd);
+    sp_debug_ipc("PIPE FD - fd = %d", fd);
     return pipe_worker();
   }
   // TCP
   else if (IsTcp(fd)) {
-    sp_debug("ipc", "TCP FD - fd = %d", fd);
+    sp_debug_ipc("TCP FD - fd = %d", fd);
     return tcp_worker();
   }
   // UDP
@@ -353,7 +353,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
   
   ph::PatchFunction* f = sp::Callee(pt);
   if (!f) {
-    sp_debug("ipc", "CALLEE NOT FOUND - in BeforeEntry for call insn %lx",
+    sp_debug_ipc("CALLEE NOT FOUND - in BeforeEntry for call insn %lx",
              pt->block()->last());
     return false;
   }
@@ -390,10 +390,10 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
       }
       else
       {
-	sp_debug("ipc", "Not injected in ipc_mgr");
+	sp_debug_ipc("Not injected in ipc_mgr");
       }
     } else {
-      sp_debug("ipc", "FAILED TO CREATE CHANNEL - for write");
+      sp_debug_ipc("FAILED TO CREATE CHANNEL - for write");
     }
 
     return true;
@@ -410,7 +410,7 @@ SpIpcMgr::BeforeEntry(SpPoint* pt) {
     if (c) {
       pt->SetChannel(c);
     } else {
-      sp_debug("ipc", "FAILED TO CREATE CHANNEL - for read");
+      sp_debug_ipc("FAILED TO CREATE CHANNEL - for read");
     }
   }
 
@@ -432,7 +432,7 @@ SpIpcMgr::BeforeExit(PointCallHandle* handle) {
   //Detect fork for pipe
   if (ipc_mgr->IsFork(f->name().c_str())) {
     long pid = handle->GetReturnValue();
-    sp_debug("ipc", "fork: pid[%ld]", pid);
+    sp_debug_ipc("fork: pid[%ld]", pid);
     // Receiver
     if (pid == 0) {
       ipc_mgr->pipe_worker()->SetLocalStartTracing(0);
@@ -492,6 +492,7 @@ SpIpcMgr::BeforeExit(PointCallHandle* handle) {
 void SpIpcMgr::HandleExec(SpPoint* pt) {
   SpFunction* callee = sp::Callee(pt);
   if (callee->name().compare("execve") == 0) {
+    sp_debug_ipc("EXEC");
     sp::ArgumentHandle h;
     char** path = (char**)PopArgument(pt, &h, sizeof(char*));
     char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
@@ -586,6 +587,7 @@ void SpIpcMgr::HandleExec(SpPoint* pt) {
              callee->name().compare("execle") == 0 ||
              callee->name().compare("execv") == 0 ||
              callee->name().compare("execvp") == 0) {
+    sp_debug_ipc("EXEC_OTHER");
     std::string agent_name = g_parser->agent_name();
     if (char* ld_preload_str = getenv("LD_PRELOAD")) {
       std::string libs{ld_preload_str};

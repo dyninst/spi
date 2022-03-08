@@ -51,20 +51,20 @@ TEST_F(AddrSpaceTest, simple_malloc_free) {
   SpObject* exe = agent_->parser()->exe();
   dt::Address buf = as_->malloc(exe, 100, 0);
   EXPECT_TRUE(IsDisp32(buf - exe->load_addr()));
-  sp_debug("patchapi", "SMALL BUF - %lx", buf);
+  sp_debug_patchapi("SMALL BUF - %lx", buf);
 
   buf = as_->malloc(exe, 500, 0);
   EXPECT_TRUE(IsDisp32(buf - exe->load_addr()));
-  sp_debug("patchapi", "MID BUF - %lx", buf);
+  sp_debug_patchapi("MID BUF - %lx", buf);
 
   buf = as_->malloc(exe, 4000, 0);
   EXPECT_TRUE(IsDisp32(buf - exe->load_addr()));
-  sp_debug("patchapi", "LARGE BUF - %lx", buf);
+  sp_debug_patchapi("LARGE BUF - %lx", buf);
 
   // Should use mmap to allocate
   buf = as_->malloc(exe, 40000, 0);
   EXPECT_TRUE(buf != 0);
-  sp_debug("patchapi", "MMAPED - %lx", buf);
+  sp_debug_patchapi("MMAPED - %lx", buf);
 }
 
 }

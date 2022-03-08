@@ -93,7 +93,14 @@ void PointCallHandle::SetReturnValue(long ret_val) {
 
 class TrampGuard {
   public:
-    TrampGuard(bool &b): guard(b) {if (!guard) guard = true; else return;}
+    TrampGuard(bool &b): guard(b) {
+      if (!guard)
+        guard = true; 
+      else {
+        sp_perror("Tramp guard error");
+        assert(false);
+      }
+    }
     ~TrampGuard() {guard = false;}
   private:
     bool &guard;
@@ -111,13 +118,11 @@ class TrampGuard {
  */
 void
 wrapper_entry(sp::SpPoint* pt,
-              sp::PayloadFuncEntry entry) {
+              sp::PayloadFuncEntry sp_entry) {
 
     if (inTramp) return;
     TrampGuard trampGuard(inTramp);
-    //if (!inTramp) {
-      //inTramp = true;
-    sp_debug("agent", "In wrapper entry function for point %p", pt);
+    sp_debug_agent("In wrapper entry function for point %p", pt);
     
     if (sp::g_context == NULL) {
       sp_perror("Global context is NULL, return");
@@ -130,7 +135,7 @@ wrapper_entry(sp::SpPoint* pt,
     sp::PointCallHandle* call_handle =
       new sp::PointCallHandle(pt, callee);
 
-    if (callee != NULL) {
+    if (callee != nullptr) {
       // Handle IPC stuffs
       if (sp::g_context->IsIpcEnabled()) {
         sp::SpIpcMgr::BeforeEntry(pt);
@@ -141,16 +146,15 @@ wrapper_entry(sp::SpPoint* pt,
         sp::SpThreadMgr::BeforeEntry(pt);
       }
 
-      if (entry) {
-        user_info = entry(call_handle);
+      if (sp_entry) {
+        user_info = sp_entry(call_handle);
       }
 
       call_handle->SetUserInfo(user_info);
     }
 
     sp::g_context->PushPointCallHandle(call_handle);
-    //inTramp = false;
-    //}
+    
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -170,13 +174,11 @@ wrapper_entry(sp::SpPoint* pt,
  */
 void
 wrapper_exit(sp::SpPoint* pt,
-             sp::PayloadFuncExit exit) {
+             sp::PayloadFuncExit sp_exit) {
   
     if (inTramp) return;
     TrampGuard trampGuard(inTramp);
-    //if (!inTramp) {
-      //inTramp = true;
-    sp_debug("agent", "In wrapper exit function for point %p", pt);
+    sp_debug_agent("In wrapper exit function for point %p", pt);
   
     sp::PointCallHandle* call_handle;
     long ret_val;
@@ -192,10 +194,10 @@ wrapper_exit(sp::SpPoint* pt,
     // 2. Iterate through all the missed tailcall information and call the exit
     //    payload function for all of them
     while (pt != call_handle->GetPoint()) {
-      sp_debug("agent", "Got info from previous tail call %p", call_handle->GetPoint());
+      sp_debug_agent("Got info from previous tail call %p", call_handle->GetPoint());
 
       if (!call_handle->GetPoint()->tailcall()) {
-        sp_debug("agent", "ERROR: this point is not tailcall");
+        sp_debug_agent("ERROR: this point is not tailcall");
       }
     
       // Handle IPC stuffs
@@ -208,8 +210,8 @@ wrapper_exit(sp::SpPoint* pt,
         sp::SpParser::ParseDlExit(call_handle->GetPoint());
       }
 
-      if (exit) {
-        exit(call_handle);
+      if (sp_exit) {
+        sp_exit(call_handle);
       }
     
       delete call_handle;
@@ -227,13 +229,12 @@ wrapper_exit(sp::SpPoint* pt,
       sp::SpParser::ParseDlExit(pt);
     }
 
-    if (exit) {
-      exit(call_handle);
+    if (sp_exit) {
+      sp_exit(call_handle);
     }
 
     delete call_handle;
-    //inTramp = false;
-    //}
+
 }
 
 
@@ -271,7 +272,7 @@ default_exit(sp::PointCallHandle*) {
  */
 void
 toggle_off_instrumentation_entry(sp::SpPoint* pt) {
-  sp_debug("agent", "PROCESS[%d] toggle off instrumentation", getpid());
+  sp_debug_agent("PROCESS[%d] toggle off instrumentation", getpid());
   IN_INSTRUMENTATION = 0;
 }
 
@@ -343,10 +344,10 @@ Propel(SpPoint* pt) {
   // we stop instrumentation since the exit handlers call destructors for
   // all the global variables, and we can not rely on them any more
   if (!IN_INSTRUMENTATION) {
-    sp_debug("agent", "PROCESS[%d] Already hit exit function, skip instrumentation", getpid());
+    sp_debug_agent("PROCESS[%d] Already hit exit function, skip instrumentation", getpid());
     return;
   } else {
-    sp_debug("agent", "PROCESS[%d] still in instrumentation", getpid());
+    sp_debug_agent("PROCESS[%d] still in instrumentation", getpid());
   }
 
   sp::SpPropeller::ptr p = sp::SpPropeller::ptr();
@@ -355,19 +356,19 @@ Propel(SpPoint* pt) {
   SP_LOCK(PROPEL);
   f = CalleeNolock(pt);
   if (!f) {
-    sp_debug("agent", "NOT VALID FUNC - stop propagation");
+    sp_debug_agent("NOT VALID FUNC - stop propagation");
     goto PROPEL_EXIT;
   }
 
   // Skip if we have already propagated from this point
   if (f->propagated()) {
-    sp_debug("agent", "Already propagated, goto exit");
+    sp_debug_agent("Already propagated, goto exit");
     goto PROPEL_EXIT;
   }
 
   p = g_context->init_propeller();
   if (!p) {
-    sp_debug("agent", "asserting propeller");
+    sp_debug_agent("asserting propeller");
     assert(p);
   }
 
@@ -433,7 +434,7 @@ IsIpcRead(SpPoint* pt) {
     // if (c && c->rw == SP_READ) {
     ret = true;
     if (CalleeNolock(pt)->name().compare("accept") == 0) {
-      sp_debug("agent", "Accept skip");
+      sp_debug_agent("Accept skip");
       ret = false;
     }
   }
