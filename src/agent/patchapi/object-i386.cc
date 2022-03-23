@@ -45,7 +45,7 @@ namespace sp {
 	SpObject::AllocateBuffer(size_t size) {
     dt::Address ret = 0;
     if (::posix_memalign((void**)&ret, getpagesize(), size) == 0) {
-      sp_debug("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
+      sp_debug_patchapi("FAILED TO GET A CLOSE BUFFER - %lx malloced", ret);
     }
     return ret;
 	}

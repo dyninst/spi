@@ -10,6 +10,9 @@ using namespace sp;
 FILE* g_debug_fp = stderr;
 FILE* g_error_fp = stderr;
 FILE* g_output_fp = stdout;
+bool debugTypeEnabled [numDebugTypes] = {getenv("SP_DEBUG_INJECTOR"), getenv("SP_DEBUG_COMMON"), getenv("SP_DEBUG_PATCHAPI"), getenv("SP_DEBUG_IPC"), getenv("SP_DEBUG_WORKER"), getenv("SP_DEBUG_SIGTRAP"), getenv("SP_DEBUG_AGENT"), true};
+bool sp_debug = getenv("SP_DEBUG");
+bool sp_fdebug = getenv("SP_FDEBUG");
 
 // Here we go!
 int main(int argc, char *argv[]) {
@@ -31,7 +34,7 @@ int main(int argc, char *argv[]) {
     const char* lib_name = argv[3];
     sp_print("Injector [pid = %5d]: INJECTING - %s to pid=%d...",
              getpid(), lib_name, pid);
-    sp_debug("========== Injector ==========");
+    sp_debug_injector("========== Injector ==========");
     SpInjector::ptr injector = SpInjector::Create(pid);
     injector->Inject(lib_name);
   }

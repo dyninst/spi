@@ -90,11 +90,11 @@ namespace sp {
            i != insns.end(); i++) {
         in::Instruction insn = i->second;
         if (SpSnippet::UsePC(insn)) {
-          sp_debug("EST SIZE - USE PC");
+          sp_debug_worker("EST SIZE - USE PC");
           size += 20; // the worse case, we emulate pc insn
         }
       }
-      sp_debug("EST SIZE - %lu", (unsigned long)size);
+      sp_debug_worker("EST SIZE - %zu", size);
       return size;
     }
 	};

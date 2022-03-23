@@ -44,9 +44,7 @@ namespace sp {
 	typedef std::list<unsigned> FreeList;
 
 	typedef enum {
-		SMALL_BUF,
-		MID_BUF,
-		BIG_BUF
+		SMALL_BUF
 	} BufType;
 
 	typedef std::map<dt::Address, BufType> BufTypeMap;
@@ -72,6 +70,7 @@ namespace sp {
 			load_addr_(la),
 			symtab_(symtab) {}
 
+
     dt::Address load_addr() const { return load_addr_; }
 
 		// Get this object's name
@@ -88,9 +87,8 @@ namespace sp {
 		std::string name_;
 		sb::Symtab* symtab_;
 
-		FreeBufs small_freebufs_;  // Small buffers
-		FreeBufs mid_freebufs_;    // Midium buffers
-		FreeBufs big_freebufs_;    // Big buffers
+		FreeBufs small_freebufs_ {};  // Small buffers
+
 		BufTypeMap alloc_bufs_;    // To facilitate future deallocation
     typedef std::map<dt::Address, size_t> BufSizeMap;  // For the mmap-ed
     BufSizeMap buf_size_map_;

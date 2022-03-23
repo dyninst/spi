@@ -53,7 +53,7 @@ namespace sp {
   typedef std::vector<ph::PatchObject*> PatchObjects;
 
   typedef std::set<sp::SpFunction*> FuncSet;
-  typedef std::map<std::string, SpFunction*> MangledFuncMap;
+  typedef std::map<std::string, FuncSet> MangledFuncMap;
   typedef std::map<dt::Address, SpFunction*> AddrFuncMap;
   typedef std::map<std::string, FuncSet> DemangledFuncsMap;
 
@@ -106,11 +106,14 @@ namespace sp {
 
     AGENT_EXPORT SpFunction*
         FindFunction(dt::Address absolute_addr);
-    AGENT_EXPORT SpFunction*
-        FindFunction(string func_name);
     AGENT_EXPORT bool
         FindFunction(string func_name,
                      FuncSet* found_funcs);
+    AGENT_EXPORT FuncSet
+        FindFunctionByMangledName(string func_name);
+
+    /*AGENT_EXPORT SpFunction*
+        FindFunction(string func_name);*/
 
     AGENT_EXPORT SpFunction*
         callee(SpPoint* point,

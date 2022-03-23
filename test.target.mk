@@ -68,7 +68,8 @@ google-mock: $(GMOCK_MAIN)
 #==========================================================
 # SPI UNIT TESTS
 #==========================================================
-UT_FLAGS   = $(AG_IFLAGS) $(CPPFLAGS) -no-pie -fno-PIE
+UT_FLAGS   = $(AG_IFLAGS) $(CPPFLAGS) -no-pie -fno-PIE -fPIC -D_GLIBCXX_USE_CXX11_ABI=1
+
 UT_LDFLAGS = -lpthread -ldl
 
 ifeq ($(DYNLINK), true)
@@ -249,6 +250,23 @@ $(TG_OBJS): $(TAGENT_OBJS_DIR)/%.o : $(TG_DIR)/%.cc
 $(TG_SO): $(TAGENT_EXES_DIR)/%.so : $(TAGENT_OBJS_DIR)/%.o  $(AGENT)
 	@echo "Linking $*.so"
 	@$(GCC) -o $@ $< $(TG_LDFLAGS)
+
+FPVA_DIR = $(SP_DIR)/user_agent/fpva
+
+fpva:
+	@echo "Compiling fpva"
+	@$(MKDIR) $(TAGENT_OBJS_DIR)
+	@$(GCC) -I/usr/include/libxml2 -o $(TAGENT_OBJS_DIR)/MyAgent.o $(FPVA_DIR)/MyAgent.C $(TG_FLAGS) -c
+	@$(GCC) -I/usr/include/libxml2 -o $(TAGENT_OBJS_DIR)/fpva.o $(FPVA_DIR)/fpva.C $(TG_FLAGS) -c
+	@$(GCC) -I/usr/include/libxml2 -o $(TAGENT_OBJS_DIR)/fpva_checker.o $(FPVA_DIR)/fpva_checker.C $(TG_FLAGS) -c
+	@$(GCC) -I/usr/include/libxml2 -o $(TAGENT_OBJS_DIR)/fpva_utils.o $(FPVA_DIR)/fpva_utils.C $(TG_FLAGS) -c
+#	@$(GCC) -I/usr/include/libxml2 -o $(TAGENT_OBJS_DIR)/tcp_client.o $(FPVA_DIR)/tcp_client.c $(TG_FLAGS) -c
+#	@$(GCC) -I/usr/include/libxml2 -o $(TAGENT_OBJS_DIR)/tcp_server4.o $(FPVA_DIR)/tcp_server4.c $(TG_FLAGS) -c
+	@$(GCC) -I/usr/include/libxml2 -o $(TAGENT_OBJS_DIR)/trace_mgr.o $(FPVA_DIR)/trace_mgr.C $(TG_FLAGS) -c
+	@echo "Linking fpva"
+	@echo $(TAGENT_OBJS_DIR)
+	@$(GCC) -o $(TAGENT_EXES_DIR)/MyAgent.so $(TAGENT_OBJS_DIR)/MyAgent.o $(TAGENT_OBJS_DIR)/fpva.o $(TAGENT_OBJS_DIR)/fpva_checker.o $(TAGENT_OBJS_DIR)/fpva_utils.o $(TAGENT_OBJS_DIR)/trace_mgr.o $(AGENT) $(TG_LDFLAGS) -I/usr/include/libxml2 -L/usr/lib/x86_64-linux-gnu -lxml2 /usr/lib/x86_64-linux-gnu/libxml2.so
+#	@$(GCC) -o $(TAGENT_EXES_DIR)/MyAgent.so $(TG_LDFLAGS) $(TAGENT_OBJS_DIR)/trace_mgr.o
 
 debug:
 	echo $(UT_LDFLAGS)

@@ -22,8 +22,9 @@
     file is also used by Makefile, I don't put `pwd` in it.
   - DYNLINK: true for building shared library for agent, otherwise for building
     static library
-3. Run `make spi` to build injector and libagent.so.  
-4. Run `make test_agent` to build example user agents
+  - PLATFORM: set to x86_64-unknown-linux2.4 or i386-unknown-linux2.4
+3. Run `make spi` in directory x86_64-unknown-linux2.4/ or i386-unknown-linux2.4/ to build injector and libagent.so.  
+4. Run `make test_agent` in one of the above directories to build example user agents
 5. For more make options, see [Make Arguments](#make-arguments)
 
 ## How to Run
@@ -31,6 +32,7 @@
   1. `SP_DIR`
   2. `PLATFORM`
   3. `SP_AGENT_DIR`
+  4. `PLATFORM`
 2. Make sure that your system does not block non-child ptrace
   - To temporarily disable this measure (until a reboot), execute the following command:  
     `echo 0 > /proc/sys/kernel/yama/ptrace_scope`
@@ -40,7 +42,7 @@
    1. To use the environment variable LD_PRELOAD when starting the user process.  
    Ex:  `LD_PRELOAD=$SP_DIR/PLATFORM/test_agent/print_test_agent.so [EXECUTABLE]`
    1. To use the injector to force a running process to load agent library, note that injector has two modes, pid injection and port injection    
-   Ex:  `$SP_DIR/PLATFORM/injector.exe pid [PID]` or `$SP_DIR/PLATFORM/injector.exe port [PORT NUMBER]`
+   Ex:  `$SP_DIR/$PLATFORM/injector.exe pid [PID]` or `$SP_DIR/$PLATFORM/injector.exe port [PORT NUMBER]`
 ### Interprocess Propel
 - Local Machine
   - Interprocess propelling relies on the following environment variables: `SP_DIR`, `PLATFORM`, `SP_AGENT_DIR`

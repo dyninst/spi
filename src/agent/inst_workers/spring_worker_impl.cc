@@ -44,7 +44,7 @@ namespace sp {
 
   bool
   SpringboardWorker::run(SpPoint* pt) {
-    sp_debug("SPRINGBOARD WORKER - runs");
+    sp_debug_worker("SPRINGBOARD WORKER - runs");
     return install(pt);
   }
 
@@ -60,13 +60,13 @@ namespace sp {
 		SpBlock* b = pt->GetBlock();
 		assert(b);
 
-		sp_debug("SPRING WORKER - saves");
+		sp_debug_worker("SPRING WORKER - saves");
 		bool ret = false;
 
 		assert(pt->snip());
 		ph::PatchBlock* springblk = pt->snip()->FindSpringboard();
     if (!springblk) {
-      sp_debug("NO SPRING BOARD - cannot find suitable spring board");
+      sp_debug_worker("NO SPRING BOARD - cannot find suitable spring board");
       return false;
     }
 		SpBlock* sblk = BLK_CAST(springblk);
@@ -88,11 +88,11 @@ namespace sp {
     SpSnippet::ptr snip = pt->snip();
 		assert(snip);
 
-    sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
+    sp_debug_worker("BEFORE INSTALL (%lu bytes) for point %lx - {",
              callblk->size(), callblk->last());
-    sp_debug("%s", g_parser->DumpInsns((void*)callblk->start(),
+    sp_debug_worker("%s", g_parser->DumpInsns((void*)callblk->start(),
                                      callblk->size()).c_str());
-    sp_debug("}");
+    sp_debug_worker("}");
 
     // Find a spring block. A spring block should:
     // - big enough to hold two absolute jumps
@@ -101,22 +101,22 @@ namespace sp {
     // ignore this call
 		SpBlock* springblk = snip->FindSpringboard();
     if (!springblk) {
-			sp_debug("FAILED TO GET A SPRINGBOARD BLOCK");
+			sp_debug_worker("FAILED TO GET A SPRINGBOARD BLOCK");
 			return false;
 		}
 
-    sp_debug("BEFORE INSTALL SPRING BLK (%lu bytes) for point %lx - {",
+    sp_debug_worker("BEFORE INSTALL SPRING BLK (%lu bytes) for point %lx - {",
              springblk->size(), callblk->last());
-    sp_debug("%s", g_parser->DumpInsns((void*)springblk->start(),
+    sp_debug_worker("%s", g_parser->DumpInsns((void*)springblk->start(),
                                      springblk->size()).c_str());
-    sp_debug("}");
+    sp_debug_worker("}");
 
     // Build blob & change the permission of snippet
 		size_t est_size = EstimateBlobSize(pt);
     char* blob = snip->BuildBlob(est_size,
 																	/*reloc=*/true);
     if (!blob || (long)blob < getpagesize()) {
-			sp_debug("FAILED TO GENERATE BLOB");
+			sp_debug_worker("FAILED TO GENERATE BLOB");
 			return false;
 		}
 		SpObject* obj = callblk->GetObject();
@@ -127,7 +127,7 @@ namespace sp {
     if (!g_as->SetMemoryPermission((dt::Address)blob,
                                    snip->GetBlobSize(),
                                    perm)) {
-      sp_debug("MPROTECT - Failed to change memory access permission"
+      sp_debug_worker("MPROTECT - Failed to change memory access permission"
                " for blob at %lx", (dt::Address)blob);
       // g_as->dump_mem_maps();
       exit(0);
@@ -138,14 +138,14 @@ namespace sp {
     // spring block
     char* spring = snip->RelocateSpring(springblk);
     if (!spring || (long)spring < getpagesize()) {
-			sp_debug("FAILED TO RELOCATE SPRINGBOARD BLOCK");
+			sp_debug_worker("FAILED TO RELOCATE SPRINGBOARD BLOCK");
 			return false;
 		}
     obj = springblk->GetObject();
     if (!g_as->SetMemoryPermission((dt::Address)spring,
                                    snip->GetRelocSpringSize(),
                                    perm)) {
-      sp_debug("MPROTECT - Failed to change memory access permission"
+      sp_debug_worker("MPROTECT - Failed to change memory access permission"
                " for relocated spring blk at %lx", (dt::Address)spring);
       // g_as->dump_mem_maps();
       exit(0);
@@ -176,7 +176,7 @@ namespace sp {
                                   springblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)springblk_insn, off);
     } else {
-      sp_debug("MPROTECT - Failed to change memory access permission");
+      sp_debug_worker("MPROTECT - Failed to change memory access permission");
     }
 
     // Handle call block
@@ -191,22 +191,22 @@ namespace sp {
                                   callblk->size(), perm)) {
       g_as->write(obj, (dt::Address)addr, (dt::Address)callblk_insn, 2);
     } else {
-      sp_debug("MPROTECT - Failed to change memory access permission");
+      sp_debug_worker("MPROTECT - Failed to change memory access permission");
     }
 
-    sp_debug("AFTER INSTALL CALL BLK (%lu bytes) for point %lx - {",
+    sp_debug_worker("AFTER INSTALL CALL BLK (%lu bytes) for point %lx - {",
              callblk->size(), callblk->last());
-    sp_debug("%s", g_parser->DumpInsns((void*)callblk->start(),
+    sp_debug_worker("%s", g_parser->DumpInsns((void*)callblk->start(),
                                      callblk->size()).c_str());
-    sp_debug("}");
+    sp_debug_worker("}");
 
-    sp_debug("AFTER INSTALL SPRING BLK (%lu bytes) for point %lx - {",
+    sp_debug_worker("AFTER INSTALL SPRING BLK (%lu bytes) for point %lx - {",
              springblk->size(), callblk->last());
-    sp_debug("%s", g_parser->DumpInsns((void*)springblk->start(),
+    sp_debug_worker("%s", g_parser->DumpInsns((void*)springblk->start(),
                                      springblk->size()).c_str());
-    sp_debug("}");
+    sp_debug_worker("}");
 
-    sp_debug("USE SPRING - piont %lx is instrumented using 1-hop spring",
+    sp_debug_worker("USE SPRING - piont %lx is instrumented using 1-hop spring",
              callblk->last());
 
     return true;

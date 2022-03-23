@@ -87,7 +87,7 @@ TEST_F(InjectorTest, pid_inject) {
   cmd += getenv("PLATFORM");
   cmd += "/test_agent/inject_test_agent.so";
 	//cmd += " 2>&1";
-	sp_debug(cmd.c_str());
+	sp_debug_injector(cmd.c_str());
 
   // system(cmd.c_str());
 
@@ -98,9 +98,9 @@ TEST_F(InjectorTest, pid_inject) {
 
   // Skip the first line
 	ASSERT_TRUE(fgets(buf, 1024, fp) != NULL);
-	sp_debug("first line: %s", buf);
+	sp_debug_injector("first line: %s", buf);
 	ASSERT_TRUE(fgets(buf, 1024, fp) != NULL);
-	sp_debug("second line: %s", buf);
+	sp_debug_injector("second line: %s", buf);
 
 	// Check "INJECTED" for the second line
 	ASSERT_TRUE(strstr(buf, "INJECTION SUCCESS") != NULL);

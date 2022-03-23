@@ -33,6 +33,7 @@
 #define SP_COMMON_H_
 
 #include <stdio.h>
+#include <string.h>
 
 // Some macros for code readability
 #define OVERRIDE
@@ -49,6 +50,13 @@ const int kLenStringBuffer = 280;
 extern FILE* g_output_fp;
 extern FILE* g_debug_fp;
 extern FILE* g_error_fp;
+
+extern bool sp_debug;
+extern bool sp_fdebug;
+const int numDebugTypes = 8;
+enum DebugType {injectorDebug, commonDebug, patchapiDebug, ipcDebug, workerDebug, sigtrapDebug, agentDebug, unknownDebugType};
+extern bool debugTypeEnabled [numDebugTypes];
+// = {getenv("SP_DEBUG_INJECTOR"), getenv("SP_DEBUG_COMMON"), getenv("SP_DEBUG_PATCHAPI"), getenv("SP_DEBUG_IPC"), getenv("SP_DEBUG_WORKER"), getenv("SP_DEBUG_SIGTRAP"), getenv("SP_DEBUG_AGENT"), true};
 
 // Print facility
 #define sp_perror(...) do {\
@@ -84,22 +92,34 @@ extern FILE* g_error_fp;
   }  \
 } while(0)
 
-#define sp_debug(...) do { \
-  if (getenv("SP_DEBUG")) {   \
-  		char* nodir = basename((char*)__FILE__);				 \
-      fprintf(stderr, "%s [%d]: ", nodir, __LINE__); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n");  \
-      fflush(stderr); \
-    } \
-  else if (getenv("SP_FDEBUG")) {               \
-  		char* nodir = basename((char*)__FILE__);				 \
-      fprintf(g_debug_fp, "%s [%d]: ", nodir, __LINE__); \
-      fprintf(g_debug_fp, __VA_ARGS__); \
-      fprintf(g_debug_fp, "\n");  \
-      fflush(g_debug_fp); \
-  }\
+#define sp_debug(debug_type, ...) do { \
+  DebugType debugType = debug_type; \
+  if (debugType >= numDebugTypes) { \
+    debugType = unknownDebugType; \
+  } \
+  if (debugTypeEnabled[debugType]) { \
+    FILE* debug_fp; \
+    if (sp_fdebug) \
+        debug_fp = g_debug_fp; \
+    else \
+        debug_fp = stderr; \
+    if (sp_debug || sp_fdebug) {   \
+        char* nodir = basename((char*)__FILE__);				 \
+        fprintf(debug_fp, "%s [%d]: ", nodir, __LINE__); \
+        fprintf(debug_fp, __VA_ARGS__); \
+        fprintf(debug_fp, "\n");  \
+        fflush(debug_fp); \
+      } \
+  } \
 } while(0)
+
+#define sp_debug_injector(...) sp_debug(injectorDebug, __VA_ARGS__)
+#define sp_debug_common(...) sp_debug(commonDebug, __VA_ARGS__)
+#define sp_debug_patchapi(...) sp_debug(patchapiDebug, __VA_ARGS__)
+#define sp_debug_ipc(...) sp_debug(ipcDebug, __VA_ARGS__)
+#define sp_debug_worker(...) sp_debug(workerDebug, __VA_ARGS__)
+#define sp_debug_sigtrap(...) sp_debug(sigtrapDebug, __VA_ARGS__)
+#define sp_debug_agent(...) sp_debug(agentDebug, __VA_ARGS__)
 
 // Gets file name from a full path name
 #define sp_filename(path) basename((char*)path)

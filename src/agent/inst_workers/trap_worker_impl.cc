@@ -49,8 +49,12 @@ extern SpParser::ptr g_parser;
 // Used in trap handler, for mapping call instruction's address to snippet
 TrapWorker::InstMap TrapWorker::inst_map_;
 
+bool sigill = getenv("SP_SIGILL");
+bool installed = false;
+
 bool TrapWorker::run(SpPoint* pt) {
-  sp_debug("TRAP WORKER - runs");
+  sp_debug_worker("TRAP WORKER - runs");
+  sp_debug_worker("USE SIGILL - %d", sigill);
   assert(pt);
 
   // Install trap handler to the trap signal
@@ -58,7 +62,13 @@ bool TrapWorker::run(SpPoint* pt) {
   act.sa_sigaction = TrapWorker::OnTrap;
   act.sa_flags = SA_SIGINFO;
   struct sigaction old_act;
-  sigaction(SIGTRAP, &act, &old_act);
+  if (!installed)
+    if (sigill)
+      sigaction(SIGILL, &act, &old_act);
+    else
+      sigaction(SIGTRAP, &act, &old_act);
+
+  installed = true;
 
   // Call insn's addr
   assert(pt->GetBlock());
@@ -81,12 +91,12 @@ bool TrapWorker::install(SpPoint* pt) {
   SpBlock* b = pt->GetBlock();
   assert(b);
 
-  sp_debug("TRAP WORKER - installs");
+  sp_debug_worker("TRAP WORKER - installs");
 
-  sp_debug("BEFORE INSTALL (%lu bytes) for point %lx - {",
+  sp_debug_worker("BEFORE INSTALL (%lu bytes) for point %lx - {",
            (unsigned long)b->size(), (unsigned long)b->last());
-  sp_debug("%s", g_parser->DumpInsns((void*)b->start(), b->size()).c_str());
-  sp_debug("}");
+  sp_debug_worker("%s", g_parser->DumpInsns((void*)b->start(), b->size()).c_str());
+  sp_debug_worker("}");
 
   char* call_addr = (char*)b->last();
   assert(call_addr);
@@ -97,12 +107,20 @@ bool TrapWorker::install(SpPoint* pt) {
   size_t est_size = EstimateBlobSize(pt);
   char* blob = pt->snip()->BuildBlob(est_size);
   if (!blob) {
-    sp_debug("FAILED BLOB - failed to generate blob for call insn %lx",
+    sp_debug_worker("FAILED BLOB - failed to generate blob for call insn %lx",
              (unsigned long)call_addr);
     return false;
   }
+  
+  char ill_1, ill_2, int3;
 
-  char int3 = (char)0xcc;
+  if (sigill) {
+    ill_1 = (char) 0x0F; 
+    ill_2 = (char) 0x0B;
+  }
+  else
+    int3 = (char)0xcc;
+
   size_t call_size = b->call_size();
 
   // Overwrite int3 to the call site
@@ -112,20 +130,24 @@ bool TrapWorker::install(SpPoint* pt) {
   assert(g_as);
 
   if (!g_as->SetMemoryPermission((dt::Address)call_addr, call_size, perm)) {
-    sp_debug("FAILED PERM - failed to change memory permission");
+    sp_debug_worker("FAILED PERM - failed to change memory permission");
     return false;
   } else {
-    g_as->write(obj, (dt::Address)call_addr, (dt::Address)&int3, 1);
+    if (sigill) {
+      g_as->write(obj, (dt::Address)call_addr, (dt::Address)&ill_1, 1);
+      g_as->write(obj, (dt::Address)call_addr+1, (dt::Address)&ill_2, 1);
+    } else
+      g_as->write(obj, (dt::Address)call_addr, (dt::Address)&int3, 1);
   }
 
-  sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
+  sp_debug_worker("AFTER INSTALL (%lu bytes) for point %lx - {",
            (unsigned long)b->size(), (unsigned long)b->last());
-  sp_debug("%s",
+  sp_debug_worker("%s",
            g_parser->DumpInsns((void*)b->start(), b->last() - b->start() + 1)
                .c_str());
-  sp_debug("}");
+  sp_debug_worker("}");
 
-  sp_debug("TRAP INSTALLED - successful for call insn %lx", (long)call_addr);
+  sp_debug_worker("TRAP INSTALLED - successful for call insn %lx", (long)call_addr);
   return true;
 }
 
@@ -139,10 +161,10 @@ bool TrapWorker::ReplaceReturnWithTrap(SpPoint* pt) {
   sigaction(SIGTRAP, &act, &old_act);
 
   SpBlock* b = pt->GetBlock();
-  sp_debug("BEFORE INSTALL (%lu bytes) for return point %lx - {",
+  sp_debug_worker("BEFORE INSTALL (%lu bytes) for return point %lx - {",
            (unsigned long)b->size(), (unsigned long)b->last());
-  sp_debug("%s", g_parser->DumpInsns((void*)b->start(), b->size()).c_str());
-  sp_debug("}");
+  sp_debug_worker("%s", g_parser->DumpInsns((void*)b->start(), b->size()).c_str());
+  sp_debug_worker("}");
 
   char* ret_addr = (char*)b->last();
   assert(ret_addr);
@@ -159,20 +181,20 @@ bool TrapWorker::ReplaceReturnWithTrap(SpPoint* pt) {
   assert(g_as);
 
   if (!g_as->SetMemoryPermission((dt::Address)ret_addr, 1, perm)) {
-    sp_debug("FAILED PERM - failed to change memory permission");
+    sp_debug_worker("FAILED PERM - failed to change memory permission");
     return false;
   } else {
     g_as->write(obj, (dt::Address)ret_addr, (dt::Address)&int3, 1);
   }
 
-  sp_debug("AFTER INSTALL (%lu bytes) for point %lx - {",
+  sp_debug_worker("AFTER INSTALL (%lu bytes) for point %lx - {",
            (unsigned long)b->size(), (unsigned long)b->last());
-  sp_debug("%s",
+  sp_debug_worker("%s",
            g_parser->DumpInsns((void*)b->start(), b->last() - b->start() + 1)
                .c_str());
-  sp_debug("}");
+  sp_debug_worker("}");
 
-  sp_debug("TRAP INSTALLED - successful for return insn %lx", (long)ret_addr);
+  sp_debug_worker("TRAP INSTALLED - successful for return insn %lx", (long)ret_addr);
   return true;
 }
 
@@ -186,7 +208,7 @@ void TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
     dt::Address ret = g_context->GetReturnAddress();
 
     if (ret != (dt::Address)0) {
-      sp_debug("TRAP HANDLER - for ret insn %lx", ret);
+      sp_debug_sigtrap("TRAP HANDLER - for ret insn %lx", ret);
 
       // Find the call site point corresponding to the return address
       SpPoint* call_site_point = g_context->FindCallSitePointFromRetAddr(ret);
@@ -195,7 +217,7 @@ void TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
             "A call site point has not been registered for the return address "
             "%lx",
             ret);
-      sp_debug("Got point %lx", (dt::Address)call_site_point);
+      sp_debug_sigtrap("Got point %lx", (dt::Address)call_site_point);
 
       // Find the exit instrumentation address correspoding to the call point
       char* exit_snip_addr =
@@ -205,22 +227,22 @@ void TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
             "Exit Instrumentation address cannot be found for the call site "
             "point %lx",
             (dt::Address)call_site_point);
-      sp_debug("Got exit instrumentation address %lx",
+      sp_debug_sigtrap("Got exit instrumentation address %lx",
                (dt::Address)exit_snip_addr);
 
       // The x86-64 needs its stack to be 16 byte aligned for accessing XMM
       // registers
       dt::Address esp = SpSnippet::align_stack(c);
-      sp_debug("Stack pointer aligned at %lx", esp);
+      sp_debug_sigtrap("Stack pointer aligned at %lx", esp);
 
-      // sp_debug("%s", g_parser->DumpInsns((void*)exit_snip_addr,150).c_str());
-      sp_debug("Jump to exit point instrumentation at %lx ",
+      // sp_debug("sigtrap", "%s", g_parser->DumpInsns((void*)exit_snip_addr,150).c_str());
+      sp_debug_sigtrap("Jump to exit point instrumentation at %lx ",
                (dt::Address)exit_snip_addr);
 
       // Set pc to jump to the exit point instrumentation
       SpSnippet::set_pc((dt::Address)exit_snip_addr, c);
     } else {
-      sp_debug("ret 0 inside trap handler");
+      sp_debug_sigtrap("ret 0 inside trap handler");
     }
   } else {
     // Get patch area's address
@@ -228,13 +250,13 @@ void TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
     assert(sp_snip);
     char* blob = (char*)sp_snip->GetBlob();
     if (!blob || (long)blob < getpagesize()) {
-      sp_debug("TRAP invalid BLOB - at %lx, blob is %lx", pc,
+      sp_debug_sigtrap("TRAP invalid BLOB - at %lx, blob is %lx", pc,
                (dt::Address)blob);
       return;
     }
 
     int perm = PROT_READ | PROT_WRITE | PROT_EXEC;
-    sp_debug("TRAP HANDLER - for call insn %lx", pc);
+    sp_debug_sigtrap("TRAP HANDLER - for call insn %lx", pc);
 
     assert(g_as);
     // Change memory permission for the snippet
@@ -244,7 +266,7 @@ void TrapWorker::OnTrap(int sig, siginfo_t* info, void* c) {
       sp_perror("FAILED PERM - failed to change memory permission for blob");
     }
 
-    sp_debug("JUMP TO BLOB - at %s Address %lx", blob, (dt::Address)blob);
+    sp_debug_sigtrap("JUMP TO BLOB - at %s Address %lx", blob, (dt::Address)blob);
     // Set pc to jump to patch area
     SpSnippet::set_pc((dt::Address)blob, c);
   }

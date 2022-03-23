@@ -82,10 +82,10 @@ namespace sp {
     /*
     void* buffer[100];
     int num = backtrace(buffer, 100);
-    sp_debug("%d traces", num);
+    sp_debug_agent("%d traces", num);
     char** syms = backtrace_symbols(buffer, num);
     for (int i = 0; i < num; i++) {
-      sp_debug("%lx - %s", *(unsigned long*)buffer[i], syms[i]);
+      sp_debug_agent("%p - %s", *buffer[i], syms[i]);
     }
     return;
     */
@@ -95,14 +95,14 @@ namespace sp {
     SpFunction* func = parser_->FindFunction(pc);
     if (func) sp_print("%s", func->name().c_str());
 
-    sp_debug("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
+    sp_debug_agent("GET FRAME - pc: %lx, sp: %lx, bp: %lx", pc, sp, bp);
     sk::Frame* f = sk::Frame::newFrame(pc, sp, bp, walker_);
-    sp_debug("constructed frame");
+    sp_debug_agent("constructed frame");
     assert(walker_);
 
     //Get the total number of calls in stack using StackWalkerAPI
     walker_->walkStackFromFrame(stackwalk_, *f);
-    sp_debug("WALKED STACK - %ld function calls found",
+    sp_debug_agent("WALKED STACK - %ld function calls found",
              (long)stackwalk_.size());
 
     for (unsigned i=0; i<stackwalk_.size(); i++) {
@@ -121,12 +121,12 @@ namespace sp {
       // Step 1: if the function can be resolved
       SpFunction* func = parser_->FindFunction(s.c_str());
       if (!func) {
-        sp_debug("SKIPPED - Function %s cannot be resolved", s.c_str());
+        sp_debug_agent("SKIPPED - Function %s cannot be resolved", s.c_str());
         continue;
       }
 
       // Step 2: add this function
-      sp_debug("FOUND - Function %s is in the call stack", s.c_str());
+      sp_debug_agent("FOUND - Function %s is in the call stack", s.c_str());
       call_stack->insert(func);
       */
     }
@@ -140,7 +140,7 @@ namespace sp {
 		stackwalk_[i].getName(func);
 		if(IsRecvLikeFunction(func.c_str())) {
 			sk::location_t location =stackwalk_[i+1].getRALocation();
-			sp_debug("Function %s Return Address on the stack  = %lx",func.c_str(),location.val.addr);
+			sp_debug_agent("Function %s Return Address on the stack  = %lx",func.c_str(),location.val.addr);
 			return (dt::Address) stackwalk_[i+1].getRA();
 		}
 	}

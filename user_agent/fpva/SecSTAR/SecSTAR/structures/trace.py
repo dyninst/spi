@@ -121,9 +121,12 @@ class Trace:
         self.init_euid = self.__get_node_value2(head_nodes, 'effective_user', 'name')
         self.cur_euid = self.init_euid
         self.ppid = self.__get_node_value2(head_nodes, 'parent', 'pid')
-        self.parent_exe = os.path.basename(self.__get_node_value2(head_nodes,
+        try:
+            self.parent_exe = os.path.basename(self.__get_node_value2(head_nodes,
                                                                   'parent',
                                                                   'exe_name'))
+        except:
+            print("Skipping parent exe name")
 
         traces_nodes = dom.getElementsByTagName('traces')[0].childNodes
         for eve in traces_nodes:
@@ -134,7 +137,7 @@ class Trace:
                 # XXX: abnormal forked pid? skip it for now
                 if  eve.firstChild.nodeValue == '4294967295': continue
                 the_eve = event.ForkEvent(eve_type, eve_time, self.hostname,
-                                          self.pid, eve.firstChild.nodeValue)
+                                          self.pid, self.__get_node_value1(eve.childNodes, 'pid'))
             elif eve_type == 'clone':
                 the_eve = event.CloneEvent(eve_type, eve_time, self.hostname,
                                            self.pid, eve.firstChild.nodeValue)
