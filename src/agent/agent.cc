@@ -48,7 +48,8 @@ FILE* g_debug_fp;
 FILE* g_error_fp;
 FILE* g_output_fp;
 bool debugTypeEnabled [numDebugTypes] = {getenv("SP_DEBUG_INJECTOR"), getenv("SP_DEBUG_COMMON"), getenv("SP_DEBUG_PATCHAPI"), getenv("SP_DEBUG_IPC"), getenv("SP_DEBUG_WORKER"), getenv("SP_DEBUG_SIGTRAP"), getenv("SP_DEBUG_AGENT"), true};
-
+bool sp_debug = getenv("SP_DEBUG");
+bool sp_fdebug = getenv("SP_FDEBUG");
 
 namespace sp {
 
@@ -69,7 +70,7 @@ namespace sp {
       core_limit.rlim_cur = RLIM_INFINITY;
       core_limit.rlim_max = RLIM_INFINITY;
       if (setrlimit(RLIMIT_CORE, &core_limit) < 0) {
-        sp_perror("RROR: failed to setup core dump ability\n");
+        sp_perror("ERROR: failed to setup core dump ability\n");
       }
     }
 	

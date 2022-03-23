@@ -789,27 +789,26 @@ SpParser::FindFunction(string name,
 // Find function by mangled name.
 FuncSet
 SpParser::FindFunctionByMangledName(string name) {
-
   sp_debug_agent("LOOKING FOR FUNC BY MANGLED NAME - looking for %s",
            name.c_str());
 
-  FuncSet* found_funcs = new FuncSet();  
+  FuncSet found_funcs; 
   if (name.length() == 0) {
-    return *found_funcs;
+    return found_funcs;
   }
 
   // A quick return, if this function is in the cache
   if (mangled_func_map_.find(name) != mangled_func_map_.end()) {
     sp_debug_agent("GOT FROM CACHE - %s",
              FUNC_CAST((*mangled_func_map_[name].begin()))->GetMangledName().c_str());
-    std::copy(mangled_func_map_[name].begin(), mangled_func_map_[name].end(), inserter(*found_funcs, found_funcs->begin()));
-    return *found_funcs;
+    std::copy(mangled_func_map_[name].begin(), mangled_func_map_[name].end(), inserter(found_funcs, found_funcs.begin()));
+    return found_funcs;
   }
 
   // A quick return, if this function is proved to be not found
   if (mangled_func_not_found_.find(name) != mangled_func_not_found_.end()) {
     sp_debug_agent("NOT FOUND - %s is proved to be not found", name.c_str());
-    return *found_funcs;
+    return found_funcs;
   }
   
   // Iterate through each object to look for this function
@@ -839,15 +838,15 @@ SpParser::FindFunctionByMangledName(string name) {
   if (func_set.size() == 0) {
     mangled_func_not_found_.insert(name);  
     sp_debug_agent("NO FOUND - %s", name.c_str());
-    return *found_funcs;
+    return found_funcs;
   }
   
   //std::copy(func_set.begin(), func_set.end(), inserter(mangled_func_map_[name], mangled_func_map_[name].begin()));
-  std::copy(func_set.begin(), func_set.end(), inserter(*found_funcs, found_funcs->begin()));
-  assert(found_funcs->size() > 0);
-  sp_debug_agent("FOUND - %lu instances of %s, first in object %s", found_funcs->size(), name.c_str(),
+  std::copy(func_set.begin(), func_set.end(), inserter(found_funcs, found_funcs.begin()));
+  assert(found_funcs.size() > 0);
+  sp_debug_agent("FOUND - %lu instances of %s, first in object %s", found_funcs.size(), name.c_str(),
          FUNC_CAST((*func_set.begin()))->GetObject()->name().c_str());
-  return *found_funcs;
+  return found_funcs;
 }
 
 // Find function by name.

@@ -51,6 +51,8 @@ extern FILE* g_output_fp;
 extern FILE* g_debug_fp;
 extern FILE* g_error_fp;
 
+extern bool sp_debug;
+extern bool sp_fdebug;
 const int numDebugTypes = 8;
 enum DebugType {injectorDebug, commonDebug, patchapiDebug, ipcDebug, workerDebug, sigtrapDebug, agentDebug, unknownDebugType};
 extern bool debugTypeEnabled [numDebugTypes];
@@ -96,20 +98,18 @@ extern bool debugTypeEnabled [numDebugTypes];
     debugType = unknownDebugType; \
   } \
   if (debugTypeEnabled[debugType]) { \
-    if (getenv("SP_DEBUG")) {   \
+    FILE* debug_fp; \
+    if (sp_fdebug) \
+        debug_fp = g_debug_fp; \
+    else \
+        debug_fp = stderr; \
+    if (sp_debug || sp_fdebug) {   \
         char* nodir = basename((char*)__FILE__);				 \
-        fprintf(stderr, "%s [%d]: ", nodir, __LINE__); \
-        fprintf(stderr, __VA_ARGS__); \
-        fprintf(stderr, "\n");  \
-        fflush(stderr); \
+        fprintf(debug_fp, "%s [%d]: ", nodir, __LINE__); \
+        fprintf(debug_fp, __VA_ARGS__); \
+        fprintf(debug_fp, "\n");  \
+        fflush(debug_fp); \
       } \
-    else if (getenv("SP_FDEBUG")) {               \
-        char* nodir = basename((char*)__FILE__);				 \
-        fprintf(g_debug_fp, "%s [%d]: ", nodir, __LINE__); \
-        fprintf(g_debug_fp, __VA_ARGS__); \
-        fprintf(g_debug_fp, "\n");  \
-        fflush(g_debug_fp); \
-    }\
   } \
 } while(0)
 
