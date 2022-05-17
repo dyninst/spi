@@ -34,6 +34,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 // Some macros for code readability
 #define OVERRIDE
@@ -51,6 +52,7 @@ extern FILE* g_output_fp;
 extern FILE* g_debug_fp;
 extern FILE* g_error_fp;
 
+extern bool sp_timing;
 extern bool sp_debug;
 extern bool sp_fdebug;
 const int numDebugTypes = 8;
@@ -105,6 +107,11 @@ extern bool debugTypeEnabled [numDebugTypes];
         debug_fp = stderr; \
     if (sp_debug || sp_fdebug) {   \
         char* nodir = basename((char*)__FILE__);				 \
+        if (sp_timing) { \
+            struct timespec time; \
+            clock_gettime(CLOCK_MONOTONIC, &time); \
+            fprintf(debug_fp, "%lu : ", time.tv_sec); \
+        } \
         fprintf(debug_fp, "%s [%d]: ", nodir, __LINE__); \
         fprintf(debug_fp, __VA_ARGS__); \
         fprintf(debug_fp, "\n");  \

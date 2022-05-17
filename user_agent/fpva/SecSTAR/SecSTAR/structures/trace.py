@@ -27,14 +27,19 @@ class Trace:
       parent_exe: parent process's exe
       init_exe
       init_euid: effective user name (not the numerical one!)
+      init_working_dir
       cur_exe: current exe
       cur_euid: current user name
+      cur_working_dir
       event_list: A list of Event objects. These events are supported:
             - fork
             - clone
             - connect
             - accept
             - seteuid
+            - open
+            - chown
+            - chdir, chroot
             - exit
       port_list: a list of ports that are open to accect connections
     """
@@ -56,8 +61,10 @@ class Trace:
         self.parent_exe = ''
         self.init_exe = ''
         self.init_euid = ''
+        self.init_working_dir = ''
         self.cur_exe = ''
         self.cur_euid = ''
+        self. cur_working_dir = ''
         self.event_list = []
         self.port_list = set([])
 
@@ -95,16 +102,21 @@ class Trace:
           - PID
           - init_exe
           - init_euid
+          - init_working_dir
           - cur_exe
           - cur_euid
+          - cur_working_dir
           - Event List, possible events include
             - fork
             - clone
             - connect
             - accept
             - seteuid
+            - open
+            - chown
+            - chdir, chroot
             - exit
-            - execeve
+            - execs
             - send
             - recv
         """
@@ -118,6 +130,8 @@ class Trace:
         self.init_exe = os.path.basename(self.__get_node_value1(head_nodes,
                                                                 'exe_name'))
         self.cur_exe = self.init_exe
+        self.init_working_dir = self.__get_node_value1(head_nodes, 'working_dir')
+        self.cur_working_dir = self.init_working_dir
         self.init_euid = self.__get_node_value2(head_nodes, 'effective_user', 'name')
         self.cur_euid = self.init_euid
         self.ppid = self.__get_node_value2(head_nodes, 'parent', 'pid')
@@ -140,8 +154,8 @@ class Trace:
                                           self.pid, self.__get_node_value1(eve.childNodes, 'pid'))
             elif eve_type == 'clone':
                 the_eve = event.CloneEvent(eve_type, eve_time, self.hostname,
-                                           self.pid, eve.firstChild.nodeValue)
-            elif eve_type == 'connect to':
+                                           self.pid, self.__get_node_value1(eve.childNodes, 'pid'))
+            elif eve_type == 'connect':
                 trg_host = self.__get_node_value1(eve.childNodes, 'host')
                 if trg_host == '127.0.0.1':
                     trg_host = self.hostname
@@ -165,7 +179,7 @@ class Trace:
                 the_eve = event.RecvEvent('recv', eve_time, self.hostname,
                                              self.pid, trg_host, trg_port)
 
-            elif eve_type == 'accept from':
+            elif eve_type == 'accept':
                 trg_host = self.__get_node_value1(eve.childNodes, 'host')
                 if trg_host == '127.0.0.1':
                     trg_host = self.hostname
@@ -183,10 +197,42 @@ class Trace:
                 the_eve = event.SeteuidEvent('seteuid', eve_time, self.hostname,
                                              self.pid, new_euid)
 
-            elif eve_type == 'execve' or eve_type == 'execv':
-                new_exe = os.path.basename(eve.firstChild.nodeValue)
-                the_eve = event.ExeEvent('execve', eve_time, self.hostname,
-                                          self.pid, new_exe)
+            elif eve_type == 'execve' or eve_type == 'execv' or eve_type == 'execvpe' or eve_type == 'fexecve' or eve_type == 'execveat' or eve_type == 'execle' or eve_type == 'execl' or eve_type == 'execlp' or eve_type == 'execvp':
+                new_exe = os.path.basename(self.__get_node_value1(eve.childNodes, 'path'))
+                argvs = self.__get_node_value1 (eve.childNodes, 'argvs');
+                envs = self.__get_node_value1 (eve.childNodes, 'envs');
+                directory_fd = self.__get_node_value1 (eve.childNodes, 'directory_fd');
+                flags = self.__get_node_value1 (eve.childNodes, 'flags');
+                exe_type = eve_type
+                the_eve = event.ExeEvent('exec', eve_time, self.hostname,
+                                          self.pid, new_exe, exe_type, argvs, envs, directory_fd, flags)
+
+            elif eve_type == 'open' or eve_type == 'fopen' or eve_type == 'fdopen' or eve_type == 'freopen' or eve_type == 'openat':
+                the_file = self.__get_node_value1(eve.childNodes, 'file')
+                mode = self.__get_node_value1(eve.childNodes, 'mode')
+                flags = self.__get_node_value1(eve.childNodes, 'flags')
+                directory_fd = self.__get_node_value1(eve.childNodes, 'directory_fd')
+                open_type = eve_type
+                the_eve = event.OpenEvent('open', eve_time, self.hostname,
+                                         self.pid, the_file, open_type, mode, directory_fd, flags)
+                print("FILE1: " + eve_type)
+                if (the_file != None): print("FILE2: " + the_file)
+            
+            elif eve_type == 'chown' or eve_type == 'fchown' or eve_type == 'lchown' or eve_type == 'fchownat':
+                the_file = self.__get_node_value1(eve.childNodes, 'file')
+                directory_fd = self.__get_node_value1(eve.childNodes, 'directory_fd')
+                owner = self.__get_node_value1(eve.childNodes, 'owner')
+                group = self.__get_node_value1(eve.childNodes, 'group')
+                flags = self.__get_node_value1(eve.childNodes, 'flags')
+                chfile_type = eve_type
+                the_eve = event.FileEvent('chown', eve_time, self.hostname,
+                                         self.pid, the_file, chfile_type, owner, group, directory_fd, flags)
+
+            elif eve_type == 'chroot' or eve_type == 'chdir':
+                new_directory = self.__get_node_value1(eve.childNodes, 'directory')
+                the_eve = event.DirectoryEvent(eve_type, eve_time, self.hostname,
+                                              self.pid, new_directory)
+                print("CH " + new_directory)
 
             self.event_list.append(the_eve)
 
@@ -247,6 +293,7 @@ class Trace:
         ret += 'PID: %s\n' % self.pid
         ret += 'Init Exe: %s\n' % self.init_exe
         ret += 'Init Euid: %s\n' % self.init_euid
+        ret += 'Init Working Directory: %s\n' % self.init_working_dir
         ret += 'Events:\n'
         for eve in self.event_list:
             ret = '%s%s' % (ret, eve)

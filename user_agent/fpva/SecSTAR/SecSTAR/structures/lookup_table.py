@@ -34,7 +34,7 @@ class LookupTable:
         """
 
         relation_map = dict()
-        relation_types = ['connect', 'fork', 'clone', 'accept', 'send']
+        relation_types = ['connect', 'fork', 'clone', 'accept', 'send', 'open']
         for host in self.trace_map.keys():
             for pid, trace in self.trace_map[host].items():
                 for eve in trace.event_list:
@@ -60,6 +60,10 @@ class LookupTable:
                                 eve.host in self.trace_map and \
                                 eve.child in self.trace_map[eve.host]:
                             self.__add_to_2d_dict(relation_map, eve.host, eve.child, 1)
+                        elif (eve.type == 'open') and \
+                                eve.host in self.trace_map and \
+                                eve.the_file in self.trace_map[eve.host]:
+                            self.__add_to_2d_dict(relation_map, eve.host, eve.the_file, 1)
                         elif eve.type == 'send' and \
                                 eve.trg_host in self.trace_map and \
                                 eve.trg_pid in self.trace_map[eve.trg_host]:

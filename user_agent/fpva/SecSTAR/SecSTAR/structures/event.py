@@ -69,6 +69,42 @@ class CloneEvent(Event):
     def child_pidhost(self):
         return "%s@%s" % (self.child, self.host)
 
+class OpenEvent(Event):
+    def __init__(self, the_type, the_time, the_host, the_pid, the_file, open_type, mode="", directory_fd="", flags=""):
+        Event.__init__(self, the_type, the_time, the_host, the_pid)
+        self.the_file = the_file
+        self.mode = mode
+        self.directory_fd = directory_fd
+        self.flags = flags
+        self.open_type = open_type
+
+    def __str__(self):
+        ret = Event.__str__(self)
+        ret += 'file_name: %s}\n' % (self.the_file)
+        return ret
+
+    def filehost(self):
+        return "%s@%s" % (self.the_file, self.host)
+
+class FileEvent(Event):
+    def __init__(self, the_type, the_time, the_host, the_pid, the_file, chfile_type, owner="", group="", directory_fd="", flags=""):
+        Event.__init__(self, the_type, the_time, the_host, the_pid)
+        self.the_file = the_file
+        self.chfile_type = chfile_type
+        self.owner = owner
+        self.group = group
+        self.directory_fd = directory_fd
+        self.flags = flags
+
+    def __str__(self):
+        ret = Event.__str__(self)
+        ret += 'file_name: %s}\n' % (self.the_file)
+        ret += 'owner: %s}\n' % (self.owner)
+        ret += 'group: %s}\n' % (self.group)
+
+    def filehost(self):
+        return "%s@%s" % (self.the_file, self.host)
+
 class ConnectEvent(Event):
     def __init__(self, the_type, the_time, src_host, src_pid, trg_host, trg_port):
         Event.__init__(self, the_type, the_time, src_host, src_pid)
@@ -153,10 +189,25 @@ class SeteuidEvent(Event):
         ret += 'new_euid: %s}\n' % (self.new_euid)
         return ret
     
+class DirectoryEvent(Event):
+    def __init__(self, the_type, the_time, the_host, the_pid, new_directory):
+        Event.__init__(self, the_type, the_time, the_host, the_pid)
+        self.new_directory = new_directory
+
+    def __str__(self):
+        ret = Event.__str__(self)
+        ret += 'new_directory: %s}\n' % (self.new_directory)
+        return ret
+
 class ExeEvent(Event):
-    def __init__(self, the_type, the_time, the_host, the_pid, new_exe):
+    def __init__(self, the_type, the_time, the_host, the_pid, new_exe, exe_type, argvs="", envs="", directory_fd="", flags=""):
         Event.__init__(self, the_type, the_time, the_host, the_pid)
         self.new_exe = new_exe
+        self.argvs = argvs
+        self.envs = envs
+        self.directory_fd = directory_fd
+        self.flags = flags
+        self.exe_type = exe_type
 
     def __str__(self):
         ret = Event.__str__(self)

@@ -481,24 +481,9 @@ SpIpcMgr::BeforeExit(PointCallHandle* handle) {
   return true;
 }
 
-/*
- * In the case of exec family functions, we want the agent library to
- * get propelled into the new program
- * In the case of execve, we have to construct new environment
- * variables so that we can add LD_PRELOAD and etc, and we call execve
- * In other cases, we simply add LD_PRELOAD to the parent process as
- * the environment variables are copied to the new program
- */
-void SpIpcMgr::HandleExec(SpPoint* pt) {
-  SpFunction* callee = sp::Callee(pt);
-  if (callee->name().compare("execve") == 0) {
-    sp_debug_ipc("EXEC");
-    sp::ArgumentHandle h;
-    char** path = (char**)PopArgument(pt, &h, sizeof(char*));
-    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
-    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
 
-    char** new_envs = (char**)malloc(1024 * sizeof(char*));
+char** SetEnvs(char*** envs) {
+    char** new_envs = (char**)malloc(1024 * sizeof(char*)); 
     char** ptr = *envs;
     int cur = 0;
 
@@ -506,6 +491,7 @@ void SpIpcMgr::HandleExec(SpPoint* pt) {
     bool ld_library_path = false;
     bool platform = false;
     bool sp_agent_dir = false;
+    bool sp_dir = false;
     if (ptr != NULL) {
       while (*ptr != NULL) {
         // if the key is LD_PRELOAD, we append the agent library
@@ -522,14 +508,16 @@ void SpIpcMgr::HandleExec(SpPoint* pt) {
         } else if (strstr(*ptr, "LD_LIBRARY_PATH=") == *ptr) {
           // if the key is LD_LIBRARY_PATH, we append the agent dir
           new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-          snprintf(new_envs[cur], 1024, "%s:%s:%s/%s", *ptr,
+          snprintf(new_envs[cur], 1024, "%s:%s:%s/%s:%s", *ptr,
                    getenv("SP_AGENT_DIR"), getenv("SP_DIR"),
-                   getenv("PLATFORM"));
+                   getenv("PLATFORM"), getenv("SP_DYNINST_DIR"));
           ld_library_path = true;
         } else if (strstr(*ptr, "PLATFORM=") == *ptr) {
           platform = true;
         } else if (strstr(*ptr, "SP_AGENT_DIR=") == *ptr) {
           sp_agent_dir = true;
+        } else if (strstr(*ptr, "SP_DIR=") == *ptr) {
+          sp_dir = true;
         } else {
           new_envs[cur] = *ptr;
           sp_print("%s", new_envs[cur]);
@@ -540,6 +528,7 @@ void SpIpcMgr::HandleExec(SpPoint* pt) {
     }
 
     if (!ld_preload) {
+      sp_debug_ipc("LD_PRELOAD");
       new_envs[cur] = (char*)malloc(1024 * sizeof(char));
       if (sp::g_context) {
         snprintf(new_envs[cur], 1024, "LD_PRELOAD=%s/%s",
@@ -548,13 +537,15 @@ void SpIpcMgr::HandleExec(SpPoint* pt) {
         snprintf(new_envs[cur], 1024, "LD_PRELOAD=%s/%s",
                   getenv("SP_AGENT_DIR"), "libmyagent.so");
       }
+      cur++;
     }
     if (!ld_library_path) {
       new_envs[cur] = (char*)malloc(1024 * sizeof(char));
-      snprintf(new_envs[cur], 1024, "LD_LIBRARY_PATH=%s:%s/%s",
+      snprintf(new_envs[cur], 1024, "LD_LIBRARY_PATH=%s:%s/%s:%s",
                 getenv("SP_AGENT_DIR"), getenv("SP_DIR"),
-                getenv("PLATFORM"));
+                getenv("PLATFORM"), getenv("SP_DYNINST_DIR"));
       ld_library_path = true;
+      cur++;
     }
     if (!platform) {
       new_envs[cur] = (char*)malloc(1024 * sizeof(char));
@@ -564,6 +555,11 @@ void SpIpcMgr::HandleExec(SpPoint* pt) {
     if (!sp_agent_dir) {
       new_envs[cur] = (char*)malloc(1024 * sizeof(char));
       snprintf(new_envs[cur], 1024, "SP_AGENT_DIR=%s", getenv("SP_AGENT_DIR"));
+      cur++;
+    }
+    if (!sp_dir) {
+      new_envs[cur] = (char*)malloc(1024 * sizeof(char));
+      snprintf(new_envs[cur], 1024, "SP_DIR=%s", getenv("SP_DIR"));
       cur++;
     }
     if (getenv("SP_IPC")) {
@@ -577,16 +573,87 @@ void SpIpcMgr::HandleExec(SpPoint* pt) {
       snprintf(new_envs[cur], 1024, "SP_FDEBUG=1");
       cur++;
     }
+
     new_envs[cur] = NULL;
     cur++;
+    return new_envs;
+}
 
+/*
+ * In the case of exec family functions, we want the agent library to
+ * get propelled into the new program
+ * In the case of execve, we have to construct new environment
+ * variables so that we can add LD_PRELOAD and etc, and we call execve
+ * In other cases, we simply add LD_PRELOAD to the parent process as
+ * the environment variables are copied to the new program
+ */
+void SpIpcMgr::HandleExec(SpPoint* pt) {
+  SpFunction* callee = sp::Callee(pt);
+  if (callee->name().compare("execve") == 0) {
+    sp_debug_ipc("EXECVE");
+    sp::ArgumentHandle h;
+    char** path = (char**)PopArgument(pt, &h, sizeof(char*));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
+
+    char** new_envs = SetEnvs(envs);
     execve(*path, *argvs, new_envs);
     system("touch /tmp/fail_execve");
+
+  } else if (callee->name().compare("execvpe") == 0) {
+    sp_debug_ipc("EXECVPE");
+    sp::ArgumentHandle h;
+    char** file = (char**)PopArgument(pt, &h, sizeof(char*));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
+
+    char** new_envs = SetEnvs(envs);
+ 
+    execvpe(*file, *argvs, new_envs);
+    system("touch /tmp/fail_execvpe");
+
+  } else if (callee->name().compare("fexecve") == 0) {
+    sp_debug_ipc("FEXECVE");
+    sp::ArgumentHandle h;
+    int* file = (int*)PopArgument(pt, &h, sizeof(int));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
+
+    char** new_envs = SetEnvs(envs);
+
+    fexecve(*file, *argvs, new_envs);
+    system("touch /tmp/fail_fexecve");
+ 
+  } else if (callee->name().compare("execveat") == 0) {
+    sp_debug_ipc("EXECVEAT");
+    sp_perror("EXECVEAT REQUIRES GLIBC VERSION 2.34+");
+    sp::ArgumentHandle h;
+    int* dirfd = (int*)PopArgument(pt, &h, sizeof(int));
+    char** path = (char**)PopArgument(pt, &h, sizeof(char*));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
+    int* flags = (int*)PopArgument(pt, &h, sizeof(int));
+
+    char** new_envs = SetEnvs(envs);
+    //execveat(*dirfd, *path, *argvs, new_envs, *flags);
+    system("touch /tmp/fail_execveat");
+
+  } else if (callee->name().compare("execle") == 0) {
+    sp_debug_ipc("EXECLE");
+    sp::ArgumentHandle h;
+    sp_perror("EXECLE NOT CURRENTLY SUPPORTED BY SPI");
+    char** path = (char**)PopArgument(pt, &h, sizeof(char*));
+    char*** argvs = (char***)PopArgument(pt, &h, sizeof(char**));
+    char*** envs = (char***)PopArgument(pt, &h, sizeof(char**));
+
+    char** new_envs = SetEnvs(envs);
+    //execle(*path, *argvs, new_envs);
+    system("touch /tmp/fail_execle");
+
   } else if (callee->name().compare("execl") == 0 ||
              callee->name().compare("execlp") == 0 ||
-             callee->name().compare("execle") == 0 ||
              callee->name().compare("execv") == 0 ||
-             callee->name().compare("execvp") == 0) {
+             callee->name().compare("execvp") == 0 ) {
     sp_debug_ipc("EXEC_OTHER");
     std::string agent_name = g_parser->agent_name();
     if (char* ld_preload_str = getenv("LD_PRELOAD")) {

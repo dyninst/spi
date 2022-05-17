@@ -117,7 +117,15 @@ void TraceMgr::PrintCurrentProc() {
     xmlNewChild(this->head_node_, NULL, BAD_CAST "exe_name",
                 BAD_CAST exename.c_str());
   } else {
-    sp_perror("Failed to get exename from procfs cmdline");
+    //sp_perror("Failed to get exename from procfs cmdline");
+    snprintf(path, 256, "/proc/%d/stat", getpid());
+    std::ifstream cmdf2(path, std::ifstream::in);
+    string pid;
+    cmdf2 >> pid;
+    cmdf2 >> exename;
+    exename = exename.substr(1, exename.size()-2);
+    xmlNewChild(this->head_node_, NULL, BAD_CAST "exe_name",
+		BAD_CAST exename.c_str());
   }
   cmdf.close();
 
@@ -136,11 +144,30 @@ void TraceMgr::PrintCurrentProc() {
 }
 
 /**
- * This function writes parent pid node to the head
+ * This function writes parent pid and exe_name node to the head
  */
 void TraceMgr::PrintParentProc() {
-  xmlNewChild(this->head_node_, NULL, BAD_CAST "parent",
+  xmlNodePtr parent = xmlNewChild(this->head_node_, NULL, BAD_CAST "parent", NULL);
+  xmlNewChild(parent, NULL, BAD_CAST "parent_pid",
               BAD_CAST std::to_string(getppid()).c_str());
+  char path[256];
+  snprintf(path, 256, "/proc/%d/cmdline", getppid());
+  std::ifstream cmdf(path, std::ifstream::in);
+  string exename;
+  if (std::getline(cmdf, exename)) {
+    xmlNewChild(parent, NULL, BAD_CAST "parent_exe",
+              BAD_CAST exename.c_str());
+  }
+  else {
+    snprintf(path, 256, "/proc/%d/stat", getppid());
+    std::ifstream cmdf2(path, std::ifstream::in);
+    string pid;
+    cmdf2 >> pid;
+    cmdf2 >> exename;
+    exename = exename.substr(1, exename.size()-2);
+    xmlNewChild(parent, NULL, BAD_CAST "parent_exe",
+             BAD_CAST exename.c_str());
+  }
   this->dirty_ = true;
 }
 

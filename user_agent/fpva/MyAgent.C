@@ -11,15 +11,25 @@ fpva::Fpva* G_FPVA;
 void FpvaEntry(sp::PointCallHandle* handle) {
   sp::SpFunction* f = handle->GetCallee();
   sp::SpPoint* pt = handle->GetPoint();
-  if (!f) return;
+  if (!f) {
+    //std::cout << "Return start " << std::endl;
+    return;
+  }
+  std::cout << "Start " << f->name().c_str() << std::endl;
   G_FPVA->PreRun(pt, f);
   sp::Propel(pt);
+  return;
 }
 
 void FpvaExit(sp::PointCallHandle* pHandle) {
   sp::SpFunction* f = pHandle->GetCallee();
-  if (!f) return;
+  if (!f) {
+    //std::cout << "Return end " << std::endl;
+    return;
+  }
+  //std::cout << "End " << f->name().c_str() << std::endl;
   G_FPVA->PostRun(pHandle);
+  return;
 }
 
 AGENT_INIT
@@ -35,6 +45,7 @@ void MyAgent() {
       "libpcontrol.so", "libstackwalk.so",    "libpatchAPI.so"//, "libclassad.so"
   };
   agent->SetLibrariesNotToInstrument(libs_not_to_inst);
+  agent->UseDefaultLibrariesNotToInstrument();
 
   sp::StringSet funcs_not_to_inst;
   funcs_not_to_inst.insert("_Znwm");
@@ -55,6 +66,7 @@ void MyAgent() {
   funcs_not_to_inst.insert("memset");
   funcs_not_to_inst.insert("_condor_dprintf_va");
   funcs_not_to_inst.insert("__cxa_throw_bad_array_new_length");
+  funcs_not_to_inst.insert("_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc");
   agent->SetFuncsNotToInstrument(funcs_not_to_inst);
 
   agent->SetInitEntry("FpvaEntry");
