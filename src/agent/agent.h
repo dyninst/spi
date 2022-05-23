@@ -61,6 +61,7 @@ namespace sp {
     AGENT_EXPORT void SetInitExit(string);
     AGENT_EXPORT void SetInitPropeller(SpPropeller::ptr);
     AGENT_EXPORT void SetLibrariesNotToInstrument(const StringSet& libs);
+    AGENT_EXPORT void UseDefaultLibrariesNotToInstrument();
 
     // Note: We can only bypass instrumenting direct function calls that
     // are specified by this function. For indirect function calls, we

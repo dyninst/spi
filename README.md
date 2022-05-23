@@ -32,7 +32,7 @@
   1. `SP_DIR`
   2. `PLATFORM`
   3. `SP_AGENT_DIR`
-  4. `PLATFORM`
+  4. `SP_DYNINST_DIR (DYNINST_ROOT/lib)`
 2. Make sure that your system does not block non-child ptrace
   - To temporarily disable this measure (until a reboot), execute the following command:  
     `echo 0 > /proc/sys/kernel/yama/ptrace_scope`
@@ -51,24 +51,27 @@
     - SP_DIR
     - PLATFORM
     - SP_AGENT_DIR
-    - Add `DYNINST_ROOT/lib`, `SP_DIR/PLATFORM` to your LD_LIBRARY_PATH
+    - SP_DYNINST_DIR (DYNINST_ROOT/lib)
+    - Add `SP_DYNINST_DIR`, `SP_DIR/PLATFORM` to your LD_LIBRARY_PATH
 
 
 ## Environment Variables
 1. FOR DEBUGGING
   1. SP_COREDUMP: enables core dump when segfault happens
   2. SP_DEBUG: enables printing out debugging messages
-  3. SP_TEST_RELOCINSN: only uses instruction relocation instrumentation worker
-  4. SP_TEST_RELOCBLK: only uses call block relocation instrumentation worker
-  5. SP_TEST_SPRING: only uses sprint block instrumentation worker
-  6. SP_TEST_TRAP: only uses trap instrumentation worker
-  7. SP_NO_TAILCALL: don't instrument tail calls
-  8. SP_LIBC_MALLOC: will always use libc malloc
-  9. SP_NO_LIBC_MALLOC: will never use libc malloc
+  3. SP_FDEBUG: enables printing debugging messages to an output file
+  4. SP_TEST_RELOCINSN: only uses instruction relocation instrumentation worker
+  5. SP_TEST_RELOCBLK: only uses call block relocation instrumentation worker
+  6. SP_TEST_SPRING: only uses sprint block instrumentation worker
+  7. SP_TEST_TRAP: only uses trap instrumentation worker
+  8. SP_NO_TAILCALL: don't instrument tail calls
+  9. SP_LIBC_MALLOC: will always use libc malloc
+  10. SP_NO_LIBC_MALLOC: will never use libc malloc
 2. FOR RUNTIME
   1. PLATFORM: 'i386-unknown-linux2.4' for x86 or 'x86_64-unknown-linux2.4' for x86-64
   2. SP_DIR: the root directory of self-propelled instrumentation.
   3. SP_AGENT_DIR: the directory path of agent shared library that will be injected.
+  4. SP_DYNINST_DIR: the directory path of the modified Dyninst build's /lib dir
 
 ## Shared memory id used
 1. 1986+[user_process_pid]: for communication between injector process and user process

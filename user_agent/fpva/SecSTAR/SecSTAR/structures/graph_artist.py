@@ -76,7 +76,7 @@ class GraphArtist:
             - fork / clone: add two nodes (init color), one edge (if exist, skip)
             - connect: add two nodes (init color), one edge (if exist, skip)
             - seteuid: get node, change color
-            - execve: change letter
+            - exec: change letter
 
           Draw animation graphs
           - Make all nodes and edges invisible
@@ -85,7 +85,7 @@ class GraphArtist:
             - fork / clone: add two nodes (init color), one edge (if exist, skip)
             - connect: add two nodes (init color), one edge (if exist, skip)
             - seteuid: get node, change color
-            - execve: change letter
+            - exec: change letter
             - exit: disappear nodes
 
           Generate Legend
@@ -185,13 +185,27 @@ class GraphArtist:
                 self.__get_node(eve.trg_pidhost(), trg_cluster)
                 self.__get_edge(eve.pidhost(), eve.trg_pidhost(), eve.type)
             elif eve.type == 'fork' or eve.type == 'clone':
+                print("fork event " + eve.pidhost() + " " + eve.child_pidhost())
                 self.__get_node(eve.pidhost(), cluster)
                 self.__get_node(eve.child_pidhost(), cluster)
                 self.__get_edge(eve.pidhost(), eve.child_pidhost(), eve.type)
             elif eve.type == 'seteuid':
                 self.__get_node(eve.pidhost(), cluster, uid=eve.new_euid)
-            elif eve.type == 'execve':
+            elif eve.type == 'chroot':
+                self.__get_node(eve.pidhost(), cluster, root_directory=eve.new_directory)
+            elif eve.type == 'chdir':
+                self.__get_node(eve.pidhost(), cluster, working_directory=eve.new_directory)
+            elif eve.type == 'exec':
                 self.__get_node(eve.pidhost(), cluster, exe=eve.new_exe)
+            elif eve.type == 'open':
+                print("open event")
+                self.__get_node(eve.pidhost(), cluster)
+                self.__get_file_node(eve.filehost(), cluster)
+                self.__get_file_edge(eve.pidhost(), eve.filehost(), eve.type)
+            elif eve.type == 'chown':
+                self.__get_node(eve.pidhost(), cluster)
+                self.__get_file_node(eve.filehost(), cluster)
+                self.__get_file_edge(eve.pidhost(), eve.filehost(), eve.type)
             
     def __draw_animation(self, dest_dir):
         """
@@ -258,23 +272,88 @@ class GraphArtist:
                     if j == i: self.__highlight_node(node)
                     eve_desc = "%s<br><font color='red'><b>seteuid</b></font> to<br>%s" % \
                         (eve.pidhost(), eve.new_euid)
-        
-                elif eve.type == 'execve':
+
+                elif eve.type == 'chdir':
+                    node = self.__get_node(eve.pidhost(), cluster, working_directory=eve.new_directory)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    eve_desc = "%s<br><font color='red'><b>chdir</b></font> to<br>%s" % \
+                        (eve.pidhost(), eve.new_directory)
+ 
+                elif eve.type == 'chroot':
+                    node = self.__get_node(eve.pidhost(), cluster, root_directory=eve.new_directory)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    eve_desc = "%s<br><font color='red'><b>chroot</b></font> to<br>%s" % \
+                        (eve.pidhost(), eve.new_directory)      
+
+                elif eve.type == 'exec':
                     node = self.__get_node(eve.pidhost(), cluster, exe=eve.new_exe)
                     self.__show_node(node)
                     if j == i: self.__highlight_node(node)
-                    eve_desc = "%s<br><font color='red'><b>execves</b></font><br>%s" % \
+                    eve_desc = "%s<br><font color='red'><b>execs</b></font><br>%s<br>" % \
                         (eve.pidhost(), eve.new_exe)
+                    if (eve.argvs != None):
+                        eve_desc += "argvs: %s <br>" % (eve.argvs)
+                    if (eve.envs != None):
+                        eve_desc += "envs: %s <br>" % (eve.envs)
+                    if (eve.directory_fd != None):
+                        eve_desc += "directory_fd: %s <br>" % (eve.directory_fd)
+                    if (eve.flags != None):
+                        eve_desc += "flags: %s <br>" % (eve.flags)
         
                 elif eve.type == 'exit':
                     node = self.__get_node(eve.pidhost(), cluster)
                     self.__hide_node(node)
                     eve_desc = "%s<br><font color='red'><b>exits</b></font><br>exit code: %s" % \
                         (eve.pidhost(), eve.exit_code)
-        
+
+                elif eve.type == 'open':
+                    node = self.__get_node(eve.pidhost(), cluster)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    node = self.__get_file_node(eve.filehost(), cluster, filename=eve.the_file)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    edge = self.__get_file_edge(eve.pidhost(), eve.filehost(), eve.type)
+                    self.__show_edge(edge, eve.type)
+                    if j == i: self.__highlight_edge(edge)
+                    eve_desc = "%s<br><font color='red'><b>open file </b></font><br>%s<br>" % \
+                        (eve.pidhost(), eve.the_file)
+                    if (eve.mode != None):
+                        eve_desc += "mode: %s <br>" % (eve.mode)
+                    if (eve.directory_fd != None):
+                        eve_desc += "directory_fd: %s <br>" % (eve.directory_fd)
+                    if (eve.flags != None):
+                        eve_desc += "flags: %s <br>" % (eve.flags)
+
+                elif eve.type == 'chown':
+                    node = self.__get_node(eve.pidhost(), cluster)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    node = self.__get_file_node(eve.filehost(), cluster, filename=eve.the_file)
+                    self.__show_node(node)
+                    if j == i: self.__highlight_node(node)
+                    edge = self.__get_file_edge(eve.pidhost(), eve.filehost(), eve.type)
+                    self.__show_edge(edge, eve.type)
+                    if j == i: self.__highlight_edge(edge)
+                    eve_desc = "%s<br><font color='red'><b>chown file </b></font><br>%s<br>" % \
+                        (eve.pidhost(), eve.the_file)
+                    if (eve.owner != None):
+                        eve_desc += "owner: %s <br>" % (eve.owner)
+                    if (eve.group != None):
+                        eve_desc += "group: %s <br>" % (eve.group)
+                    if (eve.directory_fd != None):
+                        eve_desc += "directory_fd: %s <br>" % (eve.directory_fd)
+                    if (eve.flags != None):
+                        eve_desc += "flags: %s <br>" % (eve.flags)
+
+                    
             event_count += 1
             with open("%s/%d.e" % (dest_dir, i), "w") as ef:
                 ef.write(eve_desc)
+            print("DEBUG: " + dest_dir)
+            print("DEBUG: " + str(i))
             self.__dot.write_svg("%s/%d.svg" % (dest_dir, i))
             self.__dot.write_raw("%s/%d.dot" % (dest_dir, i))
 
@@ -301,7 +380,7 @@ class GraphArtist:
     # The following are some tiny utilities
     #
     
-    def __get_node(self, pidhost, cluster, exe = None, uid = None):
+    def __get_node(self, pidhost, cluster, exe = None, uid = None, working_directory = None, root_directory = None):
         """
         Use __node_map as cache
         """
@@ -329,20 +408,23 @@ class GraphArtist:
             trace.cur_exe = exe
             initial = self.__get_exe_initial(exe)
             ret_node.set_label(initial)
-            
+  
         # Set node color
         if uid != None:
             trace.cur_euid = uid
             new_color = self.__get_color(uid)
             ret_node.set_fillcolor(new_color)
 
+        #Change working directory
+        if working_directory != None:
+            trace.cur_working_dir = working_directory
 
         # Resume from highlight
         ret_node.set_penwidth(1.0)
 
         # Handle dedup
-        tip = "pid=%s, exe=%s, user=%s, ppid=%s, parent_exe=%s" % \
-            (pid, trace.cur_exe, trace.cur_euid, trace.ppid, trace.parent_exe)
+        tip = "pid=%s, exe=%s, user=%s, ppid=%s, parent_exe=%s, working_directory=%s" % \
+            (pid, trace.cur_exe, trace.cur_euid, trace.ppid, trace.parent_exe, trace.cur_working_dir)
         if trace.ppid in self.__dedup_dict and \
                 trace.init_exe in self.__dedup_dict[trace.ppid] and \
                 trace.init_euid in self.__dedup_dict[trace.ppid][trace.init_exe] and \
@@ -401,7 +483,83 @@ class GraphArtist:
         self.__cluster_map[host] = cluster
         return cluster
         
-    
+    def __get_file_node(self, pidhost, cluster, filename = "filename_not_found"):
+        """
+        Use __node_map as cache
+        """
+        ret_node = None
+        (pid, seq, host) = pidhost.partition('@')
+        print(pidhost) 
+
+        if pidhost in self.__node_map:
+            ret_node = self.__node_map[pidhost]
+        else:
+            #initial = self.__get_exe_initial(trace.init_exe)
+            #new_color = self.__get_color(trace.init_euid)
+            ret_node = pydot.Node(pidhost, \
+                                      label = "F", \
+                                      fillcolor = 'green', \
+                                      style = "filled", \
+                                      fontcolor = 'white')
+
+            cluster.add_node(ret_node)
+            self.__node_map[pidhost] = ret_node
+
+        # Resume from highlight
+        ret_node.set_penwidth(1.0)
+
+        # Handle dedup
+        #tip = "pid=%s, exe=%s, user=%s, ppid=%s, parent_exe=%s" % \
+        #    (pid, trace.cur_exe, trace.cur_euid, trace.ppid, trace.parent_exe)
+        #if trace.ppid in self.__dedup_dict and \
+        #        trace.init_exe in self.__dedup_dict[trace.ppid] and \
+        #        trace.init_euid in self.__dedup_dict[trace.ppid][trace.init_exe] and \
+        #        trace.pid in self.__dedup_dict[trace.ppid][trace.init_exe][trace.init_euid] and\
+        #        len(self.__dedup_dict[trace.ppid][trace.init_exe][trace.init_euid]) > 1:
+        #    ret_node.set_shape("doublecircle")
+        #    ret_node.set_color('black')
+        #    tip = "pid={ "
+        #    for pid in self.__dedup_dict[trace.ppid][trace.init_exe][trace.init_euid]:
+        #        tip = "%s%s " % (tip, pid)
+        #    tip = "%s}, exe=%s, user=%s, ppid=%s, parent_exe=%s" %  \
+        #        (tip, trace.cur_exe, trace.cur_euid, trace.ppid, trace.parent_exe)
+        #else:    
+        ret_node.set_shape("circle")
+        ret_node.set_color('white')
+
+        # Set tooltip
+        ret_node.set_tooltip(filename)
+
+        return ret_node
+
+    def __get_file_edge(self, pidhost_from, pidhost_to, event_type = None):
+        """
+        Use self.edge_map as cache
+        """
+        ret_edge = None
+        if pidhost_from in self.__edge_map and \
+                pidhost_to in self.__edge_map[pidhost_from] and \
+                event_type in self.__edge_map[pidhost_from][pidhost_to]:
+            ret_edge = self.__edge_map[pidhost_from][pidhost_to][event_type]
+        else:
+            ret_edge = pydot.Edge(pidhost_from, pidhost_to)
+            # ret_edge.set_key('%s_%s_%s', (pidhost_from, pidhost_to, event_type)) 
+            self.__dot.add_edge(ret_edge)
+            if pidhost_from not in self.__edge_map:
+                self.__edge_map[pidhost_from] = dict()
+            if pidhost_to not in self.__edge_map[pidhost_from]:    
+                self.__edge_map[pidhost_from][pidhost_to] = dict()
+            self.__edge_map[pidhost_from][pidhost_to][event_type] = ret_edge
+
+        self.__show_edge(ret_edge, event_type)
+        
+        # Resume from highlight
+        ret_edge.set_penwidth(1.0)
+        ret_edge.set_color('black')
+
+        return ret_edge
+
+   
     def __get_exe_initial(self, exe):
         """
         Use exe_initial_map as cache
@@ -482,6 +640,9 @@ class GraphArtist:
         elif event_type == 'send':
             edge.set_style('solid')
             edge.set_arrowhead('empty')
+        elif event_type == 'open':
+            edge.set_style('dashed')
+            edge.set_arrowhead('empty')
 
     def __hide_edge(self, edge):
         edge.set_style('invis')
@@ -517,7 +678,7 @@ class GraphArtist:
         # We don't consider fork-then-exe, connect, and seteuid event
         trace = self.trace_map[eve.host][eve.child]
         for e in trace.event_list:
-            if e != None and (e.type == 'execve' or \
+            if e != None and (e.type == 'exec' or \
                     e.type == 'seteuid' or \
                     e.type == 'fork' or \
                     e.type == 'clone' or \
@@ -546,6 +707,7 @@ class GraphArtist:
                 af_str = "%s<br>%s: %s" % (af_str, abbr, exe_name)
             else:
                 af_str = "%s: %s" % (abbr, exe_name)
+        af_str = "%s<br>%s: %s" % (af_str, "F", "File")
         af.write(af_str)
 
     def __generate_user_color(self, legend_dir):
@@ -627,7 +789,7 @@ class GraphArtist:
                               color = 'white',\
                               shape = "none")
         shape_graph.add_node(dummy_right2)
-        edge = pydot.Edge(single_proc, dummy_left1, style='invis')
+        edge = pydot.Edge(single_proc, dummy_left1, label='open', style='dashed', fontsize=10)
         shape_graph.add_edge(edge)
         edge = pydot.Edge(dummy_left1, dummy_left2, label='fork', style='dotted', fontsize=10)
         shape_graph.add_edge(edge)

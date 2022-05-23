@@ -50,6 +50,7 @@ FILE* g_output_fp;
 bool debugTypeEnabled [numDebugTypes] = {getenv("SP_DEBUG_INJECTOR"), getenv("SP_DEBUG_COMMON"), getenv("SP_DEBUG_PATCHAPI"), getenv("SP_DEBUG_IPC"), getenv("SP_DEBUG_WORKER"), getenv("SP_DEBUG_SIGTRAP"), getenv("SP_DEBUG_AGENT"), true};
 bool sp_debug = getenv("SP_DEBUG");
 bool sp_fdebug = getenv("SP_FDEBUG");
+bool sp_timing = getenv("SP_TIMING");
 
 namespace sp {
 
@@ -186,6 +187,34 @@ namespace sp {
 
   void
   SpAgent::SetLibrariesNotToInstrument(const StringSet& libs) {
+    for (StringSet::iterator i = libs.begin(); i != libs.end(); i++)
+      libs_not_to_inst_.insert(*i);
+  }
+
+  void
+  SpAgent::UseDefaultLibrariesNotToInstrument() {
+    StringSet libs {"linux-vdso.so",
+                                "libdl.so",
+                                "librt.so",
+                                "libcrypto.so",
+                                "libstdc++.so",
+                                "libm.so",
+                                "libgomp.so",
+                                "libpthread.so",
+                                "libc.so",
+                                "ld-linux-x86-64.so",
+                                "libpatchAPI.so",
+                                "libstackwalk.so",
+                                "libpcontrol.so",
+                                "libparseAPI.so",
+                                "libinstructionAPI.so",
+                                "libsymtabAPI.so",
+                                "libboost_system.so",
+                                "libdynDwarf.so",
+                                "libdynElf.so",
+                                "libboost_filesystem.so",
+                                "libbosst_thread.so"};
+
     for (StringSet::iterator i = libs.begin(); i != libs.end(); i++)
       libs_not_to_inst_.insert(*i);
   }

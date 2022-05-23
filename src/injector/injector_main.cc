@@ -13,6 +13,7 @@ FILE* g_output_fp = stdout;
 bool debugTypeEnabled [numDebugTypes] = {getenv("SP_DEBUG_INJECTOR"), getenv("SP_DEBUG_COMMON"), getenv("SP_DEBUG_PATCHAPI"), getenv("SP_DEBUG_IPC"), getenv("SP_DEBUG_WORKER"), getenv("SP_DEBUG_SIGTRAP"), getenv("SP_DEBUG_AGENT"), true};
 bool sp_debug = getenv("SP_DEBUG");
 bool sp_fdebug = getenv("SP_FDEBUG");
+bool sp_timing = getenv("SP_TIMING");
 
 // Here we go!
 int main(int argc, char *argv[]) {
