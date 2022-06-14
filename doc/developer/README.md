@@ -1,5 +1,6 @@
 <h3 style="text-align: center;">Paradyn Parallel Performance Tools</h3>
-![logo](figure/paradyn_logo.png "logo")
+
+<img src="figure/paradyn_logo.png" alt="logo" width="30%"/>
 
 <h1>Self-propelled Instrumentation <br><br>
 Developer’s Manual
@@ -22,6 +23,65 @@ Developer’s Manual
   
   Web     `www.dyinst.org`
   ------- --------------------
+  
+Content
+============
+- [Introduction](#introduction)
+- [Abstraction](#abstraction)
+  * [Agent](#agent)
+  * [Injector](#injector)
+- [How it works](#how-it-works)
+  * [Building Agent](#building-agent)
+  * [Injection](#injection)
+  * [Initialization](#initialization)
+  * [Initial Instrumentation](#initial-instrumentation)
+  * [Instrumentation Propagation](#instrumentation-propagation)
+    + [Intra-process propagation](#intra-process-propagation)
+    + [Inter-process propagation](#inter-process-propagation)
+- [Examples](#examples)
+  * [Writing Payload](#writing-payload)
+  * [Configuration](#configuration)
+  * [Using Injector](#using-injector)
+  * [Extending SPI](#extending-spi)
+    + [Parser](#parser)
+    + [Event](#event)
+    + [Instrumentation Workers](#instrumentation-workers)
+    + [IPC Workers](#ipc-workers)
+- [Class Reference](#class-reference)
+  * [Class Agent](#class-agent)
+  * [Class PointCallHandle](#class-pointcallhandle)
+  * [Class SpPoint](#class-sppoint)
+  * [Class SpObject](#class-spobject)
+  * [Class SpFunction](#class-spfunction)
+  * [Class SpBlock](#class-spblock)
+  * [Class SpEdge](#class-spedge)
+  * [Utility Functions](#utility-functions)
+  * [Class SpInjector](#class-spinjector)
+  * [Class SpParser](#class-spparser)
+  * [Class SpContext](#class-spcontext)
+  * [Events](#events)
+  * [Class SpPropeller](#class-sppropeller)
+  * [Class SpSnippet](#class-spsnippet)
+- [Internals](#internals)
+  * [Injector](#injector-1)
+  * [Agent](#agent-1)
+    + [Parsing](#parsing)
+    + [Initial Instrumentation](#initial-instrumentation-1)
+    + [Intra-process Propagation {#sec:intrainst}](#intra-process-propagation---sec-intrainst-)
+    + [Inter-process Propagation](#inter-process-propagation)
+    + [Inter-thread Propagation](#inter-thread-propagation)
+    + [x86\_64 Issues](#x86--64-issues)
+    + [Parsing Newly Loaded Library](#parsing-newly-loaded-library)
+    + [Thread-safe](#thread-safe)
+- [Installation](#installation)
+  * [Getting the source](#getting-the-source)
+  * [Configuration](#configuration-1)
+  * [Building](#building)
+- [Testing and Debugging](#testing-and-debugging)
+  * [Testing](#testing)
+  * [Debugging](#debugging)
+- [Directory Organization](#directory-organization)
+- [References](#references)
 
 Introduction
 ============
@@ -210,10 +270,9 @@ or across process boundaries by following communication flow.
 
 ### Intra-process propagation
 
-![Intra-process Self-propelled Instrumentation
-Workflow[]{data-label="fig:intrainst"}](../user/figure/intraprocess.eps){width="90.00000%"}
+<img src="figure/intraprocess.png" alt="intraprocess" width="50%"/>
 
-Figure \[fig:intrainst\] shows an example of intra-process
+Figure 1 shows an example of intra-process
 instrumentation propagation from step 3 to step 5.
 
 In the example, a wrapper function [*instrument*]{} is invoked right
@@ -227,8 +286,9 @@ instrumentation propagates from a caller to its callees.
 
 ### Inter-process propagation
 
-![Inter-process Self-propelled Instrumentation
-Workflow[]{data-label="fig:interinst"}](../user/figure/interprocess.eps){width="90.00000%"}
+<img src="figure/interprocess.png" alt="interprocess" width="50%"/>
+
+Figure 2: Inter-process Self-propelled Instrumentation Workflow
 
 For inter-process instrumentation propagation, the instrumentation
 engine identifies communication initiation functions like [*connect*]{},
