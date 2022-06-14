@@ -67,11 +67,15 @@
   8. SP_NO_TAILCALL: don't instrument tail calls
   9. SP_LIBC_MALLOC: will always use libc malloc
   10. SP_NO_LIBC_MALLOC: will never use libc malloc
+  11. SP_DEBUG_$TYPE: Enables debugging for different components of SPI. Options are SP_DEBUG_INJECTOR, SP_DEBUG_COMMON, SP_DEBUG_PATCHAPI, SP_DEBUG_IPC, SP_DEBUG_WORKER, SP_DEBUG_SIGTRAP, SP_DEBUG_AGENT. Each option corresponds roughly to directories under /src.
+  12. SP_TIMING: Enables timestamps on debug output messages, in seconds.
 2. FOR RUNTIME
   1. PLATFORM: 'i386-unknown-linux2.4' for x86 or 'x86_64-unknown-linux2.4' for x86-64
   2. SP_DIR: the root directory of self-propelled instrumentation.
   3. SP_AGENT_DIR: the directory path of agent shared library that will be injected.
   4. SP_DYNINST_DIR: the directory path of the modified Dyninst build's /lib dir
+
+Refer to template.sh in this repository for an example script to configure/run with SPI.
 
 ## Shared memory id used
 1. 1986+[user_process_pid]: for communication between injector process and user process
