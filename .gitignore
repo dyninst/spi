@@ -6,3 +6,14 @@ external_mutatee
 .DS_Store
 config.mk
 tmp/*
+.vscode
+
+# ignore build dir except make, build and run script
+x86_64-unknown-linux2.4/*
+!x86_64-unknown-linux2.4/Makefile
+!x86_64-unknown-linux2.4/build.sh
+!x86_64-unknown-linux2.4/run.sh
+
+i386-unknown-linux2.4/*
+!i386-unknown-linux2.4/build.sh
+!i386-unknown-linux2.4/Makefile
