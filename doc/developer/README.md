@@ -1,4 +1,5 @@
 <h3 style="text-align: center;">Paradyn Parallel Performance Tools</h3>
+![logo](figure/paradyn_logo.png "logo")
 
 <h1>Self-propelled Instrumentation <br><br>
 Developer’s Manual
@@ -21,8 +22,6 @@ Developer’s Manual
   
   Web     `www.dyinst.org`
   ------- --------------------
-
-![image](paradyn_logo)
 
 Introduction
 ============
