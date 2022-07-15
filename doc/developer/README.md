@@ -148,7 +148,7 @@ Building Agent
 
 Users build their own Agent shared library using self-propelled instrumentation’s API.
 
-1.  Coding. Users need to write two pieces of code: 1) payload function; 2) configuration code that registers payload function and does some customization and configuration. The configuration code must be executed right away when the Agent shared library is loaded into the application process, so the configuration code should be in the init function of the Agent shared library, i.e., the function with gcc directive \__attribute__((constructor)). 
+1.  Coding. Users need to write two pieces of code: 1) payload function; 2) configuration code that registers payload function and does some customization and configuration. The configuration code must be executed right away when the Agent shared library is loaded into the application process, so the configuration code should be in the init function of the Agent shared library, i.e., the function with gcc directive \_\_attribute\_\_((constructor)). 
 
 2.  Building. Users build the code into an Agent shared library linking with libagent.so provided by the self-propelled instrumentation infrastructure. 
 
