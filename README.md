@@ -2,8 +2,18 @@
 
 ## Note
 1. Currently SPI depends on a customized dyninstAPI
-  - build dyninst with arch-x86.h exposed to public
-  - build dyninst with OpenMP disabled
+  - Build dyninst with arch-x86.h exposed to public
+    - Move **arch-x86.h** from **common/src** to **common/h**
+    - Replace `#include "common/src/Types.h"` with `#include "dyntypes.h"`, and manually add the missing definitions to **arch-x86.h**
+    - Add `COMMON_EXPORT` before class and function names inside **arch-x86.h**
+    - Change `#include "common/src/arch-x86.h"` to `#include "arch-x86.h"` in the follwing files:
+      - **common/src/arch-x86.C**
+      - **common/src/arch.h**
+      - **instructionAPI/src/Instruction.C**
+      - **instructionAPI/src/InstructionDecoder-x86.C**
+      - **instructionAPI/src/Operation.C**
+    - Add `#include "common/src/ia32_locations.h"` to **common/src/arch-x86.C**
+  - Build dyninst with OpenMP disabled
 2. Dynamically linked functions may appear twice during instrumentation, because these functions exist in .plt sections too.
 
 ## TODOs
