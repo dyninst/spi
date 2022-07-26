@@ -28,6 +28,7 @@ FpvaChecker::FpvaChecker(TraceMgr* mgr) : mgr_(mgr) {}
 //////////////////////////////////////////////////
 
 bool ProcInitChecker::Run() {
+  sp_print("ProcInitChecker for pid=%d\n", getpid());
   mgr_->PrintCurrentProc();
   mgr_->PrintParentProc();
   mgr_->PrintUserInfo();
@@ -227,6 +228,9 @@ bool ForkChecker::PostCheck(sp::PointCallHandle* pHandle) {
     pid_t ret = (pid_t)pHandle->GetReturnValue();
     if (ret == 0) {
       mgr_->NewDoc();
+      mgr_->PrintCurrentProc();
+      mgr_->PrintParentProc();
+      mgr_->PrintUserInfo();
     } else {
       sp_print("INSTRUMENTATION(pid=%d): fork() child pid = %d...\n", getpid(),
                ret);
@@ -244,6 +248,9 @@ bool ForkChecker::PostCheck(sp::PointCallHandle* pHandle) {
     pid_t ret = (pid_t)pHandle->GetReturnValue();
     if (ret == 0) {
       mgr_->NewDoc();
+      mgr_->PrintCurrentProc();
+      mgr_->PrintParentProc();
+      mgr_->PrintUserInfo();
     } else {
       sp_print("INSTRUMENTATION(pid=%d): clone() child pid = %d/...\n", getpid(), ret);
       CallTrace newTrace;

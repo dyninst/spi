@@ -10,6 +10,7 @@ namespace fpva {
 //////////////////////////////////////////////////////////////////////
 
 TraceMgr::TraceMgr() {
+  sp_print("TraceMgr init for pid=%d\n", getpid());
   // first figure out where to store trace files
   if (getenv("SP_DIR") && getenv("PLATFORM")) {
     working_dir_ = getenv("SP_DIR");
@@ -77,6 +78,7 @@ std::string TraceMgr::TraceFileName() const { return filename_; }
 //
 
 void TraceMgr::NewDoc() {
+  sp_print("NewDoc for pid=%d:%s\n", getpid(), sp::GetExeName().c_str());
   // Get seq
   unsigned long seq = FpvaUtils::GetUsec();
 
