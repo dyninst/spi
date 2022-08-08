@@ -12,11 +12,13 @@ The class relationships:
 
 import logging
 import os
+import argparse
 
 from workers import combine_worker
 from workers import lookup_table_worker
 from workers import static_graph_worker
 from workers import animation_worker
+
 
 class GraphBuilder:
     """
@@ -41,7 +43,7 @@ class GraphBuilder:
     def __init__(self):
         pass
 
-    def package(self, dir_path, dedup = False):
+    def package(self, dir_path, dedup=False):
         """
         Summary:
 
@@ -54,7 +56,7 @@ class GraphBuilder:
               - delimiter: "<?xml ...>" (default)
            3. Cancatenate all events, zip them
               - output: events.zip
-              - delimiter: "===event===\n" (additional)
+              - delimiter: "===event===" (additional)
         """
         path = "%s/raw" % dir_path
         if dedup:
@@ -89,7 +91,7 @@ class GraphBuilder:
             os.system("rm -f %s/event_tmp" % path)
             os.system("rm -f %s/*.e" % path)
 
-    def go(self, input_dir, output_dir, dedup = False):
+    def go(self, input_dir, output_dir, dedup=False):
         """
         Summary:
 
@@ -114,7 +116,7 @@ class GraphBuilder:
 
         # Step 1
         combine_worker.run(input_dir)
-        
+
         # Step 2
         table = lookup_table_worker.run(input_dir)
 
@@ -123,18 +125,24 @@ class GraphBuilder:
 
         # Step 4
         animation_worker.run(table, output_dir, dedup)
-        
+
+
 def main():
+
+    # get args
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_dir", type=str, required=True, help="DIR contains trace xml files")
+    parser.add_argument("--output_dir", type=str, required=True, help="DIR for output svg images")
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO)
 
-    input_dir = '../traces'
-    output_dir = '../html/images'
-  
     builder = GraphBuilder()
-    builder.go(input_dir, output_dir, dedup=False)
-#    builder.go(input_dir, output_dir, dedup=True)
-    builder.package(output_dir, dedup=False)
-#    builder.package(output_dir, dedup=True)
+    builder.go(args.input_dir, args.output_dir, dedup=False)
+    builder.go(args.input_dir, args.output_dir, dedup=True)
+    builder.package(args.output_dir, dedup=False)
+    builder.package(args.output_dir, dedup=True)
+
 
 if __name__ == "__main__":
     main()
