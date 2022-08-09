@@ -2,6 +2,8 @@
 Lookup table for raw traces and events
 """
 
+from structures.event import Event
+
 class LookupTable:
     """
     Args:
@@ -75,7 +77,10 @@ class LookupTable:
                                    eve.pid in relation_map[eve.host]]
 
         # Sorting!
-        self.event_list.sort()
+        def sortFunc(event: Event) -> int:
+            return event.time
+        
+        self.event_list.sort(key=sortFunc)
         # eve = event_list[0]
         # the_eve = event.CloneEvent('init', eve.time, eve.host, eve.pid)
         
@@ -100,12 +105,12 @@ class LookupTable:
 
         try:
             the_dict[key1]
-        except KeyError, e:
+        except KeyError as e:
             the_dict[key1] = {}
 
         try:
             the_dict[key1][key2]
-        except KeyError, e:
+        except KeyError as e:
             the_dict[key1][key2] = {}
 
         the_dict[key1][key2] = val

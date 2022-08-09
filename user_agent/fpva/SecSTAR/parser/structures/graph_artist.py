@@ -371,6 +371,7 @@ class GraphArtist:
         """
 
         legend_dir = "%s/legend" % dest_dir
+        os.makedirs(legend_dir, exist_ok=True)
         self.__generate_abbr_exe(legend_dir)
         self.__generate_user_color(legend_dir)
         self.__generate_node_edge_legend(legend_dir)
