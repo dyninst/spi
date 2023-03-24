@@ -19,7 +19,8 @@ namespace sp {
   extern void report_timer();
 }
 
-void print_before(SpPoint* pt) {
+void print_before(PointCallHandle* handle) {
+  SpPoint* pt = handle->GetPoint();
   ++callcount;
   switch (pt->install_method()) {
   case SP_TRAP:
@@ -40,7 +41,7 @@ void print_before(SpPoint* pt) {
   sp::Propel(pt);
 }
 
-void print_after(Point* pt) {
+void print_after(PointCallHandle* handle) {
 }
 
 void segv_handler(int num) {
@@ -54,6 +55,7 @@ void MyAgent() {
 
   agent->SetParser(parser);
   agent->SetInitEntry("print_before");
+  agent->SetInitExit("print_after");
   agent->Go();
 }
 
