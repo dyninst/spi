@@ -6,9 +6,10 @@ using namespace PatchAPI;
 using namespace sp;
 
 int level = 0;
-void test_entry(SpPoint* pt) {
+void test_entry(PointCallHandle* handle) {
 
-  SpFunction* f = Callee(pt);
+  SpFunction* f = handle->GetCallee();
+  SpPoint* pt = handle->GetPoint();
   if (!f) return;
 
   for (int i = 0; i < level; i++) fprintf(stdout, " ");
@@ -17,8 +18,8 @@ void test_entry(SpPoint* pt) {
   sp::Propel(pt);
 }
 
-void test_exit(SpPoint* pt) {
-  SpFunction* f = Callee(pt);
+void test_exit(PointCallHandle* handle) {
+  SpFunction* f = handle->GetCallee();
   if (!f) return;
   level--;
 }
