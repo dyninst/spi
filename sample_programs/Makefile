@@ -6,13 +6,10 @@ CXXFLAGS = -Wall
 CXX = g++
 
 
-all: helloc hellocc calltest calltest_fork client server simple_fork
+all: helloc calltest calltest_fork client server simple_fork
 
 helloc: hello.c
-	$(CC) -o helloc hello.c $(CFLAGS)
-
-hellocc: hello.cc
-	$(CXX) -o hellocc hello.cc $(CFLAGS)
+	$(CC) -o hello hello.c $(CFLAGS)
 
 calltest: calltest.cc
 	$(CXX) -o calltest calltest.cc $(CFLAGS)
@@ -31,5 +28,5 @@ simple_fork: simple_fork.cc
 
 clean: 
 	$(RM) \
-        helloc hellocc calltest calltest_fork tcp_client tcp_server4 simple_fork \
+        hello calltest calltest_fork tcp_client tcp_server4 simple_fork \
 	*.o
